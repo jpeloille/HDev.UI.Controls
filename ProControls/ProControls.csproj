@@ -27,4 +27,8 @@
     <AvaloniaResource Include="Theme/DataGrid/**/*.axaml" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Interaction" />
+  </ItemGroup>
+
 </Project>

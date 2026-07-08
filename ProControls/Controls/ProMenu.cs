@@ -17,12 +17,30 @@ public class ProMenuPopup : Popup
 {
     private readonly Border _container;
     private readonly StackPanel _itemsPanel;
-    
+
+    /// <summary>
+    /// Popup parent dans une chaîne de sous-menus (null pour un menu de premier niveau)
+    /// </summary>
+    internal ProMenuPopup? ParentPopup { get; set; }
+
     public ProMenuPopup()
     {
         IsLightDismissEnabled = true;
         Placement = PlacementMode.BottomEdgeAlignedLeft;
-        
+
+        // À la fermeture : refermer les sous-menus encore ouverts de nos items,
+        // et se détacher de l'arbre logique (le popup est recréé à chaque ouverture)
+        Closed += (s, e) =>
+        {
+            foreach (var child in _itemsPanel!.Children)
+            {
+                if (child is ProMenuItem item)
+                    item.CloseSubmenu();
+            }
+
+            ((ISetLogicalParent)this).SetParent(null);
+        };
+
         _itemsPanel = new StackPanel
         {
             Orientation = Orientation.Vertical
@@ -51,38 +69,55 @@ public class ProMenuPopup : Popup
     public void SetItems(IEnumerable<ProMenuItem> sourceItems)
     {
         _itemsPanel.Children.Clear();
-        foreach (var item in sourceItems)
+        foreach (var item in sourceItems.ToList())
         {
-            // Créer une copie pour le popup
-            var menuItem = new ProMenuItem
-            {
-                Header = item.Header,
-                Icon = item.Icon,
-                Shortcut = item.Shortcut,
-                IsSeparator = item.IsSeparator,
-                IsCheckable = item.IsCheckable,
-                IsChecked = item.IsChecked
-            };
-            menuItem.Click += (s, e) => item.RaiseClick();
-            _itemsPanel.Children.Add(menuItem);
+            // Les items originaux sont affichés directement (pas de copie), pour que
+            // l'état (IsChecked...) et les handlers restent sur la même instance.
+            // Un item ne peut avoir qu'un parent visuel : on le retire de l'ancien popup.
+            if (item.Parent is Panel oldPanel)
+                oldPanel.Children.Remove(item);
+
+            item.OwnerPopup = this;
+            _itemsPanel.Children.Add(item);
         }
+    }
+
+    /// <summary>
+    /// Ferme ce popup et tous ses parents (clic sur un item de sous-menu)
+    /// </summary>
+    internal void CloseChain()
+    {
+        Close();
+        ParentPopup?.CloseChain();
     }
     
     public void ShowAt(Control target, Point offset = default)
     {
+        EnsureLogicalParent(target);
         PlacementTarget = target;
         HorizontalOffset = offset.X;
         VerticalOffset = offset.Y;
         Open();
     }
-    
+
     public void ShowAtPosition(Control anchor, double x, double y)
     {
+        EnsureLogicalParent(anchor);
         PlacementTarget = anchor;
         Placement = PlacementMode.Pointer;
         HorizontalOffset = x;
         VerticalOffset = y;
         Open();
+    }
+
+    /// <summary>
+    /// Un Popup détaché de l'arbre logique n'applique jamais son contenu :
+    /// comme FlyoutBase, on se parente à la cible le temps de l'affichage.
+    /// </summary>
+    private void EnsureLogicalParent(Control target)
+    {
+        if (Parent == null)
+            ((ISetLogicalParent)this).SetParent(target);
     }
 }
 
@@ -274,7 +309,11 @@ public class ProMenuBarItem : Control
     public override void Render(DrawingContext context)
     {
         var bounds = new Rect(Bounds.Size);
-        
+
+        // Fond transparent : sans primitive dessinée couvrant les bounds,
+        // le contrôle serait invisible au hit-test du pointeur
+        context.FillRectangle(Brushes.Transparent, bounds);
+
         // Fond au survol ou si menu ouvert
         if (_isHovered || _isOpen)
         {

@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProControls.Demo", "ProCont
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Julien.Avalonia.DataGrid", "..\AvaloniaDataGrid\src\Julien.Avalonia.DataGrid.csproj", "{63FB8FD6-8050-4A93-A465-8C6498DC75D1}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Interaction", "tests\Interaction\Interaction.csproj", "{6B91146E-7D38-4655-B3C3-F6C40C3140F2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,8 +59,23 @@ Global
 		{63FB8FD6-8050-4A93-A465-8C6498DC75D1}.Release|x64.Build.0 = Release|Any CPU
 		{63FB8FD6-8050-4A93-A465-8C6498DC75D1}.Release|x86.ActiveCfg = Release|Any CPU
 		{63FB8FD6-8050-4A93-A465-8C6498DC75D1}.Release|x86.Build.0 = Release|Any CPU
+		{6B91146E-7D38-4655-B3C3-F6C40C3140F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B91146E-7D38-4655-B3C3-F6C40C3140F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B91146E-7D38-4655-B3C3-F6C40C3140F2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6B91146E-7D38-4655-B3C3-F6C40C3140F2}.Debug|x64.Build.0 = Debug|Any CPU
+		{6B91146E-7D38-4655-B3C3-F6C40C3140F2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6B91146E-7D38-4655-B3C3-F6C40C3140F2}.Debug|x86.Build.0 = Debug|Any CPU
+		{6B91146E-7D38-4655-B3C3-F6C40C3140F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B91146E-7D38-4655-B3C3-F6C40C3140F2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B91146E-7D38-4655-B3C3-F6C40C3140F2}.Release|x64.ActiveCfg = Release|Any CPU
+		{6B91146E-7D38-4655-B3C3-F6C40C3140F2}.Release|x64.Build.0 = Release|Any CPU
+		{6B91146E-7D38-4655-B3C3-F6C40C3140F2}.Release|x86.ActiveCfg = Release|Any CPU
+		{6B91146E-7D38-4655-B3C3-F6C40C3140F2}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6B91146E-7D38-4655-B3C3-F6C40C3140F2} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

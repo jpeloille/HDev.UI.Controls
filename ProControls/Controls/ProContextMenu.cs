@@ -86,9 +86,9 @@ public class ProContextMenu
             Closed?.Invoke(this, EventArgs.Empty);
             _popup = null;
         };
-        
-        _popup.PlacementTarget = anchor;
-        _popup.Open();
+
+        // ShowAt assure le parentage logique du popup (sinon contenu jamais rendu)
+        _popup.ShowAt(anchor);
     }
     
     /// <summary>

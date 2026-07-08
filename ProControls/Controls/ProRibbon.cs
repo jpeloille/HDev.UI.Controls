@@ -20,6 +20,8 @@ public class ProRibbon : Control
     
     private int _hoveredTabIndex = -1;
     private Point _mousePosition;
+    private ProRibbonButton? _hoveredButton;
+    private ProRibbonButton? _pressedButton;
     
     // ═══════════════════════════════════════════════════════════════
     // PROPRIÉTÉS
@@ -81,7 +83,7 @@ public class ProRibbon : Control
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         _mousePosition = e.GetPosition(this);
-        
+
         // Déterminer l'onglet survolé
         var newHovered = GetTabIndexAtPosition(_mousePosition.X);
         if (newHovered != _hoveredTabIndex)
@@ -89,21 +91,31 @@ public class ProRibbon : Control
             _hoveredTabIndex = newHovered;
             InvalidateVisual();
         }
-        
+
+        // Déterminer le bouton survolé dans le contenu
+        var newHoveredButton = GetButtonAtPosition(_mousePosition);
+        if (newHoveredButton != _hoveredButton)
+        {
+            _hoveredButton = newHoveredButton;
+            InvalidateVisual();
+        }
+
         base.OnPointerMoved(e);
     }
-    
+
     protected override void OnPointerExited(PointerEventArgs e)
     {
         _hoveredTabIndex = -1;
+        _hoveredButton = null;
+        _pressedButton = null;
         InvalidateVisual();
         base.OnPointerExited(e);
     }
-    
+
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         var pos = e.GetPosition(this);
-        
+
         // Clic sur un onglet ?
         if (pos.Y < TabRowHeight)
         {
@@ -115,7 +127,7 @@ public class ProRibbon : Control
                     IsCollapsed = false;
                 InvalidateVisual();
             }
-            
+
             // Clic sur le bouton collapse ?
             if (pos.X > Bounds.Width - 40)
             {
@@ -123,8 +135,140 @@ public class ProRibbon : Control
                 InvalidateMeasure();
             }
         }
-        
+        else
+        {
+            // Clic sur un bouton du contenu ?
+            var btn = GetButtonAtPosition(pos);
+            if (btn is { IsEnabled: true })
+            {
+                _pressedButton = btn;
+                InvalidateVisual();
+                e.Handled = true;
+            }
+        }
+
         base.OnPointerPressed(e);
+    }
+
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    {
+        if (_pressedButton != null)
+        {
+            var pos = e.GetPosition(this);
+            var released = GetButtonAtPosition(pos);
+            var btn = _pressedButton;
+            _pressedButton = null;
+            InvalidateVisual();
+
+            if (released == btn)
+            {
+                btn.RaiseClick();
+
+                if (btn.HasDropdown && btn.DropdownMenu != null)
+                    btn.DropdownMenu.Show(this, pos);
+
+                e.Handled = true;
+            }
+        }
+
+        base.OnPointerReleased(e);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // LAYOUT DES BOUTONS (partagé entre rendu et hit-test)
+    // ═══════════════════════════════════════════════════════════════
+
+    private ProRibbonButton? GetButtonAtPosition(Point pos)
+    {
+        if (IsCollapsed || pos.Y <= TabRowHeight) return null;
+
+        foreach (var (item, rect) in GetContentLayout())
+        {
+            if (item is ProRibbonButton btn && rect.Contains(pos))
+                return btn;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Énumère les items du tab sélectionné avec leur rectangle : la même marche
+    /// est utilisée par le rendu et par le hit-test, pour que ce qui est dessiné
+    /// soit exactement ce qui est cliquable.
+    /// </summary>
+    internal IEnumerable<(ProRibbonItem Item, Rect Rect)> GetContentLayout()
+    {
+        if (SelectedTab == null) yield break;
+
+        double groupX = 6;
+        foreach (var group in SelectedTab.Groups)
+        {
+            var groupWidth = MeasureGroupWidth(group);
+            foreach (var entry in GetGroupItemsLayout(group, groupX, TabRowHeight))
+                yield return entry;
+            groupX += groupWidth;
+        }
+    }
+
+    private IEnumerable<(ProRibbonItem Item, Rect Rect)> GetGroupItemsLayout(
+        ProRibbonGroup group, double x, double y)
+    {
+        var largeButtonHeight = ContentHeight - GroupLabelHeight - 10;
+        double itemX = x + 6;
+        double itemY = y + 4;
+        int smallRow = 0;
+        double smallColumnX = 0;
+        double maxSmallWidth = 0;
+
+        foreach (var item in group.Items)
+        {
+            if (item is ProRibbonButton btn)
+            {
+                if (btn.IsLarge)
+                {
+                    if (smallRow > 0)
+                    {
+                        itemX = smallColumnX + maxSmallWidth + 4;
+                        smallRow = 0;
+                        maxSmallWidth = 0;
+                    }
+
+                    yield return (btn, new Rect(itemX, itemY, 50, largeButtonHeight));
+                    itemX += 54;
+                }
+                else
+                {
+                    if (smallRow == 0)
+                    {
+                        smallColumnX = itemX;
+                        maxSmallWidth = 0;
+                    }
+
+                    var btnWidth = MeasureSmallButtonWidth(btn);
+                    maxSmallWidth = Math.Max(maxSmallWidth, btnWidth);
+                    yield return (btn, new Rect(smallColumnX, itemY + smallRow * 22, btnWidth, 20));
+
+                    smallRow++;
+                    if (smallRow >= 3)
+                    {
+                        itemX = smallColumnX + maxSmallWidth + 4;
+                        smallRow = 0;
+                        maxSmallWidth = 0;
+                    }
+                }
+            }
+            else if (item is ProRibbonSeparator sep)
+            {
+                if (smallRow > 0)
+                {
+                    itemX = smallColumnX + maxSmallWidth + 4;
+                    smallRow = 0;
+                    maxSmallWidth = 0;
+                }
+
+                yield return (sep, new Rect(itemX + 4, y + 8, 1, ContentHeight - GroupLabelHeight - 16));
+                itemX += 12;
+            }
+        }
     }
     
     private int GetTabIndexAtPosition(double x)
@@ -347,127 +491,98 @@ public class ProRibbon : Control
             new Point(x + 4, y + ContentHeight - GroupLabelHeight - 2),
             new Point(x + width - 8, y + ContentHeight - GroupLabelHeight - 2));
         
-        // Dessiner les items
-        double itemX = x + 6;
-        double itemY = y + 4;
-        int smallRow = 0;
-        double smallColumnX = 0;
-        double maxSmallWidth = 0;
-        
-        foreach (var item in group.Items)
+        // Dessiner les items (positions issues du même walker que le hit-test)
+        foreach (var (item, rect) in GetGroupItemsLayout(group, x, y))
         {
             if (item is ProRibbonButton btn)
             {
                 if (btn.IsLarge)
-                {
-                    // Finaliser la colonne de petits boutons si en cours
-                    if (smallRow > 0)
-                    {
-                        itemX = smallColumnX + maxSmallWidth + 4;
-                        smallRow = 0;
-                        maxSmallWidth = 0;
-                    }
-                    
-                    RenderLargeButton(context, btn, itemX, itemY);
-                    itemX += 54;
-                }
+                    RenderLargeButton(context, btn, rect);
                 else
-                {
-                    if (smallRow == 0)
-                    {
-                        smallColumnX = itemX;
-                        maxSmallWidth = 0;
-                    }
-                    
-                    var btnWidth = MeasureSmallButtonWidth(btn);
-                    maxSmallWidth = Math.Max(maxSmallWidth, btnWidth);
-                    RenderSmallButton(context, btn, smallColumnX, itemY + smallRow * 22, btnWidth);
-                    
-                    smallRow++;
-                    if (smallRow >= 3)
-                    {
-                        itemX = smallColumnX + maxSmallWidth + 4;
-                        smallRow = 0;
-                        maxSmallWidth = 0;
-                    }
-                }
+                    RenderSmallButton(context, btn, rect);
             }
             else if (item is ProRibbonSeparator)
             {
-                if (smallRow > 0)
-                {
-                    itemX = smallColumnX + maxSmallWidth + 4;
-                    smallRow = 0;
-                    maxSmallWidth = 0;
-                }
-                
                 context.DrawLine(sepPen,
-                    new Point(itemX + 4, y + 8),
-                    new Point(itemX + 4, y + ContentHeight - GroupLabelHeight - 8));
-                itemX += 12;
+                    new Point(rect.X, rect.Top),
+                    new Point(rect.X, rect.Bottom));
             }
         }
     }
-    
-    private void RenderLargeButton(DrawingContext context, ProRibbonButton btn, double x, double y)
+
+    private void RenderButtonBackground(DrawingContext context, ProRibbonButton btn, Rect btnRect, float radius)
     {
-        var buttonHeight = ContentHeight - GroupLabelHeight - 10;
-        var btnRect = new Rect(x, y, 50, buttonHeight);
-        
-        // Fond hover
-        bool isHovered = btnRect.Contains(_mousePosition) && _mousePosition.Y > TabRowHeight;
-        if (isHovered)
+        var isHovered = btn == _hoveredButton && btn.IsEnabled;
+        var isPressed = btn == _pressedButton && isHovered;
+
+        if (isPressed || btn.IsChecked)
+        {
+            context.FillRectangle(
+                new SolidColorBrush(VS2022Theme.Background.ControlPressed),
+                btnRect, radius);
+
+            if (btn.IsChecked)
+            {
+                var checkedPen = new Pen(new SolidColorBrush(VS2022Theme.Accent.Primary), 1);
+                context.DrawRectangle(null, checkedPen, btnRect.Deflate(0.5), radius, radius);
+            }
+        }
+        else if (isHovered)
         {
             context.FillRectangle(
                 new SolidColorBrush(VS2022Theme.Background.ControlHover),
-                btnRect, 3);
+                btnRect, radius);
         }
-        
+    }
+
+    private void RenderLargeButton(DrawingContext context, ProRibbonButton btn, Rect btnRect)
+    {
+        RenderButtonBackground(context, btn, btnRect, 3);
+
+        var textColor = btn.IsEnabled ? VS2022Theme.Text.Primary : VS2022Theme.Text.Disabled;
+        var x = btnRect.X;
+        var y = btnRect.Y;
+
         // Icône (grande, centrée en haut)
         if (!string.IsNullOrEmpty(btn.Icon))
         {
-            var iconText = CreateFormattedText(btn.Icon, VS2022Theme.Text.Primary, 22);
+            var iconText = CreateFormattedText(btn.Icon, textColor, 22);
             context.DrawText(iconText, new Point(
                 x + (50 - iconText.Width) / 2,
                 y + 6));
         }
-        
+
         // Texte (en bas, peut être sur 2 lignes)
         var lines = btn.Label.Split('\n');
         double textY = y + 38;
         foreach (var line in lines)
         {
-            var lineText = CreateFormattedText(line.Trim(), VS2022Theme.Text.Primary, 11);
+            var lineText = CreateFormattedText(line.Trim(), textColor, 11);
             context.DrawText(lineText, new Point(
                 x + (50 - lineText.Width) / 2,
                 textY));
             textY += 12;
         }
     }
-    
-    private void RenderSmallButton(DrawingContext context, ProRibbonButton btn, double x, double y, double width)
+
+    private void RenderSmallButton(DrawingContext context, ProRibbonButton btn, Rect btnRect)
     {
-        var btnRect = new Rect(x, y, width, 20);
-        
-        // Fond hover
-        bool isHovered = btnRect.Contains(_mousePosition) && _mousePosition.Y > TabRowHeight;
-        if (isHovered)
-        {
-            context.FillRectangle(
-                new SolidColorBrush(VS2022Theme.Background.ControlHover),
-                btnRect, 2);
-        }
-        
+        RenderButtonBackground(context, btn, btnRect, 2);
+
+        var textColor = btn.IsEnabled ? VS2022Theme.Text.Primary : VS2022Theme.Text.Disabled;
+        var x = btnRect.X;
+        var y = btnRect.Y;
+
         // Icône
         if (!string.IsNullOrEmpty(btn.Icon))
         {
-            var iconText = CreateFormattedText(btn.Icon, VS2022Theme.Text.Primary, 12);
+            var iconText = CreateFormattedText(btn.Icon, textColor, 12);
             context.DrawText(iconText, new Point(x + 4, y + (20 - iconText.Height) / 2));
         }
-        
+
         // Texte
         var label = btn.Label.Replace("\n", " ");
-        var labelText = CreateFormattedText(label, VS2022Theme.Text.Primary, 11);
+        var labelText = CreateFormattedText(label, textColor, 11);
         context.DrawText(labelText, new Point(x + 22, y + (20 - labelText.Height) / 2));
     }
     

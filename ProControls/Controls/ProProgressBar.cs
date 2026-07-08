@@ -1,6 +1,8 @@
 using Avalonia;
 using Avalonia.Media;
+using Avalonia.Threading;
 using ProControls.Theme;
+using System.Diagnostics;
 
 namespace ProControls.Controls;
 
@@ -88,6 +90,49 @@ public class ProProgressBar : ProControlBase
     }
 
     // ═══════════════════════════════════════════════════════════════
+    // ANIMATION (mode indéterminé)
+    // ═══════════════════════════════════════════════════════════════
+
+    private static readonly Stopwatch AnimClock = Stopwatch.StartNew();
+    private DispatcherTimer? _animTimer;
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        UpdateAnimTimer();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        _animTimer?.Stop();
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == IsIndeterminateProperty)
+            UpdateAnimTimer();
+    }
+
+    private void UpdateAnimTimer()
+    {
+        if (IsIndeterminate && VisualRoot != null)
+        {
+            if (_animTimer == null)
+            {
+                _animTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33) };
+                _animTimer.Tick += (s, e) => InvalidateVisual();
+            }
+            _animTimer.Start();
+        }
+        else
+        {
+            _animTimer?.Stop();
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     // MESURE
     // ═══════════════════════════════════════════════════════════════
     
@@ -144,8 +189,10 @@ public class ProProgressBar : ProControlBase
                 
                 if (IsIndeterminate)
                 {
-                    // Animation simulée (en production, utiliser une vraie animation)
-                    var animProgress = (DateTime.Now.Millisecond / 1000.0);
+                    // Cycle de 1,4 s basé sur une horloge monotone ; le DispatcherTimer
+                    // invalide le rendu tant que la barre est indéterminée et attachée
+                    const double cycleSeconds = 1.4;
+                    var animProgress = AnimClock.Elapsed.TotalSeconds % cycleSeconds / cycleSeconds;
                     var barWidth = trackRect.Width * 0.3;
                     var barX = trackRect.X + (trackRect.Width + barWidth) * animProgress - barWidth;
                     progressRect = new Rect(barX, trackRect.Y, barWidth, trackRect.Height);

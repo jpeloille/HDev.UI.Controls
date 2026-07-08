@@ -90,7 +90,12 @@ public class ProMenuItem : Control
     }
     
     public bool HasItems => Items != null && Items.Count > 0;
-    
+
+    /// <summary>
+    /// Popup qui affiche actuellement cet item (renseigné par ProMenuPopup.SetItems)
+    /// </summary>
+    internal ProMenuPopup? OwnerPopup { get; set; }
+
     // ═══════════════════════════════════════════════════════════════
     // ÉVÉNEMENTS
     // ═══════════════════════════════════════════════════════════════
@@ -165,10 +170,20 @@ public class ProMenuItem : Control
     {
         _isHovered = true;
         InvalidateVisual();
-        
+
+        // Fermer les sous-menus ouverts des items voisins du même popup
+        if (Parent is Panel panel)
+        {
+            foreach (var sibling in panel.Children)
+            {
+                if (sibling is ProMenuItem other && other != this)
+                    other.CloseSubmenu();
+            }
+        }
+
         if (HasItems)
             OpenSubmenu();
-        
+
         base.OnPointerEntered(e);
     }
     
@@ -208,37 +223,44 @@ public class ProMenuItem : Control
         base.OnPointerReleased(e);
     }
     
-    private void OpenSubmenu()
+    internal void OpenSubmenu()
     {
         if (_isSubmenuOpen || Items == null || Items.Count == 0) return;
-        
-        _submenuPopup = new ProMenuPopup();
-        _submenuPopup.SetItems(Items);
-        
-        // Positionner à droite de l'item
-        var position = this.TranslatePoint(new Point(Bounds.Width - 4, -4), null);
-        if (position.HasValue)
+
+        // Positionné à droite de l'item ; la fermeture est pilotée par la chaîne
+        // de popups (pas de light dismiss propre), sinon un clic dans le sous-menu
+        // pourrait fermer le parent avant d'être traité
+        _submenuPopup = new ProMenuPopup
         {
-            // _submenuPopup.Show(position.Value);
-        }
-        
+            Placement = PlacementMode.RightEdgeAlignedTop,
+            IsLightDismissEnabled = false,
+            ParentPopup = OwnerPopup,
+        };
+        _submenuPopup.SetItems(Items);
+        _submenuPopup.Closed += (s, e) =>
+        {
+            _isSubmenuOpen = false;
+            InvalidateVisual();
+        };
+        _submenuPopup.ShowAt(this, new Point(-4, -6));
+
         _isSubmenuOpen = true;
+        InvalidateVisual();
     }
-    
-    private void CloseSubmenu()
+
+    internal void CloseSubmenu()
     {
         _submenuPopup?.Close();
         _submenuPopup = null;
         _isSubmenuOpen = false;
     }
-    
+
     internal void CloseAllMenus()
     {
         CloseSubmenu();
-        
-        // Remonter pour fermer les parents
-        if (Parent is ProMenuPopup popup)
-            popup.Close();
+
+        // Fermer le popup qui nous affiche et toute la chaîne de parents
+        OwnerPopup?.CloseChain();
     }
     
     // ═══════════════════════════════════════════════════════════════
@@ -248,7 +270,11 @@ public class ProMenuItem : Control
     public override void Render(DrawingContext context)
     {
         var bounds = new Rect(Bounds.Size);
-        
+
+        // Fond transparent : sans primitive dessinée couvrant les bounds,
+        // le contrôle serait invisible au hit-test du pointeur
+        context.FillRectangle(Brushes.Transparent, bounds);
+
         if (IsSeparator)
         {
             // Ligne séparatrice
