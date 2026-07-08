@@ -75,8 +75,19 @@ public class ProSlider : ProControlBase
     // ÉVÉNEMENTS
     // ═══════════════════════════════════════════════════════════════
     
+    /// <summary>
+    /// Déclenché à chaque changement de Value, quelle qu'en soit la source
+    /// (souris, clavier, binding, code)
+    /// </summary>
     public event EventHandler<double>? ValueChanged;
-    
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == ValueProperty)
+            ValueChanged?.Invoke(this, Value);
+    }
+
     static ProSlider()
     {
         AffectsRender<ProSlider>(ValueProperty, MinimumProperty, MaximumProperty, 
@@ -126,7 +137,34 @@ public class ProSlider : ProControlBase
         e.Pointer.Capture(null);
         base.OnPointerReleased(e);
     }
-    
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        if (!e.Handled && IsEnabled)
+        {
+            var step = Step > 0 ? Step : (Maximum - Minimum) / 100;
+            double? newValue = e.Key switch
+            {
+                Key.Left or Key.Down => Value - step,
+                Key.Right or Key.Up => Value + step,
+                Key.PageDown => Value - step * 10,
+                Key.PageUp => Value + step * 10,
+                Key.Home => Minimum,
+                Key.End => Maximum,
+                _ => null
+            };
+
+            if (newValue.HasValue)
+            {
+                Value = Math.Clamp(newValue.Value, Minimum, Maximum);
+                e.Handled = true;
+                return;
+            }
+        }
+
+        base.OnKeyDown(e);
+    }
+
     private void UpdateValueFromPointer(Point pos)
     {
         var trackRect = GetTrackRect();
@@ -141,11 +179,10 @@ public class ProSlider : ProControlBase
         }
         
         newValue = Math.Clamp(newValue, Minimum, Maximum);
-        
+
         if (Math.Abs(newValue - Value) > 0.001)
         {
             Value = newValue;
-            ValueChanged?.Invoke(this, Value);
         }
     }
     

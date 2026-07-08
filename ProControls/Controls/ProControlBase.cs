@@ -93,6 +93,38 @@ public abstract class ProControlBase : Control
         base.OnPointerReleased(e);
     }
 
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+        if (e.Handled || !IsEnabled) return;
+
+        // Socle clavier commun : Espace/Entrée activent le contrôle
+        // (feedback pressé au down, OnClick au up, comme à la souris)
+        if (e.Key is Key.Space or Key.Enter)
+        {
+            _isPressed = true;
+            InvalidateVisual();
+            e.Handled = true;
+        }
+    }
+
+    protected override void OnKeyUp(KeyEventArgs e)
+    {
+        base.OnKeyUp(e);
+        if (e.Handled) return;
+
+        if (e.Key is Key.Space or Key.Enter && _isPressed)
+        {
+            _isPressed = false;
+            InvalidateVisual();
+
+            if (IsEnabled)
+                OnClick();
+
+            e.Handled = true;
+        }
+    }
+
     protected override void OnGotFocus(GotFocusEventArgs e)
     {
         _isFocusedState = true;

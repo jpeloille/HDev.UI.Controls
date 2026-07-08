@@ -54,13 +54,23 @@ public class ProToggleSwitch : ProControlBase
     // ÉVÉNEMENTS
     // ═══════════════════════════════════════════════════════════════
     
+    /// <summary>
+    /// Déclenché à chaque changement de IsOn, quelle qu'en soit la source
+    /// (souris, clavier, binding, code)
+    /// </summary>
     public event EventHandler<bool>? Toggled;
-    
+
     protected override void OnClick()
     {
         if (!IsEnabled) return;
         IsOn = !IsOn;
-        Toggled?.Invoke(this, IsOn);
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == IsOnProperty)
+            Toggled?.Invoke(this, IsOn);
     }
     
     static ProToggleSwitch()

@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using ProControls.Theme;
@@ -46,27 +47,79 @@ public class ProRadioButton : ProControlBase
     // ÉVÉNEMENTS
     // ═══════════════════════════════════════════════════════════════
     
+    /// <summary>
+    /// Déclenché à chaque changement de IsChecked, quelle qu'en soit la source
+    /// (souris, clavier, binding, code)
+    /// </summary>
     public event EventHandler<bool>? CheckedChanged;
-    
+
     protected override void OnClick()
     {
         if (!IsEnabled || IsChecked) return;
-        
-        // Décocher les autres radio buttons du même groupe
-        if (Parent is Visual visualParent && !string.IsNullOrEmpty(GroupName))
+        IsChecked = true;
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+
+        if (change.Property == IsCheckedProperty)
         {
-            foreach (var child in visualParent.GetVisualChildren())
+            // L'exclusivité du groupe vit ici pour s'appliquer aussi aux
+            // changements programmatiques et aux bindings
+            if (IsChecked)
             {
-                if (child is ProRadioButton radio && radio != this && radio.GroupName == GroupName)
-                {
+                foreach (var radio in GetGroupSiblings())
                     radio.IsChecked = false;
-                }
+            }
+
+            CheckedChanged?.Invoke(this, IsChecked);
+        }
+    }
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        // Navigation par flèches au sein du groupe (coche la cible, comme WPF/WinForms)
+        if (!e.Handled && IsEnabled &&
+            e.Key is Key.Down or Key.Right or Key.Up or Key.Left)
+        {
+            var group = GetGroupSiblings().Append(this).OrderBy(IndexInParent).ToList();
+
+            if (group.Count > 1)
+            {
+                var forward = e.Key is Key.Down or Key.Right;
+                var index = group.IndexOf(this);
+                var next = group[(index + (forward ? 1 : -1) + group.Count) % group.Count];
+                next.Focus();
+                next.IsChecked = true;
+                e.Handled = true;
+                return;
             }
         }
-        
-        IsChecked = true;
-        CheckedChanged?.Invoke(this, IsChecked);
+
+        base.OnKeyDown(e);
     }
+
+    /// <summary>
+    /// Les autres radios actifs du même groupe : mêmes GroupName et parent visuel.
+    /// Un GroupName vide forme le groupe par défaut du conteneur.
+    /// </summary>
+    private IEnumerable<ProRadioButton> GetGroupSiblings()
+    {
+        if (Parent is not Visual visualParent) yield break;
+
+        foreach (var child in visualParent.GetVisualChildren())
+        {
+            if (child is ProRadioButton radio && radio != this &&
+                radio.GroupName == GroupName && radio.IsEnabled)
+            {
+                yield return radio;
+            }
+        }
+    }
+
+    private static int IndexInParent(ProRadioButton radio) =>
+        radio.Parent is Visual p ? p.GetVisualChildren().ToList().IndexOf(radio) : -1;
     
     static ProRadioButton()
     {

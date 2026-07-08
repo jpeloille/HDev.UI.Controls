@@ -218,6 +218,90 @@ Check("timer arrêté quand la barre repasse en mode déterminé", timer is { Is
 
 pbWindow.Close();
 
+// ═════════════════════════════════════════════════════════════════
+// 5. CLAVIER & ÉVÉNEMENTS PILOTÉS PAR LES PROPRIÉTÉS
+// ═════════════════════════════════════════════════════════════════
+Console.WriteLine("Clavier & événements :");
+
+int btnClicks = 0;
+var kbButton = new ProButton { Text = "OK" };
+kbButton.Click += (s, e) => btnClicks++;
+
+var kbCheck = new ProCheckBox { Label = "Option" };
+var checkEvents = new List<bool?>();
+kbCheck.CheckedChanged += (s, v) => checkEvents.Add(v);
+
+var kbToggle = new ProToggleSwitch();
+int toggleEvents = 0;
+kbToggle.Toggled += (s, v) => toggleEvents++;
+
+var kbSlider = new ProSlider { Minimum = 0, Maximum = 100, Step = 5, Value = 50 };
+var sliderEvents = new List<double>();
+kbSlider.ValueChanged += (s, v) => sliderEvents.Add(v);
+
+var radioA = new ProRadioButton { Label = "A", IsChecked = true };
+var radioB = new ProRadioButton { Label = "B" };
+var radioC = new ProRadioButton { Label = "C" };
+
+var kbPanel = new StackPanel();
+kbPanel.Children.Add(kbButton);
+kbPanel.Children.Add(kbCheck);
+kbPanel.Children.Add(kbToggle);
+kbPanel.Children.Add(kbSlider);
+kbPanel.Children.Add(radioA);
+kbPanel.Children.Add(radioB);
+kbPanel.Children.Add(radioC);
+
+var kbWindow = new Window { Width = 400, Height = 400, Content = kbPanel };
+kbWindow.Show();
+Pump(kbWindow);
+
+void PressKey(Key key)
+{
+    kbWindow.KeyPress(key, RawInputModifiers.None);
+    kbWindow.KeyRelease(key, RawInputModifiers.None);
+    Pump(kbWindow);
+}
+
+kbButton.Focus();
+PressKey(Key.Space);
+Check("Espace active ProButton", btnClicks == 1);
+PressKey(Key.Enter);
+Check("Entrée active ProButton", btnClicks == 2);
+
+kbCheck.Focus();
+PressKey(Key.Space);
+Check("Espace coche ProCheckBox", kbCheck.IsChecked == true);
+Check("CheckedChanged déclenché par le clavier", checkEvents.Count == 1 && checkEvents[0] == true);
+kbCheck.IsChecked = false;
+Check("CheckedChanged déclenché par set programmatique", checkEvents.Count == 2 && checkEvents[1] == false);
+
+kbToggle.Focus();
+PressKey(Key.Space);
+Check("Espace bascule ProToggleSwitch", kbToggle.IsOn);
+kbToggle.IsOn = false;
+Check("Toggled déclenché aussi par set programmatique", toggleEvents == 2);
+
+kbSlider.Focus();
+PressKey(Key.Right);
+Check("flèche droite incrémente le slider d'un Step", Math.Abs(kbSlider.Value - 55) < 0.001);
+PressKey(Key.PageDown);
+Check("PageDown décrémente de 10 Steps", Math.Abs(kbSlider.Value - 5) < 0.001);
+PressKey(Key.Home);
+Check("Home va au minimum", kbSlider.Value == 0);
+PressKey(Key.End);
+Check("End va au maximum", kbSlider.Value == 100);
+Check("ValueChanged suit chaque changement", sliderEvents.Count == 4);
+
+radioA.Focus();
+PressKey(Key.Down);
+Check("flèche bas coche le radio suivant et décoche l'actuel",
+    radioB.IsChecked && !radioA.IsChecked);
+radioC.IsChecked = true;
+Check("exclusivité de groupe aussi en programmatique", !radioB.IsChecked && radioC.IsChecked);
+
+kbWindow.Close();
+
 Console.WriteLine(failed == 0 ? "Interaction ProControls : ALL PASS" : $"Interaction ProControls : {failed} FAILED");
 return failed == 0 ? 0 : 1;
 

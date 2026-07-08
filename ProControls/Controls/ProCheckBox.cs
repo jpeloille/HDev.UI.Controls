@@ -45,12 +45,16 @@ public class ProCheckBox : ProControlBase
     // ÉVÉNEMENTS
     // ═══════════════════════════════════════════════════════════════
     
+    /// <summary>
+    /// Déclenché à chaque changement de IsChecked, quelle qu'en soit la source
+    /// (souris, clavier, binding, code)
+    /// </summary>
     public event EventHandler<bool?>? CheckedChanged;
-    
+
     protected override void OnClick()
     {
         if (!IsEnabled) return;
-        
+
         if (IsThreeState)
         {
             IsChecked = IsChecked switch
@@ -64,8 +68,13 @@ public class ProCheckBox : ProControlBase
         {
             IsChecked = !(IsChecked ?? false);
         }
-        
-        CheckedChanged?.Invoke(this, IsChecked);
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == IsCheckedProperty)
+            CheckedChanged?.Invoke(this, IsChecked);
     }
     
     static ProCheckBox()
