@@ -256,45 +256,45 @@ var kbWindow = new Window { Width = 400, Height = 400, Content = kbPanel };
 kbWindow.Show();
 Pump(kbWindow);
 
-void PressKey(Key key)
+void PressKey(PhysicalKey key)
 {
-    kbWindow.KeyPress(key, RawInputModifiers.None);
-    kbWindow.KeyRelease(key, RawInputModifiers.None);
+    kbWindow.KeyPressQwerty(key, RawInputModifiers.None);
+    kbWindow.KeyReleaseQwerty(key, RawInputModifiers.None);
     Pump(kbWindow);
 }
 
 kbButton.Focus();
-PressKey(Key.Space);
+PressKey(PhysicalKey.Space);
 Check("Espace active ProButton", btnClicks == 1);
-PressKey(Key.Enter);
+PressKey(PhysicalKey.Enter);
 Check("Entrée active ProButton", btnClicks == 2);
 
 kbCheck.Focus();
-PressKey(Key.Space);
+PressKey(PhysicalKey.Space);
 Check("Espace coche ProCheckBox", kbCheck.IsChecked == true);
 Check("CheckedChanged déclenché par le clavier", checkEvents.Count == 1 && checkEvents[0] == true);
 kbCheck.IsChecked = false;
 Check("CheckedChanged déclenché par set programmatique", checkEvents.Count == 2 && checkEvents[1] == false);
 
 kbToggle.Focus();
-PressKey(Key.Space);
+PressKey(PhysicalKey.Space);
 Check("Espace bascule ProToggleSwitch", kbToggle.IsOn);
 kbToggle.IsOn = false;
 Check("Toggled déclenché aussi par set programmatique", toggleEvents == 2);
 
 kbSlider.Focus();
-PressKey(Key.Right);
+PressKey(PhysicalKey.ArrowRight);
 Check("flèche droite incrémente le slider d'un Step", Math.Abs(kbSlider.Value - 55) < 0.001);
-PressKey(Key.PageDown);
+PressKey(PhysicalKey.PageDown);
 Check("PageDown décrémente de 10 Steps", Math.Abs(kbSlider.Value - 5) < 0.001);
-PressKey(Key.Home);
+PressKey(PhysicalKey.Home);
 Check("Home va au minimum", kbSlider.Value == 0);
-PressKey(Key.End);
+PressKey(PhysicalKey.End);
 Check("End va au maximum", kbSlider.Value == 100);
 Check("ValueChanged suit chaque changement", sliderEvents.Count == 4);
 
 radioA.Focus();
-PressKey(Key.Down);
+PressKey(PhysicalKey.ArrowDown);
 Check("flèche bas coche le radio suivant et décoche l'actuel",
     radioB.IsChecked && !radioA.IsChecked);
 radioC.IsChecked = true;

@@ -513,7 +513,9 @@ public class ProComboBox : Control
     /// <summary>
     /// Déclenché pour dessiner un item personnalisé
     /// </summary>
+#pragma warning disable CS0067 // Pas encore consommé par le rendu — sort du tri de l'API façade (implémenter ou retirer)
     public event EventHandler<ProDrawItemEventArgs>? DrawItem;
+#pragma warning restore CS0067
 
     /// <summary>
     /// Déclenché lors du clic sur un bouton
