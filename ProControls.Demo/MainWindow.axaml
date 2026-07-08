@@ -1,0 +1,275 @@
+<pro:ProWindow xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:pro="clr-namespace:ProControls.Controls;assembly=ProControls"
+        xmlns:datagrid="clr-namespace:ProControls.Controls.DataGrid;assembly=ProControls"
+        xmlns:models="clr-namespace:ProControls.Models.DataGrid;assembly=ProControls"
+        x:Class="ProControls.Demo.MainWindow"
+        Title="ProControls — VS2022 Style Library"
+        Width="1200" Height="900"
+        TitleBarBackground="#68217A"
+        TitleBarForeground="White"
+        WindowStartupLocation="CenterScreen">
+    
+    <Grid Background="#F5F5F5" RowDefinitions="Auto,Auto,*">
+        
+        <!-- Menu Bar -->
+        <pro:ProMenuBar x:Name="MainMenuBar" Grid.Row="0"/>
+        
+        <!-- Ribbon -->
+        <pro:ProRibbon x:Name="MainRibbon" Grid.Row="1"/>
+        
+        <!-- Content -->
+        <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="20" Spacing="20">
+                
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- BUTTONS SECTION -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <pro:ProCard Title="Buttons">
+                    <StackPanel Spacing="16">
+                        
+                        <!-- Variantes -->
+                        <TextBlock Text="Variantes" FontSize="12" Foreground="#6A6A6A"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <pro:ProButton Text="Secondary" Variant="Secondary"/>
+                            <pro:ProButton Text="Primary" Variant="Primary"/>
+                            <pro:ProButton Text="Ghost" Variant="Ghost"/>
+                            <pro:ProButton Text="Danger" Variant="Danger"/>
+                            <pro:ProButton Text="Disabled" Variant="Primary" IsEnabled="False"/>
+                        </StackPanel>
+                        
+                        <!-- Tailles -->
+                        <TextBlock Text="Tailles" FontSize="12" Foreground="#6A6A6A" Margin="0,16,0,0"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <pro:ProButton Text="Small" Variant="Primary" Size="Small"/>
+                            <pro:ProButton Text="Medium" Variant="Primary" Size="Medium"/>
+                            <pro:ProButton Text="Large" Variant="Primary" Size="Large"/>
+                        </StackPanel>
+                        
+                    </StackPanel>
+                </pro:ProCard>
+                
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- INPUT SECTION -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <Grid ColumnDefinitions="*,20,*">
+                    
+                    <!-- Text Inputs -->
+                    <pro:ProCard Title="Text Input" Grid.Column="0">
+                        <StackPanel Spacing="12">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Standard" FontSize="12" Foreground="#6A6A6A"/>
+                                <pro:ProTextBox Placeholder="Enter your name..." Width="250"/>
+                            </StackPanel>
+                            
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="With Value" FontSize="12" Foreground="#6A6A6A"/>
+                                <pro:ProTextBox Text="john.doe@example.com" Width="250"/>
+                            </StackPanel>
+                            
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Password" FontSize="12" Foreground="#6A6A6A"/>
+                                <pro:ProTextBox Text="password123" IsPassword="True" Width="250"/>
+                            </StackPanel>
+                            
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="With Error" FontSize="12" Foreground="#6A6A6A"/>
+                                <pro:ProTextBox Text="invalid-email" HasError="True" Width="250"/>
+                            </StackPanel>
+                            
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Read Only" FontSize="12" Foreground="#6A6A6A"/>
+                                <pro:ProTextBox Text="Read only content" IsReadOnly="True" Width="250"/>
+                            </StackPanel>
+                            
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Disabled" FontSize="12" Foreground="#6A6A6A"/>
+                                <pro:ProTextBox Text="Cannot edit" IsEnabled="False" Width="250"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </pro:ProCard>
+                    
+                    <!-- Selections -->
+                    <pro:ProCard Title="Selections" Grid.Column="2">
+                        <Grid ColumnDefinitions="*,*">
+                            <!-- Checkboxes -->
+                            <StackPanel Spacing="12" Grid.Column="0">
+                                <TextBlock Text="Checkboxes" FontSize="12" Foreground="#6A6A6A"/>
+                                <pro:ProCheckBox Label="Option 1" IsChecked="True"/>
+                                <pro:ProCheckBox Label="Option 2"/>
+                                <pro:ProCheckBox Label="Indeterminate" IsChecked="{x:Null}"/>
+                                <pro:ProCheckBox Label="Disabled" IsEnabled="False"/>
+                            </StackPanel>
+                            
+                            <!-- Radio Buttons -->
+                            <StackPanel Spacing="12" Grid.Column="1">
+                                <TextBlock Text="Radio Buttons" FontSize="12" Foreground="#6A6A6A"/>
+                                <pro:ProRadioButton Label="Choice A" GroupName="demo" IsChecked="True"/>
+                                <pro:ProRadioButton Label="Choice B" GroupName="demo"/>
+                                <pro:ProRadioButton Label="Choice C" GroupName="demo"/>
+                                <pro:ProRadioButton Label="Disabled" GroupName="demo2" IsEnabled="False"/>
+                            </StackPanel>
+                        </Grid>
+                    </pro:ProCard>
+                    
+                </Grid>
+                
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- TOGGLES & SLIDERS -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <Grid ColumnDefinitions="*,20,*">
+                    
+                    <pro:ProCard Title="Toggle Switches" Grid.Column="0">
+                        <StackPanel Spacing="16">
+                            <StackPanel Orientation="Horizontal" Spacing="16">
+                                <pro:ProToggleSwitch IsOn="True"/>
+                                <TextBlock Text="Notifications enabled" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            
+                            <StackPanel Orientation="Horizontal" Spacing="16">
+                                <pro:ProToggleSwitch IsOn="False"/>
+                                <TextBlock Text="Dark mode" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            
+                            <StackPanel Orientation="Horizontal" Spacing="16">
+                                <pro:ProToggleSwitch IsEnabled="False" IsOn="True"/>
+                                <TextBlock Text="Disabled (on)" VerticalAlignment="Center" Foreground="#8A8A8A"/>
+                            </StackPanel>
+                            
+                            <StackPanel Orientation="Horizontal" Spacing="16">
+                                <pro:ProToggleSwitch IsEnabled="False"/>
+                                <TextBlock Text="Disabled (off)" VerticalAlignment="Center" Foreground="#8A8A8A"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </pro:ProCard>
+                    
+                    <pro:ProCard Title="Sliders" Grid.Column="2">
+                        <StackPanel Spacing="20">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Volume: 70%" FontSize="12" Foreground="#6A6A6A"/>
+                                <pro:ProSlider Value="70" Minimum="0" Maximum="100" Width="300"/>
+                            </StackPanel>
+                            
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Brightness: 50%" FontSize="12" Foreground="#6A6A6A"/>
+                                <pro:ProSlider Value="50" Minimum="0" Maximum="100" Width="300"/>
+                            </StackPanel>
+                            
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Disabled" FontSize="12" Foreground="#8A8A8A"/>
+                                <pro:ProSlider Value="30" Minimum="0" Maximum="100" Width="300" IsEnabled="False"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </pro:ProCard>
+                    
+                </Grid>
+                
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- PROGRESS INDICATORS -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <pro:ProCard Title="Progress Indicators">
+                    <StackPanel Spacing="16">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Download Progress: 65%" FontSize="12" Foreground="#6A6A6A"/>
+                            <pro:ProProgressBar Value="65" Width="400" HorizontalAlignment="Left"/>
+                        </StackPanel>
+                        
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Upload Complete: 100%" FontSize="12" Foreground="#6A6A6A"/>
+                            <pro:ProProgressBar Value="100" Width="400" HorizontalAlignment="Left"/>
+                        </StackPanel>
+                        
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Processing..." FontSize="12" Foreground="#6A6A6A"/>
+                            <pro:ProProgressBar IsIndeterminate="True" Width="400" HorizontalAlignment="Left"/>
+                        </StackPanel>
+                    </StackPanel>
+                </pro:ProCard>
+                
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- BADGES -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <pro:ProCard Title="Badges">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <pro:ProBadge Text="Default"/>
+                        <pro:ProBadge Text="Primary" Variant="Primary"/>
+                        <pro:ProBadge Text="Success" Variant="Success"/>
+                        <pro:ProBadge Text="Warning" Variant="Warning"/>
+                        <pro:ProBadge Text="Error" Variant="Error"/>
+                        <pro:ProBadge Text="Info" Variant="Info"/>
+                        <pro:ProBadge Text="99+" Variant="Primary"/>
+                    </StackPanel>
+                </pro:ProCard>
+
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- COMBOBOX -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <pro:ProCard Title="ComboBox">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="États" FontSize="12" Foreground="#6A6A6A"/>
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Normal" FontSize="11" Foreground="#888"/>
+                                <pro:ProComboBox x:Name="ComboCountries" Width="200"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Avec sélection" FontSize="11" Foreground="#888"/>
+                                <pro:ProComboBox x:Name="ComboWithSelection" Width="200"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Disabled" FontSize="11" Foreground="#888"/>
+                                <pro:ProComboBox x:Name="ComboDisabled" IsEnabled="False" Width="200"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="ReadOnly" FontSize="11" Foreground="#888"/>
+                                <pro:ProComboBox x:Name="ComboReadOnly" Width="200"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </pro:ProCard>
+
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- DATAGRID -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <pro:ProCard Title="DataGrid - Employee Management">
+                    <StackPanel Spacing="12">
+                        <datagrid:ProDataGrid x:Name="EmployeeDataGrid"
+                                             Height="400"
+                                             ShowFilterRow="True"
+                                             ShowGroupPanel="True"
+                                             AllowSorting="True">
+                            <datagrid:ProDataGrid.Columns>
+                                <models:GridColumn FieldName="Id" Header="ID" Width="80" />
+                                <models:GridColumn FieldName="FirstName" Header="First Name" Width="150" />
+                                <models:GridColumn FieldName="LastName" Header="Last Name" Width="150" />
+                                <models:GridColumn FieldName="Email" Header="Email" Width="250" />
+                                <models:GridColumn FieldName="Department" Header="Department" Width="120" />
+                                <models:GridColumn FieldName="Position" Header="Position" Width="120" />
+                                <models:GridColumn FieldName="Salary" Header="Salary" Width="100" FormatString="C0" />
+                                <models:GridColumn FieldName="HireDate" Header="Hire Date" Width="120" ColumnType="DateTime" />
+                                <models:GridColumn FieldName="IsActive" Header="Active" Width="80" ColumnType="Boolean" />
+                                <models:GridColumn FieldName="Country" Header="Country" Width="120" />
+                            </datagrid:ProDataGrid.Columns>
+                        </datagrid:ProDataGrid>
+                    </StackPanel>
+                </pro:ProCard>
+
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- FOOTER -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <Border Background="#E8E8E8" Padding="16" CornerRadius="4" Margin="0,20,0,0">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel>
+                            <TextBlock Text="ProControls for Avalonia" FontWeight="SemiBold"/>
+                            <TextBlock Text="Professional VS2022-style UI controls" FontSize="12" Foreground="#6A6A6A"/>
+                        </StackPanel>
+                        <TextBlock Text="Built with ❤ for Synaxis &amp; Ovidie" 
+                                   FontSize="12" Foreground="#8A8A8A" 
+                                   HorizontalAlignment="Right"/>
+                    </Grid>
+                </Border>
+                
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</pro:ProWindow>
