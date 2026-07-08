@@ -1,0 +1,28 @@
+<!-- Skin VS2022 pour JDataGrid (Julien.Avalonia.DataGrid).
+     Surcharge uniquement les ressources de thème exposées par la bibliothèque ;
+     le contrôle lui-même vit dans Julien.Avalonia.DataGrid. -->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- Couleurs (consommées directement par certains templates) -->
+  <Color x:Key="DataGridHeaderBackground">#EEEEF2</Color>
+  <Color x:Key="DataGridHeaderBorder">#CCCEDB</Color>
+  <Color x:Key="DataGridRowAlternate">#FAFAFA</Color>
+  <Color x:Key="DataGridRowSelected">#C9DEF5</Color>
+  <Color x:Key="DataGridRowHover">#E5F1FB</Color>
+  <Color x:Key="DataGridGridLines">#E5E5E5</Color>
+  <Color x:Key="DataGridCellSelected">#A6C8E6</Color>
+  <Color x:Key="DataGridGroupBackground">#EEEEF2</Color>
+  <Color x:Key="DataGridFrozenColumnSeparator">#8A8A8A</Color>
+
+  <!-- Brushes (surface de surcharge principale du thème JDataGrid) -->
+  <SolidColorBrush x:Key="DataGridHeaderBackgroundBrush" Color="#EEEEF2" />
+  <SolidColorBrush x:Key="DataGridHeaderBorderBrush" Color="#CCCEDB" />
+  <SolidColorBrush x:Key="DataGridRowAlternateBrush" Color="#FAFAFA" />
+  <SolidColorBrush x:Key="DataGridRowSelectedBrush" Color="#C9DEF5" />
+  <SolidColorBrush x:Key="DataGridRowHoverBrush" Color="#E5F1FB" />
+  <SolidColorBrush x:Key="DataGridGridLinesBrush" Color="#E5E5E5" />
+  <SolidColorBrush x:Key="DataGridCellSelectedBrush" Color="#A6C8E6" />
+  <SolidColorBrush x:Key="DataGridGroupBackgroundBrush" Color="#EEEEF2" />
+
+</ResourceDictionary>

@@ -1,8 +1,8 @@
 <pro:ProWindow xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:pro="clr-namespace:ProControls.Controls;assembly=ProControls"
-        xmlns:datagrid="clr-namespace:ProControls.Controls.DataGrid;assembly=ProControls"
-        xmlns:models="clr-namespace:ProControls.Models.DataGrid;assembly=ProControls"
+        xmlns:datagrid="clr-namespace:Julien.Avalonia.DataGrid.Controls;assembly=Julien.Avalonia.DataGrid"
+        xmlns:models="clr-namespace:Julien.Avalonia.DataGrid.Models;assembly=Julien.Avalonia.DataGrid"
         x:Class="ProControls.Demo.MainWindow"
         Title="ProControls — VS2022 Style Library"
         Width="1200" Height="900"
@@ -233,12 +233,12 @@
                 <!-- ══════════════════════════════════════════════════════════ -->
                 <pro:ProCard Title="DataGrid - Employee Management">
                     <StackPanel Spacing="12">
-                        <datagrid:ProDataGrid x:Name="EmployeeDataGrid"
+                        <datagrid:JDataGrid x:Name="EmployeeDataGrid"
                                              Height="400"
                                              ShowFilterRow="True"
                                              ShowGroupPanel="True"
                                              AllowSorting="True">
-                            <datagrid:ProDataGrid.Columns>
+                            <datagrid:JDataGrid.Columns>
                                 <models:GridColumn FieldName="Id" Header="ID" Width="80" />
                                 <models:GridColumn FieldName="FirstName" Header="First Name" Width="150" />
                                 <models:GridColumn FieldName="LastName" Header="Last Name" Width="150" />
@@ -249,8 +249,8 @@
                                 <models:GridColumn FieldName="HireDate" Header="Hire Date" Width="120" ColumnType="DateTime" />
                                 <models:GridColumn FieldName="IsActive" Header="Active" Width="80" ColumnType="Boolean" />
                                 <models:GridColumn FieldName="Country" Header="Country" Width="120" />
-                            </datagrid:ProDataGrid.Columns>
-                        </datagrid:ProDataGrid>
+                            </datagrid:JDataGrid.Columns>
+                        </datagrid:JDataGrid>
                     </StackPanel>
                 </pro:ProCard>
 

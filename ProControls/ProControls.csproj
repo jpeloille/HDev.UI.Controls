@@ -16,7 +16,11 @@
 
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.2.1" />
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Datagrid de référence : source de vérité unique, ProControls n'ajoute que le skin VS2022 -->
+    <ProjectReference Include="..\..\AvaloniaDataGrid\src\Julien.Avalonia.DataGrid.csproj" />
   </ItemGroup>
 
   <ItemGroup>

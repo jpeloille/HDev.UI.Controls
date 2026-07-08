@@ -26,7 +26,7 @@ Créer une **bibliothèque de contrôles Avalonia UI professionnels** avec le st
 
 - **Aucune dépendance vendor** : Pas de DevExpress, Telerik, etc.
 - **Souveraineté technologique** : Code source maîtrisé à 100%
-- **Dépendances** : Avalonia UI 11.2.1 + CommunityToolkit.Mvvm 8.3.2 (pour ProDataGrid)
+- **Dépendances** : Avalonia UI 11.2.1 + projet frère `Julien.Avalonia.DataGrid` (datagrid maison, ../AvaloniaDataGrid)
 
 ### 4. Contrôles cibles
 
@@ -49,7 +49,7 @@ Créer une **bibliothèque de contrôles Avalonia UI professionnels** avec le st
 | ProComboBox | Liste déroulante | 🔲 À faire |
 | ProTabControl | Onglets de navigation | 🔲 À faire |
 | ProTreeView | Arborescence | 🔲 À faire |
-| ProDataGrid | Grille de données (tri, filtrage, groupage, virtualisation) | ✅ Fait |
+| JDataGrid (réf.) | Grille de données : référence au projet `Julien.Avalonia.DataGrid` (source de vérité) + skin VS2022 (`Theme/DataGrid/VS2022DataGrid.axaml`) | ✅ Référencé |
 | ProToolbar | Barre d'outils | 🔲 À faire |
 | ProStatusBar | Barre de statut | 🔲 À faire |
 

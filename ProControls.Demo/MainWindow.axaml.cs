@@ -32,7 +32,7 @@ public partial class MainWindow : ProWindow
 
     private void InitializeDataGrid()
     {
-        var dataGrid = this.FindControl<ProControls.Controls.DataGrid.ProDataGrid>("EmployeeDataGrid");
+        var dataGrid = this.FindControl<Julien.Avalonia.DataGrid.Controls.JDataGrid>("EmployeeDataGrid");
         if (dataGrid != null)
         {
             dataGrid.ItemsSource = Employees;
