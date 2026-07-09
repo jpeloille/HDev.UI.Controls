@@ -15,7 +15,7 @@ public enum CardElevation
 }
 
 /// <summary>
-/// Carte/conteneur avec titre style VS2022
+/// Carte/conteneur avec titre, style carte libadwaita
 /// </summary>
 public class ProCard : ContentControl
 {
@@ -80,7 +80,7 @@ public class ProCard : ContentControl
             Background = new SolidColorBrush(ProTheme.Background.Panel),
             BorderBrush = new SolidColorBrush(ProTheme.Border.Subtle),
             BorderThickness = HasBorder ? new Thickness(1) : new Thickness(0),
-            CornerRadius = new CornerRadius(ProTheme.Size.CornerRadiusMedium)
+            CornerRadius = new CornerRadius(ProTheme.Size.CornerRadiusLarge)
         };
         
         var innerPanel = new StackPanel();

@@ -159,7 +159,7 @@ public class ProMenuItem : Control
         if (HasItems)
             width += 20; // Arrow space
         
-        return new Size(Math.Max(150, width), 28);
+        return new Size(Math.Max(160, width), 32);
     }
     
     // ═══════════════════════════════════════════════════════════════
@@ -290,12 +290,12 @@ public class ProMenuItem : Control
             var bgColor = _isPressed 
                 ? ProTheme.Background.ControlPressed 
                 : ProTheme.Background.ControlHover;
-            var bgRect = bounds.Deflate(new Thickness(4, 2));
+            var bgRect = bounds.Deflate(new Thickness(0, 1));
             context.DrawRectangle(
-                new SolidColorBrush(bgColor), 
+                new SolidColorBrush(bgColor),
                 null,
                 bgRect,
-                3, 3);
+                6, 6);
         }
         
         var x = 8.0;

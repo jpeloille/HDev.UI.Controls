@@ -4,7 +4,7 @@
         xmlns:datagrid="clr-namespace:Julien.Avalonia.DataGrid.Controls;assembly=Julien.Avalonia.DataGrid"
         xmlns:models="clr-namespace:Julien.Avalonia.DataGrid.Models;assembly=Julien.Avalonia.DataGrid"
         x:Class="ProControls.Demo.MainWindow"
-        Title="ProControls — VS2022 Style Library"
+        Title="ProControls — Ubuntu Style Library"
         Width="1200" Height="900"
         WindowStartupLocation="CenterScreen">
     

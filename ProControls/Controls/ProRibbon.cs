@@ -10,7 +10,7 @@ using System.Globalization;
 namespace ProControls.Controls;
 
 /// <summary>
-/// Ruban professionnel style Office/VS2022
+/// Ruban professionnel, habillage Yaru (Ubuntu 26.04)
 /// </summary>
 public class ProRibbon : Control
 {
@@ -334,24 +334,19 @@ public class ProRibbon : Control
             var isSelected = i == SelectedTabIndex;
             var isHovered = i == _hoveredTabIndex && !isSelected;
             
-            // Fond de l'onglet
+            // Fond de l'onglet : pilule arrondie façon view-switcher GNOME
+            var pillRect = new Rect(tabX, 4, tabWidth, TabRowHeight - 8);
             if (isSelected)
             {
-                // Onglet sélectionné
-                var tabRect = new Rect(tabX, 0, tabWidth, TabRowHeight);
-                context.FillRectangle(new SolidColorBrush(ProTheme.Background.Panel), tabRect);
-                
-                // Ligne d'accent en haut
-                var accentPen = new Pen(new SolidColorBrush(ProTheme.Accent.Primary), 2);
-                context.DrawLine(accentPen,
-                    new Point(tabX + 1, 1),
-                    new Point(tabX + tabWidth - 1, 1));
+                context.DrawRectangle(
+                    new SolidColorBrush(ProTheme.Background.ControlHover), null,
+                    pillRect, 6, 6);
             }
             else if (isHovered)
             {
-                // Onglet survolé
-                var hoverRect = new Rect(tabX, 2, tabWidth, TabRowHeight - 4);
-                context.FillRectangle(new SolidColorBrush(ProTheme.Background.ControlHover), hoverRect);
+                context.DrawRectangle(
+                    new SolidColorBrush(ProTheme.Background.Control), null,
+                    pillRect, 6, 6);
             }
             
             // Texte
@@ -537,7 +532,7 @@ public class ProRibbon : Control
 
     private void RenderLargeButton(DrawingContext context, ProRibbonButton btn, Rect btnRect)
     {
-        RenderButtonBackground(context, btn, btnRect, 3);
+        RenderButtonBackground(context, btn, btnRect, 6);
 
         var textColor = btn.IsEnabled ? ProTheme.Text.Primary : ProTheme.Text.Disabled;
         var x = btnRect.X;
@@ -567,7 +562,7 @@ public class ProRibbon : Control
 
     private void RenderSmallButton(DrawingContext context, ProRibbonButton btn, Rect btnRect)
     {
-        RenderButtonBackground(context, btn, btnRect, 2);
+        RenderButtonBackground(context, btn, btnRect, 4);
 
         var textColor = btn.IsEnabled ? ProTheme.Text.Primary : ProTheme.Text.Disabled;
         var x = btnRect.X;

@@ -9,7 +9,7 @@ using ProControls.Theme;
 namespace ProControls.Controls;
 
 /// <summary>
-/// Fenêtre professionnelle style VS2022
+/// Fenêtre professionnelle, chrome façon headerbar GNOME (Yaru)
 /// Chrome personnalisé avec barre de titre, boutons de contrôle
 /// </summary>
 public class ProWindow : Window
@@ -18,6 +18,7 @@ public class ProWindow : Window
     // ÉLÉMENTS UI
     // ═══════════════════════════════════════════════════════════════
     
+    private Grid? _mainGrid;
     private Border? _titleBar;
     private Border? _contentArea;
     private Panel? _windowButtonsPanel;
@@ -46,7 +47,7 @@ public class ProWindow : Window
         AvaloniaProperty.Register<ProWindow, IBrush?>(nameof(TitleBarForeground));
     
     public static readonly StyledProperty<double> TitleBarHeightProperty =
-        AvaloniaProperty.Register<ProWindow, double>(nameof(TitleBarHeight), 32);
+        AvaloniaProperty.Register<ProWindow, double>(nameof(TitleBarHeight), 40);
     
     public static readonly StyledProperty<bool> ShowIconProperty =
         AvaloniaProperty.Register<ProWindow, bool>(nameof(ShowIcon), true);
@@ -157,6 +158,7 @@ public class ProWindow : Window
         {
             RowDefinitions = new RowDefinitions("Auto,*")
         };
+        _mainGrid = mainGrid;
         
         // ══════════════════════════════════════════════════════════
         // BARRE DE TITRE
@@ -195,6 +197,7 @@ public class ProWindow : Window
         {
             VerticalAlignment = VerticalAlignment.Center,
             FontSize = ProTheme.Typography.FontSizeBody,
+            FontWeight = FontWeight.SemiBold,
             Foreground = TitleBarForeground
         };
         // Binding au titre de la fenêtre
@@ -218,7 +221,9 @@ public class ProWindow : Window
         _windowButtonsPanel = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            VerticalAlignment = VerticalAlignment.Top
+            VerticalAlignment = VerticalAlignment.Center,
+            Spacing = 8,
+            Margin = new Thickness(0, 0, 8, 0)
         };
         
         _minimizeButton = new ProWindowButton(ProWindowButtonType.Minimize);
@@ -319,6 +324,18 @@ public class ProWindow : Window
     {
         base.OnPropertyChanged(change);
         
+        if (change.Property == ContentProperty &&
+            _mainGrid != null && _contentArea != null &&
+            !ReferenceEquals(change.NewValue, _mainGrid))
+        {
+            // Le XAML (ou un set direct) a remplacé la racine du chrome :
+            // rediriger ce contenu vers la zone interne et restaurer le chrome
+            var newContent = change.NewValue as Control;
+            base.Content = _mainGrid;
+            _contentArea.Child = newContent;
+            return;
+        }
+
         if (change.Property == WindowStateProperty)
         {
             var state = (WindowState)change.NewValue!;
@@ -378,9 +395,9 @@ public class ProWindowButton : Control
     public ProWindowButton(ProWindowButtonType type)
     {
         _buttonType = type;
-        Width = 46;
-        Height = 32;
-        ClipToBounds = true;
+        Width = 26;
+        Height = 26;
+        ClipToBounds = false;
     }
     
     public void SetButtonType(ProWindowButtonType type)
@@ -426,58 +443,40 @@ public class ProWindowButton : Control
     public override void Render(DrawingContext context)
     {
         var bounds = new Rect(Bounds.Size);
-        
-        // Couleur de fond selon l'état
-        Color? bgColor = null;
-        
-        if (_buttonType == ProWindowButtonType.Close)
-        {
-            if (_isPressed)
-                bgColor = ProTheme.WindowChrome.ClosePressed;
-            else if (_isHovered)
-                bgColor = ProTheme.WindowChrome.CloseHover;
-        }
-        else
-        {
-            if (_isPressed)
-                bgColor = ProTheme.Background.ControlPressed;
-            else if (_isHovered)
-                bgColor = ProTheme.Background.ControlHover;
-        }
-        
-        if (bgColor.HasValue)
-        {
-            context.FillRectangle(new SolidColorBrush(bgColor.Value), bounds);
-        }
-        
-        // Couleur de l'icône
-        var iconColor = _buttonType == ProWindowButtonType.Close && _isHovered
-            ? Colors.White
-            : ProTheme.Text.Primary;
-        
-        var iconPen = new Pen(new SolidColorBrush(iconColor), 1);
+
+        // Boutons circulaires façon headerbar GNOME : cercle gris subtil
+        // toujours visible, plus soutenu au survol/appui (y compris Fermer)
+        var bgColor = _isPressed ? ProTheme.Background.ControlPressed
+                    : _isHovered ? ProTheme.Background.ControlHover
+                    : ProTheme.Background.Control;
+
         var center = bounds.Center;
+        var radius = bounds.Width / 2;
+        context.DrawEllipse(new SolidColorBrush(bgColor), null, center, radius, radius);
+
+        var iconColor = ProTheme.Text.Primary;
+        var iconPen = new Pen(new SolidColorBrush(iconColor), 1.2);
         
         // Dessiner l'icône selon le type
         switch (_buttonType)
         {
             case ProWindowButtonType.Minimize:
-                // Ligne horizontale
+                // Ligne horizontale basse (glyphe GNOME)
                 context.DrawLine(iconPen,
-                    new Point(center.X - 5, center.Y),
-                    new Point(center.X + 5, center.Y));
+                    new Point(center.X - 4, center.Y + 3),
+                    new Point(center.X + 4, center.Y + 3));
                 break;
                 
             case ProWindowButtonType.Maximize:
                 // Rectangle
-                var maxRect = new Rect(center.X - 5, center.Y - 5, 10, 10);
+                var maxRect = new Rect(center.X - 4, center.Y - 4, 8, 8);
                 context.DrawRectangle(null, iconPen, maxRect);
                 break;
                 
             case ProWindowButtonType.Restore:
                 // Deux rectangles superposés
-                var backRect = new Rect(center.X - 3, center.Y - 6, 8, 8);
-                var frontRect = new Rect(center.X - 6, center.Y - 3, 8, 8);
+                var backRect = new Rect(center.X - 2, center.Y - 5, 7, 7);
+                var frontRect = new Rect(center.X - 5, center.Y - 2, 7, 7);
                 
                 // Rectangle arrière (juste les côtés visibles)
                 context.DrawLine(iconPen, 
@@ -488,17 +487,17 @@ public class ProWindowButton : Control
                     new Point(backRect.Right, backRect.Bottom - 2));
                 
                 // Rectangle avant
-                context.DrawRectangle(new SolidColorBrush(ProTheme.Background.Toolbar), iconPen, frontRect);
+                context.DrawRectangle(new SolidColorBrush(bgColor), iconPen, frontRect);
                 break;
                 
             case ProWindowButtonType.Close:
                 // Croix
                 context.DrawLine(iconPen,
-                    new Point(center.X - 5, center.Y - 5),
-                    new Point(center.X + 5, center.Y + 5));
+                    new Point(center.X - 4, center.Y - 4),
+                    new Point(center.X + 4, center.Y + 4));
                 context.DrawLine(iconPen,
-                    new Point(center.X + 5, center.Y - 5),
-                    new Point(center.X - 5, center.Y + 5));
+                    new Point(center.X + 4, center.Y - 4),
+                    new Point(center.X - 4, center.Y + 4));
                 break;
         }
     }

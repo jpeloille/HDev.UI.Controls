@@ -49,10 +49,10 @@ public class ProMenuPopup : Popup
         _container = new Border
         {
             Background = new SolidColorBrush(ProTheme.Background.Panel),
-            BorderBrush = new SolidColorBrush(ProTheme.Border.Default),
+            BorderBrush = new SolidColorBrush(ProTheme.Border.Subtle),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(4),
-            Padding = new Thickness(2, 4),
+            CornerRadius = new CornerRadius(ProTheme.Size.CornerRadiusLarge),
+            Padding = new Thickness(6),
             BoxShadow = new BoxShadows(new BoxShadow
             {
                 OffsetX = 0,
@@ -137,7 +137,7 @@ public class ProMenuBar : Panel
     
     public ProMenuBar()
     {
-        Height = 28;
+        Height = 34;
         ClipToBounds = false;
         Background = new SolidColorBrush(ProTheme.Background.Toolbar);
         
@@ -160,7 +160,7 @@ public class ProMenuBar : Panel
             child.Measure(availableSize);
             totalWidth += child.DesiredSize.Width;
         }
-        return new Size(Math.Max(totalWidth, availableSize.Width), 28);
+        return new Size(Math.Max(totalWidth, availableSize.Width), 34);
     }
     
     protected override Size ArrangeOverride(Size finalSize)
@@ -248,7 +248,7 @@ public class ProMenuBarItem : Control
             ProTheme.Typography.FontSizeBody,
             Brushes.Black);
         
-        return new Size(text.Width + 20, 28);
+        return new Size(text.Width + 24, 34);
     }
     
     protected override void OnPointerEntered(PointerEventArgs e)
@@ -318,13 +318,14 @@ public class ProMenuBarItem : Control
         // le contrôle serait invisible au hit-test du pointeur
         context.FillRectangle(Brushes.Transparent, bounds);
 
-        // Fond au survol ou si menu ouvert
+        // Fond au survol ou si menu ouvert : pilule arrondie GNOME
         if (_isHovered || _isOpen)
         {
-            var bgColor = _isOpen 
-                ? ProTheme.Background.ControlPressed 
+            var bgColor = _isOpen
+                ? ProTheme.Background.ControlPressed
                 : ProTheme.Background.ControlHover;
-            context.FillRectangle(new SolidColorBrush(bgColor), bounds);
+            var pill = bounds.Deflate(new Thickness(2, 4));
+            context.DrawRectangle(new SolidColorBrush(bgColor), null, pill, 6, 6);
         }
         
         // Texte
