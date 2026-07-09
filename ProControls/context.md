@@ -2,24 +2,24 @@
 
 ## Objectif
 
-Créer une **bibliothèque de contrôles Avalonia UI professionnels** avec le style **Visual Studio 2022** pour les applications métier **Synaxis** (gestion des opérations de vol) et **Ovidie** (gestion financière).
+Créer une **bibliothèque de contrôles Avalonia UI professionnels** avec le style **Ubuntu 26.04 (Yaru / GNOME)** pour les applications métier **Synaxis** (gestion des opérations de vol) et **Ovidie** (gestion financière).
 
 ## Caractéristiques clés
 
-### 1. Style Visual Studio 2022
+### 1. Style Ubuntu 26.04 (Yaru)
 
 - **Palette de couleurs** : Gris/blanc subtil, sobre et professionnel
-- **Accents** : Bleu (#0078D4) pour les éléments interactifs et focus
-- **Typographie** : Segoe UI, tailles cohérentes (12px body, 14px subtitle, 18px title)
+- **Accents** : Orange Ubuntu (#E95420) pour les éléments interactifs et focus
+- **Typographie** : Ubuntu Sans (police système), 14px body, 16px subtitle, 19px title
 - **Bordures** : Fines (1px), couleurs subtiles (#E0E0E0, #CCCCCC)
 - **États visuels** : Hover, pressed, focused, disabled — tous cohérents
-- **Coins arrondis** : Subtils (2-4px) pour un look moderne mais professionnel
+- **Coins arrondis** : libadwaita (6px boutons, 8px popovers, 12px cartes)
 
 ### 2. Architecture technique
 
 - **Rendu "from scratch"** : Contrôles en C# pur avec `DrawingContext`
 - **Pas de templates XAML** : Contrôle total sur chaque pixel
-- **Thème centralisé** : `VS2022Theme.cs` contient toutes les constantes (couleurs, tailles, polices)
+- **Thème centralisé** : `ProTheme.cs` contient toutes les constantes (couleurs, tailles, polices)
 - **Héritage minimal** : Hériter de `Control` ou `ContentControl` selon le besoin
 
 ### 3. Indépendance technologique
@@ -49,11 +49,11 @@ Créer une **bibliothèque de contrôles Avalonia UI professionnels** avec le st
 | ProComboBox | Liste déroulante | 🔲 À faire |
 | ProTabControl | Onglets de navigation | 🔲 À faire |
 | ProTreeView | Arborescence | 🔲 À faire |
-| JDataGrid (réf.) | Grille de données : référence au projet `Julien.Avalonia.DataGrid` (source de vérité) + skin VS2022 (`Theme/DataGrid/VS2022DataGrid.axaml`) | ✅ Référencé |
+| JDataGrid (réf.) | Grille de données : référence au projet `Julien.Avalonia.DataGrid` (source de vérité) + skin Yaru (`Theme/DataGrid/YaruDataGrid.axaml`) | ✅ Référencé |
 | ProToolbar | Barre d'outils | 🔲 À faire |
 | ProStatusBar | Barre de statut | 🔲 À faire |
 
-## Palette de couleurs VS2022
+## Palette de couleurs Yaru (claire)
 
 ```csharp
 // Backgrounds

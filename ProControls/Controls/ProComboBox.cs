@@ -544,7 +544,7 @@ public class ProComboBox : Control
     {
         _listBox = new ListBox
         {
-            Background = new SolidColorBrush(VS2022Theme.Background.Panel),
+            Background = new SolidColorBrush(ProTheme.Background.Panel),
             BorderThickness = new Thickness(0),
             Padding = new Thickness(2),
             Margin = new Thickness(0),
@@ -573,17 +573,17 @@ public class ProComboBox : Control
 
         var dropdownBorder = new Border
         {
-                Background = new SolidColorBrush(VS2022Theme.Background.Panel),
-                BorderBrush = new SolidColorBrush(VS2022Theme.Border.Default),
+                Background = new SolidColorBrush(ProTheme.Background.Panel),
+                BorderBrush = new SolidColorBrush(ProTheme.Border.Default),
                 BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(0, 0, VS2022Theme.Size.CornerRadiusSmall, VS2022Theme.Size.CornerRadiusSmall),
+                CornerRadius = new CornerRadius(0, 0, ProTheme.Size.CornerRadiusSmall, ProTheme.Size.CornerRadiusSmall),
                 Child = scrollViewer,
                 BoxShadow = new BoxShadows(new BoxShadow
                 {
                     OffsetX = 0,
                     OffsetY = 2,
                     Blur = 8,
-                    Color = VS2022Theme.Shadow.Color
+                    Color = ProTheme.Shadow.Color
                 })
         };
         // Arbre visuel séparé : appliquer le rendu subpixel au contenu du dropdown
@@ -814,52 +814,52 @@ public class ProComboBox : Control
     public override void Render(DrawingContext context)
     {
         var bounds = new Rect(Bounds.Size);
-        var cornerRadius = VS2022Theme.Size.CornerRadiusSmall;
+        var cornerRadius = ProTheme.Size.CornerRadiusSmall;
 
         // Couleurs selon l'état
         Color bgColor, borderColor, textColor;
 
         if (!IsEnabled)
         {
-            bgColor = VS2022Theme.Background.ControlDisabled;
-            borderColor = VS2022Theme.Border.Subtle;
-            textColor = VS2022Theme.Text.Disabled;
+            bgColor = ProTheme.Background.ControlDisabled;
+            borderColor = ProTheme.Border.Subtle;
+            textColor = ProTheme.Text.Disabled;
         }
         else if (_isDropDownOpen)
         {
-            bgColor = VS2022Theme.Background.Control;
-            borderColor = VS2022Theme.Accent.Primary;
-            textColor = VS2022Theme.Text.Primary;
+            bgColor = ProTheme.Background.Control;
+            borderColor = ProTheme.Accent.Primary;
+            textColor = ProTheme.Text.Primary;
         }
         else if (_isPressed)
         {
-            bgColor = VS2022Theme.Background.ControlPressed;
-            borderColor = VS2022Theme.Accent.Primary;
-            textColor = VS2022Theme.Text.Primary;
+            bgColor = ProTheme.Background.ControlPressed;
+            borderColor = ProTheme.Accent.Primary;
+            textColor = ProTheme.Text.Primary;
         }
         else if (_isHovered)
         {
-            bgColor = VS2022Theme.Background.ControlHover;
-            borderColor = VS2022Theme.Border.Default;
-            textColor = VS2022Theme.Text.Primary;
+            bgColor = ProTheme.Background.ControlHover;
+            borderColor = ProTheme.Border.Default;
+            textColor = ProTheme.Text.Primary;
         }
         else
         {
-            bgColor = VS2022Theme.Background.Control;
-            borderColor = VS2022Theme.Border.Default;
-            textColor = VS2022Theme.Text.Primary;
+            bgColor = ProTheme.Background.Control;
+            borderColor = ProTheme.Border.Default;
+            textColor = ProTheme.Text.Primary;
         }
 
         // Focus
         if (IsFocused && IsEnabled)
         {
-            borderColor = VS2022Theme.Accent.Primary;
+            borderColor = ProTheme.Accent.Primary;
         }
 
         // ReadOnly
         if (_properties.ReadOnly)
         {
-            bgColor = VS2022Theme.Background.ControlDisabled;
+            bgColor = ProTheme.Background.ControlDisabled;
         }
 
         // Fond
@@ -910,9 +910,9 @@ public class ProComboBox : Control
                 displayText,
                 CultureInfo.CurrentCulture,
                 FlowDirection.LeftToRight,
-                new Typeface(VS2022Theme.Typography.FontFamily),
-                VS2022Theme.Typography.FontSizeBody,
-                new SolidColorBrush(isPlaceholder ? VS2022Theme.Text.Secondary : textColor));
+                new Typeface(ProTheme.Typography.FontFamily),
+                ProTheme.Typography.FontSizeBody,
+                new SolidColorBrush(isPlaceholder ? ProTheme.Text.Secondary : textColor));
 
             var textY = (bounds.Height - formattedText.Height) / 2;
 
@@ -949,7 +949,7 @@ public class ProComboBox : Control
             }
 
             context.DrawGeometry(
-                new SolidColorBrush(IsEnabled ? VS2022Theme.Text.Secondary : VS2022Theme.Text.Disabled),
+                new SolidColorBrush(IsEnabled ? ProTheme.Text.Secondary : ProTheme.Text.Disabled),
                 null,
                 arrowGeometry);
         }

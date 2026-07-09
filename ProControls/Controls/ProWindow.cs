@@ -112,18 +112,23 @@ public class ProWindow : Window
         // l'anti-aliasing niveaux de gris par défaut paraît flou à 96 dpi
         RenderOptions.SetTextRenderingMode(this, TextRenderingMode.SubpixelAntialias);
 
+        // Police système Ubuntu : FontFamily est héritée, tout l'arbre (grille,
+        // TextBox natifs...) l'utilise sans configuration par contrôle
+        FontFamily = new FontFamily(ProTheme.Typography.FontFamily);
+        FontSize = ProTheme.Typography.FontSizeBody;
+
         // Fenêtre sans chrome système
         ExtendClientAreaToDecorationsHint = true;
         ExtendClientAreaChromeHints = Avalonia.Platform.ExtendClientAreaChromeHints.NoChrome;
         ExtendClientAreaTitleBarHeightHint = -1;
         
         // Valeurs par défaut VS2022
-        TitleBarBackground = new SolidColorBrush(VS2022Theme.Background.Toolbar);
-        TitleBarForeground = new SolidColorBrush(VS2022Theme.Text.Primary);
-        Background = new SolidColorBrush(VS2022Theme.Background.Window);
+        TitleBarBackground = new SolidColorBrush(ProTheme.Background.Toolbar);
+        TitleBarForeground = new SolidColorBrush(ProTheme.Text.Primary);
+        Background = new SolidColorBrush(ProTheme.Background.Window);
         
         // Bordure subtile
-        BorderBrush = new SolidColorBrush(VS2022Theme.Border.Default);
+        BorderBrush = new SolidColorBrush(ProTheme.Border.Default);
         BorderThickness = new Thickness(1);
         
         // Construire l'UI
@@ -189,7 +194,7 @@ public class ProWindow : Window
         _titleText = new TextBlock
         {
             VerticalAlignment = VerticalAlignment.Center,
-            FontSize = VS2022Theme.Typography.FontSizeBody,
+            FontSize = ProTheme.Typography.FontSizeBody,
             Foreground = TitleBarForeground
         };
         // Binding au titre de la fenêtre
@@ -428,16 +433,16 @@ public class ProWindowButton : Control
         if (_buttonType == ProWindowButtonType.Close)
         {
             if (_isPressed)
-                bgColor = VS2022Theme.WindowChrome.ClosePressed;
+                bgColor = ProTheme.WindowChrome.ClosePressed;
             else if (_isHovered)
-                bgColor = VS2022Theme.WindowChrome.CloseHover;
+                bgColor = ProTheme.WindowChrome.CloseHover;
         }
         else
         {
             if (_isPressed)
-                bgColor = VS2022Theme.Background.ControlPressed;
+                bgColor = ProTheme.Background.ControlPressed;
             else if (_isHovered)
-                bgColor = VS2022Theme.Background.ControlHover;
+                bgColor = ProTheme.Background.ControlHover;
         }
         
         if (bgColor.HasValue)
@@ -448,7 +453,7 @@ public class ProWindowButton : Control
         // Couleur de l'icône
         var iconColor = _buttonType == ProWindowButtonType.Close && _isHovered
             ? Colors.White
-            : VS2022Theme.Text.Primary;
+            : ProTheme.Text.Primary;
         
         var iconPen = new Pen(new SolidColorBrush(iconColor), 1);
         var center = bounds.Center;
@@ -483,7 +488,7 @@ public class ProWindowButton : Control
                     new Point(backRect.Right, backRect.Bottom - 2));
                 
                 // Rectangle avant
-                context.DrawRectangle(new SolidColorBrush(VS2022Theme.Background.Toolbar), iconPen, frontRect);
+                context.DrawRectangle(new SolidColorBrush(ProTheme.Background.Toolbar), iconPen, frontRect);
                 break;
                 
             case ProWindowButtonType.Close:

@@ -100,7 +100,7 @@ public class ProBadge : ProControlBase
             _ => (11.0, 8.0, 3.0)
         };
         
-        var text = CreateText(Text, VS2022Theme.Text.Primary, fontSize, FontWeight.Medium);
+        var text = CreateText(Text, ProTheme.Text.Primary, fontSize, FontWeight.Medium);
         return new Size(text.Width + paddingH * 2, text.Height + paddingV * 2);
     }
 
@@ -119,7 +119,7 @@ public class ProBadge : ProControlBase
             _ => (11.0, 8.0, 3.0)
         };
         
-        var cornerRadius = IsPill ? bounds.Height / 2 : VS2022Theme.Size.CornerRadiusSmall;
+        var cornerRadius = IsPill ? bounds.Height / 2 : ProTheme.Size.CornerRadiusSmall;
         
         // Couleurs selon la variante
         var (bgColor, textColor, borderColor) = ResolveColors();
@@ -128,7 +128,7 @@ public class ProBadge : ProControlBase
         {
             // Version outline : fond transparent, bordure colorée
             context.DrawRectangle(
-                new SolidColorBrush(VS2022Theme.WithOpacity(bgColor, 20)),
+                new SolidColorBrush(ProTheme.WithOpacity(bgColor, 20)),
                 null,
                 bounds,
                 cornerRadius, cornerRadius);
@@ -156,34 +156,34 @@ public class ProBadge : ProControlBase
         return Variant switch
         {
             BadgeVariant.Primary => (
-                VS2022Theme.Accent.Primary,
-                VS2022Theme.Text.OnAccent,
-                VS2022Theme.Accent.Primary
+                ProTheme.Accent.Primary,
+                ProTheme.Text.OnAccent,
+                ProTheme.Accent.Primary
             ),
             BadgeVariant.Success => (
-                VS2022Theme.Accent.Success,
-                VS2022Theme.Text.OnAccent,
-                VS2022Theme.Accent.Success
+                ProTheme.Accent.Success,
+                ProTheme.Text.OnAccent,
+                ProTheme.Accent.Success
             ),
             BadgeVariant.Warning => (
-                VS2022Theme.Accent.Warning,
-                VS2022Theme.Text.OnAccent,
-                VS2022Theme.Accent.Warning
+                ProTheme.Accent.Warning,
+                ProTheme.Text.OnAccent,
+                ProTheme.Accent.Warning
             ),
             BadgeVariant.Error => (
-                VS2022Theme.Accent.Error,
-                VS2022Theme.Text.OnAccent,
-                VS2022Theme.Accent.Error
+                ProTheme.Accent.Error,
+                ProTheme.Text.OnAccent,
+                ProTheme.Accent.Error
             ),
             BadgeVariant.Info => (
-                VS2022Theme.Accent.Primary,
-                VS2022Theme.Text.OnAccent,
-                VS2022Theme.Accent.Primary
+                ProTheme.Accent.Primary,
+                ProTheme.Text.OnAccent,
+                ProTheme.Accent.Primary
             ),
             _ => (
-                VS2022Theme.Background.Toolbar,
-                VS2022Theme.Text.Primary,
-                VS2022Theme.Border.Default
+                ProTheme.Background.Toolbar,
+                ProTheme.Text.Primary,
+                ProTheme.Border.Default
             )
         };
     }

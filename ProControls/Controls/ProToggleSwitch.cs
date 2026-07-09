@@ -94,7 +94,7 @@ public class ProToggleSwitch : ProControlBase
         }
         
         var label = IsOn ? OnLabel : OffLabel;
-        var labelText = CreateText(label, VS2022Theme.Text.Primary, 13);
+        var labelText = CreateText(label, ProTheme.Text.Primary, ProTheme.Typography.FontSizeBody);
         return new Size(trackWidth + 10 + labelText.Width + 6, Math.Max(trackHeight, labelText.Height) + 6);
     }
 
@@ -119,40 +119,25 @@ public class ProToggleSwitch : ProControlBase
         
         if (!IsEnabled)
         {
-            trackColor = VS2022Theme.Background.ControlDisabled;
-            thumbColor = VS2022Theme.Border.Disabled;
-            borderColor = VS2022Theme.Border.Disabled;
+            trackColor = ProTheme.Background.ControlDisabled;
+            thumbColor = ProTheme.Border.Disabled;
+            borderColor = ProTheme.Border.Disabled;
         }
         else if (IsOn)
         {
-            trackColor = IsPressed ? VS2022Theme.Accent.PrimaryPressed :
-                        IsHovered ? VS2022Theme.Accent.PrimaryHover :
-                        VS2022Theme.Accent.Primary;
+            trackColor = IsPressed ? ProTheme.Accent.PrimaryPressed :
+                        IsHovered ? ProTheme.Accent.PrimaryHover :
+                        ProTheme.Accent.Primary;
             thumbColor = Colors.White;
             borderColor = trackColor;
         }
         else
         {
-            trackColor = IsPressed ? VS2022Theme.Background.ControlPressed :
-                        IsHovered ? VS2022Theme.Background.ControlHover :
-                        VS2022Theme.Background.Control;
-            thumbColor = IsHovered ? VS2022Theme.Text.Secondary : VS2022Theme.Text.Tertiary;
-            borderColor = IsHovered ? VS2022Theme.Border.Hover : VS2022Theme.Border.Default;
-        }
-        
-        // Ombre du track
-        if (IsEnabled)
-        {
-            for (int i = 2; i >= 0; i--)
-            {
-                var shadowOpacity = (byte)(8 - i * 2);
-                var shadowRect = trackRect.Inflate(i * 0.5).Translate(new Vector(0, i * 0.3 + 0.5));
-                context.DrawRectangle(
-                    new SolidColorBrush(Color.FromArgb(shadowOpacity, 0, 0, 0)),
-                    null,
-                    shadowRect,
-                    trackRadius + i * 0.5, trackRadius + i * 0.5);
-            }
+            trackColor = IsPressed ? ProTheme.Background.ControlPressed :
+                        IsHovered ? ProTheme.Background.ControlHover :
+                        ProTheme.Background.Control;
+            thumbColor = IsHovered ? ProTheme.Text.Secondary : ProTheme.Text.Tertiary;
+            borderColor = IsHovered ? ProTheme.Border.Hover : ProTheme.Border.Default;
         }
         
         // Track (piste)
@@ -201,7 +186,7 @@ public class ProToggleSwitch : ProControlBase
         // Bordure du thumb (si off)
         if (!IsOn && IsEnabled)
         {
-            var thumbBorderPen = new Pen(new SolidColorBrush(VS2022Theme.Border.Strong), 1.0);
+            var thumbBorderPen = new Pen(new SolidColorBrush(ProTheme.Border.Strong), 1.0);
             context.DrawEllipse(null, thumbBorderPen, thumbCenter, currentThumbRadius - 0.5, currentThumbRadius - 0.5);
         }
         
@@ -227,7 +212,7 @@ public class ProToggleSwitch : ProControlBase
         {
             var focusRect = trackRect.Inflate(3);
             var focusPen = new Pen(
-                new SolidColorBrush(VS2022Theme.WithOpacity(VS2022Theme.Border.FocusOuter, 100)),
+                new SolidColorBrush(ProTheme.WithOpacity(ProTheme.Border.FocusOuter, 100)),
                 1.5);
             context.DrawRectangle(null, focusPen, focusRect, trackRadius + 3, trackRadius + 3);
         }
@@ -236,8 +221,8 @@ public class ProToggleSwitch : ProControlBase
         if (ShowLabels)
         {
             var label = IsOn ? OnLabel : OffLabel;
-            var textColor = IsEnabled ? VS2022Theme.Text.Primary : VS2022Theme.Text.Disabled;
-            var labelText = CreateText(label, textColor, 13);
+            var textColor = IsEnabled ? ProTheme.Text.Primary : ProTheme.Text.Disabled;
+            var labelText = CreateText(label, textColor, ProTheme.Typography.FontSizeBody);
             var labelX = trackRect.Right + 10;
             var labelY = (bounds.Height - labelText.Height) / 2;
             context.DrawText(labelText, Crisp.Snap(new Point(labelX, labelY)));

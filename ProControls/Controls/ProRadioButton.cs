@@ -141,7 +141,7 @@ public class ProRadioButton : ProControlBase
             return new Size(circleSize + 6, circleSize + 6);
         }
         
-        var labelText = CreateText(Label, VS2022Theme.Text.Primary, 13);
+        var labelText = CreateText(Label, ProTheme.Text.Primary, ProTheme.Typography.FontSizeBody);
         return new Size(circleSize + spacing + labelText.Width + 6, Math.Max(circleSize, labelText.Height) + 6);
     }
 
@@ -163,30 +163,30 @@ public class ProRadioButton : ProControlBase
         
         if (!IsEnabled)
         {
-            bgColor = VS2022Theme.Background.ControlDisabled;
-            borderColor = VS2022Theme.Border.Disabled;
+            bgColor = ProTheme.Background.ControlDisabled;
+            borderColor = ProTheme.Border.Disabled;
         }
         else if (IsChecked)
         {
-            bgColor = IsPressed ? VS2022Theme.Accent.PrimaryPressed :
-                      IsHovered ? VS2022Theme.Accent.PrimaryHover : 
-                      VS2022Theme.Accent.Primary;
+            bgColor = IsPressed ? ProTheme.Accent.PrimaryPressed :
+                      IsHovered ? ProTheme.Accent.PrimaryHover : 
+                      ProTheme.Accent.Primary;
             borderColor = bgColor;
         }
         else if (IsPressed)
         {
-            bgColor = VS2022Theme.Background.ControlPressed;
-            borderColor = VS2022Theme.Border.Pressed;
+            bgColor = ProTheme.Background.ControlPressed;
+            borderColor = ProTheme.Border.Pressed;
         }
         else if (IsHovered)
         {
-            bgColor = VS2022Theme.Background.ControlHover;
-            borderColor = VS2022Theme.Border.Hover;
+            bgColor = ProTheme.Background.ControlHover;
+            borderColor = ProTheme.Border.Hover;
         }
         else
         {
-            bgColor = VS2022Theme.Background.Control;
-            borderColor = VS2022Theme.Border.Default;
+            bgColor = ProTheme.Background.Control;
+            borderColor = ProTheme.Border.Default;
         }
         
         // Ombre subtile
@@ -220,7 +220,7 @@ public class ProRadioButton : ProControlBase
         if (IsChecked)
         {
             var dotRadius = 4.0;
-            var dotColor = IsEnabled ? VS2022Theme.Text.OnAccent : VS2022Theme.Text.Disabled;
+            var dotColor = IsEnabled ? ProTheme.Text.OnAccent : ProTheme.Text.Disabled;
             context.DrawEllipse(
                 new SolidColorBrush(dotColor),
                 null,
@@ -255,7 +255,7 @@ public class ProRadioButton : ProControlBase
         if (IsFocused && IsEnabled)
         {
             var focusPen = new Pen(
-                new SolidColorBrush(VS2022Theme.WithOpacity(VS2022Theme.Border.FocusOuter, 100)),
+                new SolidColorBrush(ProTheme.WithOpacity(ProTheme.Border.FocusOuter, 100)),
                 1.5);
             context.DrawEllipse(null, focusPen, center, radius + 3, radius + 3);
         }
@@ -263,8 +263,8 @@ public class ProRadioButton : ProControlBase
         // Label
         if (!string.IsNullOrEmpty(Label))
         {
-            var textColor = IsEnabled ? VS2022Theme.Text.Primary : VS2022Theme.Text.Disabled;
-            var labelText = CreateText(Label, textColor, 13);
+            var textColor = IsEnabled ? ProTheme.Text.Primary : ProTheme.Text.Disabled;
+            var labelText = CreateText(Label, textColor, ProTheme.Typography.FontSizeBody);
             var labelX = center.X + radius + 8;
             var labelY = (bounds.Height - labelText.Height) / 2;
             context.DrawText(labelText, Crisp.Snap(new Point(labelX, labelY)));

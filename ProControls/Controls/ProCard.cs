@@ -77,10 +77,10 @@ public class ProCard : ContentControl
         // Créer la structure de la carte
         var cardBorder = new Border
         {
-            Background = new SolidColorBrush(VS2022Theme.Background.Panel),
-            BorderBrush = new SolidColorBrush(VS2022Theme.Border.Subtle),
+            Background = new SolidColorBrush(ProTheme.Background.Panel),
+            BorderBrush = new SolidColorBrush(ProTheme.Border.Subtle),
             BorderThickness = HasBorder ? new Thickness(1) : new Thickness(0),
-            CornerRadius = new CornerRadius(VS2022Theme.Size.CornerRadiusMedium)
+            CornerRadius = new CornerRadius(ProTheme.Size.CornerRadiusMedium)
         };
         
         var innerPanel = new StackPanel();
@@ -91,10 +91,10 @@ public class ProCard : ContentControl
             var titleBlock = new TextBlock
             {
                 Text = Title,
-                FontFamily = new FontFamily(VS2022Theme.Typography.FontFamily),
-                FontSize = VS2022Theme.Typography.FontSizeSubtitle,
+                FontFamily = new FontFamily(ProTheme.Typography.FontFamily),
+                FontSize = ProTheme.Typography.FontSizeSubtitle,
                 FontWeight = FontWeight.SemiBold,
-                Foreground = new SolidColorBrush(VS2022Theme.Text.Primary),
+                Foreground = new SolidColorBrush(ProTheme.Text.Primary),
                 Margin = new Thickness(16, 12, 16, 8)
             };
             innerPanel.Children.Add(titleBlock);
@@ -103,7 +103,7 @@ public class ProCard : ContentControl
             var separator = new Border
             {
                 Height = 1,
-                Background = new SolidColorBrush(VS2022Theme.Border.Subtle),
+                Background = new SolidColorBrush(ProTheme.Border.Subtle),
                 Margin = new Thickness(16, 0, 16, 12)
             };
             innerPanel.Children.Add(separator);

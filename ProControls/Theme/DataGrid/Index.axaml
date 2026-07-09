@@ -5,7 +5,7 @@
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries>
         <ResourceInclude Source="avares://Julien.Avalonia.DataGrid/Themes/JDataGrid.axaml" />
-        <ResourceInclude Source="avares://ProControls/Theme/DataGrid/VS2022DataGrid.axaml" />
+        <ResourceInclude Source="avares://ProControls/Theme/DataGrid/YaruDataGrid.axaml" />
       </ResourceDictionary.MergedDictionaries>
     </ResourceDictionary>
   </Styles.Resources>

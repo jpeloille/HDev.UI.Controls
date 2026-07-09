@@ -6,8 +6,6 @@
         x:Class="ProControls.Demo.MainWindow"
         Title="ProControls — VS2022 Style Library"
         Width="1200" Height="900"
-        TitleBarBackground="#68217A"
-        TitleBarForeground="White"
         WindowStartupLocation="CenterScreen">
     
     <Grid Background="#F5F5F5" RowDefinitions="Auto,Auto,*">

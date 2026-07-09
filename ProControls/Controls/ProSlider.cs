@@ -210,14 +210,14 @@ public class ProSlider : ProControlBase
         if (ShowValue)
         {
             var valueStr = Step >= 1 ? ((int)Value).ToString() : Value.ToString("F1");
-            var valueText = CreateText(valueStr, VS2022Theme.Text.Secondary, 11);
+            var valueText = CreateText(valueStr, ProTheme.Text.Secondary, 11);
             var textX = (bounds.Width - valueText.Width) / 2;
             context.DrawText(valueText, Crisp.Snap(new Point(textX, 2)));
         }
         
         // Track (fond)
         context.DrawRectangle(
-            new SolidColorBrush(VS2022Theme.Background.ControlDisabled),
+            new SolidColorBrush(ProTheme.Background.ControlDisabled),
             null,
             trackRect,
             trackRadius, trackRadius);
@@ -227,8 +227,8 @@ public class ProSlider : ProControlBase
         var filledWidth = trackRect.Width * progress;
         var filledRect = new Rect(trackRect.X, trackRect.Y, filledWidth, trackRect.Height);
         
-        var fillColor = !IsEnabled ? VS2022Theme.Border.Disabled :
-                        (_isDragging ? VS2022Theme.Accent.PrimaryPressed : VS2022Theme.Accent.Primary);
+        var fillColor = !IsEnabled ? ProTheme.Border.Disabled :
+                        (_isDragging ? ProTheme.Accent.PrimaryPressed : ProTheme.Accent.Primary);
         
         context.DrawRectangle(
             new SolidColorBrush(fillColor),
@@ -240,7 +240,7 @@ public class ProSlider : ProControlBase
         if (ShowTicks && Step > 0)
         {
             var tickY = trackRect.Bottom + 4;
-            var tickPen = new Pen(new SolidColorBrush(VS2022Theme.Border.Default), 1);
+            var tickPen = new Pen(new SolidColorBrush(ProTheme.Border.Default), 1);
             var tickCount = (int)((Maximum - Minimum) / Step);
             
             for (int i = 0; i <= tickCount; i++)
@@ -271,7 +271,7 @@ public class ProSlider : ProControlBase
         }
         
         // Thumb
-        var thumbColor = !IsEnabled ? VS2022Theme.Background.ControlDisabled : Colors.White;
+        var thumbColor = !IsEnabled ? ProTheme.Background.ControlDisabled : Colors.White;
         context.DrawEllipse(
             new SolidColorBrush(thumbColor),
             null,
@@ -279,9 +279,9 @@ public class ProSlider : ProControlBase
             thumbRadius, thumbRadius);
         
         // Bordure du thumb
-        var thumbBorderColor = !IsEnabled ? VS2022Theme.Border.Disabled :
-                              (_isDragging ? VS2022Theme.Accent.PrimaryPressed :
-                               IsHovered ? VS2022Theme.Accent.PrimaryHover : VS2022Theme.Accent.Primary);
+        var thumbBorderColor = !IsEnabled ? ProTheme.Border.Disabled :
+                              (_isDragging ? ProTheme.Accent.PrimaryPressed :
+                               IsHovered ? ProTheme.Accent.PrimaryHover : ProTheme.Accent.Primary);
         var thumbBorderPen = new Pen(new SolidColorBrush(thumbBorderColor), 2);
         context.DrawEllipse(null, thumbBorderPen, thumbCenter, thumbRadius - 1, thumbRadius - 1);
         
@@ -299,7 +299,7 @@ public class ProSlider : ProControlBase
         if (IsFocused && IsEnabled)
         {
             var focusPen = new Pen(
-                new SolidColorBrush(VS2022Theme.WithOpacity(VS2022Theme.Border.FocusOuter, 100)),
+                new SolidColorBrush(ProTheme.WithOpacity(ProTheme.Border.FocusOuter, 100)),
                 1.5);
             context.DrawEllipse(null, focusPen, thumbCenter, thumbRadius + 4, thumbRadius + 4);
         }

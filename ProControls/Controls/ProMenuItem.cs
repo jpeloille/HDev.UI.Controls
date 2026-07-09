@@ -147,12 +147,12 @@ public class ProMenuItem : Control
         if (IsSeparator)
             return new Size(100, 9);
         
-        var headerText = CreateFormattedText(Header, VS2022Theme.Text.Primary);
+        var headerText = CreateFormattedText(Header, ProTheme.Text.Primary);
         var width = 24 + headerText.Width + 50; // icon + header + shortcut space
         
         if (!string.IsNullOrEmpty(Shortcut))
         {
-            var shortcutText = CreateFormattedText(Shortcut, VS2022Theme.Text.Secondary);
+            var shortcutText = CreateFormattedText(Shortcut, ProTheme.Text.Secondary);
             width += shortcutText.Width;
         }
         
@@ -279,7 +279,7 @@ public class ProMenuItem : Control
         {
             // Ligne séparatrice
             var y = bounds.Height / 2;
-            var pen = new Pen(new SolidColorBrush(VS2022Theme.Border.Subtle), 1);
+            var pen = new Pen(new SolidColorBrush(ProTheme.Border.Subtle), 1);
             context.DrawLine(pen, new Point(8, y), new Point(bounds.Width - 8, y));
             return;
         }
@@ -288,8 +288,8 @@ public class ProMenuItem : Control
         if (_isHovered || _isSubmenuOpen)
         {
             var bgColor = _isPressed 
-                ? VS2022Theme.Background.ControlPressed 
-                : VS2022Theme.Background.ControlHover;
+                ? ProTheme.Background.ControlPressed 
+                : ProTheme.Background.ControlHover;
             var bgRect = bounds.Deflate(new Thickness(4, 2));
             context.DrawRectangle(
                 new SolidColorBrush(bgColor), 
@@ -306,7 +306,7 @@ public class ProMenuItem : Control
         {
             if (IsChecked)
             {
-                var checkPen = new Pen(new SolidColorBrush(VS2022Theme.Accent.Primary), 1.5);
+                var checkPen = new Pen(new SolidColorBrush(ProTheme.Accent.Primary), 1.5);
                 context.DrawLine(checkPen, 
                     new Point(x + 2, centerY), 
                     new Point(x + 6, centerY + 4));
@@ -318,7 +318,7 @@ public class ProMenuItem : Control
         }
         else if (!string.IsNullOrEmpty(Icon))
         {
-            var iconText = CreateFormattedText(Icon, VS2022Theme.Text.Primary, 14);
+            var iconText = CreateFormattedText(Icon, ProTheme.Text.Primary, 14);
             context.DrawText(iconText, Crisp.Snap(new Point(x, centerY - iconText.Height / 2)));
             x += 24;
         }
@@ -328,14 +328,14 @@ public class ProMenuItem : Control
         }
         
         // Header
-        var textColor = IsEnabled ? VS2022Theme.Text.Primary : VS2022Theme.Text.Disabled;
+        var textColor = IsEnabled ? ProTheme.Text.Primary : ProTheme.Text.Disabled;
         var headerText = CreateFormattedText(Header, textColor);
         context.DrawText(headerText, Crisp.Snap(new Point(x, centerY - headerText.Height / 2)));
         
         // Shortcut (aligné à droite)
         if (!string.IsNullOrEmpty(Shortcut))
         {
-            var shortcutText = CreateFormattedText(Shortcut, VS2022Theme.Text.Tertiary, 12);
+            var shortcutText = CreateFormattedText(Shortcut, ProTheme.Text.Tertiary, 12);
             var shortcutX = bounds.Width - shortcutText.Width - (HasItems ? 28 : 12);
             context.DrawText(shortcutText, Crisp.Snap(new Point(shortcutX, centerY - shortcutText.Height / 2)));
         }
@@ -344,7 +344,7 @@ public class ProMenuItem : Control
         if (HasItems)
         {
             var arrowX = bounds.Width - 16;
-            var arrowPen = new Pen(new SolidColorBrush(VS2022Theme.Text.Secondary), 1.2);
+            var arrowPen = new Pen(new SolidColorBrush(ProTheme.Text.Secondary), 1.2);
             context.DrawLine(arrowPen, 
                 new Point(arrowX, centerY - 4), 
                 new Point(arrowX + 5, centerY));
@@ -354,13 +354,13 @@ public class ProMenuItem : Control
         }
     }
     
-    private FormattedText CreateFormattedText(string text, Color color, double fontSize = 13)
+    private FormattedText CreateFormattedText(string text, Color color, double fontSize = ProTheme.Typography.FontSizeBody)
     {
         return new FormattedText(
             text ?? "",
             CultureInfo.CurrentCulture,
             FlowDirection.LeftToRight,
-            new Typeface(VS2022Theme.Typography.FontFamily),
+            new Typeface(ProTheme.Typography.FontFamily),
             fontSize,
             new SolidColorBrush(color));
     }

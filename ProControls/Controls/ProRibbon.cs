@@ -286,7 +286,7 @@ public class ProRibbon : Control
     
     private double MeasureTabWidth(ProRibbonTab tab)
     {
-        var text = CreateFormattedText(tab.Header, VS2022Theme.Text.Primary, 12);
+        var text = CreateFormattedText(tab.Header, ProTheme.Text.Primary, 12);
         return Math.Max(60, text.Width + 24);
     }
     
@@ -299,7 +299,7 @@ public class ProRibbon : Control
         var bounds = new Rect(Bounds.Size);
         
         // Fond général
-        context.FillRectangle(new SolidColorBrush(VS2022Theme.Background.Toolbar), bounds);
+        context.FillRectangle(new SolidColorBrush(ProTheme.Background.Toolbar), bounds);
         
         // ══════════════════════════════════════════════════════════
         // RANGÉE DES ONGLETS
@@ -317,7 +317,7 @@ public class ProRibbon : Control
         }
         
         // Bordure en bas
-        var borderPen = new Pen(new SolidColorBrush(VS2022Theme.Border.Subtle), 1);
+        var borderPen = new Pen(new SolidColorBrush(ProTheme.Border.Subtle), 1);
         context.DrawLine(borderPen, 
             new Point(0, bounds.Height - 0.5), 
             new Point(bounds.Width, bounds.Height - 0.5));
@@ -339,10 +339,10 @@ public class ProRibbon : Control
             {
                 // Onglet sélectionné
                 var tabRect = new Rect(tabX, 0, tabWidth, TabRowHeight);
-                context.FillRectangle(new SolidColorBrush(VS2022Theme.Background.Panel), tabRect);
+                context.FillRectangle(new SolidColorBrush(ProTheme.Background.Panel), tabRect);
                 
                 // Ligne d'accent en haut
-                var accentPen = new Pen(new SolidColorBrush(VS2022Theme.Accent.Primary), 2);
+                var accentPen = new Pen(new SolidColorBrush(ProTheme.Accent.Primary), 2);
                 context.DrawLine(accentPen,
                     new Point(tabX + 1, 1),
                     new Point(tabX + tabWidth - 1, 1));
@@ -351,11 +351,11 @@ public class ProRibbon : Control
             {
                 // Onglet survolé
                 var hoverRect = new Rect(tabX, 2, tabWidth, TabRowHeight - 4);
-                context.FillRectangle(new SolidColorBrush(VS2022Theme.Background.ControlHover), hoverRect);
+                context.FillRectangle(new SolidColorBrush(ProTheme.Background.ControlHover), hoverRect);
             }
             
             // Texte
-            var textColor = isSelected ? VS2022Theme.Text.Primary : VS2022Theme.Text.Secondary;
+            var textColor = isSelected ? ProTheme.Text.Primary : ProTheme.Text.Secondary;
             var tabText = CreateFormattedText(tab.Header, textColor, 12);
             context.DrawText(tabText, Crisp.Snap(new Point(
                 tabX + (tabWidth - tabText.Width) / 2,
@@ -370,7 +370,7 @@ public class ProRibbon : Control
         // Ligne de séparation sous les onglets (seulement si non collapsed)
         if (!IsCollapsed)
         {
-            var sepPen = new Pen(new SolidColorBrush(VS2022Theme.Border.Subtle), 1);
+            var sepPen = new Pen(new SolidColorBrush(ProTheme.Border.Subtle), 1);
             context.DrawLine(sepPen, 
                 new Point(0, TabRowHeight - 0.5), 
                 new Point(bounds.Width, TabRowHeight - 0.5));
@@ -381,7 +381,7 @@ public class ProRibbon : Control
     {
         var btnX = bounds.Width - 28;
         var btnY = 6;
-        var pen = new Pen(new SolidColorBrush(VS2022Theme.Text.Tertiary), 1.5);
+        var pen = new Pen(new SolidColorBrush(ProTheme.Text.Tertiary), 1.5);
         
         if (IsCollapsed)
         {
@@ -402,7 +402,7 @@ public class ProRibbon : Control
         var contentRect = new Rect(0, TabRowHeight, bounds.Width, ContentHeight);
         
         // Fond du contenu
-        context.FillRectangle(new SolidColorBrush(VS2022Theme.Background.Panel), contentRect);
+        context.FillRectangle(new SolidColorBrush(ProTheme.Background.Panel), contentRect);
         
         if (SelectedTab == null) return;
         
@@ -458,7 +458,7 @@ public class ProRibbon : Control
         width += largeButtonsWidth + smallButtonsMaxWidth;
         
         // Largeur minimum pour le label
-        var labelText = CreateFormattedText(group.Header, VS2022Theme.Text.Tertiary, 11);
+        var labelText = CreateFormattedText(group.Header, ProTheme.Text.Tertiary, 11);
         width = Math.Max(width, labelText.Width + 20);
         
         return width;
@@ -466,7 +466,7 @@ public class ProRibbon : Control
     
     private double MeasureSmallButtonWidth(ProRibbonButton btn)
     {
-        var text = CreateFormattedText(btn.Label.Replace("\n", " "), VS2022Theme.Text.Primary, 11);
+        var text = CreateFormattedText(btn.Label.Replace("\n", " "), ProTheme.Text.Primary, 11);
         return 22 + text.Width + 8; // icône + texte + padding
     }
     
@@ -474,19 +474,19 @@ public class ProRibbon : Control
         double x, double y, double width)
     {
         // Séparateur à droite
-        var sepPen = new Pen(new SolidColorBrush(VS2022Theme.Border.Default), 1);
+        var sepPen = new Pen(new SolidColorBrush(ProTheme.Border.Default), 1);
         context.DrawLine(sepPen,
             new Point(x + width - 1, y + 6),
             new Point(x + width - 1, y + ContentHeight - GroupLabelHeight - 4));
         
         // Label du groupe en bas
-        var labelText = CreateFormattedText(group.Header, VS2022Theme.Text.Tertiary, 11);
+        var labelText = CreateFormattedText(group.Header, ProTheme.Text.Tertiary, 11);
         context.DrawText(labelText, Crisp.Snap(new Point(
             x + (width - labelText.Width) / 2,
             y + ContentHeight - GroupLabelHeight + 2)));
         
         // Ligne au-dessus du label
-        var labelLinePen = new Pen(new SolidColorBrush(VS2022Theme.Border.Subtle), 1);
+        var labelLinePen = new Pen(new SolidColorBrush(ProTheme.Border.Subtle), 1);
         context.DrawLine(labelLinePen,
             new Point(x + 4, y + ContentHeight - GroupLabelHeight - 2),
             new Point(x + width - 8, y + ContentHeight - GroupLabelHeight - 2));
@@ -518,19 +518,19 @@ public class ProRibbon : Control
         if (isPressed || btn.IsChecked)
         {
             context.FillRectangle(
-                new SolidColorBrush(VS2022Theme.Background.ControlPressed),
+                new SolidColorBrush(ProTheme.Background.ControlPressed),
                 btnRect, radius);
 
             if (btn.IsChecked)
             {
-                var checkedPen = new Pen(new SolidColorBrush(VS2022Theme.Accent.Primary), 1);
+                var checkedPen = new Pen(new SolidColorBrush(ProTheme.Accent.Primary), 1);
                 context.DrawRectangle(null, checkedPen, btnRect.Deflate(0.5), radius, radius);
             }
         }
         else if (isHovered)
         {
             context.FillRectangle(
-                new SolidColorBrush(VS2022Theme.Background.ControlHover),
+                new SolidColorBrush(ProTheme.Background.ControlHover),
                 btnRect, radius);
         }
     }
@@ -539,7 +539,7 @@ public class ProRibbon : Control
     {
         RenderButtonBackground(context, btn, btnRect, 3);
 
-        var textColor = btn.IsEnabled ? VS2022Theme.Text.Primary : VS2022Theme.Text.Disabled;
+        var textColor = btn.IsEnabled ? ProTheme.Text.Primary : ProTheme.Text.Disabled;
         var x = btnRect.X;
         var y = btnRect.Y;
 
@@ -569,7 +569,7 @@ public class ProRibbon : Control
     {
         RenderButtonBackground(context, btn, btnRect, 2);
 
-        var textColor = btn.IsEnabled ? VS2022Theme.Text.Primary : VS2022Theme.Text.Disabled;
+        var textColor = btn.IsEnabled ? ProTheme.Text.Primary : ProTheme.Text.Disabled;
         var x = btnRect.X;
         var y = btnRect.Y;
 
@@ -592,7 +592,7 @@ public class ProRibbon : Control
             text,
             CultureInfo.CurrentCulture,
             FlowDirection.LeftToRight,
-            new Typeface(VS2022Theme.Typography.FontFamily),
+            new Typeface(ProTheme.Typography.FontFamily),
             size,
             new SolidColorBrush(color));
     }

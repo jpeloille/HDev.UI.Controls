@@ -1,0 +1,28 @@
+<!-- Skin Yaru (Ubuntu 26.04) pour JDataGrid (Julien.Avalonia.DataGrid).
+     Surcharge uniquement les ressources de thème exposées par la bibliothèque ;
+     le contrôle lui-même vit dans Julien.Avalonia.DataGrid. -->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- Couleurs (consommées directement par certains templates) -->
+  <Color x:Key="DataGridHeaderBackground">#F6F5F4</Color>
+  <Color x:Key="DataGridHeaderBorder">#DEDDDA</Color>
+  <Color x:Key="DataGridRowAlternate">#FAFAF9</Color>
+  <Color x:Key="DataGridRowSelected">#FBDDD2</Color>
+  <Color x:Key="DataGridRowHover">#F2F1F0</Color>
+  <Color x:Key="DataGridGridLines">#EBEBEA</Color>
+  <Color x:Key="DataGridCellSelected">#F5C2AC</Color>
+  <Color x:Key="DataGridGroupBackground">#F6F5F4</Color>
+  <Color x:Key="DataGridFrozenColumnSeparator">#C0BFBC</Color>
+
+  <!-- Brushes (surface de surcharge principale du thème JDataGrid) -->
+  <SolidColorBrush x:Key="DataGridHeaderBackgroundBrush" Color="#F6F5F4" />
+  <SolidColorBrush x:Key="DataGridHeaderBorderBrush" Color="#DEDDDA" />
+  <SolidColorBrush x:Key="DataGridRowAlternateBrush" Color="#FAFAF9" />
+  <SolidColorBrush x:Key="DataGridRowSelectedBrush" Color="#FBDDD2" />
+  <SolidColorBrush x:Key="DataGridRowHoverBrush" Color="#F2F1F0" />
+  <SolidColorBrush x:Key="DataGridGridLinesBrush" Color="#EBEBEA" />
+  <SolidColorBrush x:Key="DataGridCellSelectedBrush" Color="#F5C2AC" />
+  <SolidColorBrush x:Key="DataGridGroupBackgroundBrush" Color="#F6F5F4" />
+
+</ResourceDictionary>

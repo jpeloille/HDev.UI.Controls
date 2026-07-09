@@ -18,7 +18,7 @@ internal static class Crisp
 }
 
 /// <summary>
-/// Classe de base pour tous les contrôles Pro VS2022
+/// Classe de base pour tous les contrôles Pro (style Ubuntu 26.04 / Yaru)
 /// Gère les états visuels, le hit testing, et fournit des helpers de rendu
 /// </summary>
 public abstract class ProControlBase : Control
@@ -157,14 +157,14 @@ public abstract class ProControlBase : Control
     protected FormattedText CreateText(
         string text, 
         Color color, 
-        double fontSize = 13, 
+        double fontSize = ProTheme.Typography.FontSizeBody, 
         FontWeight? weight = null)
     {
         return new FormattedText(
             text,
             CultureInfo.CurrentCulture,
             FlowDirection.LeftToRight,
-            new Typeface(VS2022Theme.Typography.FontFamily, FontStyle.Normal, weight ?? FontWeight.Regular),
+            new Typeface(ProTheme.Typography.FontFamily, FontStyle.Normal, weight ?? FontWeight.Regular),
             fontSize,
             new SolidColorBrush(color));
     }
@@ -231,7 +231,7 @@ public abstract class ProControlBase : Control
     {
         var focusRect = rect.Inflate(2);
         var focusPen = new Pen(
-            new SolidColorBrush(VS2022Theme.WithOpacity(VS2022Theme.Border.FocusOuter, 100)), 
+            new SolidColorBrush(ProTheme.WithOpacity(ProTheme.Border.FocusOuter, 100)), 
             1.5);
         context.DrawRectangle(null, focusPen, focusRect, cornerRadius + 2, cornerRadius + 2);
     }
@@ -253,34 +253,34 @@ public abstract class ProControlBase : Control
         if (!IsEnabled)
         {
             return (
-                VS2022Theme.Background.ControlDisabled,
-                VS2022Theme.Border.Disabled,
-                VS2022Theme.Text.Disabled
+                ProTheme.Background.ControlDisabled,
+                ProTheme.Border.Disabled,
+                ProTheme.Text.Disabled
             );
         }
         
         if (IsPressed)
         {
             return (
-                VS2022Theme.Background.ControlPressed,
-                VS2022Theme.Border.Pressed,
-                VS2022Theme.Text.Primary
+                ProTheme.Background.ControlPressed,
+                ProTheme.Border.Pressed,
+                ProTheme.Text.Primary
             );
         }
         
         if (IsHovered)
         {
             return (
-                VS2022Theme.Background.ControlHover,
-                VS2022Theme.Border.Hover,
-                VS2022Theme.Text.Primary
+                ProTheme.Background.ControlHover,
+                ProTheme.Border.Hover,
+                ProTheme.Text.Primary
             );
         }
         
         return (
-            VS2022Theme.Background.Control,
-            VS2022Theme.Border.Default,
-            VS2022Theme.Text.Primary
+            ProTheme.Background.Control,
+            ProTheme.Border.Default,
+            ProTheme.Text.Primary
         );
     }
 }

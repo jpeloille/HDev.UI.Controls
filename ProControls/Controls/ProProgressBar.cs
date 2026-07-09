@@ -159,14 +159,14 @@ public class ProProgressBar : ProControlBase
         // Couleur selon la variante
         var progressColor = Variant switch
         {
-            ProgressVariant.Success => VS2022Theme.Accent.Success,
-            ProgressVariant.Warning => VS2022Theme.Accent.Warning,
-            ProgressVariant.Error => VS2022Theme.Accent.Error,
-            _ => VS2022Theme.Accent.Primary
+            ProgressVariant.Success => ProTheme.Accent.Success,
+            ProgressVariant.Warning => ProTheme.Accent.Warning,
+            ProgressVariant.Error => ProTheme.Accent.Error,
+            _ => ProTheme.Accent.Primary
         };
         
         // Track (fond)
-        var trackColor = VS2022Theme.Background.ControlDisabled;
+        var trackColor = ProTheme.Background.ControlDisabled;
         context.DrawRectangle(
             new SolidColorBrush(trackColor),
             null,
@@ -174,7 +174,7 @@ public class ProProgressBar : ProControlBase
             cornerRadius, cornerRadius);
         
         // Bordure du track
-        var trackBorderPen = new Pen(new SolidColorBrush(VS2022Theme.Border.Subtle), 0.5);
+        var trackBorderPen = new Pen(new SolidColorBrush(ProTheme.Border.Subtle), 0.5);
         context.DrawRectangle(null, trackBorderPen, trackRect.Deflate(0.25), cornerRadius, cornerRadius);
         
         // Progression
@@ -203,34 +203,8 @@ public class ProProgressBar : ProControlBase
                     progressRect = new Rect(trackRect.X, trackRect.Y, progressWidth, trackRect.Height);
                 }
                 
-                // Dégradé pour la barre de progression
-                var progressBrush = new LinearGradientBrush
-                {
-                    StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
-                    EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
-                    GradientStops =
-                    {
-                        new GradientStop(VS2022Theme.Lerp(progressColor, Colors.White, 0.2), 0),
-                        new GradientStop(progressColor, 0.5),
-                        new GradientStop(VS2022Theme.Lerp(progressColor, Colors.Black, 0.1), 1)
-                    }
-                };
-                
-                context.DrawRectangle(progressBrush, null, progressRect, cornerRadius, cornerRadius);
-                
-                // Highlight
-                var highlightRect = new Rect(progressRect.X, progressRect.Y, progressRect.Width, progressRect.Height / 2);
-                var highlightBrush = new LinearGradientBrush
-                {
-                    StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
-                    EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
-                    GradientStops =
-                    {
-                        new GradientStop(Color.FromArgb(60, 255, 255, 255), 0),
-                        new GradientStop(Color.FromArgb(0, 255, 255, 255), 1)
-                    }
-                };
-                context.DrawRectangle(highlightBrush, null, highlightRect);
+                // Remplissage plat (style GNOME)
+                context.DrawRectangle(new SolidColorBrush(progressColor), null, progressRect, cornerRadius, cornerRadius);
             }
         }
         
@@ -238,7 +212,7 @@ public class ProProgressBar : ProControlBase
         if (ShowValue && !IsIndeterminate)
         {
             var percentage = (int)(progress * 100);
-            var valueText = CreateText($"{percentage}%", VS2022Theme.Text.Secondary, 11);
+            var valueText = CreateText($"{percentage}%", ProTheme.Text.Secondary, 11);
             var textX = (bounds.Width - valueText.Width) / 2;
             context.DrawText(valueText, Crisp.Snap(new Point(textX, 0)));
         }

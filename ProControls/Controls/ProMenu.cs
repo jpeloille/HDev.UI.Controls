@@ -48,8 +48,8 @@ public class ProMenuPopup : Popup
         
         _container = new Border
         {
-            Background = new SolidColorBrush(VS2022Theme.Background.Panel),
-            BorderBrush = new SolidColorBrush(VS2022Theme.Border.Default),
+            Background = new SolidColorBrush(ProTheme.Background.Panel),
+            BorderBrush = new SolidColorBrush(ProTheme.Border.Default),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(4),
             Padding = new Thickness(2, 4),
@@ -139,7 +139,7 @@ public class ProMenuBar : Panel
     {
         Height = 28;
         ClipToBounds = false;
-        Background = new SolidColorBrush(VS2022Theme.Background.Toolbar);
+        Background = new SolidColorBrush(ProTheme.Background.Toolbar);
         
         Items.CollectionChanged += (s, e) =>
         {
@@ -244,8 +244,8 @@ public class ProMenuBarItem : Control
             Header,
             System.Globalization.CultureInfo.CurrentCulture,
             FlowDirection.LeftToRight,
-            new Typeface(VS2022Theme.Typography.FontFamily),
-            VS2022Theme.Typography.FontSizeBody,
+            new Typeface(ProTheme.Typography.FontFamily),
+            ProTheme.Typography.FontSizeBody,
             Brushes.Black);
         
         return new Size(text.Width + 20, 28);
@@ -322,8 +322,8 @@ public class ProMenuBarItem : Control
         if (_isHovered || _isOpen)
         {
             var bgColor = _isOpen 
-                ? VS2022Theme.Background.ControlPressed 
-                : VS2022Theme.Background.ControlHover;
+                ? ProTheme.Background.ControlPressed 
+                : ProTheme.Background.ControlHover;
             context.FillRectangle(new SolidColorBrush(bgColor), bounds);
         }
         
@@ -332,9 +332,9 @@ public class ProMenuBarItem : Control
             Header,
             System.Globalization.CultureInfo.CurrentCulture,
             FlowDirection.LeftToRight,
-            new Typeface(VS2022Theme.Typography.FontFamily),
-            VS2022Theme.Typography.FontSizeBody,
-            new SolidColorBrush(VS2022Theme.Text.Primary));
+            new Typeface(ProTheme.Typography.FontFamily),
+            ProTheme.Typography.FontSizeBody,
+            new SolidColorBrush(ProTheme.Text.Primary));
         
         var textX = (bounds.Width - text.Width) / 2;
         var textY = (bounds.Height - text.Height) / 2;

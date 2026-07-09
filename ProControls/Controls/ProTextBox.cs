@@ -88,9 +88,9 @@ public class ProTextBox : Border
     
     public ProTextBox()
     {
-        CornerRadius = new CornerRadius(VS2022Theme.Size.CornerRadiusSmall);
+        CornerRadius = new CornerRadius(ProTheme.Size.CornerRadiusSmall);
         BorderThickness = new Thickness(1);
-        MinHeight = VS2022Theme.Size.ControlHeightMedium;
+        MinHeight = ProTheme.Size.ControlHeightMedium;
         ClipToBounds = true;
         
         _innerTextBox = new TextBox
@@ -101,10 +101,10 @@ public class ProTextBox : Border
             Margin = new Thickness(0),
             VerticalAlignment = VerticalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
-            FontFamily = new FontFamily(VS2022Theme.Typography.FontFamily),
-            FontSize = VS2022Theme.Typography.FontSizeBody,
-            CaretBrush = new SolidColorBrush(VS2022Theme.Text.Primary),
-            SelectionBrush = new SolidColorBrush(VS2022Theme.WithOpacity(VS2022Theme.Accent.Primary, 80)),
+            FontFamily = new FontFamily(ProTheme.Typography.FontFamily),
+            FontSize = ProTheme.Typography.FontSizeBody,
+            CaretBrush = new SolidColorBrush(ProTheme.Text.Primary),
+            SelectionBrush = new SolidColorBrush(ProTheme.WithOpacity(ProTheme.Accent.Primary, 80)),
             SelectionForegroundBrush = new SolidColorBrush(Colors.White)
         };
         
@@ -191,39 +191,39 @@ public class ProTextBox : Border
         
         if (!IsEnabled)
         {
-            bgColor = VS2022Theme.Background.ControlDisabled;
-            borderColor = VS2022Theme.Border.Disabled;
-            _innerTextBox.Foreground = new SolidColorBrush(VS2022Theme.Text.Disabled);
+            bgColor = ProTheme.Background.ControlDisabled;
+            borderColor = ProTheme.Border.Disabled;
+            _innerTextBox.Foreground = new SolidColorBrush(ProTheme.Text.Disabled);
             _innerTextBox.IsEnabled = false;
         }
         else if (HasError)
         {
-            bgColor = VS2022Theme.Background.Error;
-            borderColor = VS2022Theme.Accent.Error;
+            bgColor = ProTheme.Background.Error;
+            borderColor = ProTheme.Accent.Error;
             borderThickness = 1.5;
-            _innerTextBox.Foreground = new SolidColorBrush(VS2022Theme.Text.Primary);
+            _innerTextBox.Foreground = new SolidColorBrush(ProTheme.Text.Primary);
             _innerTextBox.IsEnabled = true;
         }
         else if (_isFocusedState)
         {
-            bgColor = VS2022Theme.Background.Control;
-            borderColor = VS2022Theme.Border.Focused;
+            bgColor = ProTheme.Background.Control;
+            borderColor = ProTheme.Border.Focused;
             borderThickness = 1.5;
-            _innerTextBox.Foreground = new SolidColorBrush(VS2022Theme.Text.Primary);
+            _innerTextBox.Foreground = new SolidColorBrush(ProTheme.Text.Primary);
             _innerTextBox.IsEnabled = true;
         }
         else if (_isHovered)
         {
-            bgColor = VS2022Theme.Background.Control;
-            borderColor = VS2022Theme.Border.Hover;
-            _innerTextBox.Foreground = new SolidColorBrush(VS2022Theme.Text.Primary);
+            bgColor = ProTheme.Background.Control;
+            borderColor = ProTheme.Border.Hover;
+            _innerTextBox.Foreground = new SolidColorBrush(ProTheme.Text.Primary);
             _innerTextBox.IsEnabled = true;
         }
         else
         {
-            bgColor = VS2022Theme.Background.Control;
-            borderColor = VS2022Theme.Border.Default;
-            _innerTextBox.Foreground = new SolidColorBrush(VS2022Theme.Text.Primary);
+            bgColor = ProTheme.Background.Control;
+            borderColor = ProTheme.Border.Default;
+            _innerTextBox.Foreground = new SolidColorBrush(ProTheme.Text.Primary);
             _innerTextBox.IsEnabled = true;
         }
         
@@ -237,7 +237,7 @@ public class ProTextBox : Border
             BoxShadow = new BoxShadows(new BoxShadow
             {
                 Blur = 0, Spread = 2,
-                Color = VS2022Theme.WithOpacity(VS2022Theme.Border.Focused, 50)
+                Color = ProTheme.WithOpacity(ProTheme.Border.Focused, 50)
             });
         }
         else if (HasError)
@@ -245,7 +245,7 @@ public class ProTextBox : Border
             BoxShadow = new BoxShadows(new BoxShadow
             {
                 Blur = 0, Spread = 2,
-                Color = VS2022Theme.WithOpacity(VS2022Theme.Accent.Error, 40)
+                Color = ProTheme.WithOpacity(ProTheme.Accent.Error, 40)
             });
         }
         else
