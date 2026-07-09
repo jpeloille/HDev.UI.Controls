@@ -594,12 +594,54 @@ public class ProComboBox : Control
             Child = dropdownBorder,
             PlacementTarget = this,
             Placement = PlacementMode.Bottom,
-            IsLightDismissEnabled = true,
+            // Garde maison (cf. ProMenuPopup) : le light dismiss Avalonia ferme
+            // le dropdown à la moindre désactivation de fenêtre
+            IsLightDismissEnabled = false,
             HorizontalOffset = 0,
             VerticalOffset = -1
         };
 
+        _popup.Opened += OnPopupOpenedInstallGuard;
         _popup.Closed += OnPopupClosed;
+    }
+
+    private DateTime _popupOpenedAt;
+    private DateTime _lastDropDownClose;
+    private TopLevel? _dismissRoot;
+
+    private void OnPopupOpenedInstallGuard(object? sender, EventArgs e)
+    {
+        _popupOpenedAt = DateTime.UtcNow;
+        _dismissRoot = TopLevel.GetTopLevel(this);
+        if (_dismissRoot == null) return;
+
+        _dismissRoot.AddHandler(PointerPressedEvent, OnRootPointerPressed,
+            RoutingStrategies.Tunnel, handledEventsToo: true);
+        if (_dismissRoot is Window w)
+            w.Deactivated += OnRootDeactivated;
+    }
+
+    private void RemoveDismissGuard()
+    {
+        if (_dismissRoot == null) return;
+        _dismissRoot.RemoveHandler(PointerPressedEvent, OnRootPointerPressed);
+        if (_dismissRoot is Window w)
+            w.Deactivated -= OnRootDeactivated;
+        _dismissRoot = null;
+    }
+
+    private void OnRootPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (e.Source is Avalonia.Visual v && ProMenuPopup.IsInsidePopupHost(v)) return;
+
+        _lastDropDownClose = DateTime.UtcNow;
+        CloseDropDown();
+    }
+
+    private void OnRootDeactivated(object? sender, EventArgs e)
+    {
+        if ((DateTime.UtcNow - _popupOpenedAt).TotalMilliseconds > 800)
+            CloseDropDown();
     }
 
     private void OnListBoxPointerReleased(object? sender, PointerReleasedEventArgs e)
@@ -1094,9 +1136,14 @@ public class ProComboBox : Control
     private void ToggleDropDown()
     {
         if (_isDropDownOpen)
+        {
             CloseDropDown();
-        else
+        }
+        else if ((DateTime.UtcNow - _lastDropDownClose).TotalMilliseconds > 250)
+        {
+            // Ignorer la réouverture si le garde vient de fermer sur ce même clic
             OpenDropDown();
+        }
     }
 
     private void OpenDropDown()
@@ -1157,6 +1204,8 @@ public class ProComboBox : Control
 
     private void OnPopupClosed(object? sender, EventArgs e)
     {
+        RemoveDismissGuard();
+
         if (_isDropDownOpen)
         {
             _isDropDownOpen = false;

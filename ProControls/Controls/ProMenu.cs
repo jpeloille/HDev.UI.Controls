@@ -4,6 +4,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Layout;
+using Avalonia.VisualTree;
 using ProControls.Theme;
 using System.Collections.ObjectModel;
 
@@ -23,10 +24,22 @@ public class ProMenuPopup : Popup
     /// </summary>
     internal ProMenuPopup? ParentPopup { get; set; }
 
+    private DateTime _openedAt;
+    private TopLevel? _guardRoot;
+
+    /// <summary>true si la dernière fermeture vient d'un clic extérieur (garde)</summary>
+    internal bool WasClosedByGuard { get; private set; }
+
     public ProMenuPopup()
     {
-        IsLightDismissEnabled = true;
+        // Pas de light dismiss Avalonia : il ferme aussi le popup à la moindre
+        // désactivation de la fenêtre (turbulences de focus fréquentes sous
+        // GNOME/XWayland -> les menus se refermaient instantanément).
+        // Remplacé par un garde : clic extérieur + désactivation avec délai de grâce.
+        IsLightDismissEnabled = false;
         Placement = PlacementMode.BottomEdgeAlignedLeft;
+
+        Opened += (s, e) => { WasClosedByGuard = false; InstallDismissGuard(); };
 
         // À la fermeture : refermer les sous-menus encore ouverts de nos items,
         // et se détacher de l'arbre logique (le popup est recréé à chaque ouverture)
@@ -39,6 +52,7 @@ public class ProMenuPopup : Popup
             }
 
             ((ISetLogicalParent)this).SetParent(null);
+            RemoveDismissGuard();
         };
 
         _itemsPanel = new StackPanel
@@ -84,6 +98,54 @@ public class ProMenuPopup : Popup
             item.OwnerPopup = this;
             _itemsPanel.Children.Add(item);
         }
+    }
+
+    private void InstallDismissGuard()
+    {
+        _openedAt = DateTime.UtcNow;
+        _guardRoot = PlacementTarget != null ? TopLevel.GetTopLevel(PlacementTarget) : null;
+        if (_guardRoot == null) return;
+
+        _guardRoot.AddHandler(PointerPressedEvent, OnRootPointerPressed,
+            Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
+        if (_guardRoot is Window w)
+            w.Deactivated += OnRootDeactivated;
+    }
+
+    private void RemoveDismissGuard()
+    {
+        if (_guardRoot == null) return;
+        _guardRoot.RemoveHandler(PointerPressedEvent, OnRootPointerPressed);
+        if (_guardRoot is Window w)
+            w.Deactivated -= OnRootDeactivated;
+        _guardRoot = null;
+    }
+
+    private void OnRootPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        // En mode overlay (headless), le contenu des popups vit dans l'arbre de
+        // la fenêtre : ignorer les presses venant de l'intérieur d'un popup
+        if (e.Source is Visual v && IsInsidePopupHost(v)) return;
+
+        WasClosedByGuard = true;
+        Close();
+    }
+
+    internal static bool IsInsidePopupHost(Visual v)
+    {
+        foreach (var a in v.GetVisualAncestors())
+        {
+            if (a is Avalonia.Controls.Primitives.OverlayPopupHost) return true;
+        }
+        return false;
+    }
+
+    private void OnRootDeactivated(object? sender, EventArgs e)
+    {
+        // Délai de grâce : l'ouverture du popup provoque parfois une
+        // désactivation transitoire — ne fermer que si le menu est établi
+        if ((DateTime.UtcNow - _openedAt).TotalMilliseconds > 800)
+            Close();
     }
 
     /// <summary>
@@ -210,7 +272,8 @@ public class ProMenuBarItem : Control
     private bool _isHovered;
     private bool _isOpen;
     private ProMenuPopup? _popup;
-    
+    private DateTime _lastCloseTime;
+
     public static readonly StyledProperty<string> HeaderProperty =
         AvaloniaProperty.Register<ProMenuBarItem, string>(nameof(Header), "");
     
@@ -272,10 +335,16 @@ public class ProMenuBarItem : Control
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         if (_isOpen)
+        {
             CloseMenu();
-        else
+        }
+        else if ((DateTime.UtcNow - _lastCloseTime).TotalMilliseconds > 250)
+        {
+            // Le garde du popup vient peut-être de le fermer sur CE même press
+            // (tunnel) : ne pas rouvrir aussitôt, sinon le toggle est impossible
             OpenMenu();
-        
+        }
+
         base.OnPointerPressed(e);
     }
     
@@ -289,6 +358,10 @@ public class ProMenuBarItem : Control
         _popup.Closed += (s, e) =>
         {
             _isOpen = false;
+            // N'armer l'anti-réouverture que si le garde a fermé (clic extérieur,
+            // typiquement sur CE bar-item) — pas pour un clic d'item de menu
+            if (s is ProMenuPopup p && p.WasClosedByGuard)
+                _lastCloseTime = DateTime.UtcNow;
             InvalidateVisual();
             if (Parent is ProMenuBar menuBar)
                 menuBar.CloseAllMenus();
