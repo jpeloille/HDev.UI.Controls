@@ -76,10 +76,10 @@ public class ProMenuPopup : Popup
             Child = _itemsPanel
         };
         
-        // Les popups vivent dans un arbre visuel séparé : l'option de rendu
-        // subpixel posée sur la fenêtre ne s'y propage pas
-        RenderOptions.SetTextRenderingMode(_container, TextRenderingMode.SubpixelAntialias);
-
+        // ATTENTION : ne PAS forcer SubpixelAntialias ici — la surface des
+        // popups est transparente (ARGB, ombre portée) et le rendu LCD subpixel
+        // n'y peint AUCUN glyphe (liste/menu visuellement vides sur X11).
+        // L'anti-aliasing par défaut (niveaux de gris) est correct sur popup.
         Child = _container;
     }
     

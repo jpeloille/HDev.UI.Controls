@@ -586,8 +586,8 @@ public class ProComboBox : Control
                     Color = ProTheme.Shadow.Color
                 })
         };
-        // Arbre visuel séparé : appliquer le rendu subpixel au contenu du dropdown
-        RenderOptions.SetTextRenderingMode(dropdownBorder, TextRenderingMode.SubpixelAntialias);
+        // Pas de SubpixelAntialias sur le dropdown : surface popup transparente,
+        // le rendu LCD n'y peint aucun glyphe (cf. ProMenuPopup)
 
         _popup = new Popup
         {

@@ -124,14 +124,23 @@ public class ProWindow : Window
     
     public ProWindow()
     {
-        // Rendu de texte subpixel (type ClearType) pour toute la fenêtre :
-        // l'anti-aliasing niveaux de gris par défaut paraît flou à 96 dpi
-        RenderOptions.SetTextRenderingMode(this, TextRenderingMode.SubpixelAntialias);
+        // NE PAS forcer TextRenderingMode.SubpixelAntialias ici : l'option
+        // s'hérite par la chaîne logique jusqu'au contenu des popups (surfaces
+        // ARGB transparentes) où le rendu LCD ne peint AUCUN glyphe -> menus et
+        // dropdowns visuellement vides. GNOME rend d'ailleurs son texte en
+        // niveaux de gris : l'AA par défaut est le look natif. La netteté vient
+        // de l'alignement pixel des origines de texte (Crisp.Snap).
 
         // Police système Ubuntu : FontFamily est héritée, tout l'arbre (grille,
         // TextBox natifs...) l'utilise sans configuration par contrôle
         FontFamily = new FontFamily(ProTheme.Typography.FontFamily);
         FontSize = ProTheme.Typography.FontSizeBody;
+
+        // ProTheme n'a pour l'instant que des tokens CLAIRS : forcer le variant
+        // Light pour les contrôles Fluent embarqués (ListBox du combo, éditeurs
+        // de la grille...) même sur un bureau sombre — sinon texte blanc sur nos
+        // fonds blancs (invisible). À retirer quand le mode sombre Yaru existera.
+        RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
 
         ApplyChromeMode();
         
