@@ -605,13 +605,11 @@ public class ProComboBox : Control
         _popup.Closed += OnPopupClosed;
     }
 
-    private DateTime _popupOpenedAt;
     private DateTime _lastDropDownClose;
     private TopLevel? _dismissRoot;
 
     private void OnPopupOpenedInstallGuard(object? sender, EventArgs e)
     {
-        _popupOpenedAt = DateTime.UtcNow;
         _dismissRoot = TopLevel.GetTopLevel(this);
         if (_dismissRoot == null) return;
 
@@ -640,8 +638,13 @@ public class ProComboBox : Control
 
     private void OnRootDeactivated(object? sender, EventArgs e)
     {
-        if ((DateTime.UtcNow - _popupOpenedAt).TotalMilliseconds > 800)
-            CloseDropDown();
+        // Certains bureaux (GNOME/XWayland) font rebondir l'activation de la
+        // fenêtre en permanence : ne fermer que si elle reste inactive 250 ms
+        Avalonia.Threading.DispatcherTimer.RunOnce(() =>
+        {
+            if (_isDropDownOpen && _dismissRoot is Window { IsActive: false })
+                CloseDropDown();
+        }, TimeSpan.FromMilliseconds(250));
     }
 
     private void OnListBoxPointerReleased(object? sender, PointerReleasedEventArgs e)

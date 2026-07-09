@@ -24,7 +24,6 @@ public class ProMenuPopup : Popup
     /// </summary>
     internal ProMenuPopup? ParentPopup { get; set; }
 
-    private DateTime _openedAt;
     private TopLevel? _guardRoot;
 
     /// <summary>true si la dernière fermeture vient d'un clic extérieur (garde)</summary>
@@ -102,7 +101,6 @@ public class ProMenuPopup : Popup
 
     private void InstallDismissGuard()
     {
-        _openedAt = DateTime.UtcNow;
         _guardRoot = PlacementTarget != null ? TopLevel.GetTopLevel(PlacementTarget) : null;
         if (_guardRoot == null) return;
 
@@ -142,10 +140,13 @@ public class ProMenuPopup : Popup
 
     private void OnRootDeactivated(object? sender, EventArgs e)
     {
-        // Délai de grâce : l'ouverture du popup provoque parfois une
-        // désactivation transitoire — ne fermer que si le menu est établi
-        if ((DateTime.UtcNow - _openedAt).TotalMilliseconds > 800)
-            Close();
+        // Certains bureaux (GNOME/XWayland) font rebondir l'activation de la
+        // fenêtre en permanence : ne fermer que si elle reste inactive 250 ms
+        Avalonia.Threading.DispatcherTimer.RunOnce(() =>
+        {
+            if (IsOpen && _guardRoot is Window { IsActive: false })
+                Close();
+        }, TimeSpan.FromMilliseconds(250));
     }
 
     /// <summary>
