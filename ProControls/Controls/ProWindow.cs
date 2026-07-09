@@ -40,6 +40,9 @@ public class ProWindow : Window
     // PROPRIÉTÉS
     // ═══════════════════════════════════════════════════════════════
     
+    public static readonly StyledProperty<bool> UseNativeChromeProperty =
+        AvaloniaProperty.Register<ProWindow, bool>(nameof(UseNativeChrome), true);
+
     public static readonly StyledProperty<IBrush?> TitleBarBackgroundProperty =
         AvaloniaProperty.Register<ProWindow, IBrush?>(nameof(TitleBarBackground));
     
@@ -60,6 +63,18 @@ public class ProWindow : Window
     
     public static readonly StyledProperty<object?> TitleBarContentProperty =
         AvaloniaProperty.Register<ProWindow, object?>(nameof(TitleBarContent));
+
+    /// <summary>
+    /// true (défaut) : décorations de fenêtre du système (headerbar GNOME sous
+    /// Ubuntu). false : chrome custom ProWindow (barre de titre + boutons).
+    /// Sous X11/XWayland, ExtendClientArea se combine mal avec les décorations
+    /// serveur (marges fantômes, entrées décalées) : le natif est le défaut sûr.
+    /// </summary>
+    public bool UseNativeChrome
+    {
+        get => GetValue(UseNativeChromeProperty);
+        set => SetValue(UseNativeChromeProperty, value);
+    }
 
     public IBrush? TitleBarBackground
     {
@@ -118,10 +133,7 @@ public class ProWindow : Window
         FontFamily = new FontFamily(ProTheme.Typography.FontFamily);
         FontSize = ProTheme.Typography.FontSizeBody;
 
-        // Fenêtre sans chrome système
-        ExtendClientAreaToDecorationsHint = true;
-        ExtendClientAreaChromeHints = Avalonia.Platform.ExtendClientAreaChromeHints.NoChrome;
-        ExtendClientAreaTitleBarHeightHint = -1;
+        ApplyChromeMode();
         
         // Valeurs par défaut VS2022
         TitleBarBackground = new SolidColorBrush(ProTheme.Background.Toolbar);
@@ -168,7 +180,8 @@ public class ProWindow : Window
         {
             Height = TitleBarHeight,
             Background = TitleBarBackground,
-            ClipToBounds = true
+            ClipToBounds = true,
+            IsVisible = !UseNativeChrome
         };
         
         var titleBarGrid = new Grid
@@ -320,10 +333,39 @@ public class ProWindow : Window
         }
     }
     
+    private void ApplyChromeMode()
+    {
+        if (UseNativeChrome)
+        {
+            // Revenir strictement aux valeurs PAR DÉFAUT : poser une autre valeur
+            // (ex. TitleBarHeightHint = 0) suffit à réveiller la comptabilité CSD
+            // du backend X11 et décale PointToScreen/le placement des popups
+            ExtendClientAreaToDecorationsHint = false;
+            ExtendClientAreaChromeHints = Avalonia.Platform.ExtendClientAreaChromeHints.Default;
+            ExtendClientAreaTitleBarHeightHint = -1;
+            SystemDecorations = SystemDecorations.Full;
+        }
+        else
+        {
+            ExtendClientAreaToDecorationsHint = true;
+            ExtendClientAreaChromeHints = Avalonia.Platform.ExtendClientAreaChromeHints.NoChrome;
+            ExtendClientAreaTitleBarHeightHint = -1;
+        }
+
+        if (_titleBar != null)
+            _titleBar.IsVisible = !UseNativeChrome;
+    }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        
+
+        if (change.Property == UseNativeChromeProperty)
+        {
+            ApplyChromeMode();
+            return;
+        }
+
         if (change.Property == ContentProperty &&
             _mainGrid != null && _contentArea != null &&
             !ReferenceEquals(change.NewValue, _mainGrid))
