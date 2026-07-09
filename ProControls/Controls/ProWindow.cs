@@ -108,6 +108,10 @@ public class ProWindow : Window
     
     public ProWindow()
     {
+        // Rendu de texte subpixel (type ClearType) pour toute la fenêtre :
+        // l'anti-aliasing niveaux de gris par défaut paraît flou à 96 dpi
+        RenderOptions.SetTextRenderingMode(this, TextRenderingMode.SubpixelAntialias);
+
         // Fenêtre sans chrome système
         ExtendClientAreaToDecorationsHint = true;
         ExtendClientAreaChromeHints = Avalonia.Platform.ExtendClientAreaChromeHints.NoChrome;

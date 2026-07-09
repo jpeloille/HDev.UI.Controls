@@ -63,6 +63,10 @@ public class ProMenuPopup : Popup
             Child = _itemsPanel
         };
         
+        // Les popups vivent dans un arbre visuel séparé : l'option de rendu
+        // subpixel posée sur la fenêtre ne s'y propage pas
+        RenderOptions.SetTextRenderingMode(_container, TextRenderingMode.SubpixelAntialias);
+
         Child = _container;
     }
     
@@ -334,6 +338,6 @@ public class ProMenuBarItem : Control
         
         var textX = (bounds.Width - text.Width) / 2;
         var textY = (bounds.Height - text.Height) / 2;
-        context.DrawText(text, new Point(textX, textY));
+        context.DrawText(text, Crisp.Snap(new Point(textX, textY)));
     }
 }

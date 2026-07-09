@@ -240,7 +240,7 @@ public class ProToggleSwitch : ProControlBase
             var labelText = CreateText(label, textColor, 13);
             var labelX = trackRect.Right + 10;
             var labelY = (bounds.Height - labelText.Height) / 2;
-            context.DrawText(labelText, new Point(labelX, labelY));
+            context.DrawText(labelText, Crisp.Snap(new Point(labelX, labelY)));
         }
     }
 }

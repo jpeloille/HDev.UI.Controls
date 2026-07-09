@@ -240,7 +240,7 @@ public class ProProgressBar : ProControlBase
             var percentage = (int)(progress * 100);
             var valueText = CreateText($"{percentage}%", VS2022Theme.Text.Secondary, 11);
             var textX = (bounds.Width - valueText.Width) / 2;
-            context.DrawText(valueText, new Point(textX, 0));
+            context.DrawText(valueText, Crisp.Snap(new Point(textX, 0)));
         }
     }
 }

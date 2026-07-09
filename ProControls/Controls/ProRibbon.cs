@@ -357,9 +357,9 @@ public class ProRibbon : Control
             // Texte
             var textColor = isSelected ? VS2022Theme.Text.Primary : VS2022Theme.Text.Secondary;
             var tabText = CreateFormattedText(tab.Header, textColor, 12);
-            context.DrawText(tabText, new Point(
+            context.DrawText(tabText, Crisp.Snap(new Point(
                 tabX + (tabWidth - tabText.Width) / 2,
-                (TabRowHeight - tabText.Height) / 2));
+                (TabRowHeight - tabText.Height) / 2)));
             
             tabX += tabWidth + 4;
         }
@@ -481,9 +481,9 @@ public class ProRibbon : Control
         
         // Label du groupe en bas
         var labelText = CreateFormattedText(group.Header, VS2022Theme.Text.Tertiary, 11);
-        context.DrawText(labelText, new Point(
+        context.DrawText(labelText, Crisp.Snap(new Point(
             x + (width - labelText.Width) / 2,
-            y + ContentHeight - GroupLabelHeight + 2));
+            y + ContentHeight - GroupLabelHeight + 2)));
         
         // Ligne au-dessus du label
         var labelLinePen = new Pen(new SolidColorBrush(VS2022Theme.Border.Subtle), 1);
@@ -547,9 +547,9 @@ public class ProRibbon : Control
         if (!string.IsNullOrEmpty(btn.Icon))
         {
             var iconText = CreateFormattedText(btn.Icon, textColor, 22);
-            context.DrawText(iconText, new Point(
+            context.DrawText(iconText, Crisp.Snap(new Point(
                 x + (50 - iconText.Width) / 2,
-                y + 6));
+                y + 6)));
         }
 
         // Texte (en bas, peut être sur 2 lignes)
@@ -558,9 +558,9 @@ public class ProRibbon : Control
         foreach (var line in lines)
         {
             var lineText = CreateFormattedText(line.Trim(), textColor, 11);
-            context.DrawText(lineText, new Point(
+            context.DrawText(lineText, Crisp.Snap(new Point(
                 x + (50 - lineText.Width) / 2,
-                textY));
+                textY)));
             textY += 12;
         }
     }
@@ -577,13 +577,13 @@ public class ProRibbon : Control
         if (!string.IsNullOrEmpty(btn.Icon))
         {
             var iconText = CreateFormattedText(btn.Icon, textColor, 12);
-            context.DrawText(iconText, new Point(x + 4, y + (20 - iconText.Height) / 2));
+            context.DrawText(iconText, Crisp.Snap(new Point(x + 4, y + (20 - iconText.Height) / 2)));
         }
 
         // Texte
         var label = btn.Label.Replace("\n", " ");
         var labelText = CreateFormattedText(label, textColor, 11);
-        context.DrawText(labelText, new Point(x + 22, y + (20 - labelText.Height) / 2));
+        context.DrawText(labelText, Crisp.Snap(new Point(x + 22, y + (20 - labelText.Height) / 2)));
     }
     
     private FormattedText CreateFormattedText(string text, Color color, double size)

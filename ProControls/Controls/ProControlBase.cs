@@ -9,6 +9,15 @@ using System.Globalization;
 namespace ProControls.Controls;
 
 /// <summary>
+/// Alignement du texte sur la grille de pixels : une origine fractionnaire
+/// (ex. centrage (h - text.Height) / 2) fait baver les glyphes sur deux pixels.
+/// </summary>
+internal static class Crisp
+{
+    public static Point Snap(Point p) => new(Math.Round(p.X), Math.Round(p.Y));
+}
+
+/// <summary>
 /// Classe de base pour tous les contrôles Pro VS2022
 /// Gère les états visuels, le hit testing, et fournit des helpers de rendu
 /// </summary>
@@ -162,17 +171,17 @@ public abstract class ProControlBase : Control
     
     protected void DrawTextCentered(DrawingContext context, FormattedText text, Rect bounds)
     {
-        var origin = new Point(
+        var origin = Crisp.Snap(new Point(
             bounds.X + (bounds.Width - text.Width) / 2,
-            bounds.Y + (bounds.Height - text.Height) / 2);
+            bounds.Y + (bounds.Height - text.Height) / 2));
         context.DrawText(text, origin);
     }
-    
+
     protected void DrawTextLeft(DrawingContext context, FormattedText text, Rect bounds, double leftPadding = 0)
     {
-        var origin = new Point(
+        var origin = Crisp.Snap(new Point(
             bounds.X + leftPadding,
-            bounds.Y + (bounds.Height - text.Height) / 2);
+            bounds.Y + (bounds.Height - text.Height) / 2));
         context.DrawText(text, origin);
     }
     

@@ -267,7 +267,7 @@ public class ProRadioButton : ProControlBase
             var labelText = CreateText(Label, textColor, 13);
             var labelX = center.X + radius + 8;
             var labelY = (bounds.Height - labelText.Height) / 2;
-            context.DrawText(labelText, new Point(labelX, labelY));
+            context.DrawText(labelText, Crisp.Snap(new Point(labelX, labelY)));
         }
     }
 }

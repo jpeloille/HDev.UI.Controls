@@ -319,7 +319,7 @@ public class ProMenuItem : Control
         else if (!string.IsNullOrEmpty(Icon))
         {
             var iconText = CreateFormattedText(Icon, VS2022Theme.Text.Primary, 14);
-            context.DrawText(iconText, new Point(x, centerY - iconText.Height / 2));
+            context.DrawText(iconText, Crisp.Snap(new Point(x, centerY - iconText.Height / 2)));
             x += 24;
         }
         else
@@ -330,14 +330,14 @@ public class ProMenuItem : Control
         // Header
         var textColor = IsEnabled ? VS2022Theme.Text.Primary : VS2022Theme.Text.Disabled;
         var headerText = CreateFormattedText(Header, textColor);
-        context.DrawText(headerText, new Point(x, centerY - headerText.Height / 2));
+        context.DrawText(headerText, Crisp.Snap(new Point(x, centerY - headerText.Height / 2)));
         
         // Shortcut (aligné à droite)
         if (!string.IsNullOrEmpty(Shortcut))
         {
             var shortcutText = CreateFormattedText(Shortcut, VS2022Theme.Text.Tertiary, 12);
             var shortcutX = bounds.Width - shortcutText.Width - (HasItems ? 28 : 12);
-            context.DrawText(shortcutText, new Point(shortcutX, centerY - shortcutText.Height / 2));
+            context.DrawText(shortcutText, Crisp.Snap(new Point(shortcutX, centerY - shortcutText.Height / 2)));
         }
         
         // Flèche pour sous-menu

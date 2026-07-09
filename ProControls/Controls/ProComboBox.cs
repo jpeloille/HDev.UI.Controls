@@ -571,10 +571,8 @@ public class ProComboBox : Control
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto
         };
 
-        _popup = new Popup
+        var dropdownBorder = new Border
         {
-            Child = new Border
-            {
                 Background = new SolidColorBrush(VS2022Theme.Background.Panel),
                 BorderBrush = new SolidColorBrush(VS2022Theme.Border.Default),
                 BorderThickness = new Thickness(1),
@@ -587,7 +585,13 @@ public class ProComboBox : Control
                     Blur = 8,
                     Color = VS2022Theme.Shadow.Color
                 })
-            },
+        };
+        // Arbre visuel séparé : appliquer le rendu subpixel au contenu du dropdown
+        RenderOptions.SetTextRenderingMode(dropdownBorder, TextRenderingMode.SubpixelAntialias);
+
+        _popup = new Popup
+        {
+            Child = dropdownBorder,
             PlacementTarget = this,
             Placement = PlacementMode.Bottom,
             IsLightDismissEnabled = true,
@@ -914,7 +918,7 @@ public class ProComboBox : Control
 
             using (context.PushClip(textBounds))
             {
-                context.DrawText(formattedText, new Point(textBounds.X, textY));
+                context.DrawText(formattedText, Crisp.Snap(new Point(textBounds.X, textY)));
             }
         }
 

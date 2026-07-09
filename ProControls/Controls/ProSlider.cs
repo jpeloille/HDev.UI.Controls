@@ -212,7 +212,7 @@ public class ProSlider : ProControlBase
             var valueStr = Step >= 1 ? ((int)Value).ToString() : Value.ToString("F1");
             var valueText = CreateText(valueStr, VS2022Theme.Text.Secondary, 11);
             var textX = (bounds.Width - valueText.Width) / 2;
-            context.DrawText(valueText, new Point(textX, 2));
+            context.DrawText(valueText, Crisp.Snap(new Point(textX, 2)));
         }
         
         // Track (fond)
