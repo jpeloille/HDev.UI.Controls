@@ -597,6 +597,11 @@ public class ProComboBox : Control
             // Garde maison (cf. ProMenuPopup) : le light dismiss Avalonia ferme
             // le dropdown à la moindre désactivation de fenêtre
             IsLightDismissEnabled = false,
+            // Bas/Haut décidé nous-mêmes dans OpenDropDown (les popups overlay
+            // sont clippés aux bords de la fenêtre) : on ne garde que le glissement
+            // horizontal automatique, pas le flip vertical qui entrerait en conflit.
+            PlacementConstraintAdjustment =
+                Avalonia.Controls.Primitives.PopupPositioning.PopupPositionerConstraintAdjustment.SlideX,
             HorizontalOffset = 0,
             VerticalOffset = -1
         };
@@ -1174,6 +1179,28 @@ public class ProComboBox : Control
         // Hauteur basée sur DropDownRows
         var itemHeight = 24;
         _listBox.MaxHeight = _properties.DropDownRows * itemHeight;
+
+        // Placement Bas par défaut, basculé en Haut si le dropdown déborderait
+        // le bas de la fenêtre : un popup overlay est clippé aux bords de la
+        // fenêtre principale, il ne peut pas s'afficher en dehors.
+        var visibleRows = Math.Min(_properties.Items.Count, _properties.DropDownRows);
+        var estimatedHeight = visibleRows * itemHeight + 2; // + bordure
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel != null && this.TranslatePoint(new Point(0, 0), topLevel) is { } comboTopInWin)
+        {
+            var spaceBelow = topLevel.ClientSize.Height - (comboTopInWin.Y + Bounds.Height);
+            var spaceAbove = comboTopInWin.Y;
+            if (spaceBelow < estimatedHeight && spaceAbove > spaceBelow)
+            {
+                _popup.Placement = PlacementMode.Top;
+                _popup.VerticalOffset = 1; // chevauche la bordure du combo
+            }
+            else
+            {
+                _popup.Placement = PlacementMode.Bottom;
+                _popup.VerticalOffset = -1;
+            }
+        }
 
         _isDropDownOpen = true;
         _popup.IsOpen = true;
