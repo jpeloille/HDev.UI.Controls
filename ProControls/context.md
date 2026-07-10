@@ -28,30 +28,70 @@ Créer une **bibliothèque de contrôles Avalonia UI professionnels** avec le st
 - **Souveraineté technologique** : Code source maîtrisé à 100%
 - **Dépendances** : Avalonia UI 11.2.1 + projet frère `Julien.Avalonia.DataGrid` (datagrid maison, ../AvaloniaDataGrid)
 
-### 4. Contrôles cibles
+### 4. État des contrôles (audit du 10/07/2026)
 
-| Contrôle | Description | Priorité |
-|----------|-------------|----------|
-| ProButton | Boutons avec variantes (Primary, Secondary, Ghost, Danger) et tailles (S, M, L) | ✅ Fait |
-| ProTextBox | Champ texte avec placeholder, password, erreur, readonly | ✅ Fait |
-| ProCheckBox | Case à cocher tri-state | ✅ Fait |
-| ProRadioButton | Bouton radio avec groupes | ✅ Fait |
-| ProToggleSwitch | Interrupteur on/off | ✅ Fait |
-| ProSlider | Curseur de valeur | ✅ Fait |
-| ProProgressBar | Barre de progression (déterminée/indéterminée) | ✅ Fait |
-| ProBadge | Étiquette de statut colorée | ✅ Fait |
-| ProCard | Conteneur avec titre et bordure | ✅ Fait |
-| ProWindow | Fenêtre custom avec chrome personnalisé | ✅ Fait |
-| ProMenuBar | Barre de menu horizontale | ✅ Fait |
-| ProMenuItem | Élément de menu avec sous-menus | ✅ Fait |
-| ProContextMenu | Menu contextuel (clic droit) | ✅ Fait |
-| ProRibbon | Ruban style Office avec onglets et groupes | ✅ Fait |
-| ProComboBox | Liste déroulante | 🔲 À faire |
-| ProTabControl | Onglets de navigation | 🔲 À faire |
-| ProTreeView | Arborescence | 🔲 À faire |
-| JDataGrid (réf.) | Grille de données : référence au projet `Julien.Avalonia.DataGrid` (source de vérité) + skin Yaru (`Theme/DataGrid/YaruDataGrid.axaml`) | ✅ Référencé |
-| ProToolbar | Barre d'outils | 🔲 À faire |
-| ProStatusBar | Barre de statut | 🔲 À faire |
+Légende : ✅ complet · 🟡 fonctionnel (trous ciblés) · 🟠 façade (API déclarée, cœur non câblé) · 🔲 à faire
+
+| Contrôle | Équivalent DevExpress | État | Trous connus |
+|----------|----------------------|------|--------------|
+| ProButton | SimpleButton | ✅ | pas de variantes DropDown/Split |
+| ProCheckBox | CheckEdit | ✅ | — (tri-state réel) |
+| ProRadioButton | RadioGroup | ✅ | — (exclusivité + flèches OK) |
+| ProToggleSwitch | ToggleSwitch | ✅ | pas d'animation du thumb |
+| ProSlider | TrackBarControl | ✅ | horizontal seulement, pas de range |
+| ProProgressBar | ProgressBar + Marquee | ✅ | — |
+| ProBadge | Badge | ✅ | Info = Primary (même couleur) |
+| ProTextBox | TextEdit | 🟡 | **ni masque, ni validation** (HasError = flag externe) ; pas de multiline |
+| ProCard | GroupControl | 🟡 | `Elevation` déclarée jamais appliquée ; layout construit une seule fois (Title changé après coup ignoré) |
+| ProWindow | XtraForm | 🟡 | chrome custom = chemin secondaire (natif par défaut, cf. X11) ; Light forcé, pas de dark ; champs restore morts |
+| ProMenuBar / ProMenuItem / ProContextMenu | BarManager, PopupMenu | 🟡 | `Shortcut` décoratif (aucun raccourci réel), pas de mnémoniques Alt+lettre ni navigation clavier ; `IsEnabled` n'empêche pas le clic |
+| ProRibbon | RibbonControl | 🟠 | rendu = boutons + séparateurs SEULEMENT ; `ProRibbonComboBox`/`Gallery`/`ToggleGroup`/`DialogLauncher`/onglets contextuels déclarés mais jamais rendus ; pas de backstage/QAT |
+| ProComboBox | ComboBoxEdit | 🟠 | combo à **sélection seule** : pas de saisie texte (pas de TextBox interne) ; `AutoComplete`/`TextEditStyle`/`Sorted`/`ImmediatePopup`/`DrawItem` déclarés jamais lus ; `SelectAll()` vide. = ComboBoxEdit en `DisableTextEditor` |
+| JDataGrid (réf. `../AvaloniaDataGrid`, source de vérité) | GridControl/GridView | 🟡 | voir section JDataGrid ci-dessous |
+| ProTabControl | XtraTabControl | 🔲 | — |
+| ProTreeView | (TreeList sans colonnes) | 🔲 | — |
+| ProToolbar | Bars | 🔲 | — |
+| ProStatusBar | RibbonStatusBar | 🔲 | — |
+
+### 4bis. JDataGrid — état (audit du 10/07/2026)
+
+**Fait et réel** : tri multi-colonnes (moteur), édition in-place complète (BeginEdit/Commit/Cancel, éditeurs typés, événements annulables), groupement drag & drop multi-niveaux + group summaries, footer d'agrégats (Count/Sum/Avg/Min/Max), resize/réordonnancement/auto-génération colonnes, sélection ligne single/multi + clavier vertical, virtualisation lignes + recyclage, accès propriétés par délégués compilés (chemins `A.B.C`).
+
+**Motif récurrent : moteur riche, UI pas branchée** :
+- Filtrage : moteur ~20 opérateurs + groupes AND/OR, mais filter row = `Contains` codé en dur ; bouton filtre d'en-tête sans handler
+- Multi-tri : `ThenBy` OK par API, Shift+clic non câblé
+- Colonnes figées : `IsFrozen` OK en XAML, mais **le bouton pin ne gèle pas** (verrouille la position)
+- Sélection cellule : `SelectCell`/`SelectedCells` existent, jamais appelés (le clic sélectionne la ligne)
+- Best-fit : `MeasureColumnWidth` existe, `AutoFitWidth()` = `// TODO` vide
+- Types de colonnes : 10 déclarés, mais Image/ProgressBar/Hyperlink/Button/Custom rendus en texte ; `CellTemplate`/`HeaderTemplate` jamais consommés
+
+**Absent** : validation d'édition, new-row/suppression, recherche globale, filter panel/dropdown Excel, master-detail, bandes d'en-têtes, formatage conditionnel, export csv/xlsx, impression, copier/coller, navigation clavier horizontale, virtualisation colonnes, réactivité `INotifyPropertyChanged` par item, persistance layout, dark mode.
+
+Note : le README de AvaloniaDataGrid est marketing (tout ✅), se fier au code / à cet audit.
+
+### 4ter. Manques vs DevExpress WinForms, priorisés pour Synaxis/Ovidie
+
+**Critique (bloquant apps métier)** :
+- ProDateEdit / ProTimeEdit (FTL, planning, échéances) — l'éditeur le plus utilisé
+- ProSpinEdit / ProCalcEdit (numérique formaté — cœur d'Ovidie)
+- Socle commun masques + validation (prérequis des deux ci-dessus, trou de ProTextBox)
+- ProTabControl
+- ProLookUpEdit / GridLookUpEdit (référentiels avions/équipages/comptes ; s'appuyer sur JDataGrid)
+- ProMessageBox / ProDialog (XtraMessageBox) — trivial, utilisé partout
+
+**Important (structure d'application)** : ProTreeView puis TreeList (arbre+colonnes), ProToolbar, ProStatusBar, ProSearchControl, MemoEdit (multiline via ProTextBox), AlertControl/Toast, WaitForm/Splash, Docking (gros chantier, poste dispatcher), NavBar/Accordion, ButtonEdit, TokenEdit.
+
+**Gros chantiers à arbitrer** :
+- Scheduler / Gantt (planning équipages/pairings Synaxis — LE contrôle DX structurant)
+- Charts / Gauges / Sparkline (dashboards Ovidie) — arbitrage maison vs lib OSS (LiveCharts2/ScottPlot) au regard de la souveraineté
+- PivotGrid, VerticalGrid/PropertyGrid
+- RichEdit/Spreadsheet/PdfViewer/Reports : hors périmètre de la lib de contrôles, besoins applicatifs séparés
+
+**Ordre d'attaque recommandé** :
+1. Quick wins : ProMessageBox, ProStatusBar, ProToolbar, multiline ProTextBox + **assainir les façades** (câbler ou retirer les propriétés mortes de ProComboBox/ProRibbon/ProCard)
+2. Éditeurs : socle masque+validation → ProDateEdit → ProSpinEdit → ProComboBox éditable/autocomplete → ProLookUpEdit
+3. JDataGrid : brancher l'UI sur le moteur existant (opérateurs de filtre, Shift+clic, pin→freeze, best-fit, sélection cellule, copier/coller, export CSV)
+4. Gros chantiers : ProTabControl/TreeView, puis arbitrage Scheduler/Gantt et Charts
 
 ## Palette de couleurs Yaru (claire)
 
