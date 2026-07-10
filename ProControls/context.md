@@ -41,17 +41,18 @@ Légende : ✅ complet · 🟡 fonctionnel (trous ciblés) · 🟠 façade (API 
 | ProSlider | TrackBarControl | ✅ | horizontal seulement, pas de range |
 | ProProgressBar | ProgressBar + Marquee | ✅ | — |
 | ProBadge | Badge | ✅ | Info = Primary (même couleur) |
-| ProTextBox | TextEdit | 🟡 | **ni masque, ni validation** (HasError = flag externe) ; pas de multiline |
-| ProCard | GroupControl | 🟡 | `Elevation` déclarée jamais appliquée ; layout construit une seule fois (Title changé après coup ignoré) |
+| ProTextBox | TextEdit | 🟡 | **ni masque, ni validation** (HasError = flag externe). Multiline OK (`IsMultiline`, lot 1) |
+| ProCard | GroupControl | ✅ | `Elevation` appliquée + `Title`/`HasBorder` réactifs (lot 1) |
 | ProWindow | XtraForm | 🟡 | chrome custom = chemin secondaire (natif par défaut, cf. X11) ; Light forcé, pas de dark ; champs restore morts |
 | ProMenuBar / ProMenuItem / ProContextMenu | BarManager, PopupMenu | 🟡 | `Shortcut` décoratif (aucun raccourci réel), pas de mnémoniques Alt+lettre ni navigation clavier ; `IsEnabled` n'empêche pas le clic |
-| ProRibbon | RibbonControl | 🟠 | rendu = boutons + séparateurs SEULEMENT ; `ProRibbonComboBox`/`Gallery`/`ToggleGroup`/`DialogLauncher`/onglets contextuels déclarés mais jamais rendus ; pas de backstage/QAT |
-| ProComboBox | ComboBoxEdit | 🟠 | combo à **sélection seule** : pas de saisie texte (pas de TextBox interne) ; `AutoComplete`/`TextEditStyle`/`Sorted`/`ImmediatePopup`/`DrawItem` déclarés jamais lus ; `SelectAll()` vide. = ComboBoxEdit en `DisableTextEditor` |
+| ProRibbon | RibbonControl | 🟡 | rendu = boutons + séparateurs + dialog launcher (lot 1). Classes inertes (ComboBox/Gallery/ToggleGroup) retirées ; `AccentColor`/`IsContextual` toujours non exploités ; pas de backstage/QAT |
+| ProComboBox | ComboBoxEdit | 🟡 | combo à **sélection seule** (pas de TextBox interne — lot 2). Assaini au lot 1 : `Sorted`/type-to-select/`AllowNullInput`/`ShowNullValuePrompt` câblés ; `AutoComplete`/`TextEditStyle`/`ImmediatePopup`/`DrawItem`/`SelectAll` retirés (réintroduits au lot 2 éditable) |
+| ProToolbar | Bars | 🟡 | boutons icône/texte, toggles, séparateurs (lot 1). Pas d'overflow, pas de drag |
+| ProStatusBar | RibbonStatusBar | ✅ | panneaux gauche/droite, séparateurs, panneaux cliquables (lot 1) |
+| ProMessageBox | XtraMessageBox | ✅ | modale OK/OKCancel/YesNo/YesNoCancel, icônes, résultat typé, ShowAsync + raccourcis (lot 1) |
 | JDataGrid (réf. `../AvaloniaDataGrid`, source de vérité) | GridControl/GridView | 🟡 | voir section JDataGrid ci-dessous |
 | ProTabControl | XtraTabControl | 🔲 | — |
 | ProTreeView | (TreeList sans colonnes) | 🔲 | — |
-| ProToolbar | Bars | 🔲 | — |
-| ProStatusBar | RibbonStatusBar | 🔲 | — |
 
 ### 4bis. JDataGrid — état (audit du 10/07/2026)
 
@@ -88,7 +89,7 @@ Note : le README de AvaloniaDataGrid est marketing (tout ✅), se fier au code /
 - RichEdit/Spreadsheet/PdfViewer/Reports : hors périmètre de la lib de contrôles, besoins applicatifs séparés
 
 **Ordre d'attaque recommandé** :
-1. Quick wins : ProMessageBox, ProStatusBar, ProToolbar, multiline ProTextBox + **assainir les façades** (câbler ou retirer les propriétés mortes de ProComboBox/ProRibbon/ProCard)
+1. ~~Quick wins : ProMessageBox, ProStatusBar, ProToolbar, multiline ProTextBox + assainir les façades~~ ✅ **Fait le 10/07/2026** (validé visuellement)
 2. Éditeurs : socle masque+validation → ProDateEdit → ProSpinEdit → ProComboBox éditable/autocomplete → ProLookUpEdit
 3. JDataGrid : brancher l'UI sur le moteur existant (opérateurs de filtre, Shift+clic, pin→freeze, best-fit, sélection cellule, copier/coller, export CSV)
 4. Gros chantiers : ProTabControl/TreeView, puis arbitrage Scheduler/Gantt et Charts

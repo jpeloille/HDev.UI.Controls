@@ -8,16 +8,19 @@
         Width="1200" Height="900"
         WindowStartupLocation="CenterScreen">
     
-    <Grid Background="#F5F5F5" RowDefinitions="Auto,Auto,*">
-        
+    <Grid Background="#F5F5F5" RowDefinitions="Auto,Auto,Auto,*,Auto">
+
         <!-- Menu Bar -->
         <pro:ProMenuBar x:Name="MainMenuBar" Grid.Row="0"/>
-        
+
         <!-- Ribbon -->
         <pro:ProRibbon x:Name="MainRibbon" Grid.Row="1"/>
-        
+
+        <!-- Toolbar -->
+        <pro:ProToolbar x:Name="MainToolbar" Grid.Row="2"/>
+
         <!-- Content -->
-        <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="3" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="20" Spacing="20">
                 
                 <!-- ══════════════════════════════════════════════════════════ -->
@@ -83,6 +86,12 @@
                             <StackPanel Spacing="4">
                                 <TextBlock Text="Disabled" FontSize="12" Foreground="#6A6A6A"/>
                                 <pro:ProTextBox Text="Cannot edit" IsEnabled="False" Width="250"/>
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Multiline (MemoEdit)" FontSize="12" Foreground="#6A6A6A"/>
+                                <pro:ProTextBox IsMultiline="True" Width="250"
+                                                Placeholder="Notes multi-lignes : Entrée insère un saut de ligne..."/>
                             </StackPanel>
                         </StackPanel>
                     </pro:ProCard>
@@ -222,9 +231,45 @@
                                 <TextBlock Text="ReadOnly" FontSize="11" Foreground="#888"/>
                                 <pro:ProComboBox x:Name="ComboReadOnly" Width="200"/>
                             </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Sorted + type-to-select" FontSize="11" Foreground="#888"/>
+                                <pro:ProComboBox x:Name="ComboSorted" Width="200"/>
+                            </StackPanel>
                         </StackPanel>
                     </StackPanel>
                 </pro:ProCard>
+
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- DIALOGS / MESSAGEBOX -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <pro:ProCard Title="Dialogs (ProMessageBox)">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <pro:ProButton x:Name="BtnMsgInfo" Text="Information" Variant="Secondary"/>
+                        <pro:ProButton x:Name="BtnMsgWarning" Text="Avertissement" Variant="Secondary"/>
+                        <pro:ProButton x:Name="BtnMsgError" Text="Erreur" Variant="Danger"/>
+                        <pro:ProButton x:Name="BtnMsgQuestion" Text="Question Oui/Non" Variant="Primary"/>
+                        <TextBlock x:Name="MsgBoxResult" VerticalAlignment="Center" Margin="12,0,0,0"
+                                   FontSize="12" Foreground="#6A6A6A"/>
+                    </StackPanel>
+                </pro:ProCard>
+
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- CARDS / ELEVATIONS -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <Grid ColumnDefinitions="*,*,*,*">
+                    <pro:ProCard Title="Flat" Elevation="Flat" Grid.Column="0">
+                        <TextBlock Text="Elevation=Flat" FontSize="12" Foreground="#6A6A6A"/>
+                    </pro:ProCard>
+                    <pro:ProCard Title="Low" Elevation="Low" Grid.Column="1">
+                        <TextBlock Text="Elevation=Low" FontSize="12" Foreground="#6A6A6A"/>
+                    </pro:ProCard>
+                    <pro:ProCard Title="Medium" Elevation="Medium" Grid.Column="2">
+                        <TextBlock Text="Elevation=Medium" FontSize="12" Foreground="#6A6A6A"/>
+                    </pro:ProCard>
+                    <pro:ProCard Title="High" Elevation="High" Grid.Column="3">
+                        <TextBlock Text="Elevation=High" FontSize="12" Foreground="#6A6A6A"/>
+                    </pro:ProCard>
+                </Grid>
 
                 <!-- ══════════════════════════════════════════════════════════ -->
                 <!-- DATAGRID -->
@@ -269,5 +314,8 @@
                 
             </StackPanel>
         </ScrollViewer>
+
+        <!-- Status Bar -->
+        <pro:ProStatusBar x:Name="MainStatusBar" Grid.Row="4"/>
     </Grid>
 </pro:ProWindow>

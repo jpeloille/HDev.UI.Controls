@@ -22,6 +22,8 @@ public class ProRibbon : Control
     private Point _mousePosition;
     private ProRibbonButton? _hoveredButton;
     private ProRibbonButton? _pressedButton;
+    private ProRibbonGroup? _hoveredLauncher;
+    private ProRibbonGroup? _pressedLauncher;
     
     // ═══════════════════════════════════════════════════════════════
     // PROPRIÉTÉS
@@ -100,6 +102,14 @@ public class ProRibbon : Control
             InvalidateVisual();
         }
 
+        // Déterminer le dialog launcher survolé
+        var newHoveredLauncher = GetLauncherAtPosition(_mousePosition);
+        if (newHoveredLauncher != _hoveredLauncher)
+        {
+            _hoveredLauncher = newHoveredLauncher;
+            InvalidateVisual();
+        }
+
         base.OnPointerMoved(e);
     }
 
@@ -108,6 +118,8 @@ public class ProRibbon : Control
         _hoveredTabIndex = -1;
         _hoveredButton = null;
         _pressedButton = null;
+        _hoveredLauncher = null;
+        _pressedLauncher = null;
         InvalidateVisual();
         base.OnPointerExited(e);
     }
@@ -145,6 +157,17 @@ public class ProRibbon : Control
                 InvalidateVisual();
                 e.Handled = true;
             }
+            else
+            {
+                // Clic sur un dialog launcher ?
+                var launcher = GetLauncherAtPosition(pos);
+                if (launcher != null)
+                {
+                    _pressedLauncher = launcher;
+                    InvalidateVisual();
+                    e.Handled = true;
+                }
+            }
         }
 
         base.OnPointerPressed(e);
@@ -170,6 +193,20 @@ public class ProRibbon : Control
                 e.Handled = true;
             }
         }
+        else if (_pressedLauncher != null)
+        {
+            var pos = e.GetPosition(this);
+            var released = GetLauncherAtPosition(pos);
+            var launcher = _pressedLauncher;
+            _pressedLauncher = null;
+            InvalidateVisual();
+
+            if (released == launcher)
+            {
+                launcher.DialogLauncher?.Invoke();
+                e.Handled = true;
+            }
+        }
 
         base.OnPointerReleased(e);
     }
@@ -186,6 +223,42 @@ public class ProRibbon : Control
         {
             if (item is ProRibbonButton btn && rect.Contains(pos))
                 return btn;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Rectangle du dialog launcher d'un groupe (coin bas-droit, dans la rangée du label)
+    /// </summary>
+    private static Rect GetLauncherRect(double groupX, double groupWidth, double y)
+        => new(groupX + groupWidth - 18, y + ContentHeight - GroupLabelHeight + 1, 14, 14);
+
+    /// <summary>
+    /// Énumère les dialog launchers du tab sélectionné avec leur rectangle
+    /// (même marche que le rendu, cf. GetContentLayout)
+    /// </summary>
+    private IEnumerable<(ProRibbonGroup Group, Rect Rect)> GetLauncherLayout()
+    {
+        if (SelectedTab == null) yield break;
+
+        double groupX = 6;
+        foreach (var group in SelectedTab.Groups)
+        {
+            var groupWidth = MeasureGroupWidth(group);
+            if (group.DialogLauncher != null)
+                yield return (group, GetLauncherRect(groupX, groupWidth, TabRowHeight));
+            groupX += groupWidth;
+        }
+    }
+
+    private ProRibbonGroup? GetLauncherAtPosition(Point pos)
+    {
+        if (IsCollapsed || pos.Y <= TabRowHeight) return null;
+
+        foreach (var (group, rect) in GetLauncherLayout())
+        {
+            if (rect.Contains(pos))
+                return group;
         }
         return null;
     }
@@ -503,6 +576,36 @@ public class ProRibbon : Control
                     new Point(rect.X, rect.Bottom));
             }
         }
+
+        // Dialog launcher (coin bas-droit, style Office)
+        if (group.DialogLauncher != null)
+            RenderDialogLauncher(context, group, GetLauncherRect(x, width, y));
+    }
+
+    private void RenderDialogLauncher(DrawingContext context, ProRibbonGroup group, Rect rect)
+    {
+        var isHovered = group == _hoveredLauncher;
+        var isPressed = group == _pressedLauncher && isHovered;
+
+        if (isHovered)
+        {
+            context.FillRectangle(new SolidColorBrush(isPressed
+                ? ProTheme.Background.ControlPressed
+                : ProTheme.Background.ControlHover), rect, 3);
+        }
+
+        // Glyphe : coin haut-gauche + flèche diagonale vers le bas-droit
+        var pen = new Pen(new SolidColorBrush(ProTheme.Text.Secondary), 1.2);
+        var cx = rect.X + 4;
+        var cy = rect.Y + 4;
+        var ax = rect.Right - 4;
+        var ay = rect.Bottom - 4;
+
+        context.DrawLine(pen, new Point(cx, cy + 3), new Point(cx, cy));     // coin vertical
+        context.DrawLine(pen, new Point(cx, cy), new Point(cx + 3, cy));     // coin horizontal
+        context.DrawLine(pen, new Point(cx + 2, cy + 2), new Point(ax, ay)); // diagonale
+        context.DrawLine(pen, new Point(ax - 3, ay), new Point(ax, ay));     // pointe horizontale
+        context.DrawLine(pen, new Point(ax, ay - 3), new Point(ax, ay));     // pointe verticale
     }
 
     private void RenderButtonBackground(DrawingContext context, ProRibbonButton btn, Rect btnRect, float radius)

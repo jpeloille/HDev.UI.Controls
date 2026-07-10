@@ -40,6 +40,9 @@ public class ProTextBox : Border
     public static readonly StyledProperty<int> MaxLengthProperty =
         AvaloniaProperty.Register<ProTextBox, int>(nameof(MaxLength));
 
+    public static readonly StyledProperty<bool> IsMultilineProperty =
+        AvaloniaProperty.Register<ProTextBox, bool>(nameof(IsMultiline));
+
     public string? Text
     {
         get => GetValue(TextProperty);
@@ -74,6 +77,16 @@ public class ProTextBox : Border
     {
         get => GetValue(MaxLengthProperty);
         set => SetValue(MaxLengthProperty, value);
+    }
+
+    /// <summary>
+    /// Mode multi-lignes (rôle MemoEdit) : Entrée insère un saut de ligne,
+    /// le texte s'enroule et défile verticalement
+    /// </summary>
+    public bool IsMultiline
+    {
+        get => GetValue(IsMultilineProperty);
+        set => SetValue(IsMultilineProperty, value);
     }
     
     // ═══════════════════════════════════════════════════════════════
@@ -138,6 +151,7 @@ public class ProTextBox : Border
         HasErrorProperty.Changed.AddClassHandler<ProTextBox>((x, _) => x.UpdateVisualState());
         IsPasswordProperty.Changed.AddClassHandler<ProTextBox>((x, e) => x.OnIsPasswordChanged());
         MaxLengthProperty.Changed.AddClassHandler<ProTextBox>((x, e) => x.OnMaxLengthChanged());
+        IsMultilineProperty.Changed.AddClassHandler<ProTextBox>((x, _) => x.OnIsMultilineChanged());
         IsEnabledProperty.Changed.AddClassHandler<ProTextBox>((x, _) => x.UpdateVisualState());
     }
     
@@ -155,6 +169,26 @@ public class ProTextBox : Border
     private void OnIsReadOnlyChanged() => _innerTextBox.IsReadOnly = IsReadOnly;
     private void OnIsPasswordChanged() => _innerTextBox.PasswordChar = IsPassword ? '●' : '\0';
     private void OnMaxLengthChanged() => _innerTextBox.MaxLength = MaxLength;
+
+    private void OnIsMultilineChanged()
+    {
+        if (IsMultiline)
+        {
+            _innerTextBox.AcceptsReturn = true;
+            _innerTextBox.TextWrapping = TextWrapping.Wrap;
+            _innerTextBox.VerticalAlignment = VerticalAlignment.Stretch;
+            _innerTextBox.VerticalContentAlignment = VerticalAlignment.Top;
+            MinHeight = ProTheme.Size.ControlHeightMedium * 2.6; // ~3 lignes
+        }
+        else
+        {
+            _innerTextBox.AcceptsReturn = false;
+            _innerTextBox.TextWrapping = TextWrapping.NoWrap;
+            _innerTextBox.VerticalAlignment = VerticalAlignment.Center;
+            _innerTextBox.VerticalContentAlignment = VerticalAlignment.Center;
+            MinHeight = ProTheme.Size.ControlHeightMedium;
+        }
+    }
     
     // ═══════════════════════════════════════════════════════════════
     // ÉVÉNEMENTS SOURIS

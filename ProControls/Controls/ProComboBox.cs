@@ -14,6 +14,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Globalization;
+using System.Linq;
 
 namespace ProControls.Controls;
 
@@ -95,11 +96,8 @@ public class ProComboBoxProperties : INotifyPropertyChanged
     private bool _readOnly;
     private int _dropDownRows = 7;
     private bool _showDropDown = true;
-    private TextEditStyles _textEditStyle = TextEditStyles.Standard;
     private bool _caseSensitiveSearch;
-    private bool _immediatePopup;
     private bool _sorted;
-    private AutoCompleteMode _autoComplete = AutoCompleteMode.Default;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -179,16 +177,7 @@ public class ProComboBoxProperties : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Style d'édition du texte
-    /// </summary>
-    public TextEditStyles TextEditStyle
-    {
-        get => _textEditStyle;
-        set { _textEditStyle = value; OnPropertyChanged(nameof(TextEditStyle)); }
-    }
-
-    /// <summary>
-    /// Recherche sensible à la casse
+    /// Recherche sensible à la casse (type-to-select clavier, FindItem)
     /// </summary>
     public bool CaseSensitiveSearch
     {
@@ -197,16 +186,7 @@ public class ProComboBoxProperties : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Ouvrir le popup immédiatement lors de la saisie
-    /// </summary>
-    public bool ImmediatePopup
-    {
-        get => _immediatePopup;
-        set { _immediatePopup = value; OnPropertyChanged(nameof(ImmediatePopup)); }
-    }
-
-    /// <summary>
-    /// Trier automatiquement les items
+    /// Trier les items affichés dans le dropdown (ordre alphabétique du texte affiché)
     /// </summary>
     public bool Sorted
     {
@@ -214,14 +194,9 @@ public class ProComboBoxProperties : INotifyPropertyChanged
         set { _sorted = value; OnPropertyChanged(nameof(Sorted)); }
     }
 
-    /// <summary>
-    /// Mode d'auto-complétion
-    /// </summary>
-    public AutoCompleteMode AutoComplete
-    {
-        get => _autoComplete;
-        set { _autoComplete = value; OnPropertyChanged(nameof(AutoComplete)); }
-    }
+    // NOTE : AutoComplete, TextEditStyle et ImmediatePopup (API DevExpress) sont
+    // volontairement absents tant que le combo n'a pas de zone de saisie —
+    // ils seront réintroduits avec le cœur éditable.
 
     protected void OnPropertyChanged(string propertyName)
     {
@@ -239,43 +214,9 @@ public enum ShowNullValuePromptOptions
     EditorReadOnly
 }
 
-/// <summary>
-/// Style d'édition du texte
-/// </summary>
-public enum TextEditStyles
-{
-    Standard,
-    DisableTextEditor,
-    HideTextEditor
-}
-
-/// <summary>
-/// Mode d'auto-complétion
-/// </summary>
-public enum AutoCompleteMode
-{
-    Default,
-    None,
-    Append,
-    Suggest,
-    SuggestAppend
-}
-
 // ═══════════════════════════════════════════════════════════════════════════
 // ÉVÉNEMENTS ARGS
 // ═══════════════════════════════════════════════════════════════════════════
-
-/// <summary>
-/// Arguments pour l'événement DrawItem
-/// </summary>
-public class ProDrawItemEventArgs : EventArgs
-{
-    public int Index { get; set; }
-    public object? Item { get; set; }
-    public Rect Bounds { get; set; }
-    public DrawingContext? Context { get; set; }
-    public bool Handled { get; set; }
-}
 
 /// <summary>
 /// Arguments pour l'événement CustomDisplayText
@@ -510,12 +451,8 @@ public class ProComboBox : Control
     /// </summary>
     public event EventHandler<ProCustomDisplayTextEventArgs>? CustomDisplayText;
 
-    /// <summary>
-    /// Déclenché pour dessiner un item personnalisé
-    /// </summary>
-#pragma warning disable CS0067 // Pas encore consommé par le rendu — sort du tri de l'API façade (implémenter ou retirer)
-    public event EventHandler<ProDrawItemEventArgs>? DrawItem;
-#pragma warning restore CS0067
+    // NOTE : l'événement owner-draw DrawItem (API DevExpress) a été retiré tant
+    // que le rendu des items n'est pas personnalisable — utiliser CustomDisplayText.
 
     /// <summary>
     /// Déclenché lors du clic sur un bouton
@@ -727,21 +664,8 @@ public class ProComboBox : Control
         _oldEditValue = null;
     }
 
-    /// <summary>
-    /// Sélectionne tout le texte
-    /// </summary>
-    public void SelectAll()
-    {
-        // Dans un vrai TextBox, cela sélectionnerait tout
-    }
-
-    /// <summary>
-    /// Désélectionne le texte
-    /// </summary>
-    public void DeselectAll()
-    {
-        // Dans un vrai TextBox, cela désélectionnerait tout
-    }
+    // NOTE : SelectAll/DeselectAll (sélection de texte, API DevExpress) retirés
+    // tant que le combo n'a pas de zone de saisie — réintroduits avec le cœur éditable.
 
     /// <summary>
     /// Trouve un item par son texte
@@ -933,8 +857,17 @@ public class ProComboBox : Control
 
         if (_editValue == null || string.IsNullOrEmpty(_text))
         {
+            // ShowNullValuePrompt conditionne l'affichage du placeholder
+            var promptAllowed = _properties.ShowNullValuePrompt switch
+            {
+                ShowNullValuePromptOptions.EmptyValue => !_properties.ReadOnly,
+                ShowNullValuePromptOptions.EditorFocused => IsFocused && !_properties.ReadOnly,
+                ShowNullValuePromptOptions.EditorReadOnly => true,
+                _ => true
+            };
+
             // Afficher NullValuePrompt ou NullText
-            if (!string.IsNullOrEmpty(_properties.NullValuePrompt))
+            if (promptAllowed && !string.IsNullOrEmpty(_properties.NullValuePrompt))
             {
                 displayText = _properties.NullValuePrompt;
                 isPlaceholder = true;
@@ -1118,9 +1051,79 @@ public class ProComboBox : Control
                 ToggleDropDown();
                 e.Handled = true;
                 break;
+
+            case Key.Delete:
+            case Key.Back:
+                // AllowNullInput : effacer la valeur au clavier
+                if (_properties.AllowNullInput && _editValue != null)
+                {
+                    var oldIdx = SelectedIndex;
+                    EditValue = null;
+                    if (_listBox != null)
+                        _listBox.SelectedItem = null;
+                    if (oldIdx != -1)
+                    {
+                        SelectedIndexChanged?.Invoke(this, EventArgs.Empty);
+                        SelectedValueChanged?.Invoke(this, EventArgs.Empty);
+                    }
+                }
+                e.Handled = true;
+                break;
         }
 
         base.OnKeyDown(e);
+    }
+
+    // Type-to-select : taper les premières lettres d'un item le sélectionne
+    // (buffer de préfixe réinitialisé après 1 s d'inactivité, cf. combos WinForms)
+    private string _searchPrefix = "";
+    private DateTime _lastSearchInput;
+
+    protected override void OnTextInput(TextInputEventArgs e)
+    {
+        if (!IsEnabled || _properties.ReadOnly || string.IsNullOrEmpty(e.Text))
+        {
+            base.OnTextInput(e);
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        if ((now - _lastSearchInput).TotalMilliseconds > 1000)
+            _searchPrefix = "";
+        _lastSearchInput = now;
+
+        // Espace seul = toggle du dropdown (géré par OnKeyDown), pas une recherche
+        if (e.Text == " " && _searchPrefix.Length == 0)
+        {
+            base.OnTextInput(e);
+            return;
+        }
+
+        _searchPrefix += e.Text;
+
+        var index = FindItemByPrefix(_searchPrefix);
+        if (index >= 0)
+            SelectItemAt(index);
+
+        e.Handled = true;
+        base.OnTextInput(e);
+    }
+
+    private void SelectItemAt(int index)
+    {
+        if (index < 0 || index >= _properties.Items.Count)
+            return;
+
+        var oldIndex = SelectedIndex;
+        SelectedIndex = index;
+        if (_listBox != null)
+            _listBox.SelectedIndex = index;
+
+        if (oldIndex != SelectedIndex)
+        {
+            SelectedIndexChanged?.Invoke(this, EventArgs.Empty);
+            SelectedValueChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     protected override void OnGotFocus(GotFocusEventArgs e)
@@ -1165,8 +1168,10 @@ public class ProComboBox : Control
         if (popupArgs.Cancel)
             return;
 
-        // Mettre à jour les items
-        _listBox.ItemsSource = _properties.Items;
+        // Mettre à jour les items (vue triée si Sorted, la collection n'est pas modifiée)
+        _listBox.ItemsSource = _properties.Sorted
+            ? _properties.Items.OrderBy(GetItemText, StringComparer.CurrentCultureIgnoreCase).ToList()
+            : _properties.Items;
         _listBox.SelectedItem = _editValue;
 
         // Largeur du popup = largeur du combo

@@ -26,8 +26,79 @@ public partial class MainWindow : ProWindow
 
         InitializeMenuBar();
         InitializeRibbon();
+        InitializeToolbar();
+        InitializeStatusBar();
         InitializeComboBoxDemo();
+        InitializeMessageBoxDemo();
         InitializeDataGrid();
+    }
+
+    private void InitializeToolbar()
+    {
+        var toolbar = this.FindControl<ProToolbar>("MainToolbar");
+        if (toolbar == null) return;
+
+        toolbar.AddButton("📄", "Nouveau");
+        toolbar.AddButton("📂", "Ouvrir");
+        toolbar.AddButton("💾", "Enregistrer");
+        toolbar.AddSeparator();
+        toolbar.AddButton("✂️");
+        toolbar.AddButton("📋");
+        toolbar.AddButton("📌");
+        toolbar.AddSeparator();
+        toolbar.AddToggle("🔍", "Aperçu", isChecked: true);
+        var boldToggle = toolbar.AddToggle("𝐁");
+        boldToggle.Tooltip = "Gras";
+        toolbar.AddSeparator();
+        toolbar.AddButton("🖨️", "Imprimer", () =>
+        {
+            var statusBar = this.FindControl<ProStatusBar>("MainStatusBar");
+            if (statusBar != null && statusBar.Items.Count > 0)
+                statusBar.Items[0].Text = "Impression demandée...";
+        });
+    }
+
+    private void InitializeStatusBar()
+    {
+        var statusBar = this.FindControl<ProStatusBar>("MainStatusBar");
+        if (statusBar == null) return;
+
+        statusBar.AddPanel("Prêt");
+        statusBar.AddSeparator();
+        statusBar.AddPanel("17 contrôles", icon: "🧩");
+        statusBar.AddPanel("UTF-8", ProStatusBarPanelAlignment.Right);
+        statusBar.AddSeparator(ProStatusBarPanelAlignment.Right);
+        var zoomPanel = statusBar.AddPanel("100 %", ProStatusBarPanelAlignment.Right, icon: "🔍");
+        zoomPanel.Click += (s, e) => zoomPanel.Text = zoomPanel.Text == "100 %" ? "125 %" : "100 %";
+    }
+
+    private void InitializeMessageBoxDemo()
+    {
+        var result = this.FindControl<TextBlock>("MsgBoxResult");
+        void ShowResult(ProDialogResult r)
+        {
+            if (result != null) result.Text = $"Résultat : {r}";
+        }
+
+        var btnInfo = this.FindControl<ProButton>("BtnMsgInfo");
+        if (btnInfo != null)
+            btnInfo.Click += async (s, e) =>
+                ShowResult(await ProMessageBox.ShowInfoAsync(this, "Les contrôles du lot 1 sont installés."));
+
+        var btnWarning = this.FindControl<ProButton>("BtnMsgWarning");
+        if (btnWarning != null)
+            btnWarning.Click += async (s, e) =>
+                ShowResult(await ProMessageBox.ShowWarningAsync(this, "Cette action modifiera la configuration."));
+
+        var btnError = this.FindControl<ProButton>("BtnMsgError");
+        if (btnError != null)
+            btnError.Click += async (s, e) =>
+                ShowResult(await ProMessageBox.ShowErrorAsync(this, "Impossible de contacter le serveur.\nVérifiez la connexion réseau."));
+
+        var btnQuestion = this.FindControl<ProButton>("BtnMsgQuestion");
+        if (btnQuestion != null)
+            btnQuestion.Click += async (s, e) =>
+                ShowResult(await ProMessageBox.ShowQuestionAsync(this, "Voulez-vous enregistrer les modifications avant de quitter ?"));
     }
 
     private void InitializeDataGrid()
@@ -91,6 +162,18 @@ public partial class MainWindow : ProWindow
             comboReadOnly.Properties.Items.AddRange(priorities);
             comboReadOnly.SelectedIndex = 2; // "Haute"
             comboReadOnly.ReadOnly = true;
+        }
+
+        // ComboBox trié + type-to-select (taper "ma" sélectionne Marseille)
+        var comboSorted = this.FindControl<ProComboBox>("ComboSorted");
+        if (comboSorted != null)
+        {
+            comboSorted.Properties.NullValuePrompt = "Taper pour rechercher...";
+            comboSorted.Properties.Items.AddRange(new object[]
+            {
+                "Nouméa", "Paris", "Marseille", "Lyon", "Bordeaux", "Toulouse", "Auckland", "Sydney"
+            });
+            comboSorted.Properties.Sorted = true;
         }
     }
     
@@ -160,7 +243,7 @@ public partial class MainWindow : ProWindow
             g.AddSmallButton("Format", "🎨");
         });
         
-        // Font group
+        // Font group (avec dialog launcher, cf. coin bas-droit style Office)
         homeTab.AddGroup("Font", g =>
         {
             g.AddSmallButton("Bold", "B");
@@ -169,6 +252,8 @@ public partial class MainWindow : ProWindow
             g.AddSeparator();
             g.AddSmallButton("Font Color", "A");
             g.AddSmallButton("Highlight", "🖍️");
+            g.DialogLauncher = async () =>
+                await ProMessageBox.ShowInfoAsync(this, "Dialog launcher du groupe Font : ouvrirait la boîte de dialogue complète des polices.", "Font");
         });
         
         // Paragraph group
