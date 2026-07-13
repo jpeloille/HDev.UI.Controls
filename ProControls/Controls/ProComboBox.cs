@@ -98,6 +98,9 @@ public class ProComboBoxProperties : INotifyPropertyChanged
     private bool _showDropDown = true;
     private bool _caseSensitiveSearch;
     private bool _sorted;
+    private TextEditStyles _textEditStyle = TextEditStyles.DisableTextEditor;
+    private AutoCompleteMode _autoComplete = AutoCompleteMode.Default;
+    private bool _immediatePopup;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -137,7 +140,7 @@ public class ProComboBoxProperties : INotifyPropertyChanged
     public string NullValuePrompt
     {
         get => _nullValuePrompt;
-        set { _nullValuePrompt = value; OnPropertyChanged(nameof(NullValuePrompt)); _owner.InvalidateVisual(); }
+        set { _nullValuePrompt = value; OnPropertyChanged(nameof(NullValuePrompt)); _owner.OnPropertiesVisualChanged(); }
     }
 
     /// <summary>
@@ -155,7 +158,7 @@ public class ProComboBoxProperties : INotifyPropertyChanged
     public bool ReadOnly
     {
         get => _readOnly;
-        set { _readOnly = value; OnPropertyChanged(nameof(ReadOnly)); _owner.InvalidateVisual(); }
+        set { _readOnly = value; OnPropertyChanged(nameof(ReadOnly)); _owner.OnPropertiesVisualChanged(); }
     }
 
     /// <summary>
@@ -194,9 +197,32 @@ public class ProComboBoxProperties : INotifyPropertyChanged
         set { _sorted = value; OnPropertyChanged(nameof(Sorted)); }
     }
 
-    // NOTE : AutoComplete, TextEditStyle et ImmediatePopup (API DevExpress) sont
-    // volontairement absents tant que le combo n'a pas de zone de saisie —
-    // ils seront réintroduits avec le cœur éditable.
+    /// <summary>
+    /// Style d'édition : Standard = zone de saisie éditable,
+    /// DisableTextEditor = sélection seule (défaut), HideTextEditor = pas de texte
+    /// </summary>
+    public TextEditStyles TextEditStyle
+    {
+        get => _textEditStyle;
+        set { _textEditStyle = value; OnPropertyChanged(nameof(TextEditStyle)); _owner.OnTextEditStyleChanged(); }
+    }
+
+    /// <summary>
+    /// Auto-complétion en mode Standard (Default = SuggestAppend) :
+    /// Suggest filtre le dropdown, Append complète le texte saisi
+    /// </summary>
+    public AutoCompleteMode AutoComplete
+    {
+        get => _autoComplete;
+        set { _autoComplete = value; OnPropertyChanged(nameof(AutoComplete)); }
+    }
+
+    /// <summary>Ouvrir le dropdown dès la première frappe (mode Standard)</summary>
+    public bool ImmediatePopup
+    {
+        get => _immediatePopup;
+        set { _immediatePopup = value; OnPropertyChanged(nameof(ImmediatePopup)); }
+    }
 
     protected void OnPropertyChanged(string propertyName)
     {
@@ -212,6 +238,34 @@ public enum ShowNullValuePromptOptions
     EmptyValue,
     EditorFocused,
     EditorReadOnly
+}
+
+/// <summary>
+/// Style d'édition du texte
+/// </summary>
+public enum TextEditStyles
+{
+    /// <summary>Zone de saisie éditable avec auto-complétion</summary>
+    Standard,
+    /// <summary>Texte affiché mais non éditable — sélection par dropdown seule (défaut)</summary>
+    DisableTextEditor,
+    /// <summary>Aucun texte affiché</summary>
+    HideTextEditor
+}
+
+/// <summary>
+/// Mode d'auto-complétion (mode Standard)
+/// </summary>
+public enum AutoCompleteMode
+{
+    /// <summary>Équivaut à SuggestAppend</summary>
+    Default,
+    None,
+    /// <summary>Complète le texte avec le premier item correspondant (suffixe sélectionné)</summary>
+    Append,
+    /// <summary>Filtre le dropdown sur le préfixe saisi</summary>
+    Suggest,
+    SuggestAppend
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -273,6 +327,13 @@ public class ProComboBox : Control
     private object? _oldEditValue;
     private bool _isModified;
     private string _text = "";
+
+    // Mode Standard (éditable) : zone de saisie réelle + auto-complétion
+    private TextBox? _editTextBox;
+    private bool _syncingEditText;
+    private int _lastTypedLength;
+
+    private bool IsEditable => _properties.TextEditStyle == TextEditStyles.Standard;
 
     // ═══════════════════════════════════════════════════════════════
     // STYLED PROPERTIES (Avalonia)
@@ -372,6 +433,7 @@ public class ProComboBox : Control
             if (_text != value)
             {
                 _text = value;
+                SyncEditTextBox();
                 InvalidateVisual();
                 TextChanged?.Invoke(this, EventArgs.Empty);
             }
@@ -664,8 +726,15 @@ public class ProComboBox : Control
         _oldEditValue = null;
     }
 
-    // NOTE : SelectAll/DeselectAll (sélection de texte, API DevExpress) retirés
-    // tant que le combo n'a pas de zone de saisie — réintroduits avec le cœur éditable.
+    /// <summary>
+    /// Sélectionne tout le texte de la zone de saisie (mode Standard)
+    /// </summary>
+    public void SelectAll() => _editTextBox?.SelectAll();
+
+    /// <summary>
+    /// Désélectionne le texte de la zone de saisie (mode Standard)
+    /// </summary>
+    public void DeselectAll() => _editTextBox?.ClearSelection();
 
     /// <summary>
     /// Trouve un item par son texte
@@ -761,9 +830,248 @@ public class ProComboBox : Control
         InvalidateVisual();
     }
 
+    /// <summary>Répercute NullValuePrompt/ReadOnly sur la zone de saisie interne</summary>
+    internal void OnPropertiesVisualChanged()
+    {
+        if (_editTextBox != null)
+        {
+            _editTextBox.Watermark = _properties.NullValuePrompt;
+            _editTextBox.IsReadOnly = _properties.ReadOnly;
+        }
+        InvalidateVisual();
+    }
+
     private void UpdateTextFromEditValue()
     {
         _text = GetItemText(_editValue);
+        SyncEditTextBox();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // MODE ÉDITABLE (TextEditStyle.Standard) : saisie + auto-complétion
+    // ═══════════════════════════════════════════════════════════════
+
+    internal void OnTextEditStyleChanged()
+    {
+        if (IsEditable && _editTextBox == null)
+            CreateEditTextBox();
+        else if (!IsEditable && _editTextBox != null)
+            RemoveEditTextBox();
+
+        InvalidateMeasure();
+        InvalidateVisual();
+    }
+
+    private void CreateEditTextBox()
+    {
+        _editTextBox = new TextBox
+        {
+            BorderThickness = new Thickness(0),
+            Background = Brushes.Transparent,
+            Padding = new Thickness(8, 0, 0, 0),
+            MinHeight = 0,
+            VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            FontFamily = new FontFamily(ProTheme.Typography.FontFamily),
+            FontSize = ProTheme.Typography.FontSizeBody,
+            Foreground = new SolidColorBrush(ProTheme.Text.Primary),
+            CaretBrush = new SolidColorBrush(ProTheme.Text.Primary),
+            SelectionBrush = new SolidColorBrush(ProTheme.WithOpacity(ProTheme.Accent.Primary, 80)),
+            SelectionForegroundBrush = new SolidColorBrush(Colors.White),
+            Watermark = _properties.NullValuePrompt,
+            IsReadOnly = _properties.ReadOnly,
+            Text = _text
+        };
+
+        _editTextBox.TextChanged += (s, e) => OnEditTextChanged();
+        _editTextBox.AddHandler(KeyDownEvent, OnEditTextBoxKeyDown, RoutingStrategies.Tunnel);
+        _editTextBox.GotFocus += (s, e) => InvalidateVisual();
+        _editTextBox.LostFocus += (s, e) =>
+        {
+            // Ne pas commiter si le focus part vers le dropdown (clic sur un item)
+            if (!_isDropDownOpen)
+                CommitTypedText();
+            InvalidateVisual();
+        };
+
+        VisualChildren.Add(_editTextBox);
+        LogicalChildren.Add(_editTextBox);
+    }
+
+    private void RemoveEditTextBox()
+    {
+        if (_editTextBox == null) return;
+        VisualChildren.Remove(_editTextBox);
+        LogicalChildren.Remove(_editTextBox);
+        _editTextBox = null;
+    }
+
+    private void SyncEditTextBox()
+    {
+        if (_editTextBox != null && _editTextBox.Text != _text)
+        {
+            _syncingEditText = true;
+            _editTextBox.Text = _text;
+            _lastTypedLength = _text.Length;
+            _syncingEditText = false;
+        }
+    }
+
+    private void OnEditTextChanged()
+    {
+        if (_syncingEditText || _editTextBox == null) return;
+
+        var typed = _editTextBox.Text ?? "";
+        var isDeletion = typed.Length < _lastTypedLength;
+        _lastTypedLength = typed.Length;
+
+        _text = typed;
+        TextChanged?.Invoke(this, EventArgs.Empty);
+
+        var mode = _properties.AutoComplete == AutoCompleteMode.Default
+            ? AutoCompleteMode.SuggestAppend
+            : _properties.AutoComplete;
+
+        if (string.IsNullOrEmpty(typed))
+        {
+            if (_isDropDownOpen)
+                RefreshDropDownItems(null);
+            return;
+        }
+
+        // Suggest : ouvrir et filtrer le dropdown sur le préfixe saisi
+        if (mode is AutoCompleteMode.Suggest or AutoCompleteMode.SuggestAppend
+            || _properties.ImmediatePopup)
+        {
+            if (!_isDropDownOpen && (DateTime.UtcNow - _lastDropDownClose).TotalMilliseconds > 250)
+                OpenDropDown();
+            if (_isDropDownOpen)
+                RefreshDropDownItems(typed);
+        }
+
+        // Append : compléter avec le premier item correspondant (pas sur effacement)
+        if (mode is AutoCompleteMode.Append or AutoCompleteMode.SuggestAppend && !isDeletion)
+        {
+            var index = FindItemByPrefix(typed);
+            if (index >= 0)
+            {
+                var full = GetItemText(_properties.Items[index]);
+                if (full.Length > typed.Length)
+                {
+                    _syncingEditText = true;
+                    _editTextBox.Text = full;
+                    _editTextBox.SelectionStart = typed.Length;
+                    _editTextBox.SelectionEnd = full.Length;
+                    _lastTypedLength = full.Length;
+                    _syncingEditText = false;
+                    _text = full;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Alimente le dropdown : vue triée si Sorted, filtrée sur le préfixe en mode Suggest
+    /// </summary>
+    private void RefreshDropDownItems(string? filter)
+    {
+        if (_listBox == null) return;
+
+        IEnumerable<object> source = _properties.Items;
+        if (_properties.Sorted)
+            source = source.OrderBy(GetItemText, StringComparer.CurrentCultureIgnoreCase);
+
+        if (!string.IsNullOrEmpty(filter))
+        {
+            var comparison = _properties.CaseSensitiveSearch
+                ? StringComparison.CurrentCulture
+                : StringComparison.CurrentCultureIgnoreCase;
+            source = source.Where(i => GetItemText(i).StartsWith(filter, comparison));
+        }
+
+        var list = source.ToList();
+        _listBox.ItemsSource = list;
+
+        if (list.Count == 0 && _isDropDownOpen)
+            CloseDropDown();
+    }
+
+    private void OnEditTextBoxKeyDown(object? sender, KeyEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case Key.F4:
+            case Key.Down when e.KeyModifiers.HasFlag(KeyModifiers.Alt):
+                ToggleDropDown();
+                e.Handled = true;
+                break;
+
+            case Key.Escape when _isDropDownOpen:
+                CloseDropDown();
+                e.Handled = true;
+                break;
+
+            case Key.Down when _isDropDownOpen:
+                MoveListSelection(1);
+                e.Handled = true;
+                break;
+
+            case Key.Up when _isDropDownOpen:
+                MoveListSelection(-1);
+                e.Handled = true;
+                break;
+
+            case Key.Enter:
+                if (_isDropDownOpen && _listBox?.SelectedItem != null)
+                    CommitItem(_listBox.SelectedItem);
+                else
+                    CommitTypedText();
+                CloseDropDown();
+                e.Handled = true;
+                break;
+        }
+    }
+
+    private void MoveListSelection(int delta)
+    {
+        if (_listBox == null || _listBox.ItemCount == 0) return;
+        _listBox.SelectedIndex = Math.Clamp(_listBox.SelectedIndex + delta, 0, _listBox.ItemCount - 1);
+        _listBox.ScrollIntoView(_listBox.SelectedIndex);
+    }
+
+    private void CommitItem(object item)
+    {
+        var oldIndex = SelectedIndex;
+        EditValue = item;
+
+        if (oldIndex != SelectedIndex)
+        {
+            SelectedIndexChanged?.Invoke(this, EventArgs.Empty);
+            SelectedValueChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>
+    /// Valide le texte saisi : item correspondant si trouvé, sinon texte libre
+    /// (comportement ComboBoxEdit DevExpress)
+    /// </summary>
+    private void CommitTypedText()
+    {
+        if (!IsEditable || _editTextBox == null) return;
+
+        var typed = _editTextBox.Text ?? "";
+
+        if (string.IsNullOrEmpty(typed))
+        {
+            if (_properties.AllowNullInput && _editValue != null)
+                CommitItem(null!);
+            return;
+        }
+
+        var index = FindItem(typed);
+        if (index >= 0)
+            CommitItem(_properties.Items[index]);
+        else if (!Equals(_editValue, typed))
+            EditValue = typed; // texte libre
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -775,10 +1083,25 @@ public class ProComboBox : Control
         var height = Height > 0 ? Height : 28;
         var width = Width > 0 ? Width : (MinWidth > 0 ? MinWidth : 120);
 
+        _editTextBox?.Measure(availableSize);
+
         if (double.IsInfinity(availableSize.Width))
             return new Size(width, height);
 
         return new Size(Math.Min(availableSize.Width, width), height);
+    }
+
+    protected override Size ArrangeOverride(Size finalSize)
+    {
+        // Zone de saisie = zone texte (le bouton dropdown reste dessiné/hit-testé)
+        if (_editTextBox != null)
+        {
+            var arrowWidth = _properties.ShowDropDown ? 24 : 0;
+            var rect = new Rect(1, 1,
+                Math.Max(0, finalSize.Width - arrowWidth - 2), Math.Max(0, finalSize.Height - 2));
+            _editTextBox.Arrange(rect);
+        }
+        return finalSize;
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -824,8 +1147,8 @@ public class ProComboBox : Control
             textColor = ProTheme.Text.Primary;
         }
 
-        // Focus
-        if (IsFocused && IsEnabled)
+        // Focus (en mode éditable, c'est le TextBox interne qui porte le focus)
+        if ((IsFocused || _editTextBox?.IsFocused == true) && IsEnabled)
         {
             borderColor = ProTheme.Accent.Primary;
         }
@@ -851,11 +1174,16 @@ public class ProComboBox : Control
         var arrowWidth = _properties.ShowDropDown ? 24 : 0;
         var textBounds = new Rect(8, 0, bounds.Width - arrowWidth - 8, bounds.Height);
 
-        // Déterminer le texte à afficher
+        // Déterminer le texte à afficher — en mode Standard c'est le TextBox
+        // interne qui affiche texte et placeholder ; en HideTextEditor, rien
         string displayText;
         bool isPlaceholder = false;
 
-        if (_editValue == null || string.IsNullOrEmpty(_text))
+        if (IsEditable || _properties.TextEditStyle == TextEditStyles.HideTextEditor)
+        {
+            displayText = "";
+        }
+        else if (_editValue == null || string.IsNullOrEmpty(_text))
         {
             // ShowNullValuePrompt conditionne l'affichage du placeholder
             var promptAllowed = _properties.ShowNullValuePrompt switch
@@ -957,16 +1285,28 @@ public class ProComboBox : Control
         base.OnPointerExited(e);
     }
 
+    /// <summary>En mode éditable, seul le bouton flèche ouvre le dropdown</summary>
+    private bool IsInDropDownButton(Point pos)
+        => !IsEditable || pos.X >= Bounds.Width - 24;
+
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         if (!IsEnabled || _properties.ReadOnly)
             return;
 
+        // Clic dans la zone de saisie : laisser le TextBox interne prendre le focus
+        if (IsEditable && !IsInDropDownButton(e.GetPosition(this)))
+        {
+            base.OnPointerPressed(e);
+            return;
+        }
+
         _isPressed = true;
         InvalidateVisual();
 
         e.Handled = true;
-        Focus();
+        if (!IsEditable)
+            Focus();
 
         base.OnPointerPressed(e);
     }
@@ -975,6 +1315,12 @@ public class ProComboBox : Control
     {
         if (!IsEnabled || _properties.ReadOnly)
             return;
+
+        if (IsEditable && !IsInDropDownButton(e.GetPosition(this)))
+        {
+            base.OnPointerReleased(e);
+            return;
+        }
 
         if (_isPressed && _isHovered)
         {
@@ -1081,7 +1427,8 @@ public class ProComboBox : Control
 
     protected override void OnTextInput(TextInputEventArgs e)
     {
-        if (!IsEnabled || _properties.ReadOnly || string.IsNullOrEmpty(e.Text))
+        // En mode éditable, la saisie va au TextBox interne (auto-complétion)
+        if (IsEditable || !IsEnabled || _properties.ReadOnly || string.IsNullOrEmpty(e.Text))
         {
             base.OnTextInput(e);
             return;
@@ -1169,9 +1516,7 @@ public class ProComboBox : Control
             return;
 
         // Mettre à jour les items (vue triée si Sorted, la collection n'est pas modifiée)
-        _listBox.ItemsSource = _properties.Sorted
-            ? _properties.Items.OrderBy(GetItemText, StringComparer.CurrentCultureIgnoreCase).ToList()
-            : _properties.Items;
+        RefreshDropDownItems(null);
         _listBox.SelectedItem = _editValue;
 
         // Largeur du popup = largeur du combo
@@ -1228,7 +1573,12 @@ public class ProComboBox : Control
         _isDropDownOpen = false;
         _popup.IsOpen = false;
         InvalidateVisual();
-        Focus();
+
+        // En mode éditable, rendre le focus à la zone de saisie, pas au contrôle
+        if (IsEditable)
+            _editTextBox?.Focus();
+        else
+            Focus();
 
         // CloseUp
         var closeUpArgs = new ProCloseUpEventArgs { Value = _editValue };

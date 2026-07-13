@@ -240,6 +240,38 @@
                 </pro:ProCard>
 
                 <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- EDITORS (LOT 2) -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <pro:ProCard Title="Editors — masque, validation, lookup">
+                    <StackPanel Spacing="12">
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="ProDateEdit (2020–2030)" FontSize="11" Foreground="#888"/>
+                                <pro:ProDateEdit x:Name="DateEditDemo" Width="140"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="ProTimeEdit" FontSize="11" Foreground="#888"/>
+                                <pro:ProTimeEdit x:Name="TimeEditDemo"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="ProSpinEdit (0–10 000, pas 0,5)" FontSize="11" Foreground="#888"/>
+                                <pro:ProSpinEdit x:Name="SpinEditDemo" Width="130"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Combo éditable (SuggestAppend)" FontSize="11" Foreground="#888"/>
+                                <pro:ProComboBox x:Name="ComboEditable" Width="200"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="ProLookUpEdit (employés)" FontSize="11" Foreground="#888"/>
+                                <pro:ProLookUpEdit x:Name="LookUpDemo" Width="220"/>
+                            </StackPanel>
+                        </StackPanel>
+                        <TextBlock x:Name="EditorsResult" FontSize="12" Foreground="#6A6A6A"
+                                   Text="Saisis une date invalide puis quitte le champ : bordure rouge + tooltip."/>
+                    </StackPanel>
+                </pro:ProCard>
+
+                <!-- ══════════════════════════════════════════════════════════ -->
                 <!-- DIALOGS / MESSAGEBOX -->
                 <!-- ══════════════════════════════════════════════════════════ -->
                 <pro:ProCard Title="Dialogs (ProMessageBox)">

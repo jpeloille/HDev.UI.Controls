@@ -29,8 +29,87 @@ public partial class MainWindow : ProWindow
         InitializeToolbar();
         InitializeStatusBar();
         InitializeComboBoxDemo();
+        InitializeEditorsDemo();
         InitializeMessageBoxDemo();
         InitializeDataGrid();
+    }
+
+    private void InitializeEditorsDemo()
+    {
+        var result = this.FindControl<TextBlock>("EditorsResult");
+        void Show(string message)
+        {
+            if (result != null) result.Text = message;
+        }
+
+        var dateEdit = this.FindControl<ProDateEdit>("DateEditDemo");
+        if (dateEdit != null)
+        {
+            dateEdit.MinDate = new System.DateTime(2020, 1, 1);
+            dateEdit.MaxDate = new System.DateTime(2030, 12, 31);
+            dateEdit.Value = System.DateTime.Today;
+            dateEdit.ValueChanged += (s, e) =>
+                Show($"Date : {dateEdit.Value:dd/MM/yyyy}");
+        }
+
+        var timeEdit = this.FindControl<ProTimeEdit>("TimeEditDemo");
+        if (timeEdit != null)
+        {
+            timeEdit.Value = new System.TimeSpan(14, 30, 0);
+            timeEdit.ValueChanged += (s, e) =>
+                Show($"Heure : {timeEdit.Value:hh\\:mm}");
+        }
+
+        var spinEdit = this.FindControl<ProSpinEdit>("SpinEditDemo");
+        if (spinEdit != null)
+        {
+            spinEdit.MinValue = 0;
+            spinEdit.MaxValue = 10_000;
+            spinEdit.Decimals = 2;
+            spinEdit.Increment = 0.5m;
+            spinEdit.Value = 1250.50m;
+            spinEdit.ValueChanged += (s, e) =>
+                Show($"Montant : {spinEdit.Value:N2}");
+        }
+
+        var comboEditable = this.FindControl<ProComboBox>("ComboEditable");
+        if (comboEditable != null)
+        {
+            comboEditable.Properties.TextEditStyle = TextEditStyles.Standard;
+            comboEditable.Properties.NullValuePrompt = "Taper un pays...";
+            comboEditable.Properties.Items.AddRange(new object[]
+            {
+                "France", "Nouvelle-Calédonie", "Nouvelle-Zélande", "Australie",
+                "Japon", "Singapour", "Allemagne", "Espagne"
+            });
+            comboEditable.EditValueChanged += (s, e) =>
+                Show($"Combo éditable : {comboEditable.EditValue}");
+        }
+
+        var lookUp = this.FindControl<ProLookUpEdit>("LookUpDemo");
+        if (lookUp != null)
+        {
+            lookUp.DataSource = Employees;
+            lookUp.DisplayMember = "FullName";
+            lookUp.ValueMember = "Id";
+            lookUp.NullText = "Choisir un employé...";
+            lookUp.DropDownWidth = 420;
+            lookUp.Columns.Add(new Julien.Avalonia.DataGrid.Models.GridColumn
+            {
+                FieldName = "Id", Header = "ID", Width = new Avalonia.Controls.GridLength(60)
+            });
+            lookUp.Columns.Add(new Julien.Avalonia.DataGrid.Models.GridColumn
+            {
+                FieldName = "FullName", Header = "Nom",
+                Width = new Avalonia.Controls.GridLength(1, Avalonia.Controls.GridUnitType.Star)
+            });
+            lookUp.Columns.Add(new Julien.Avalonia.DataGrid.Models.GridColumn
+            {
+                FieldName = "Department", Header = "Service", Width = new Avalonia.Controls.GridLength(120)
+            });
+            lookUp.EditValueChanged += (s, e) =>
+                Show($"LookUp : Id={lookUp.EditValue} ({(lookUp.SelectedRow as Employee)?.FullName})");
+        }
     }
 
     private void InitializeToolbar()
