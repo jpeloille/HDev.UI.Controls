@@ -181,8 +181,13 @@ public static class ProTheme
 
     public static class Typography
     {
-        // Police système d'Ubuntu 26.04 (interface : « Ubuntu Sans 11 »)
-        public static readonly string FontFamily = "Ubuntu Sans, Ubuntu, Segoe UI, sans-serif";
+        // Inter embarquée (Avalonia.Fonts.Inter, activée par .WithInterFont()
+        // dans l'app hôte) : rasterise proprement dans Skia SANS hinting, là où
+        // les fontes Ubuntu du système — désormais variables — sortent maigres
+        // et sales à 14 px (comparaison A/B validée par Julien le 14/07/2026).
+        // Rendu identique sur toute machine. Fallback Ubuntu si Inter absente.
+        public static readonly string FontFamily =
+            "fonts:Inter#Inter, Inter, Ubuntu Sans, Ubuntu, Segoe UI, sans-serif";
 
         public const double FontSizeCaption = 12;
         public const double FontSizeBody = 14;     // Ubuntu Sans 11 pt ≈ 14,7 px à 96 dpi

@@ -313,14 +313,14 @@ public class ProToolbar : Control
             var iconX = string.IsNullOrEmpty(btn.Label)
                 ? rect.X + (rect.Width - icon.Width) / 2
                 : contentX;
-            context.DrawText(icon, new Point(iconX, rect.Y + (rect.Height - icon.Height) / 2));
+            context.DrawText(icon, Crisp.Snap(new Point(iconX, rect.Y + (rect.Height - icon.Height) / 2)));
             contentX += 20;
         }
 
         if (!string.IsNullOrEmpty(btn.Label))
         {
             var text = CreateText(btn.Label, textColor);
-            context.DrawText(text, new Point(contentX, rect.Y + (rect.Height - text.Height) / 2));
+            context.DrawText(text, Crisp.Snap(new Point(contentX, rect.Y + (rect.Height - text.Height) / 2)));
         }
     }
 

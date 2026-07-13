@@ -19,6 +19,8 @@ class Program
             // les dropdowns ProComboBox/menus et correspond au mode que suppose déjà
             // la garde de dismiss (IsInsidePopupHost -> OverlayPopupHost).
             .With(new X11PlatformOptions { OverlayPopups = true })
+            // REQUIS par ProControls : ProTheme.Typography cible « fonts:Inter#Inter »
+            // (les fontes Ubuntu variables du système rendent sales dans Skia)
             .WithInterFont()
             .LogToTrace();
 }

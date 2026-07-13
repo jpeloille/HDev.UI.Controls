@@ -10,7 +10,7 @@ Créer une **bibliothèque de contrôles Avalonia UI professionnels** avec le st
 
 - **Palette de couleurs** : Gris/blanc subtil, sobre et professionnel
 - **Accents** : Orange Ubuntu (#E95420) pour les éléments interactifs et focus
-- **Typographie** : Ubuntu Sans (police système), 14px body, 16px subtitle, 19px title
+- **Typographie** : **Inter embarquée** (`fonts:Inter#Inter`, nécessite `.WithInterFont()` dans l'app hôte), 14px body, 16px subtitle, 19px title. Décision du 14/07/2026 : les fontes Ubuntu du système sont devenues variables et rasterisent sales dans Skia (pas de hinting FreeType) ; Inter rend net et identique sur toute machine (A/B validé). Fallback Ubuntu Sans. Rendu subpixel LCD actif au niveau ProWindow (sûr depuis OverlayPopups=true : surface fenêtre opaque) + origines de texte snappées au pixel (Crisp.Snap) partout.
 - **Bordures** : Fines (1px), couleurs subtiles (#E0E0E0, #CCCCCC)
 - **États visuels** : Hover, pressed, focused, disabled — tous cohérents
 - **Coins arrondis** : libadwaita (6px boutons, 8px popovers, 12px cartes)
@@ -46,7 +46,11 @@ Légende : ✅ complet · 🟡 fonctionnel (trous ciblés) · 🟠 façade (API 
 | ProWindow | XtraForm | 🟡 | chrome custom = chemin secondaire (natif par défaut, cf. X11) ; Light forcé, pas de dark ; champs restore morts |
 | ProMenuBar / ProMenuItem / ProContextMenu | BarManager, PopupMenu | 🟡 | `Shortcut` décoratif (aucun raccourci réel), pas de mnémoniques Alt+lettre ni navigation clavier ; `IsEnabled` n'empêche pas le clic |
 | ProRibbon | RibbonControl | 🟡 | rendu = boutons + séparateurs + dialog launcher (lot 1). Classes inertes (ComboBox/Gallery/ToggleGroup) retirées ; `AccentColor`/`IsContextual` toujours non exploités ; pas de backstage/QAT |
-| ProComboBox | ComboBoxEdit | 🟡 | combo à **sélection seule** (pas de TextBox interne — lot 2). Assaini au lot 1 : `Sorted`/type-to-select/`AllowNullInput`/`ShowNullValuePrompt` câblés ; `AutoComplete`/`TextEditStyle`/`ImmediatePopup`/`DrawItem`/`SelectAll` retirés (réintroduits au lot 2 éditable) |
+| ProComboBox | ComboBoxEdit | ✅ | éditable (lot 2) : `TextEditStyle` Standard/DisableTextEditor/HideTextEditor, `AutoComplete` Suggest/Append/SuggestAppend, `ImmediatePopup`, `SelectAll`, texte libre accepté. `DrawItem` (owner-draw) toujours absent |
+| ProEditorBase (socle) | BaseEdit/RepositoryItem | ✅ | masque simple (0/9/L/A + littéraux, suppression = troncature alignée), `Validating` annulable au blur, erreur bordure rouge + tooltip (lot 2) |
+| ProDateEdit / ProTimeEdit | DateEdit / TimeEdit | ✅ | masque format, calendrier popup (recréé à chaque ouverture — état périmé sinon), MinDate/MaxDate, spin ±min/±h (lot 2) |
+| ProSpinEdit | SpinEdit | ✅ | Increment/bornes/décimales, spin+molette+flèches, filtre numérique culture (lot 2). CalcEdit (calculette popup) → backlog |
+| ProLookUpEdit | LookUpEdit/GridLookUpEdit | 🟡 | dropdown JDataGrid multi-colonnes, DisplayMember/ValueMember, Suppr efface (lot 2). Pas de saisie/filtre texte ni flip haut/bas |
 | ProToolbar | Bars | 🟡 | boutons icône/texte, toggles, séparateurs (lot 1). Pas d'overflow, pas de drag |
 | ProStatusBar | RibbonStatusBar | ✅ | panneaux gauche/droite, séparateurs, panneaux cliquables (lot 1) |
 | ProMessageBox | XtraMessageBox | ✅ | modale OK/OKCancel/YesNo/YesNoCancel, icônes, résultat typé, ShowAsync + raccourcis (lot 1) |
@@ -90,7 +94,7 @@ Note : le README de AvaloniaDataGrid est marketing (tout ✅), se fier au code /
 
 **Ordre d'attaque recommandé** :
 1. ~~Quick wins : ProMessageBox, ProStatusBar, ProToolbar, multiline ProTextBox + assainir les façades~~ ✅ **Fait le 10/07/2026** (validé visuellement)
-2. Éditeurs : socle masque+validation → ProDateEdit → ProSpinEdit → ProComboBox éditable/autocomplete → ProLookUpEdit
+2. ~~Éditeurs : socle masque+validation → ProDateEdit → ProSpinEdit → ProComboBox éditable/autocomplete → ProLookUpEdit~~ ✅ **Fait le 14/07/2026** (benchmark masque 15/15, corrigé et validé visuellement ; restes : CalcEdit, saisie/filtre texte du LookUp, flip haut/bas des popups éditeurs)
 3. JDataGrid : brancher l'UI sur le moteur existant (opérateurs de filtre, Shift+clic, pin→freeze, best-fit, sélection cellule, copier/coller, export CSV)
 4. Gros chantiers : ProTabControl/TreeView, puis arbitrage Scheduler/Gantt et Charts
 

@@ -240,9 +240,9 @@ public class ProStatusBar : Control
             }
 
             var text = CreateText(GetPanelText(panel), ProTheme.Text.Secondary);
-            context.DrawText(text, new Point(
+            context.DrawText(text, Crisp.Snap(new Point(
                 rect.X + PanelPaddingX,
-                (BarHeight - text.Height) / 2));
+                (BarHeight - text.Height) / 2)));
         }
     }
 

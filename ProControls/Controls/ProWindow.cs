@@ -124,12 +124,14 @@ public class ProWindow : Window
     
     public ProWindow()
     {
-        // NE PAS forcer TextRenderingMode.SubpixelAntialias ici : l'option
-        // s'hérite par la chaîne logique jusqu'au contenu des popups (surfaces
-        // ARGB transparentes) où le rendu LCD ne peint AUCUN glyphe -> menus et
-        // dropdowns visuellement vides. GNOME rend d'ailleurs son texte en
-        // niveaux de gris : l'AA par défaut est le look natif. La netteté vient
-        // de l'alignement pixel des origines de texte (Crisp.Snap).
+        // Rendu LCD subpixel : interdit à l'époque des popups NATIFS (surfaces
+        // ARGB transparentes où le rendu LCD ne peint aucun glyphe -> menus
+        // vides). Depuis OverlayPopups=true (Program.cs), les popups sont rendus
+        // dans la surface OPAQUE de cette fenêtre (aucun TransparencyLevelHint) :
+        // le subpixel y est redevenu sûr, et il complète l'alignement pixel des
+        // origines de texte (Crisp.Snap) pour la netteté maximale.
+        // Si une app hôte force une fenêtre transparente, repasser en Antialias.
+        RenderOptions.SetTextRenderingMode(this, TextRenderingMode.SubpixelAntialias);
 
         // Police système Ubuntu : FontFamily est héritée, tout l'arbre (grille,
         // TextBox natifs...) l'utilise sans configuration par contrôle
