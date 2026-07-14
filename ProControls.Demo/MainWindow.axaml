@@ -308,6 +308,11 @@
                 <!-- ══════════════════════════════════════════════════════════ -->
                 <pro:ProCard Title="DataGrid - Employee Management">
                     <StackPanel Spacing="12">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <pro:ProButton x:Name="BtnExportCsv" Text="Exporter CSV" Variant="Secondary" Size="Small"/>
+                            <TextBlock VerticalAlignment="Center" FontSize="12" Foreground="#6A6A6A"
+                                       Text="Shift+clic en-tête = multi-tri · pin = colonne figée · double-clic bord d'en-tête = largeur auto · bouton ≈ de la ligne de filtre = opérateur · Ctrl+C = copier la sélection"/>
+                        </StackPanel>
                         <datagrid:JDataGrid x:Name="EmployeeDataGrid"
                                              Height="400"
                                              ShowFilterRow="True"

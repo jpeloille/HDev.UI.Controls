@@ -62,13 +62,14 @@ Légende : ✅ complet · 🟡 fonctionnel (trous ciblés) · 🟠 façade (API 
 
 **Fait et réel** : tri multi-colonnes (moteur), édition in-place complète (BeginEdit/Commit/Cancel, éditeurs typés, événements annulables), groupement drag & drop multi-niveaux + group summaries, footer d'agrégats (Count/Sum/Avg/Min/Max), resize/réordonnancement/auto-génération colonnes, sélection ligne single/multi + clavier vertical, virtualisation lignes + recyclage, accès propriétés par délégués compilés (chemins `A.B.C`).
 
-**Motif récurrent : moteur riche, UI pas branchée** :
-- Filtrage : moteur ~20 opérateurs + groupes AND/OR, mais filter row = `Contains` codé en dur ; bouton filtre d'en-tête sans handler
-- Multi-tri : `ThenBy` OK par API, Shift+clic non câblé
-- Colonnes figées : `IsFrozen` OK en XAML, mais **le bouton pin ne gèle pas** (verrouille la position)
-- Sélection cellule : `SelectCell`/`SelectedCells` existent, jamais appelés (le clic sélectionne la ligne)
-- Best-fit : `MeasureColumnWidth` existe, `AutoFitWidth()` = `// TODO` vide
-- Types de colonnes : 10 déclarés, mais Image/ProgressBar/Hyperlink/Button/Custom rendus en texte ; `CellTemplate`/`HeaderTemplate` jamais consommés
+**~~Motif récurrent : moteur riche, UI pas branchée~~ → résorbé au lot 3 (14/07/2026, commit f430933)** :
+- ~~Filtrage `Contains` en dur~~ → sélecteur d'opérateur par type de colonne dans la filter row ; le bouton filtre d'en-tête reste sans handler (redondant avec la filter row)
+- ~~Shift+clic non câblé~~ → multi-tri OK
+- ~~Pin ≠ freeze~~ → le pin gèle réellement
+- ~~SelectCell jamais appelé~~ → mode Cell câblé (clic + ←→↑↓/Tab) ; états non réappliqués au recyclage (scroll) — connu
+- ~~AutoFitWidth TODO~~ → best-fit au double-clic (en-tête + 100 lignes)
+- Types de colonnes : toujours 10 déclarés, Image/ProgressBar/Hyperlink/Button/Custom rendus en texte ; `CellTemplate`/`HeaderTemplate` jamais consommés
+- Nouveau : Ctrl+C (TSV), `ToCsv`/`ExportCsvAsync` (vue courante)
 
 **Absent** : validation d'édition, new-row/suppression, recherche globale, filter panel/dropdown Excel, master-detail, bandes d'en-têtes, formatage conditionnel, export csv/xlsx, impression, copier/coller, navigation clavier horizontale, virtualisation colonnes, réactivité `INotifyPropertyChanged` par item, persistance layout, dark mode.
 
@@ -95,7 +96,7 @@ Note : le README de AvaloniaDataGrid est marketing (tout ✅), se fier au code /
 **Ordre d'attaque recommandé** :
 1. ~~Quick wins : ProMessageBox, ProStatusBar, ProToolbar, multiline ProTextBox + assainir les façades~~ ✅ **Fait le 10/07/2026** (validé visuellement)
 2. ~~Éditeurs : socle masque+validation → ProDateEdit → ProSpinEdit → ProComboBox éditable/autocomplete → ProLookUpEdit~~ ✅ **Fait le 14/07/2026** (benchmark masque 15/15, corrigé et validé visuellement ; restes : CalcEdit, saisie/filtre texte du LookUp, flip haut/bas des popups éditeurs)
-3. JDataGrid : brancher l'UI sur le moteur existant (opérateurs de filtre, Shift+clic, pin→freeze, best-fit, sélection cellule, copier/coller, export CSV)
+3. ~~JDataGrid : brancher l'UI sur le moteur existant (opérateurs de filtre, Shift+clic, pin→freeze, best-fit, sélection cellule, copier/coller, export CSV)~~ ✅ **Fait le 14/07/2026** (commit AvaloniaDataGrid f430933 ; restes : coller, réapplication des états cellule au recyclage, vitrine du mode Cell)
 4. Gros chantiers : ProTabControl/TreeView, puis arbitrage Scheduler/Gantt et Charts
 
 ## Palette de couleurs Yaru (claire)

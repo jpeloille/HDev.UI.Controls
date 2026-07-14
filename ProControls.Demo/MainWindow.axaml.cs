@@ -187,6 +187,20 @@ public partial class MainWindow : ProWindow
         {
             dataGrid.ItemsSource = Employees;
         }
+
+        var exportButton = this.FindControl<ProButton>("BtnExportCsv");
+        if (exportButton != null && dataGrid != null)
+        {
+            exportButton.Click += async (s, e) =>
+            {
+                var path = System.IO.Path.Combine(
+                    System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile),
+                    "employes-export.csv");
+                await dataGrid.ExportCsvAsync(path);
+                await ProMessageBox.ShowInfoAsync(this,
+                    $"Vue courante exportée (tri + filtres appliqués) :\n{path}", "Export CSV");
+            };
+        }
     }
 
     private void InitializeComboBoxDemo()
