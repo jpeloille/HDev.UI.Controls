@@ -101,6 +101,7 @@ Note : le README de AvaloniaDataGrid est marketing (tout ✅), se fier au code /
    - ~~ProTabControl/TreeView~~ ✅ **Lot 4a fait le 14/07/2026** (validé visuellement)
    - **Arbitrages actés (14/07/2026)** :
      - **ProGantt maison, spécialisé GESTION DE PROJET** (tâches WBS, jalons, dépendances FS/SS/FF/SF, avancement, chemin critique CPM) — PAS un planning de ressources. Architecture : moteur d'ordonnancement pur testé (roll-up, calendrier ouvré, propagation, CPM) + UI custom-rendered (table arbre à gauche façon MS Project, timeline à droite). Phase 1 = afficher, phase 2 = ordonnancer/interagir, phase 3 = baseline/export.
+     - **ProGantt phase 1 ✅ faite le 14/07/2026** (validée) : moteur GanttProject/GanttTask/GanttCalendar/GanttTimeAxis (24 tests), contrôle virtualisé lignes×temps (>2000 tâches fluide), table arbre + timeline, barres/avancement, crochets récapitulatifs, jalons losanges, flèches de dépendances routage MS Project (L + S à rebours), ombrage chômés, now-line, zoom Ctrl+molette centré, splitter, tooltips. Calibrage : dates posées par l'app, calendrier ouvré v1, cible >2000 tâches.
      - **Charts Ovidie : LiveCharts2** (MIT, Avalonia natif, forkable) avec habillage ProTheme — pas de développement maison.
 
 **Tests unitaires du socle (14/07/2026)** : `ProControls.Tests` (ProMaskEngine, 35 tests) et `AvaloniaDataGrid/tests` (GridFilter/GridDataSource/PropertyAccessor/FormatValue, 61 tests) — `dotnet test` sur chaque projet. À maintenir : toute évolution du moteur de masque, des filtres ou du tri passe par là.

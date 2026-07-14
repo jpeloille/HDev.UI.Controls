@@ -71,7 +71,10 @@ public partial class MainWindow : ProWindow
         aboutPanel.Children.Add(addButton);
         tabs.AddPage("Infos", aboutPanel, "ℹ️");
 
-        // Page 3 : fermable
+        // Page 3 : ProGantt (lot 4b)
+        tabs.AddPage("Projet", BuildGanttDemo(), "📊");
+
+        // Page 4 : fermable
         var closable = tabs.AddPage("Rapport", new Avalonia.Controls.TextBlock
         {
             Margin = new Avalonia.Thickness(16),
@@ -90,6 +93,92 @@ public partial class MainWindow : ProWindow
             page.CanClose = true;
             tabs.SelectedIndex = tabs.Items.Count - 1;
         };
+    }
+
+    private Avalonia.Controls.Control BuildGanttDemo()
+    {
+        var gantt = new ProGantt();
+        var today = System.DateTime.Today;
+
+        var project = new GanttProject();
+        project.Calendar.AddHoliday(new System.DateTime(today.Year, 7, 14)); // fête nationale
+
+        project.BeginUpdate();
+
+        var etude = project.Add("Étude", today, today);
+        var cahier = etude.Add("Cahier des charges", today.AddDays(-15), today.AddDays(-8), 100);
+        var maquettes = etude.Add("Maquettes", today.AddDays(-7), today.AddDays(-1), 100);
+        maquettes.DependsOn(cahier);
+        var jalonEtude = etude.AddMilestone("Validation étude", today);
+        jalonEtude.DependsOn(maquettes);
+
+        var dev = project.Add("Développement", today, today);
+        var socle = dev.Add("Socle technique", today.AddDays(1), today.AddDays(9), 60);
+        socle.DependsOn(jalonEtude);
+        var moduleA = dev.Add("Module A", today.AddDays(10), today.AddDays(22), 20);
+        moduleA.DependsOn(socle);
+        var moduleB = dev.Add("Module B", today.AddDays(10), today.AddDays(28));
+        moduleB.DependsOn(socle);
+        var integration = dev.Add("Intégration", today.AddDays(29), today.AddDays(35));
+        integration.DependsOn(moduleA);
+        integration.DependsOn(moduleB);
+
+        var recette = project.Add("Recette", today, today);
+        var tests = recette.Add("Campagne de tests", today.AddDays(36), today.AddDays(45));
+        tests.DependsOn(integration);
+        var jalonGo = recette.AddMilestone("Go production", today.AddDays(46));
+        jalonGo.DependsOn(tests);
+
+        project.EndUpdate();
+        gantt.Project = project;
+        gantt.ScrollToToday();
+
+        gantt.SelectedTaskChanged += (s, e) =>
+        {
+            var statusBar = this.FindControl<ProStatusBar>("MainStatusBar");
+            if (statusBar != null && statusBar.Items.Count > 0 && gantt.SelectedTask != null)
+                statusBar.Items[0].Text = $"Tâche : {gantt.SelectedTask.Name} ({gantt.SelectedTask.EffectiveProgress:F0} %)";
+        };
+
+        // Barre d'outils : test de charge 2 500 tâches + retour aujourd'hui
+        var toolbar = new Avalonia.Controls.StackPanel
+        {
+            Orientation = Avalonia.Layout.Orientation.Horizontal,
+            Spacing = 8,
+            Margin = new Avalonia.Thickness(8, 6)
+        };
+        var todayButton = new ProButton { Text = "Aujourd'hui", Variant = ButtonVariant.Secondary, Size = ButtonSize.Small };
+        todayButton.Click += (s, e) => gantt.ScrollToToday();
+        var stressButton = new ProButton { Text = "Test de charge (2 500 tâches)", Variant = ButtonVariant.Ghost, Size = ButtonSize.Small };
+        stressButton.Click += (s, e) =>
+        {
+            var big = new GanttProject();
+            big.BeginUpdate();
+            var rng = new System.Random(42);
+            for (int p = 0; p < 50; p++)
+            {
+                var phase = big.Add($"Phase {p + 1:00}", today, today);
+                for (int t = 0; t < 49; t++)
+                {
+                    var start = today.AddDays(rng.Next(-60, 240));
+                    var task = phase.Add($"Tâche {p + 1:00}.{t + 1:00}", start,
+                        start.AddDays(rng.Next(2, 20)), rng.Next(0, 101));
+                    if (t > 0 && rng.Next(3) == 0)
+                        task.DependsOn(phase.Children[t - 1]);
+                }
+            }
+            big.EndUpdate();
+            gantt.Project = big;
+            gantt.ScrollToToday();
+        };
+        toolbar.Children.Add(todayButton);
+        toolbar.Children.Add(stressButton);
+
+        var layout = new Avalonia.Controls.DockPanel();
+        Avalonia.Controls.DockPanel.SetDock(toolbar, Avalonia.Controls.Dock.Top);
+        layout.Children.Add(toolbar);
+        layout.Children.Add(gantt);
+        return layout;
     }
 
     private void InitializeEditorsDemo()
