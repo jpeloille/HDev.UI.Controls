@@ -83,6 +83,9 @@ public partial class MainWindow : ProWindow
         // Page 6 : mini-Outlook (ProListView + ProHtmlView)
         tabs.AddPage("Boîte", BuildInboxDemo(), "📥");
 
+        // Page 7 : ProScheduler (4e chantier structurant Outlook)
+        tabs.AddPage("Agenda", BuildSchedulerDemo(), "📅");
+
         // Page 4 : fermable
         var closable = tabs.AddPage("Rapport", new Avalonia.Controls.TextBlock
         {
@@ -144,6 +147,74 @@ public partial class MainWindow : ProWindow
             Padding = new Avalonia.Thickness(8),
             VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto
         };
+    }
+
+    private Avalonia.Controls.Control BuildSchedulerDemo()
+    {
+        var scheduler = new ProScheduler();
+        var monday = System.DateTime.Today.AddDays(-(((int)System.DateTime.Today.DayOfWeek + 6) % 7));
+
+        // Réunions de la semaine (avec chevauchements volontaires)
+        scheduler.Events.Add(new ScheduleEvent("Comité de pilotage",
+            monday.AddHours(9), monday.AddHours(11))
+        { Location = "Salle A", Color = Avalonia.Media.Color.Parse("#0B67B2") });
+        scheduler.Events.Add(new ScheduleEvent("Point RH",
+            monday.AddHours(10), monday.AddHours(11.5))
+        { Color = Avalonia.Media.Color.Parse("#77216F") });
+        scheduler.Events.Add(new ScheduleEvent("Revue budget Ovidie",
+            monday.AddDays(1).AddHours(14), monday.AddDays(1).AddHours(16))
+        { Color = Avalonia.Media.Color.Parse("#C64614") });
+        scheduler.Events.Add(new ScheduleEvent("Démo Synaxis",
+            monday.AddDays(3).AddHours(15), monday.AddDays(3).AddHours(16.5))
+        { Location = "Visio" });
+        scheduler.Events.Add(new ScheduleEvent("Astreinte",
+            monday.AddDays(4), monday.AddDays(5)) { AllDay = true, Color = Avalonia.Media.Color.Parse("#107C10") });
+
+        // Stand-up récurrent (lun/mer/ven 08:30)
+        var standup = new ScheduleEvent("Stand-up équipe",
+            monday.AddHours(8.5), monday.AddHours(8.75))
+        { Color = Avalonia.Media.Color.Parse("#5E2750") };
+        standup.Recurrence.Kind = ScheduleRecurrenceKind.Weekly;
+        standup.Recurrence.DaysOfWeek.Add(System.DayOfWeek.Monday);
+        standup.Recurrence.DaysOfWeek.Add(System.DayOfWeek.Wednesday);
+        standup.Recurrence.DaysOfWeek.Add(System.DayOfWeek.Friday);
+        scheduler.Events.Add(standup);
+
+        void SetStatus(string message)
+        {
+            var statusBar = this.FindControl<ProStatusBar>("MainStatusBar");
+            if (statusBar != null && statusBar.Items.Count > 0)
+                statusBar.Items[0].Text = message;
+        }
+
+        scheduler.TimeSlotDoubleClicked += (s, time) =>
+        {
+            scheduler.Events.Add(new ScheduleEvent("Nouveau rendez-vous",
+                time, time.AddMinutes(60)));
+            SetStatus($"Rendez-vous créé : {time:g}");
+        };
+        scheduler.EventChanged += (s, evt) =>
+            SetStatus($"« {evt.Subject} » déplacé : {evt.Start:g} → {evt.End:t}");
+        scheduler.EventDoubleClicked += async (s, evt) =>
+            await ProMessageBox.ShowInfoAsync(this,
+                $"{evt.Subject}\n{evt.Start:g} → {evt.End:t}\n{evt.Location}", "Événement");
+
+        // Barre de navigation
+        var toolbar = new ProToolbar();
+        toolbar.AddButton("◀", null, () => scheduler.Navigate(-1));
+        toolbar.AddButton(null, "Aujourd'hui", () => scheduler.GoToToday());
+        toolbar.AddButton("▶", null, () => scheduler.Navigate(1));
+        toolbar.AddSeparator();
+        toolbar.AddButton(null, "Jour", () => scheduler.ViewMode = SchedulerViewMode.Day);
+        toolbar.AddButton(null, "Sem. ouvrée", () => scheduler.ViewMode = SchedulerViewMode.WorkWeek);
+        toolbar.AddButton(null, "Semaine", () => scheduler.ViewMode = SchedulerViewMode.Week);
+        toolbar.AddButton(null, "Mois", () => scheduler.ViewMode = SchedulerViewMode.Month);
+
+        var layout = new Avalonia.Controls.DockPanel();
+        Avalonia.Controls.DockPanel.SetDock(toolbar, Avalonia.Controls.Dock.Top);
+        layout.Children.Add(toolbar);
+        layout.Children.Add(scheduler);
+        return layout;
     }
 
     private sealed class DemoMail
