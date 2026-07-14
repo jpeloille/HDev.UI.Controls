@@ -140,6 +140,10 @@ public class ProRibbonButton : ProRibbonItem
     public string Label { get; set; } = "";
     public string? Icon { get; set; }
     public string? Tooltip { get; set; }
+
+    /// <summary>Accélérateur clavier réel (« Ctrl+P »...), enregistré par ProRibbon</summary>
+    public string? Shortcut { get; set; }
+
     public bool IsLarge { get; set; } = false;
     public bool HasDropdown { get; set; } = false;
     public bool IsToggle { get; set; } = false;

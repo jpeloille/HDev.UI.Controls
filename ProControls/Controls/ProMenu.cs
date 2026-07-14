@@ -157,7 +157,82 @@ public class ProMenuPopup : Popup
         Close();
         ParentPopup?.CloseChain();
     }
-    
+
+    // ═══════════════════════════════════════════════════════════════
+    // NAVIGATION CLAVIER (pilotée par ProMenuBar)
+    // ═══════════════════════════════════════════════════════════════
+
+    private int _highlightIndex = -1;
+
+    internal IReadOnlyList<ProMenuItem> MenuItems
+        => _itemsPanel.Children.OfType<ProMenuItem>().ToList();
+
+    internal ProMenuItem? HighlightedItem
+    {
+        get
+        {
+            var items = MenuItems;
+            return _highlightIndex >= 0 && _highlightIndex < items.Count
+                ? items[_highlightIndex] : null;
+        }
+    }
+
+    /// <summary>Déplace la surbrillance (saute séparateurs et items désactivés)</summary>
+    internal void MoveHighlight(int delta)
+    {
+        var items = MenuItems;
+        if (items.Count == 0) return;
+
+        var index = _highlightIndex;
+        for (int attempts = 0; attempts < items.Count; attempts++)
+        {
+            index = ((index + delta) % items.Count + items.Count) % items.Count;
+            if (!items[index].IsSeparator && items[index].IsEnabled)
+                break;
+        }
+
+        SetHighlight(index);
+    }
+
+    private void SetHighlight(int index)
+    {
+        var items = MenuItems;
+        if (_highlightIndex >= 0 && _highlightIndex < items.Count)
+            items[_highlightIndex].SetKeyboardHighlight(false);
+
+        _highlightIndex = index;
+
+        if (_highlightIndex >= 0 && _highlightIndex < items.Count)
+            items[_highlightIndex].SetKeyboardHighlight(true);
+    }
+
+    /// <summary>Enter sur l'item surligné : activation ou ouverture du sous-menu</summary>
+    internal ProMenuPopup? ActivateHighlighted()
+    {
+        var item = HighlightedItem;
+        if (item == null) return null;
+
+        if (item.HasItems)
+        {
+            item.OpenSubmenu();
+            item.SubmenuPopup?.MoveHighlight(1); // surligner le premier item
+            return item.SubmenuPopup;
+        }
+
+        item.Activate();
+        return null;
+    }
+
+    /// <summary>→ sur un item à sous-menu : l'ouvre et rend son popup</summary>
+    internal ProMenuPopup? OpenHighlightedSubmenu()
+    {
+        var item = HighlightedItem;
+        if (item is not { HasItems: true }) return null;
+        item.OpenSubmenu();
+        item.SubmenuPopup?.MoveHighlight(1);
+        return item.SubmenuPopup;
+    }
+
     public void ShowAt(Control target, Point offset = default)
     {
         EnsureLogicalParent(target);
@@ -195,15 +270,20 @@ public class ProMenuBar : Panel
 {
     private ProMenuBarItem? _openItem;
     private bool _isMenuMode; // Mode menu actif (après premier clic)
-    
+
+    // Raccourcis réels + navigation clavier
+    private readonly List<IDisposable> _shortcutRegistrations = new();
+    private TopLevel? _root;
+    private ProMenuPopup? _activePopup; // popup le plus profond (sous-menus)
+
     public ObservableCollection<ProMenuBarItem> Items { get; } = new();
-    
+
     public ProMenuBar()
     {
         Height = 34;
         ClipToBounds = false;
         Background = new SolidColorBrush(ProTheme.Background.Toolbar);
-        
+
         Items.CollectionChanged += (s, e) =>
         {
             Children.Clear();
@@ -212,7 +292,169 @@ public class ProMenuBar : Panel
                 Children.Add(item);
             }
             InvalidateMeasure();
+            RefreshShortcuts();
         };
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        _root = TopLevel.GetTopLevel(this);
+        if (_root != null)
+        {
+            // Tunnel : la navigation d'un menu OUVERT prime sur le contrôle focalisé
+            _root.AddHandler(InputElement.KeyDownEvent, OnRootKeyDown,
+                Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        }
+        RefreshShortcuts();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        if (_root != null)
+            _root.RemoveHandler(InputElement.KeyDownEvent, OnRootKeyDown);
+        _root = null;
+        ClearShortcuts();
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    private void ClearShortcuts()
+    {
+        foreach (var registration in _shortcutRegistrations)
+            registration.Dispose();
+        _shortcutRegistrations.Clear();
+    }
+
+    /// <summary>
+    /// (Ré)enregistre les Shortcut de tous les items comme accélérateurs
+    /// réels de la fenêtre (appelé à l'attache et sur changement d'Items)
+    /// </summary>
+    public void RefreshShortcuts()
+    {
+        ClearShortcuts();
+        if (_root == null) return;
+
+        var manager = ProShortcutManager.GetFor(_root);
+
+        void Walk(IEnumerable<ProMenuItem> items)
+        {
+            foreach (var item in items)
+            {
+                if (!item.IsSeparator &&
+                    ProShortcutManager.TryParse(item.Shortcut) is { } gesture)
+                {
+                    var captured = item;
+                    _shortcutRegistrations.Add(manager.Register(
+                        gesture, () => captured.Activate(), () => captured.IsEnabled));
+                }
+                if (item.Items is { Count: > 0 })
+                    Walk(item.Items);
+            }
+        }
+
+        foreach (var barItem in Items)
+            Walk(barItem.Items);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // CLAVIER : Alt+lettre ouvre, flèches/Enter/Échap naviguent
+    // ═══════════════════════════════════════════════════════════════
+
+    private void OnRootKeyDown(object? sender, KeyEventArgs e)
+    {
+        // Navigation dans un menu ouvert
+        if (_openItem != null)
+        {
+            var popup = _activePopup ?? _openItem.CurrentPopup;
+            if (popup == null) return;
+
+            switch (e.Key)
+            {
+                case Key.Down:
+                    popup.MoveHighlight(1);
+                    e.Handled = true;
+                    break;
+
+                case Key.Up:
+                    popup.MoveHighlight(-1);
+                    e.Handled = true;
+                    break;
+
+                case Key.Enter:
+                {
+                    var submenu = popup.ActivateHighlighted();
+                    if (submenu != null)
+                        _activePopup = submenu;
+                    else
+                        CloseAllMenus();
+                    e.Handled = true;
+                    break;
+                }
+
+                case Key.Right:
+                {
+                    var submenu = popup.OpenHighlightedSubmenu();
+                    if (submenu != null)
+                        _activePopup = submenu;
+                    else
+                        OpenAdjacentMenu(1);
+                    e.Handled = true;
+                    break;
+                }
+
+                case Key.Left:
+                    if (_activePopup is { ParentPopup: not null })
+                    {
+                        var parent = _activePopup.ParentPopup;
+                        _activePopup.Close();
+                        _activePopup = parent;
+                    }
+                    else
+                    {
+                        OpenAdjacentMenu(-1);
+                    }
+                    e.Handled = true;
+                    break;
+
+                case Key.Escape:
+                    CloseAllMenus();
+                    e.Handled = true;
+                    break;
+            }
+            return;
+        }
+
+        // Alt+lettre : ouvre le menu dont l'en-tête commence par la lettre
+        if (e.KeyModifiers.HasFlag(KeyModifiers.Alt) && e.Key is >= Key.A and <= Key.Z)
+        {
+            var letter = (char)('A' + (e.Key - Key.A));
+            var match = Items.FirstOrDefault(i =>
+                i.Header.Length > 0 &&
+                char.ToUpperInvariant(i.Header[0]) == letter);
+
+            if (match != null)
+            {
+                OpenMenuWithKeyboard(match);
+                e.Handled = true;
+            }
+        }
+    }
+
+    private void OpenMenuWithKeyboard(ProMenuBarItem item)
+    {
+        OpenMenu(item);
+        item.OpenMenu();
+        _activePopup = item.CurrentPopup;
+        _activePopup?.MoveHighlight(1); // premier item surligné
+    }
+
+    private void OpenAdjacentMenu(int direction)
+    {
+        if (_openItem == null || Items.Count == 0) return;
+        var index = Items.IndexOf(_openItem);
+        var next = Items[((index + direction) % Items.Count + Items.Count) % Items.Count];
+        CloseAllMenus();
+        OpenMenuWithKeyboard(next);
     }
     
     protected override Size MeasureOverride(Size availableSize)
@@ -248,6 +490,7 @@ public class ProMenuBar : Panel
     
     internal void CloseAllMenus()
     {
+        _activePopup = null;
         _openItem?.CloseMenu();
         _openItem = null;
         _isMenuMode = false;
@@ -376,6 +619,9 @@ public class ProMenuBarItem : Control
             menuBar.OpenMenu(this);
     }
     
+    /// <summary>Popup actuellement ouvert (navigation clavier)</summary>
+    internal ProMenuPopup? CurrentPopup => _popup;
+
     internal void CloseMenu()
     {
         _popup?.Close();

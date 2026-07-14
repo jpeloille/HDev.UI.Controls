@@ -44,7 +44,7 @@ Légende : ✅ complet · 🟡 fonctionnel (trous ciblés) · 🟠 façade (API 
 | ProTextBox | TextEdit | 🟡 | **ni masque, ni validation** (HasError = flag externe). Multiline OK (`IsMultiline`, lot 1) |
 | ProCard | GroupControl | ✅ | `Elevation` appliquée + `Title`/`HasBorder` réactifs (lot 1) |
 | ProWindow | XtraForm | 🟡 | chrome custom = chemin secondaire (natif par défaut, cf. X11) ; Light forcé, pas de dark ; champs restore morts |
-| ProMenuBar / ProMenuItem / ProContextMenu | BarManager, PopupMenu | 🟡 | `Shortcut` décoratif (aucun raccourci réel), pas de mnémoniques Alt+lettre ni navigation clavier ; `IsEnabled` n'empêche pas le clic |
+| ProMenuBar / ProMenuItem / ProContextMenu | BarManager, PopupMenu | ✅ | raccourcis RÉELS (ProShortcutManager, 14/07), Alt+lettre ouvre les menus, navigation ↑↓/Enter/←→/Échap (sous-menus compris), `IsEnabled` bloque le clic |
 | ProRibbon | RibbonControl | 🟡 | rendu = boutons + séparateurs + dialog launcher (lot 1). Classes inertes (ComboBox/Gallery/ToggleGroup) retirées ; `AccentColor`/`IsContextual` toujours non exploités ; pas de backstage/QAT |
 | ProComboBox | ComboBoxEdit | ✅ | éditable (lot 2) : `TextEditStyle` Standard/DisableTextEditor/HideTextEditor, `AutoComplete` Suggest/Append/SuggestAppend, `ImmediatePopup`, `SelectAll`, texte libre accepté. `DrawItem` (owner-draw) toujours absent |
 | ProEditorBase (socle) | BaseEdit/RepositoryItem | ✅ | masque simple (0/9/L/A + littéraux, suppression = troncature alignée), `Validating` annulable au blur, erreur bordure rouge + tooltip (lot 2) |
@@ -130,7 +130,9 @@ Note : le README de AvaloniaDataGrid est marketing (tout ✅), se fier au code /
 - **Drag & drop applicatif** : ProListView source (`EnableDragItems`, seuil 5 px, DataObject `procontrols-item`), ProTreeView cible (`AllowDropItems`, surlignage du nœud, `ItemDropped`)
 - Démo « Boîte » = shell Outlook 5 colonnes (rail + dossiers + recherche + liste + lecture, glisser mail→dossier, toast à l'arrivée, badge non-lus vivant) ; TokenEdit dans Composer ; MonthCalendar couplé à l'Agenda.
 
-**🟡 Dettes existantes qui deviennent bloquantes** : raccourcis clavier RÉELS dans menus/ribbon (aujourd'hui décoratifs — rédhibitoire pour un client mail), ribbon avancé (backstage/galeries/QAT/onglets contextuels), rendu des colonnes Image/Bouton du JDataGrid + master-detail, impression (inexistante partout), dark mode ProTheme.
+**🟡 Dettes existantes qui deviennent bloquantes** :
+- ~~Raccourcis clavier réels~~ ✅ **Fait le 14/07/2026** : `ProShortcutManager` par fenêtre (KeyGesture.Parse des `Shortcut`, dispatch en bulle = le contrôle focalisé garde la priorité), enregistrement auto ProMenuBar (récursif, `RefreshShortcuts()`) + `ProRibbonButton.Shortcut`, **Alt+lettre** ouvre les menus, **navigation clavier complète** dans les menus ouverts (↑↓ saute séparateurs/désactivés, Enter, ←→ entre menus et sous-menus, Échap), `IsEnabled` bloque réellement le clic. API publique pour les raccourcis applicatifs.
+- Restantes : ribbon avancé (backstage/galeries/QAT/onglets contextuels), rendu des colonnes Image/Bouton du JDataGrid + master-detail, impression (inexistante partout), dark mode ProTheme.
 
 **⚪ Hors contrôles (l'autre moitié de l'iceberg, pour mémoire)** : IMAP/SMTP (ou EWS/Graph), stockage local + indexation de recherche, iCal/récurrences, vCard.
 

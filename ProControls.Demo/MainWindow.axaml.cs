@@ -944,23 +944,27 @@ public partial class MainWindow : ProWindow
         var menuBar = this.FindControl<ProMenuBar>("MainMenuBar");
         if (menuBar == null) return;
         
-        // File menu
+        void Notify(string action) =>
+            ProToast.Show(this, action, "Déclenché par le menu ou son raccourci clavier", "⌨️",
+                System.TimeSpan.FromSeconds(2.5));
+
+        // File menu — actions réelles : les raccourcis sont des accélérateurs vivants
         var fileMenu = new ProMenuBarItem("File");
-        fileMenu.Items.Add(new ProMenuItem("New", "📄", "Ctrl+N"));
-        fileMenu.Items.Add(new ProMenuItem("Open", "📂", "Ctrl+O"));
-        fileMenu.Items.Add(new ProMenuItem("Save", "💾", "Ctrl+S"));
-        fileMenu.Items.Add(new ProMenuItem("Save As...", null, "Ctrl+Shift+S"));
+        fileMenu.Items.Add(new ProMenuItem("New", "📄", "Ctrl+N", () => Notify("Nouveau document")));
+        fileMenu.Items.Add(new ProMenuItem("Open", "📂", "Ctrl+O", () => Notify("Ouvrir")));
+        fileMenu.Items.Add(new ProMenuItem("Save", "💾", "Ctrl+S", () => Notify("Enregistré")));
+        fileMenu.Items.Add(new ProMenuItem("Save As...", null, "Ctrl+Shift+S", () => Notify("Enregistrer sous")));
         fileMenu.Items.Add(ProMenuItem.Separator());
         fileMenu.Items.Add(new ProMenuItem("Export", "📤"));
-        fileMenu.Items.Add(new ProMenuItem("Print", "🖨️", "Ctrl+P"));
+        fileMenu.Items.Add(new ProMenuItem("Print", "🖨️", "Ctrl+P", () => Notify("Impression")));
         fileMenu.Items.Add(ProMenuItem.Separator());
-        fileMenu.Items.Add(new ProMenuItem("Exit", null, "Alt+F4"));
+        fileMenu.Items.Add(new ProMenuItem("Exit", null, "Alt+F4", Close));
         menuBar.Items.Add(fileMenu);
-        
+
         // Edit menu
         var editMenu = new ProMenuBarItem("Edit");
-        editMenu.Items.Add(new ProMenuItem("Undo", "↩️", "Ctrl+Z"));
-        editMenu.Items.Add(new ProMenuItem("Redo", "↪️", "Ctrl+Y"));
+        editMenu.Items.Add(new ProMenuItem("Undo", "↩️", "Ctrl+Z", () => Notify("Annuler")));
+        editMenu.Items.Add(new ProMenuItem("Redo", "↪️", "Ctrl+Y", () => Notify("Rétablir")));
         editMenu.Items.Add(ProMenuItem.Separator());
         editMenu.Items.Add(new ProMenuItem("Cut", "✂️", "Ctrl+X"));
         editMenu.Items.Add(new ProMenuItem("Copy", "📋", "Ctrl+C"));

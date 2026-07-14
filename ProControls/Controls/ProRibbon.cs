@@ -24,6 +24,54 @@ public class ProRibbon : Control
     private ProRibbonButton? _pressedButton;
     private ProRibbonGroup? _hoveredLauncher;
     private ProRibbonGroup? _pressedLauncher;
+
+    private readonly List<IDisposable> _shortcutRegistrations = new();
+
+    protected override void OnAttachedToVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        RefreshShortcuts();
+    }
+
+    protected override void OnDetachedFromVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
+    {
+        foreach (var registration in _shortcutRegistrations)
+            registration.Dispose();
+        _shortcutRegistrations.Clear();
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    /// <summary>
+    /// (Ré)enregistre les Shortcut des boutons du ruban comme accélérateurs
+    /// réels de la fenêtre
+    /// </summary>
+    public void RefreshShortcuts()
+    {
+        foreach (var registration in _shortcutRegistrations)
+            registration.Dispose();
+        _shortcutRegistrations.Clear();
+
+        var root = TopLevel.GetTopLevel(this);
+        if (root == null) return;
+
+        var manager = ProShortcutManager.GetFor(root);
+        foreach (var tab in Tabs)
+        {
+            foreach (var group in tab.Groups)
+            {
+                foreach (var item in group.Items)
+                {
+                    if (item is not ProRibbonButton button ||
+                        ProShortcutManager.TryParse(button.Shortcut) is not { } gesture)
+                        continue;
+
+                    var captured = button;
+                    _shortcutRegistrations.Add(manager.Register(
+                        gesture, () => captured.RaiseClick(), () => captured.IsEnabled));
+                }
+            }
+        }
+    }
     
     // ═══════════════════════════════════════════════════════════════
     // PROPRIÉTÉS

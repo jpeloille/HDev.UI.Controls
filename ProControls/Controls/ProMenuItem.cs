@@ -197,31 +197,49 @@ public class ProMenuItem : Control
     
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
-        if (IsSeparator) return;
+        if (IsSeparator || !IsEnabled) return; // un item désactivé ne réagit pas
         _isPressed = true;
         InvalidateVisual();
         base.OnPointerPressed(e);
     }
-    
+
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
-        if (IsSeparator) return;
-        
+        if (IsSeparator || !IsEnabled) return;
+
         if (_isPressed && _isHovered && !HasItems)
-        {
-            if (IsCheckable)
-                IsChecked = !IsChecked;
-            
-            Click?.Invoke(this, EventArgs.Empty);
-            
-            // Fermer le menu parent
-            CloseAllMenus();
-        }
-        
+            Activate();
+
         _isPressed = false;
         InvalidateVisual();
         base.OnPointerReleased(e);
     }
+
+    /// <summary>
+    /// Déclenche l'item comme un clic (souris, Enter, accélérateur) :
+    /// bascule le coché, émet Click, ferme la chaîne de menus
+    /// </summary>
+    internal void Activate()
+    {
+        if (IsSeparator || !IsEnabled || HasItems) return;
+
+        if (IsCheckable)
+            IsChecked = !IsChecked;
+
+        Click?.Invoke(this, EventArgs.Empty);
+        CloseAllMenus();
+    }
+
+    /// <summary>Surbrillance pilotée par le clavier (flèches dans le menu)</summary>
+    internal void SetKeyboardHighlight(bool highlighted)
+    {
+        if (_isHovered == highlighted) return;
+        _isHovered = highlighted;
+        InvalidateVisual();
+    }
+
+    /// <summary>Sous-menu actuellement ouvert (navigation clavier)</summary>
+    internal ProMenuPopup? SubmenuPopup => _submenuPopup;
     
     internal void OpenSubmenu()
     {
