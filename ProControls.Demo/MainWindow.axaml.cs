@@ -74,6 +74,9 @@ public partial class MainWindow : ProWindow
         // Page 3 : ProGantt (lot 4b)
         tabs.AddPage("Projet", BuildGanttDemo(), "📊");
 
+        // Page 4 : ProHtmlView (monstre n° 1, tête de lecture)
+        tabs.AddPage("Mail", BuildHtmlViewDemo(), "📧");
+
         // Page 4 : fermable
         var closable = tabs.AddPage("Rapport", new Avalonia.Controls.TextBlock
         {
@@ -92,6 +95,48 @@ public partial class MainWindow : ProWindow
             }, "📄");
             page.CanClose = true;
             tabs.SelectedIndex = tabs.Items.Count - 1;
+        };
+    }
+
+    private Avalonia.Controls.Control BuildHtmlViewDemo()
+    {
+        // Pixel rouge 2x2 en data: (image embarquée, rendue nativement)
+        const string redPixel = "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEklEQVR4nGP8z8Dwn4GBgYEBAA0GAgHc9K/rAAAAAElFTkSuQmCC";
+
+        var html = $"""
+            <h1 style="color:#E95420">Confirmation de réservation</h1>
+            <p>Bonjour <b>Julien</b>,</p>
+            <p>Votre vol <i>Nouméa → Lifou</i> est <span style="color:green;font-weight:bold">confirmé</span>.
+            Détails ci-dessous&nbsp;:</p>
+            <table>
+              <tr><th>Vol</th><th>Départ</th><th>Arrivée</th><th>Prix</th></tr>
+              <tr><td>TY201</td><td>08:15 NOU</td><td>09:00 LIF</td><td>15&nbsp;900 XPF</td></tr>
+              <tr><td colspan="3">Total (taxes incluses)</td><td><b>15&nbsp;900 XPF</b></td></tr>
+            </table>
+            <p>Consignes&nbsp;:</p>
+            <ul>
+              <li>Enregistrement <u>45 minutes</u> avant le départ</li>
+              <li>Bagage cabine : <b>5 kg</b> maximum</li>
+            </ul>
+            <p>Logo embarqué : <img src="data:image/png;base64,{redPixel}" width="24" height="24"></p>
+            <p>Image distante (non chargée sans résolveur — confidentialité) :
+               <img src="https://tracker.example.com/pixel.png" alt="bannière distante" width="300" height="50"></p>
+            <blockquote><p><i>Message précédent :</i><br>Merci de me confirmer le vol de mardi.</p></blockquote>
+            <hr>
+            <p style="text-align:center"><a href="https://aircalin.example/gerer">Gérer ma réservation</a>
+               · <small>Ne pas répondre à ce message automatique.</small></p>
+            <script>alert("ceci ne doit JAMAIS apparaître");</script>
+            """;
+
+        var view = new ProHtmlView { Html = html };
+        view.LinkClicked += async (s, href) =>
+            await ProMessageBox.ShowInfoAsync(this, $"Lien cliqué (l'app décide quoi en faire) :\n{href}", "LinkClicked");
+
+        return new Avalonia.Controls.ScrollViewer
+        {
+            Content = view,
+            Padding = new Avalonia.Thickness(8),
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto
         };
     }
 
