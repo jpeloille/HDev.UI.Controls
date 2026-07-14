@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Interaction" />
+    <InternalsVisibleTo Include="ProControls.Tests" />
   </ItemGroup>
 
 </Project>
