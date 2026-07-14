@@ -133,12 +133,34 @@ public partial class MainWindow : ProWindow
         gantt.Project = project;
         gantt.ScrollToToday();
 
-        gantt.SelectedTaskChanged += (s, e) =>
+        void SetStatus(string message)
         {
             var statusBar = this.FindControl<ProStatusBar>("MainStatusBar");
-            if (statusBar != null && statusBar.Items.Count > 0 && gantt.SelectedTask != null)
-                statusBar.Items[0].Text = $"Tâche : {gantt.SelectedTask.Name} ({gantt.SelectedTask.EffectiveProgress:F0} %)";
+            if (statusBar != null && statusBar.Items.Count > 0)
+                statusBar.Items[0].Text = message;
+        }
+
+        gantt.SelectedTaskChanged += (s, e) =>
+        {
+            if (gantt.SelectedTask != null)
+                SetStatus($"Tâche : {gantt.SelectedTask.Name} ({gantt.SelectedTask.EffectiveProgress:F0} %)");
         };
+
+        // Validation métier annulable : une tâche terminée ne se déplace pas
+        gantt.TaskDatesChanging += (s, e) =>
+        {
+            if (e.Task.Progress >= 100)
+            {
+                e.Cancel = true;
+                SetStatus($"« {e.Task.Name} » est terminée : déplacement refusé (TaskDatesChanging.Cancel)");
+            }
+        };
+        gantt.TaskDatesChanged += (s, task) =>
+            SetStatus($"« {task.Name} » : {task.Start:dd/MM} → {task.End:dd/MM}");
+        gantt.ProgressChanged += (s, task) =>
+            SetStatus($"« {task.Name} » : avancement {task.Progress:F0} %");
+        gantt.LinkCreated += (s, e) =>
+            SetStatus($"Lien créé : « {e.Predecessor.Name} » → « {e.Successor.Name} »");
 
         // Barre d'outils : test de charge 2 500 tâches + retour aujourd'hui
         var toolbar = new Avalonia.Controls.StackPanel

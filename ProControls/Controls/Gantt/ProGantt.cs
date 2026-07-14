@@ -32,6 +32,19 @@ public class ProGantt : Control
     private GanttTask? _selectedTask;
     private GanttTask? _hoveredTask;
 
+    // Interactions (phase 2b)
+    private enum DragKind { None, Move, ResizeStart, ResizeEnd, Progress, Link }
+
+    private DragKind _dragKind;
+    private GanttTask? _dragTask;
+    private Point _dragOrigin;
+    private DateTime _origStart, _origEnd;
+    private DateTime _ghostStart, _ghostEnd;
+    private double _ghostProgress;
+    private Point _linkCursor;
+    private GanttTask? _linkTarget;
+    private bool _linkTargetValid;
+
     private List<(GanttTask Task, int Depth)> _visibleRows = new();
     private readonly Dictionary<GanttTask, int> _rowIndexByTask = new();
 
@@ -60,6 +73,27 @@ public class ProGantt : Control
 
     /// <summary>Déclenché au double-clic sur une tâche</summary>
     public event EventHandler<GanttTask>? TaskDoubleClicked;
+
+    /// <summary>Interactions souris désactivées (affichage seul)</summary>
+    public bool IsReadOnly { get; set; }
+
+    /// <summary>Avant application d'un déplacement/redimensionnement (annulable)</summary>
+    public event EventHandler<GanttTaskChangeEventArgs>? TaskDatesChanging;
+
+    /// <summary>Après application d'un déplacement/redimensionnement</summary>
+    public event EventHandler<GanttTask>? TaskDatesChanged;
+
+    /// <summary>Avant application d'un changement d'avancement (annulable)</summary>
+    public event EventHandler<GanttProgressChangeEventArgs>? ProgressChanging;
+
+    /// <summary>Après application d'un changement d'avancement</summary>
+    public event EventHandler<GanttTask>? ProgressChanged;
+
+    /// <summary>Avant création d'un lien à la souris (annulable)</summary>
+    public event EventHandler<GanttLinkEventArgs>? LinkCreating;
+
+    /// <summary>Après création d'un lien à la souris</summary>
+    public event EventHandler<GanttLinkEventArgs>? LinkCreated;
 
     public GanttProject? Project
     {
@@ -291,6 +325,73 @@ public class ProGantt : Control
     private static Rect ChevronRect(int depth, double rowY)
         => new(6 + depth * 16, rowY + (RowHeight - 14) / 2, 14, 14);
 
+    /// <summary>Bornes X (pixels vue) de la barre d'une tâche</summary>
+    private (double X1, double X2) GetBarX(GanttTask task)
+        => (TimelineX + Axis.ToX(task.EffectiveStart),
+            TimelineX + Axis.ToX(task.EffectiveEnd.AddDays(1)));
+
+    /// <summary>
+    /// Zone chaude sous le curseur dans la timeline : bords = resize,
+    /// milieu = déplacement, connecteur = lien, grip = avancement
+    /// </summary>
+    private (GanttTask Task, DragKind Zone)? BarHitTest(Point pos)
+    {
+        if (pos.X < TimelineX) return null;
+        var row = RowAt(pos);
+        if (row == null) return null;
+
+        var (task, _, _) = row.Value;
+        if (task.IsSummary) return null; // récapitulatives : dates par roll-up
+
+        var (x1, x2) = GetBarX(task);
+        var centerY = RowY(row.Value.Index) + RowHeight / 2;
+
+        if (task.IsMilestone)
+        {
+            var mx = x1 + Axis.PixelsPerDay / 2;
+            if (Math.Abs(pos.X - mx) <= 9 && Math.Abs(pos.Y - centerY) <= 9)
+                return (task, DragKind.Move);
+            return null;
+        }
+
+        var inBarBand = Math.Abs(pos.Y - centerY) <= BarHeight / 2 + 3;
+
+        // Connecteur de lien (cercle à droite de la barre, tâche survolée)
+        if (ReferenceEquals(task, _hoveredTask) &&
+            Math.Abs(pos.X - (x2 + 10)) <= 6 && Math.Abs(pos.Y - centerY) <= 6)
+            return (task, DragKind.Link);
+
+        // Grip d'avancement (sous la barre)
+        var progressX = x1 + (x2 - x1) * task.EffectiveProgress / 100;
+        if (ReferenceEquals(task, _hoveredTask) &&
+            pos.Y > centerY + BarHeight / 2 && pos.Y <= centerY + BarHeight / 2 + 8 &&
+            Math.Abs(pos.X - progressX) <= 6)
+            return (task, DragKind.Progress);
+
+        if (!inBarBand) return null;
+
+        if (Math.Abs(pos.X - x1) <= 5) return (task, DragKind.ResizeStart);
+        if (Math.Abs(pos.X - x2) <= 5) return (task, DragKind.ResizeEnd);
+        if (pos.X > x1 && pos.X < x2) return (task, DragKind.Move);
+
+        return null;
+    }
+
+    /// <summary>Cale une date de début sur un jour ouvré (vers l'avant)</summary>
+    private DateTime SnapStart(DateTime date)
+        => _project?.Calendar.AddWorkingDays(date, 0) ?? date;
+
+    /// <summary>Cale une date de fin sur un jour ouvré (vers l'arrière)</summary>
+    private DateTime SnapEnd(DateTime date)
+    {
+        var calendar = _project?.Calendar;
+        if (calendar == null) return date;
+        var d = date.Date;
+        while (!calendar.IsWorkingDay(d))
+            d = d.AddDays(-1);
+        return d;
+    }
+
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         var pos = e.GetPosition(this);
@@ -303,9 +404,25 @@ public class ProGantt : Control
             return;
         }
 
-        Cursor = IsOnSplitter(pos)
-            ? new Cursor(StandardCursorType.SizeWestEast)
-            : Cursor.Default;
+        // Drag en cours : mettre à jour le fantôme
+        if (_dragKind != DragKind.None && _dragTask != null && _project != null)
+        {
+            UpdateDragGhost(pos);
+            InvalidateVisual();
+            return;
+        }
+
+        // Curseur selon la zone chaude
+        var hit = IsReadOnly ? null : BarHitTest(pos);
+        Cursor = IsOnSplitter(pos) ? new Cursor(StandardCursorType.SizeWestEast)
+            : hit?.Zone switch
+            {
+                DragKind.ResizeStart or DragKind.ResizeEnd or DragKind.Progress
+                    => new Cursor(StandardCursorType.SizeWestEast),
+                DragKind.Move => new Cursor(StandardCursorType.Hand),
+                DragKind.Link => new Cursor(StandardCursorType.Cross),
+                _ => Cursor.Default
+            };
 
         var row = RowAt(pos);
         var task = row?.Task;
@@ -317,6 +434,68 @@ public class ProGantt : Control
         }
 
         base.OnPointerMoved(e);
+    }
+
+    private void UpdateDragGhost(Point pos)
+    {
+        var calendar = _project!.Calendar;
+
+        switch (_dragKind)
+        {
+            case DragKind.Move:
+            {
+                var deltaDays = (int)Math.Round((pos.X - _dragOrigin.X) / Axis.PixelsPerDay);
+                var start = _origStart.AddDays(deltaDays);
+
+                if (_dragTask!.IsMilestone)
+                {
+                    _ghostStart = _ghostEnd = start;
+                }
+                else
+                {
+                    // Durée OUVRÉE préservée, début calé sur un jour ouvré
+                    var duration = Math.Max(1, calendar.CountWorkingDays(_origStart, _origEnd));
+                    _ghostStart = SnapStart(start);
+                    _ghostEnd = calendar.AddWorkingDays(_ghostStart, duration - 1);
+                }
+                break;
+            }
+
+            case DragKind.ResizeStart:
+            {
+                var date = SnapStart(Axis.ToDate(pos.X - TimelineX).Date);
+                _ghostStart = date > _ghostEnd ? _ghostEnd : date;
+                break;
+            }
+
+            case DragKind.ResizeEnd:
+            {
+                var date = SnapEnd(Axis.ToDate(pos.X - TimelineX).Date);
+                _ghostEnd = date < _ghostStart ? _ghostStart : date;
+                break;
+            }
+
+            case DragKind.Progress:
+            {
+                var (x1, x2) = GetBarX(_dragTask!);
+                var raw = (pos.X - x1) / Math.Max(1, x2 - x1) * 100;
+                _ghostProgress = Math.Clamp(Math.Round(raw / 5) * 5, 0, 100);
+                break;
+            }
+
+            case DragKind.Link:
+            {
+                _linkCursor = pos;
+                var row = RowAt(pos);
+                var target = row?.Task;
+                _linkTarget = target != null && !target.IsSummary && !ReferenceEquals(target, _dragTask)
+                    ? target : null;
+                _linkTargetValid = _linkTarget != null
+                    && !_linkTarget.Predecessors.Any(d => ReferenceEquals(d.Predecessor, _dragTask))
+                    && !GanttScheduler.WouldCreateCycle(_dragTask!, _linkTarget);
+                break;
+            }
+        }
     }
 
     private string BuildTooltip(GanttTask task)
@@ -367,6 +546,32 @@ public class ProGantt : Control
             return;
         }
 
+        // Zone chaude d'une barre : démarrer un drag (déplacement, resize,
+        // avancement, lien) — le fantôme suit, la mutation attend le relâcher
+        if (!IsReadOnly && _project != null)
+        {
+            var hit = BarHitTest(pos);
+            if (hit != null)
+            {
+                (_dragTask, _dragKind) = hit.Value;
+                _dragOrigin = pos;
+                _origStart = _dragTask.EffectiveStart;
+                _origEnd = _dragTask.EffectiveEnd;
+                _ghostStart = _origStart;
+                _ghostEnd = _origEnd;
+                _ghostProgress = _dragTask.EffectiveProgress;
+                _linkCursor = pos;
+                _linkTarget = null;
+                _linkTargetValid = false;
+
+                SelectedTask = _dragTask;
+                e.Pointer.Capture(this);
+                e.Handled = true;
+                InvalidateVisual();
+                return;
+            }
+        }
+
         SelectedTask = task;
 
         if (e.ClickCount == 2)
@@ -384,7 +589,75 @@ public class ProGantt : Control
             e.Pointer.Capture(null);
             e.Handled = true;
         }
+        else if (_dragKind != DragKind.None)
+        {
+            CommitDrag();
+            e.Pointer.Capture(null);
+            e.Handled = true;
+        }
         base.OnPointerReleased(e);
+    }
+
+    private void CommitDrag()
+    {
+        var task = _dragTask;
+        var kind = _dragKind;
+        _dragKind = DragKind.None;
+        _dragTask = null;
+
+        if (task == null || _project == null)
+        {
+            InvalidateVisual();
+            return;
+        }
+
+        switch (kind)
+        {
+            case DragKind.Move:
+            case DragKind.ResizeStart:
+            case DragKind.ResizeEnd:
+                if (_ghostStart != _origStart || _ghostEnd != _origEnd)
+                {
+                    var args = new GanttTaskChangeEventArgs(task, _ghostStart, _ghostEnd);
+                    TaskDatesChanging?.Invoke(this, args);
+                    if (!args.Cancel)
+                    {
+                        task.SetDatesSilent(args.NewStart, args.NewEnd);
+                        _project.NotifyDataChange();
+                        TaskDatesChanged?.Invoke(this, task);
+                    }
+                }
+                break;
+
+            case DragKind.Progress:
+                if (Math.Abs(_ghostProgress - task.Progress) > 0.01)
+                {
+                    var args = new GanttProgressChangeEventArgs(task, _ghostProgress);
+                    ProgressChanging?.Invoke(this, args);
+                    if (!args.Cancel)
+                    {
+                        task.Progress = args.NewProgress;
+                        ProgressChanged?.Invoke(this, task);
+                    }
+                }
+                break;
+
+            case DragKind.Link:
+                if (_linkTargetValid && _linkTarget != null)
+                {
+                    var args = new GanttLinkEventArgs(task, _linkTarget);
+                    LinkCreating?.Invoke(this, args);
+                    if (!args.Cancel)
+                    {
+                        _linkTarget.DependsOn(task);
+                        LinkCreated?.Invoke(this, args);
+                    }
+                }
+                break;
+        }
+
+        _linkTarget = null;
+        InvalidateVisual();
     }
 
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
@@ -416,6 +689,17 @@ public class ProGantt : Control
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
+        // Échap annule le drag en cours (le fantôme disparaît, rien n'est appliqué)
+        if (e.Key == Key.Escape && _dragKind != DragKind.None)
+        {
+            _dragKind = DragKind.None;
+            _dragTask = null;
+            _linkTarget = null;
+            InvalidateVisual();
+            e.Handled = true;
+            return;
+        }
+
         if (_visibleRows.Count == 0)
         {
             base.OnKeyDown(e);
@@ -492,9 +776,136 @@ public class ProGantt : Control
         RenderDependencyArrows(context, first, last);
         RenderBars(context, first, last);
         RenderNowLine(context);
+        RenderDragOverlay(context);
         RenderTable(context, first, last);
         RenderHeader(context);
         RenderSplitter(context);
+    }
+
+    /// <summary>
+    /// Overlay d'interaction : fantôme des dates pendant déplacement/resize,
+    /// ligne élastique pendant la création de lien, grip d'avancement
+    /// </summary>
+    private void RenderDragOverlay(DrawingContext context)
+    {
+        var timelineRect = new Rect(TimelineX, HeaderHeight, TimelineWidth, RowsViewport.Height);
+
+        using (context.PushClip(timelineRect))
+        {
+            // Affordances de la barre survolée (hors drag)
+            if (_dragKind == DragKind.None && !IsReadOnly &&
+                _hoveredTask is { IsSummary: false } hovered &&
+                _rowIndexByTask.TryGetValue(hovered, out var hoveredIndex))
+            {
+                var (x1, x2) = GetBarX(hovered);
+                var centerY = RowY(hoveredIndex) + RowHeight / 2;
+
+                if (!hovered.IsMilestone)
+                {
+                    // Connecteur de lien (cercle à droite)
+                    context.DrawEllipse(new SolidColorBrush(ProTheme.Background.Panel),
+                        new Pen(new SolidColorBrush(ProTheme.Accent.Primary), 1.4),
+                        new Point(x2 + 10, centerY), 4.5, 4.5);
+
+                    // Grip d'avancement (triangle sous la barre)
+                    var progressX = x1 + (x2 - x1) * hovered.EffectiveProgress / 100;
+                    var gripY = centerY + BarHeight / 2 + 1;
+                    var grip = new StreamGeometry();
+                    using (var g = grip.Open())
+                    {
+                        g.BeginFigure(new Point(progressX, gripY), true);
+                        g.LineTo(new Point(progressX - 4, gripY + 6));
+                        g.LineTo(new Point(progressX + 4, gripY + 6));
+                        g.EndFigure(true);
+                    }
+                    context.DrawGeometry(new SolidColorBrush(ProTheme.Accent.Primary), null, grip);
+                }
+            }
+
+            if (_dragTask == null) return;
+
+            // Fantôme déplacement/resize + étiquette de dates
+            if (_dragKind is DragKind.Move or DragKind.ResizeStart or DragKind.ResizeEnd
+                && _rowIndexByTask.TryGetValue(_dragTask, out var dragIndex))
+            {
+                var y = RowY(dragIndex) + RowHeight / 2;
+                var gx1 = TimelineX + Axis.ToX(_ghostStart);
+                var gx2 = TimelineX + Axis.ToX(_ghostEnd.AddDays(1));
+
+                var ghostPen = new Pen(new SolidColorBrush(ProTheme.Accent.Primary), 1.5)
+                {
+                    DashStyle = new DashStyle(new double[] { 3, 3 }, 0)
+                };
+
+                if (_dragTask.IsMilestone)
+                {
+                    var mx = gx1 + Axis.PixelsPerDay / 2;
+                    context.DrawEllipse(null, ghostPen, new Point(mx, y), 8, 8);
+                }
+                else
+                {
+                    context.DrawRectangle(
+                        new SolidColorBrush(ProTheme.WithOpacity(ProTheme.Accent.Primary, 30)),
+                        ghostPen,
+                        new Rect(gx1, y - BarHeight / 2, Math.Max(2, gx2 - gx1), BarHeight), 3, 3);
+                }
+
+                var label = _dragTask.IsMilestone
+                    ? _ghostStart.ToString("dd/MM")
+                    : $"{_ghostStart:dd/MM} → {_ghostEnd:dd/MM}";
+                var text = CreateText(label, ProTheme.Text.Primary, 12);
+                var labelPos = new Point(gx1, y - BarHeight / 2 - text.Height - 4);
+                context.FillRectangle(new SolidColorBrush(ProTheme.Background.Panel),
+                    new Rect(labelPos.X - 3, labelPos.Y - 1, text.Width + 6, text.Height + 2), 3);
+                context.DrawText(text, Crisp.Snap(labelPos));
+            }
+
+            // Poignée d'avancement en cours de drag
+            if (_dragKind == DragKind.Progress
+                && _rowIndexByTask.TryGetValue(_dragTask, out var progressIndex))
+            {
+                var (x1, x2) = GetBarX(_dragTask);
+                var y = RowY(progressIndex) + RowHeight / 2;
+                var px = x1 + (x2 - x1) * _ghostProgress / 100;
+
+                context.DrawLine(new Pen(new SolidColorBrush(ProTheme.Accent.Primary), 2),
+                    new Point(px, y - BarHeight / 2 - 3), new Point(px, y + BarHeight / 2 + 3));
+
+                var text = CreateText($"{_ghostProgress:F0} %", ProTheme.Text.Primary, 12);
+                context.DrawText(text, Crisp.Snap(new Point(px + 6, y - BarHeight / 2 - text.Height - 2)));
+            }
+
+            // Ligne élastique de création de lien
+            if (_dragKind == DragKind.Link)
+            {
+                var (_, x2) = GetBarX(_dragTask);
+                if (_rowIndexByTask.TryGetValue(_dragTask, out var linkIndex))
+                {
+                    var fromY = RowY(linkIndex) + RowHeight / 2;
+                    var color = _linkTarget == null
+                        ? ProTheme.Text.Secondary
+                        : _linkTargetValid ? ProTheme.Accent.Success : ProTheme.Accent.Error;
+
+                    context.DrawLine(
+                        new Pen(new SolidColorBrush(color), 1.5)
+                        {
+                            DashStyle = new DashStyle(new double[] { 4, 3 }, 0)
+                        },
+                        new Point(x2 + 10, fromY), _linkCursor);
+
+                    // Surligner la cible
+                    if (_linkTarget != null &&
+                        _rowIndexByTask.TryGetValue(_linkTarget, out var targetIndex))
+                    {
+                        var (tx1, tx2) = GetBarX(_linkTarget);
+                        var ty = RowY(targetIndex) + RowHeight / 2;
+                        context.DrawRectangle(null, new Pen(new SolidColorBrush(color), 2),
+                            new Rect(tx1 - 2, ty - BarHeight / 2 - 2,
+                                Math.Max(4, tx2 - tx1) + 4, BarHeight + 4), 4, 4);
+                    }
+                }
+            }
+        }
     }
 
     private void RenderHeader(DrawingContext context)
@@ -870,4 +1281,52 @@ public class ProGantt : Control
     private static FormattedText CreateText(string text, Color color, double size)
         => new(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
             new Typeface(ProTheme.Typography.FontFamily), size, new SolidColorBrush(color));
+}
+
+/// <summary>
+/// Arguments d'un changement de dates par interaction (annulable) ;
+/// NewStart/NewEnd modifiables par le handler (validation métier)
+/// </summary>
+public class GanttTaskChangeEventArgs : System.ComponentModel.CancelEventArgs
+{
+    public GanttTask Task { get; }
+    public DateTime NewStart { get; set; }
+    public DateTime NewEnd { get; set; }
+
+    public GanttTaskChangeEventArgs(GanttTask task, DateTime newStart, DateTime newEnd)
+    {
+        Task = task;
+        NewStart = newStart;
+        NewEnd = newEnd;
+    }
+}
+
+/// <summary>
+/// Arguments d'un changement d'avancement par interaction (annulable)
+/// </summary>
+public class GanttProgressChangeEventArgs : System.ComponentModel.CancelEventArgs
+{
+    public GanttTask Task { get; }
+    public double NewProgress { get; set; }
+
+    public GanttProgressChangeEventArgs(GanttTask task, double newProgress)
+    {
+        Task = task;
+        NewProgress = newProgress;
+    }
+}
+
+/// <summary>
+/// Arguments de création de lien à la souris (annulable)
+/// </summary>
+public class GanttLinkEventArgs : System.ComponentModel.CancelEventArgs
+{
+    public GanttTask Predecessor { get; }
+    public GanttTask Successor { get; }
+
+    public GanttLinkEventArgs(GanttTask predecessor, GanttTask successor)
+    {
+        Predecessor = predecessor;
+        Successor = successor;
+    }
 }
