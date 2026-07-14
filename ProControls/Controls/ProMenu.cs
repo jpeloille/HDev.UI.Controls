@@ -632,6 +632,7 @@ public class ProMenuBarItem : Control
     
     public override void Render(DrawingContext context)
     {
+        Crisp.BeginFrame(this);
         var bounds = new Rect(Bounds.Size);
 
         // Fond transparent : sans primitive dessinée couvrant les bounds,

@@ -3,18 +3,53 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.VisualTree;
 using ProControls.Theme;
 using System.Globalization;
 
 namespace ProControls.Controls;
 
 /// <summary>
-/// Alignement du texte sur la grille de pixels : une origine fractionnaire
-/// (ex. centrage (h - text.Height) / 2) fait baver les glyphes sur deux pixels.
+/// Alignement du texte sur la grille de PIXELS PHYSIQUES : une origine qui ne tombe
+/// pas sur un pixel du device fait baver les glyphes (antialiasing sur deux pixels).
+///
+/// Arrondir à l'unité logique entière (Math.Round(p.X)) n'est correct qu'à 100 % et
+/// 200 % de scaling. Dès que l'échelle est fractionnaire — 125 / 150 / 175 %, typique
+/// de Wayland/Linux — une unité logique ≠ un pixel physique : l'origine retombe au
+/// milieu d'un pixel et le texte redevient flou. Il faut donc arrondir dans l'espace
+/// des pixels physiques : round(p * scale) / scale.
+///
+/// Le RenderScaling est uniforme sur toute une fenêtre (TopLevel). On le fige une fois
+/// en tête de chaque Render via <see cref="BeginFrame"/> ; les appels <see cref="Snap"/>
+/// suivants n'ont alors rien à connaître de la hiérarchie. Tant que BeginFrame n'a pas
+/// été appelé, le scaling vaut 1.0 (ancien comportement, sans régression).
 /// </summary>
 internal static class Crisp
 {
-    public static Point Snap(Point p) => new(Math.Round(p.X), Math.Round(p.Y));
+    [ThreadStatic] private static double _scale;
+
+    private static double Scale => _scale > 0 ? _scale : 1.0;
+
+    /// <summary>Facteur d'échelle DPI du device pour ce Visual (1.0 s'il n'est pas encore attaché).</summary>
+    public static double GetRenderScaling(Visual visual)
+        => visual.GetVisualRoot()?.RenderScaling ?? 1.0;
+
+    /// <summary>
+    /// À appeler en tête de chaque override <c>Render(DrawingContext)</c> : fige le
+    /// scaling DPI de la fenêtre pour tous les <see cref="Snap"/> du frame. Retourne
+    /// l'échelle, utile si le contrôle veut aussi caler des arêtes sur le pixel.
+    /// </summary>
+    public static double BeginFrame(Visual visual) => _scale = GetRenderScaling(visual);
+
+    /// <summary>Aligne une origine sur la grille de pixels physiques (échelle du frame courant).</summary>
+    public static Point Snap(Point p) => Snap(p, Scale);
+
+    /// <summary>Aligne une origine sur la grille de pixels physiques pour une échelle donnée.</summary>
+    public static Point Snap(Point p, double scale)
+    {
+        var s = scale > 0 ? scale : 1.0;
+        return new Point(Math.Round(p.X * s) / s, Math.Round(p.Y * s) / s);
+    }
 }
 
 /// <summary>

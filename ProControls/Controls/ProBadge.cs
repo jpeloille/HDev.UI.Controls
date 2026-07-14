@@ -110,6 +110,7 @@ public class ProBadge : ProControlBase
     
     public override void Render(DrawingContext context)
     {
+        Crisp.BeginFrame(this);
         var bounds = new Rect(Bounds.Size);
         
         var (fontSize, _, _) = Size switch

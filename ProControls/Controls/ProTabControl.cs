@@ -354,6 +354,7 @@ public class ProTabControl : Control
 
     public override void Render(DrawingContext context)
     {
+        Crisp.BeginFrame(this);
         var bounds = new Rect(Bounds.Size);
 
         // Bandeau des onglets + séparateur bas

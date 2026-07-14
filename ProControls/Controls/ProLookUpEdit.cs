@@ -366,6 +366,7 @@ public class ProLookUpEdit : Control
 
     public override void Render(DrawingContext context)
     {
+        Crisp.BeginFrame(this);
         var bounds = new Rect(Bounds.Size);
         var radius = ProTheme.Size.CornerRadiusSmall;
 

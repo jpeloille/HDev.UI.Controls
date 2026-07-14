@@ -201,6 +201,7 @@ public class ProSlider : ProControlBase
     
     public override void Render(DrawingContext context)
     {
+        Crisp.BeginFrame(this);
         var bounds = new Rect(Bounds.Size);
         var trackRect = GetTrackRect();
         var trackRadius = trackRect.Height / 2;

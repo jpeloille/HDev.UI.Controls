@@ -413,6 +413,7 @@ public class ProTreeView : Control
 
     public override void Render(DrawingContext context)
     {
+        Crisp.BeginFrame(this);
         var bounds = new Rect(Bounds.Size);
         context.FillRectangle(new SolidColorBrush(ProTheme.Background.Panel), bounds);
 

@@ -62,6 +62,7 @@ public class ProEditorGlyphButton : Control
 
     public override void Render(DrawingContext context)
     {
+        Crisp.BeginFrame(this);
         var bounds = new Rect(Bounds.Size);
 
         if (_isHovered)
@@ -141,6 +142,7 @@ public class ProSpinButtons : Control
 
     public override void Render(DrawingContext context)
     {
+        Crisp.BeginFrame(this);
         var bounds = new Rect(Bounds.Size);
         var half = bounds.Height / 2;
         var upRect = new Rect(2, 2, bounds.Width - 4, half - 3);

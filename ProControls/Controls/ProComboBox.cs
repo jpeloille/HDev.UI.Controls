@@ -1138,6 +1138,7 @@ public class ProComboBox : Control
 
     public override void Render(DrawingContext context)
     {
+        Crisp.BeginFrame(this);
         var bounds = new Rect(Bounds.Size);
         var cornerRadius = ProTheme.Size.CornerRadiusSmall;
 

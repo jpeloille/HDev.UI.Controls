@@ -417,6 +417,7 @@ public class ProRibbon : Control
     
     public override void Render(DrawingContext context)
     {
+        Crisp.BeginFrame(this);
         var bounds = new Rect(Bounds.Size);
         
         // Fond général

@@ -104,6 +104,7 @@ public class ProToggleSwitch : ProControlBase
     
     public override void Render(DrawingContext context)
     {
+        Crisp.BeginFrame(this);
         var bounds = new Rect(Bounds.Size);
         var trackWidth = 40.0;
         var trackHeight = 20.0;

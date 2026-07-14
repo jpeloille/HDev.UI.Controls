@@ -107,6 +107,7 @@ public class ProCheckBox : ProControlBase
     
     public override void Render(DrawingContext context)
     {
+        Crisp.BeginFrame(this);
         var bounds = new Rect(Bounds.Size);
         var boxSize = 16.0;
         var cornerRadius = 3.0;

@@ -148,6 +148,7 @@ public class ProProgressBar : ProControlBase
     
     public override void Render(DrawingContext context)
     {
+        Crisp.BeginFrame(this);
         var bounds = new Rect(Bounds.Size);
         var trackHeight = ShowValue ? 6.0 : 4.0;
         var cornerRadius = trackHeight / 2;

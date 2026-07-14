@@ -99,6 +99,7 @@ public class ProButton : ProControlBase
     
     public override void Render(DrawingContext context)
     {
+        Crisp.BeginFrame(this);
         var bounds = new Rect(Bounds.Size);
         var buttonRect = bounds.Deflate(new Thickness(4, 4, 4, 5));
         var cornerRadius = ProTheme.Size.CornerRadiusSmall;

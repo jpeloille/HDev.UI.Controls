@@ -166,6 +166,7 @@ public class ProNavBar : Control
 
     public override void Render(DrawingContext context)
     {
+        Crisp.BeginFrame(this);
         var bounds = new Rect(Bounds.Size);
         context.FillRectangle(new SolidColorBrush(ProTheme.Background.Toolbar), bounds);
         context.DrawLine(new Pen(new SolidColorBrush(ProTheme.Border.Subtle), 1),

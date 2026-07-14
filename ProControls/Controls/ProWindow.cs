@@ -530,6 +530,7 @@ public class ProWindowButton : Control
     
     public override void Render(DrawingContext context)
     {
+        Crisp.BeginFrame(this);
         var bounds = new Rect(Bounds.Size);
 
         // Boutons circulaires façon headerbar GNOME : cercle gris subtil
