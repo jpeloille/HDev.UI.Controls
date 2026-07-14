@@ -149,6 +149,16 @@ public partial class MainWindow : ProWindow
         };
         var todayButton = new ProButton { Text = "Aujourd'hui", Variant = ButtonVariant.Secondary, Size = ButtonSize.Small };
         todayButton.Click += (s, e) => gantt.ScrollToToday();
+
+        var criticalToggle = new ProToggleSwitch { OnLabel = "Chemin critique", OffLabel = "Chemin critique", ShowLabels = true };
+        criticalToggle.Toggled += (s, e) => gantt.HighlightCriticalPath = criticalToggle.IsOn;
+
+        var autoToggle = new ProToggleSwitch { OnLabel = "Ordonnancement auto", OffLabel = "Ordonnancement auto", ShowLabels = true };
+        autoToggle.Toggled += (s, e) =>
+        {
+            if (gantt.Project != null)
+                gantt.Project.AutoSchedule = autoToggle.IsOn;
+        };
         var stressButton = new ProButton { Text = "Test de charge (2 500 tâches)", Variant = ButtonVariant.Ghost, Size = ButtonSize.Small };
         stressButton.Click += (s, e) =>
         {
@@ -172,6 +182,8 @@ public partial class MainWindow : ProWindow
             gantt.ScrollToToday();
         };
         toolbar.Children.Add(todayButton);
+        toolbar.Children.Add(criticalToggle);
+        toolbar.Children.Add(autoToggle);
         toolbar.Children.Add(stressButton);
 
         var layout = new Avalonia.Controls.DockPanel();

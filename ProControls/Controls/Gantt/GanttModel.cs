@@ -102,11 +102,31 @@ public class GanttTask
     /// <summary>Récapitulative = a des enfants (dates et avancement par roll-up)</summary>
     public bool IsSummary => Children.Count > 0;
 
+    /// <summary>
+    /// Exclut cette tâche de l'ordonnancement automatique (ses dates posées
+    /// font foi même quand Project.AutoSchedule est actif)
+    /// </summary>
+    public bool IsManuallyScheduled { get; set; }
+
     // Valeurs effectives après roll-up (récapitulatives) — cachées, recalculées
     // par GanttProject.Recalculate, jamais pendant le rendu (volume > 2000)
     public DateTime EffectiveStart { get; internal set; }
     public DateTime EffectiveEnd { get; internal set; }
     public double EffectiveProgress { get; internal set; }
+
+    // Résultats CPM (posés par GanttScheduler.ComputeCriticalPath)
+    /// <summary>Marge totale en jours ouvrés (null = non calculée / récapitulative)</summary>
+    public int? TotalFloatDays { get; internal set; }
+
+    /// <summary>Sur le chemin critique (récapitulative : un descendant l'est)</summary>
+    public bool IsCritical { get; internal set; }
+
+    /// <summary>Pose les dates sans déclencher de recalcul (usage interne du scheduler)</summary>
+    internal void SetDatesSilent(DateTime start, DateTime end)
+    {
+        _start = start.Date;
+        _end = end.Date;
+    }
 
     public GanttTask()
     {
@@ -145,12 +165,19 @@ public class GanttTask
         return task;
     }
 
-    /// <summary>Déclare un prédécesseur (raccourci fluent)</summary>
+    /// <summary>
+    /// Déclare un prédécesseur (raccourci fluent).
+    /// Refuse la création d'un cycle de dépendances.
+    /// </summary>
     public GanttTask DependsOn(GanttTask predecessor,
         GanttDependencyType type = GanttDependencyType.FinishToStart, int lagDays = 0)
     {
+        if (ReferenceEquals(predecessor, this) || GanttScheduler.WouldCreateCycle(predecessor, this))
+            throw new InvalidOperationException(
+                $"La dépendance « {predecessor.Name} » → « {Name} » créerait un cycle.");
+
         Predecessors.Add(new GanttDependency(predecessor, type, lagDays));
-        Project?.NotifyVisualChange();
+        Project?.NotifyDataChange();
         return this;
     }
 
@@ -194,19 +221,24 @@ public class GanttCalendar
     }
 
     /// <summary>
-    /// Ajoute n jours ouvrés (n ≥ 0) à partir de date : 0 = le jour ouvré même
-    /// (ou le suivant si date est chômée)
+    /// Ajoute n jours ouvrés à partir de date (n peut être négatif = recul).
+    /// n = 0 : le jour ouvré même, sinon le prochain (n ≥ 0) ou le précédent (n &lt; 0)
     /// </summary>
     public DateTime AddWorkingDays(DateTime date, int n)
     {
         var d = date.Date;
         while (!IsWorkingDay(d))
-            d = d.AddDays(1);
+            d = d.AddDays(n >= 0 ? 1 : -1);
 
         while (n > 0)
         {
             d = d.AddDays(1);
             if (IsWorkingDay(d)) n--;
+        }
+        while (n < 0)
+        {
+            d = d.AddDays(-1);
+            if (IsWorkingDay(d)) n++;
         }
         return d;
     }
@@ -223,6 +255,29 @@ public class GanttProject
 
     public ObservableCollection<GanttTask> Tasks { get; } = new();
     public GanttCalendar Calendar { get; } = new();
+
+    private bool _autoSchedule;
+
+    /// <summary>
+    /// Ordonnancement automatique : les tâches à prédécesseurs (non
+    /// récapitulatives, non IsManuallyScheduled) sont calées selon leurs
+    /// dépendances, durée préservée. Défaut false = dates posées font foi.
+    /// </summary>
+    public bool AutoSchedule
+    {
+        get => _autoSchedule;
+        set
+        {
+            if (_autoSchedule == value) return;
+            _autoSchedule = value;
+            NotifyDataChange();
+        }
+    }
+
+    /// <summary>Tâches impliquées dans un cycle de dépendances (exclues de l'ordonnancement)</summary>
+    public IReadOnlyList<GanttTask> CyclicTasks { get; internal set; } = Array.Empty<GanttTask>();
+
+    public bool HasCycle => CyclicTasks.Count > 0;
 
     /// <summary>Données modifiées (dates, structure) : roll-up refait, layout à refaire</summary>
     public event EventHandler? DataChanged;
@@ -274,11 +329,23 @@ public class GanttProject
     }
 
     /// <summary>
-    /// Roll-up des récapitulatives (bottom-up) : début = min des enfants,
-    /// fin = max, avancement = moyenne pondérée par la durée ouvrée.
-    /// Appelé sur mutation, jamais pendant le rendu.
+    /// Recalcul complet sur mutation (jamais pendant le rendu) :
+    /// roll-up → propagation des dépendances (si AutoSchedule) → roll-up → CPM
     /// </summary>
     public void Recalculate()
+    {
+        RollUpAll();
+
+        if (_autoSchedule)
+        {
+            GanttScheduler.Propagate(this);
+            RollUpAll();
+        }
+
+        GanttScheduler.ComputeCriticalPath(this);
+    }
+
+    private void RollUpAll()
     {
         foreach (var task in Tasks)
             RollUp(task);

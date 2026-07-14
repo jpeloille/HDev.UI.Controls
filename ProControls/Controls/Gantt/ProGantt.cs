@@ -41,6 +41,20 @@ public class ProGantt : Control
     /// <summary>Axe temporel (zoom, origine, conversion temps↔pixels)</summary>
     public GanttTimeAxis Axis { get; } = new();
 
+    private bool _highlightCriticalPath;
+
+    /// <summary>Surligne le chemin critique (barres et jalons en rouge)</summary>
+    public bool HighlightCriticalPath
+    {
+        get => _highlightCriticalPath;
+        set
+        {
+            if (_highlightCriticalPath == value) return;
+            _highlightCriticalPath = value;
+            InvalidateVisual();
+        }
+    }
+
     /// <summary>Déclenché quand la sélection change</summary>
     public event EventHandler? SelectedTaskChanged;
 
@@ -675,6 +689,8 @@ public class ProGantt : Control
 
                 var centerY = y + RowHeight / 2;
 
+                var isCritical = _highlightCriticalPath && task.IsCritical;
+
                 if (task.IsMilestone)
                 {
                     // Losange
@@ -688,12 +704,14 @@ public class ProGantt : Control
                         g.LineTo(new Point(mx - 7, centerY));
                         g.EndFigure(true);
                     }
-                    context.DrawGeometry(new SolidColorBrush(ProTheme.Accent.Secondary), null, geometry);
+                    context.DrawGeometry(new SolidColorBrush(
+                        isCritical ? ProTheme.Accent.Error : ProTheme.Accent.Secondary), null, geometry);
                 }
                 else if (task.IsSummary)
                 {
                     // Crochet récapitulatif (barre fine + pattes)
-                    var brush = new SolidColorBrush(ProTheme.Text.Primary);
+                    var brush = new SolidColorBrush(
+                        isCritical ? ProTheme.Accent.Error : ProTheme.Text.Primary);
                     var barY = centerY - 5;
                     context.FillRectangle(brush, new Rect(x1, barY, Math.Max(2, x2 - x1), 5));
                     var legs = new StreamGeometry();
@@ -716,15 +734,16 @@ public class ProGantt : Control
                     var barRect = new Rect(x1, centerY - BarHeight / 2,
                         Math.Max(2, x2 - x1), BarHeight);
 
+                    var barColor = isCritical ? ProTheme.Accent.Error : ProTheme.Accent.Primary;
                     context.DrawRectangle(
-                        new SolidColorBrush(ProTheme.WithOpacity(ProTheme.Accent.Primary, 70)),
-                        new Pen(new SolidColorBrush(ProTheme.Accent.Primary), 1),
+                        new SolidColorBrush(ProTheme.WithOpacity(barColor, 70)),
+                        new Pen(new SolidColorBrush(barColor), 1),
                         barRect, 3, 3);
 
                     if (task.EffectiveProgress > 0)
                     {
                         var progressWidth = barRect.Width * task.EffectiveProgress / 100;
-                        context.DrawRectangle(new SolidColorBrush(ProTheme.Accent.Primary), null,
+                        context.DrawRectangle(new SolidColorBrush(barColor), null,
                             new Rect(barRect.X, barRect.Y, progressWidth, barRect.Height), 3, 3);
                     }
                 }
