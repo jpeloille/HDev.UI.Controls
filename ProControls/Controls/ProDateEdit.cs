@@ -108,6 +108,12 @@ public class ProDateEdit : ProEditorBase
     private static string DeriveMask(string format)
         => new(format.Select(c => char.IsLetter(c) ? '0' : c).ToArray());
 
+    protected override void RefreshThemeBrushes()
+    {
+        base.RefreshThemeBrushes();
+        RefreshPopupBorder(_popupBorder); // le calendrier lui-même est recréé à l'ouverture
+    }
+
     private void SetTextFromValue()
     {
         _updatingText = true;

@@ -418,6 +418,26 @@ public class ProRichEdit : Control
     // FOCUS + CARET CLIGNOTANT
     // ═══════════════════════════════════════════════════════════════
 
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        ProTheme.VariantChanged += OnThemeVariantChanged;
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        ProTheme.VariantChanged -= OnThemeVariantChanged;
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    private void OnThemeVariantChanged(object? sender, EventArgs e)
+    {
+        // Les TextLayouts portent des brushes construits : re-layout complet
+        _layoutWidth = -1;
+        InvalidateMeasure();
+        InvalidateVisual();
+    }
+
     protected override void OnGotFocus(GotFocusEventArgs e)
     {
         _caretVisible = true;

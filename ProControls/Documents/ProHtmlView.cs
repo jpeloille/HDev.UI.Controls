@@ -49,6 +49,26 @@ public class ProHtmlView : Control
     /// <summary>Texte brut du document (copie, recherche)</summary>
     public string GetText() => _document.GetText();
 
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        ProTheme.VariantChanged += OnThemeVariantChanged;
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        ProTheme.VariantChanged -= OnThemeVariantChanged;
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    private void OnThemeVariantChanged(object? sender, EventArgs e)
+    {
+        // Les TextLayouts portent des brushes construits : re-layout complet
+        _layoutWidth = -1;
+        InvalidateMeasure();
+        InvalidateVisual();
+    }
+
     private void ResolveImages()
     {
         if (ImageResolver == null) return;

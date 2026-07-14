@@ -135,13 +135,32 @@ public class ProLookUpEdit : Control
     {
         base.OnAttachedToVisualTree(e);
         ((ISetLogicalParent)_popup).SetParent(this);
+        ProTheme.VariantChanged += OnThemeVariantChanged;
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        ProTheme.VariantChanged -= OnThemeVariantChanged;
         _popup.IsOpen = false;
         ((ISetLogicalParent)_popup).SetParent(null);
         base.OnDetachedFromVisualTree(e);
+    }
+
+    private void OnThemeVariantChanged(object? sender, EventArgs e)
+    {
+        // Le conteneur du dropdown est construit une fois (la grille elle-même
+        // suit RequestedThemeVariant via ses ThemeDictionaries)
+        if (_popup.Child is Border border)
+        {
+            border.Background = new SolidColorBrush(ProTheme.Background.Panel);
+            border.BorderBrush = new SolidColorBrush(ProTheme.Border.Default);
+            border.BoxShadow = new BoxShadows(new BoxShadow
+            {
+                OffsetX = 0, OffsetY = 2, Blur = 8,
+                Color = ProTheme.Shadow.Color
+            });
+        }
+        InvalidateVisual();
     }
 
     // ═══════════════════════════════════════════════════════════════

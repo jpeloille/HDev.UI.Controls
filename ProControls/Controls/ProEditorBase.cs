@@ -224,6 +224,43 @@ public abstract class ProEditorBase : Border
         IsEnabledProperty.Changed.AddClassHandler<ProEditorBase>((x, _) => x.UpdateVisualState());
     }
 
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        ProTheme.VariantChanged += OnThemeVariantChanged;
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        ProTheme.VariantChanged -= OnThemeVariantChanged;
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    private void OnThemeVariantChanged(object? sender, EventArgs e) => RefreshThemeBrushes();
+
+    /// <summary>
+    /// Re-pose les brushes construits après un changement de variante ;
+    /// les éditeurs à popup surchargent pour re-brusher leur dropdown
+    /// </summary>
+    protected virtual void RefreshThemeBrushes()
+    {
+        InnerTextBox.CaretBrush = new SolidColorBrush(ProTheme.Text.Primary);
+        InnerTextBox.SelectionBrush = new SolidColorBrush(ProTheme.WithOpacity(ProTheme.Accent.Primary, 80));
+        UpdateVisualState();
+    }
+
+    /// <summary>Re-brushe un Border de dropdown (fond, bordure, ombre)</summary>
+    protected static void RefreshPopupBorder(Avalonia.Controls.Border border)
+    {
+        border.Background = new SolidColorBrush(ProTheme.Background.Panel);
+        border.BorderBrush = new SolidColorBrush(ProTheme.Border.Default);
+        border.BoxShadow = new BoxShadows(new BoxShadow
+        {
+            OffsetX = 0, OffsetY = 2, Blur = 8,
+            Color = ProTheme.Shadow.Color
+        });
+    }
+
     /// <summary>Installe la zone de boutons à droite du texte (calendrier, spin...)</summary>
     protected void SetRightElement(Control element)
     {

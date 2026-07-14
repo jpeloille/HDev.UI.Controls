@@ -132,7 +132,8 @@ Note : le README de AvaloniaDataGrid est marketing (tout ✅), se fier au code /
 
 **🟡 Dettes existantes qui deviennent bloquantes** :
 - ~~Raccourcis clavier réels~~ ✅ **Fait le 14/07/2026** : `ProShortcutManager` par fenêtre (KeyGesture.Parse des `Shortcut`, dispatch en bulle = le contrôle focalisé garde la priorité), enregistrement auto ProMenuBar (récursif, `RefreshShortcuts()`) + `ProRibbonButton.Shortcut`, **Alt+lettre** ouvre les menus, **navigation clavier complète** dans les menus ouverts (↑↓ saute séparateurs/désactivés, Enter, ←→ entre menus et sous-menus, Échap), `IsEnabled` bloque réellement le clic. API publique pour les raccourcis applicatifs.
-- Restantes : ribbon avancé (backstage/galeries/QAT/onglets contextuels), rendu des colonnes Image/Bouton du JDataGrid + master-detail, impression (inexistante partout), dark mode ProTheme.
+- ~~Dark mode ProTheme~~ ✅ **Fait le 14/07/2026** (validé) : `ProTheme` à palettes commutables — l'API historique (`ProTheme.Background.Panel`…) est INTACTE, les tokens délèguent à la palette active (`ProPalette.Light`/`Dark`, 56 couleurs) ; `ProTheme.Variant` + `VariantChanged`. Propagation : ProWindow suit (RequestedThemeVariant pour les Fluent internes + invalidation récursive), 6 contrôles à brushes construits s'abonnent (Card, TextBox, EditorBase, TokenEdit, HtmlView/RichEdit = re-layout), dropdowns re-brushés (Combo/Date/Search/Token/LookUp via `RefreshThemeBrushes()` virtuel du socle), JDataGrid via ThemeDictionaries du skin Yaru (+ extraction des couleurs en dur du thème de base, commit AvaloniaDataGrid e04094c). Toggle 🌙 démo. Une 3e variante = une palette de plus.
+- Restantes : ribbon avancé (backstage/galeries/QAT/onglets contextuels), rendu des colonnes Image/Bouton du JDataGrid + master-detail, impression (inexistante partout).
 
 **⚪ Hors contrôles (l'autre moitié de l'iceberg, pour mémoire)** : IMAP/SMTP (ou EWS/Graph), stockage local + indexation de recherche, iCal/récurrences, vCard.
 

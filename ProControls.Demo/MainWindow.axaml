@@ -8,7 +8,7 @@
         Width="1200" Height="900"
         WindowStartupLocation="CenterScreen">
     
-    <Grid Background="#F5F5F5" RowDefinitions="Auto,Auto,Auto,*,Auto">
+    <Grid x:Name="RootGrid" Background="#F5F5F5" RowDefinitions="Auto,Auto,Auto,*,Auto">
 
         <!-- Menu Bar -->
         <pro:ProMenuBar x:Name="MainMenuBar" Grid.Row="0"/>

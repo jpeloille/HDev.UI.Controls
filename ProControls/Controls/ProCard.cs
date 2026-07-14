@@ -71,6 +71,29 @@ public class ProCard : ContentControl
             _initialized = true;
             BuildLayout();
         }
+
+        ProTheme.VariantChanged += OnThemeVariantChanged;
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        ProTheme.VariantChanged -= OnThemeVariantChanged;
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    private void OnThemeVariantChanged(object? sender, EventArgs e)
+    {
+        // Les brushes de la carte sont construits une fois : les re-poser
+        if (_cardBorder != null)
+        {
+            _cardBorder.Background = new SolidColorBrush(ProTheme.Background.Panel);
+            _cardBorder.BorderBrush = new SolidColorBrush(ProTheme.Border.Subtle);
+        }
+        if (_titleBlock != null)
+            _titleBlock.Foreground = new SolidColorBrush(ProTheme.Text.Primary);
+        if (_titleSeparator != null)
+            _titleSeparator.Background = new SolidColorBrush(ProTheme.Border.Subtle);
+        ApplyElevation();
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)

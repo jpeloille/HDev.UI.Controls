@@ -804,6 +804,23 @@ public partial class MainWindow : ProWindow
             if (statusBar != null && statusBar.Items.Count > 0)
                 statusBar.Items[0].Text = "Impression demandée...";
         });
+        toolbar.AddSeparator();
+
+        // Bascule clair/sombre à chaud
+        var darkToggle = toolbar.AddToggle("🌙", "Sombre",
+            isChecked: ProControls.Theme.ProTheme.IsDark);
+        darkToggle.Click += (s, e) =>
+        {
+            ProControls.Theme.ProTheme.Variant = darkToggle.IsChecked
+                ? ProControls.Theme.ProThemeVariant.Dark
+                : ProControls.Theme.ProThemeVariant.Light;
+
+            // Fond racine de la démo (hors ProWindow)
+            var root = this.FindControl<Avalonia.Controls.Grid>("RootGrid");
+            if (root != null)
+                root.Background = new Avalonia.Media.SolidColorBrush(
+                    ProControls.Theme.ProTheme.Background.Window);
+        };
     }
 
     private void InitializeStatusBar()

@@ -96,6 +96,14 @@ public class ProSearchControl : ProEditorBase
         InnerTextBox.AddHandler(KeyDownEvent, OnSearchKeyDown, RoutingStrategies.Tunnel);
     }
 
+    protected override void RefreshThemeBrushes()
+    {
+        base.RefreshThemeBrushes();
+        _listBox.Background = new SolidColorBrush(ProTheme.Background.Panel);
+        if (_popup.Child is Border border)
+            RefreshPopupBorder(border);
+    }
+
     private void OnQueryChanged()
     {
         if (_syncing) return;

@@ -194,6 +194,25 @@ public class ProTextBox : Border
     // ÉVÉNEMENTS SOURIS
     // ═══════════════════════════════════════════════════════════════
     
+    protected override void OnAttachedToVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        ProControls.Theme.ProTheme.VariantChanged += OnThemeVariantChanged;
+    }
+
+    protected override void OnDetachedFromVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
+    {
+        ProControls.Theme.ProTheme.VariantChanged -= OnThemeVariantChanged;
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    private void OnThemeVariantChanged(object? sender, EventArgs e)
+    {
+        _innerTextBox.CaretBrush = new SolidColorBrush(ProTheme.Text.Primary);
+        _innerTextBox.SelectionBrush = new SolidColorBrush(ProTheme.WithOpacity(ProTheme.Accent.Primary, 80));
+        UpdateVisualState();
+    }
+
     protected override void OnPointerEntered(PointerEventArgs e)
     {
         base.OnPointerEntered(e);

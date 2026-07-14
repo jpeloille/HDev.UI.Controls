@@ -126,6 +126,38 @@ public class ProTokenEdit : Border
 
     private string GetTokenText(object token) => TokenText?.Invoke(token) ?? token.ToString() ?? "";
 
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        ProTheme.VariantChanged += OnThemeVariantChanged;
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        ProTheme.VariantChanged -= OnThemeVariantChanged;
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    private void OnThemeVariantChanged(object? sender, EventArgs e)
+    {
+        Background = new SolidColorBrush(ProTheme.Background.Control);
+        BorderBrush = new SolidColorBrush(ProTheme.Border.Default);
+        RebuildChips(); // les chips portent des brushes construits
+
+        // Dropdown de suggestions
+        _listBox.Background = new SolidColorBrush(ProTheme.Background.Panel);
+        if (_popup.Child is Border border)
+        {
+            border.Background = new SolidColorBrush(ProTheme.Background.Panel);
+            border.BorderBrush = new SolidColorBrush(ProTheme.Border.Default);
+            border.BoxShadow = new BoxShadows(new BoxShadow
+            {
+                OffsetX = 0, OffsetY = 2, Blur = 8,
+                Color = ProTheme.Shadow.Color
+            });
+        }
+    }
+
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);

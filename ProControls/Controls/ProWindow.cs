@@ -138,11 +138,11 @@ public class ProWindow : Window
         FontFamily = new FontFamily(ProTheme.Typography.FontFamily);
         FontSize = ProTheme.Typography.FontSizeBody;
 
-        // ProTheme n'a pour l'instant que des tokens CLAIRS : forcer le variant
-        // Light pour les contrôles Fluent embarqués (ListBox du combo, éditeurs
-        // de la grille...) même sur un bureau sombre — sinon texte blanc sur nos
-        // fonds blancs (invisible). À retirer quand le mode sombre Yaru existera.
-        RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+        // Le variant Fluent des contrôles embarqués (ListBox du combo, éditeurs
+        // de la grille, scrollbars...) suit la variante ProTheme — et se met à
+        // jour à chaud avec elle
+        ApplyThemeVariant();
+        ProTheme.VariantChanged += OnThemeVariantChanged;
 
         ApplyChromeMode();
         
@@ -154,9 +154,44 @@ public class ProWindow : Window
         // Bordure subtile
         BorderBrush = new SolidColorBrush(ProTheme.Border.Default);
         BorderThickness = new Thickness(1);
-        
+
         // Construire l'UI
         InitializeComponent();
+    }
+
+    private void ApplyThemeVariant()
+        => RequestedThemeVariant = ProTheme.IsDark
+            ? Avalonia.Styling.ThemeVariant.Dark
+            : Avalonia.Styling.ThemeVariant.Light;
+
+    private void OnThemeVariantChanged(object? sender, EventArgs e)
+    {
+        ApplyThemeVariant();
+
+        // Re-brusher les surfaces de la fenêtre
+        Background = new SolidColorBrush(ProTheme.Background.Window);
+        BorderBrush = new SolidColorBrush(ProTheme.Border.Default);
+        TitleBarBackground = new SolidColorBrush(ProTheme.Background.Toolbar);
+        TitleBarForeground = new SolidColorBrush(ProTheme.Text.Primary);
+        if (_titleBar != null)
+            _titleBar.Background = TitleBarBackground;
+
+        // Les contrôles custom-rendered relisent ProTheme au prochain rendu :
+        // une invalidation récursive suffit
+        InvalidateRecursive(this);
+    }
+
+    private static void InvalidateRecursive(Avalonia.Visual visual)
+    {
+        visual.InvalidateVisual();
+        foreach (var child in Avalonia.VisualTree.VisualExtensions.GetVisualChildren(visual))
+            InvalidateRecursive(child);
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        ProTheme.VariantChanged -= OnThemeVariantChanged;
+        base.OnClosed(e);
     }
     
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)

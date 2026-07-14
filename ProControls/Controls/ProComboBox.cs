@@ -675,10 +675,14 @@ public class ProComboBox : Control
         {
             ((ISetLogicalParent)_popup).SetParent(this);
         }
+
+        ProTheme.VariantChanged += OnThemeVariantChanged;
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        ProTheme.VariantChanged -= OnThemeVariantChanged;
+
         if (_popup != null)
         {
             _popup.IsOpen = false;
@@ -686,6 +690,30 @@ public class ProComboBox : Control
         }
 
         base.OnDetachedFromVisualTree(e);
+    }
+
+    private void OnThemeVariantChanged(object? sender, EventArgs e)
+    {
+        // Le dropdown est construit une fois : re-brusher fond, bordure, liste
+        if (_listBox != null)
+            _listBox.Background = new SolidColorBrush(ProTheme.Background.Panel);
+        if (_popup?.Child is Border border)
+        {
+            border.Background = new SolidColorBrush(ProTheme.Background.Panel);
+            border.BorderBrush = new SolidColorBrush(ProTheme.Border.Default);
+            border.BoxShadow = new BoxShadows(new BoxShadow
+            {
+                OffsetX = 0, OffsetY = 2, Blur = 8,
+                Color = ProTheme.Shadow.Color
+            });
+        }
+        if (_editTextBox != null)
+        {
+            _editTextBox.Foreground = new SolidColorBrush(ProTheme.Text.Primary);
+            _editTextBox.CaretBrush = new SolidColorBrush(ProTheme.Text.Primary);
+            _editTextBox.SelectionBrush = new SolidColorBrush(ProTheme.WithOpacity(ProTheme.Accent.Primary, 80));
+        }
+        InvalidateVisual();
     }
 
     // ═══════════════════════════════════════════════════════════════
