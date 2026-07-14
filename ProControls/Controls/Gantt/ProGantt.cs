@@ -45,6 +45,12 @@ public class ProGantt : Control
     private GanttTask? _linkTarget;
     private bool _linkTargetValid;
 
+    // Édition in-place d'une cellule de la table (phase 3)
+    private Control? _cellEditor;
+    private GanttTask? _editTask;
+    private int _editColumn;
+    private Rect _cellEditorRect;
+
     private List<(GanttTask Task, int Depth)> _visibleRows = new();
     private readonly Dictionary<GanttTask, int> _rowIndexByTask = new();
 
@@ -64,6 +70,20 @@ public class ProGantt : Control
         {
             if (_highlightCriticalPath == value) return;
             _highlightCriticalPath = value;
+            InvalidateVisual();
+        }
+    }
+
+    private bool _showBaseline;
+
+    /// <summary>Affiche la baseline (barres prévues en gris sous les barres réelles)</summary>
+    public bool ShowBaseline
+    {
+        get => _showBaseline;
+        set
+        {
+            if (_showBaseline == value) return;
+            _showBaseline = value;
             InvalidateVisual();
         }
     }
@@ -94,6 +114,12 @@ public class ProGantt : Control
 
     /// <summary>Après création d'un lien à la souris</summary>
     public event EventHandler<GanttLinkEventArgs>? LinkCreated;
+
+    /// <summary>Avant suppression d'un lien via le menu contextuel (annulable)</summary>
+    public event EventHandler<GanttLinkEventArgs>? LinkRemoving;
+
+    /// <summary>Après suppression d'un lien</summary>
+    public event EventHandler<GanttLinkEventArgs>? LinkRemoved;
 
     public GanttProject? Project
     {
@@ -155,6 +181,7 @@ public class ProGantt : Control
         _vScroll.Scroll += (s, e) =>
         {
             if (_syncingScrollbars) return;
+            CloseCellEditor(commit: true);
             _verticalOffset = _vScroll.Value;
             InvalidateVisual();
         };
@@ -267,6 +294,12 @@ public class ProGantt : Control
             TimelineX, finalSize.Height - ScrollBarSize,
             Math.Max(0, finalSize.Width - ScrollBarSize - TimelineX), ScrollBarSize));
 
+        if (_cellEditor != null)
+        {
+            _cellEditor.Measure(_cellEditorRect.Size);
+            _cellEditor.Arrange(_cellEditorRect);
+        }
+
         UpdateScrollBars();
         return finalSize;
     }
@@ -287,6 +320,71 @@ public class ProGantt : Control
             - TimelineWidth / 3;
         UpdateScrollBars();
         InvalidateVisual();
+    }
+
+    /// <summary>Ajuste le zoom pour que tout le projet tienne dans la timeline</summary>
+    public void ZoomToFit()
+    {
+        if (_project == null || TimelineWidth <= 0) return;
+
+        var (start, end) = _project.GetBounds();
+        var days = Math.Max(1, (end - start).TotalDays + 8);
+        Axis.PixelsPerDay = TimelineWidth / days;
+        Axis.ViewOffset = (start.AddDays(-3) - Axis.Origin).TotalDays * Axis.PixelsPerDay;
+        UpdateScrollBars();
+        InvalidateVisual();
+    }
+
+    /// <summary>
+    /// Exporte le diagramme en PNG. entireProject : rend l'intégralité du
+    /// projet (toutes lignes dépliées visibles, toute la plage temporelle)
+    /// via un rendu hors écran ; sinon exporte la vue courante.
+    /// </summary>
+    public void ExportPng(string path, bool entireProject = false)
+    {
+        if (!entireProject || _project == null)
+        {
+            RenderToFile(this, new global::Avalonia.PixelSize(
+                Math.Max(1, (int)Bounds.Width), Math.Max(1, (int)Bounds.Height)), path);
+            return;
+        }
+
+        // Rendu hors écran à la taille du projet complet
+        var (start, end) = _project.GetBounds();
+        var ppd = Math.Max(4, Axis.PixelsPerDay);
+        var timelineWidth = (end.AddDays(7) - start.AddDays(-3)).TotalDays * ppd;
+        var width = _tableWidth + SplitterWidth + timelineWidth + ScrollBarSize;
+        var height = HeaderHeight + _visibleRows.Count * RowHeight + ScrollBarSize;
+
+        var offscreen = new ProGantt
+        {
+            Project = _project,
+            HighlightCriticalPath = _highlightCriticalPath,
+            ShowBaseline = _showBaseline,
+            IsReadOnly = true,
+            _tableWidth = _tableWidth
+        };
+        offscreen.Axis.Origin = start.AddDays(-3);
+        offscreen.Axis.PixelsPerDay = ppd;
+        offscreen.Axis.ViewOffset = 0;
+
+        var size = new Size(Math.Min(16000, width), Math.Min(16000, height));
+        offscreen.Measure(size);
+        offscreen.Arrange(new Rect(size));
+
+        RenderToFile(offscreen, new global::Avalonia.PixelSize(
+            (int)size.Width, (int)size.Height), path);
+
+        // Détacher le projet du clone (désabonnement des événements)
+        offscreen.Project = null;
+    }
+
+    private static void RenderToFile(Control visual, global::Avalonia.PixelSize pixelSize, string path)
+    {
+        using var bitmap = new global::Avalonia.Media.Imaging.RenderTargetBitmap(
+            pixelSize, new Vector(96, 96));
+        bitmap.Render(visual);
+        bitmap.Save(path);
     }
 
     /// <summary>Rend une tâche visible (scroll vertical + horizontal)</summary>
@@ -502,9 +600,28 @@ public class ProGantt : Control
     {
         var calendar = _project?.Calendar ?? new GanttCalendar();
         var duration = calendar.CountWorkingDays(task.EffectiveStart, task.EffectiveEnd);
-        return task.IsMilestone
+        var text = task.IsMilestone
             ? $"{task.Name}\n{task.EffectiveStart:d} (jalon)"
             : $"{task.Name}\n{task.EffectiveStart:d} → {task.EffectiveEnd:d} · {duration} j ouvrés · {task.EffectiveProgress:F0} %";
+
+        // Écart vs baseline (en jours ouvrés sur la date de fin)
+        if (_showBaseline && task.HasBaseline)
+        {
+            var baselineEnd = task.BaselineEnd!.Value;
+            var actualEnd = task.EffectiveEnd;
+            var slip = actualEnd >= baselineEnd
+                ? calendar.CountWorkingDays(baselineEnd, actualEnd) - 1
+                : -(calendar.CountWorkingDays(actualEnd, baselineEnd) - 1);
+
+            text += slip switch
+            {
+                > 0 => $"\nprévu : {task.BaselineStart:d} → {baselineEnd:d} · retard {slip} j ouvrés",
+                < 0 => $"\nprévu : {task.BaselineStart:d} → {baselineEnd:d} · avance {-slip} j ouvrés",
+                _ => $"\nprévu : {task.BaselineStart:d} → {baselineEnd:d} · conforme"
+            };
+        }
+
+        return text;
     }
 
     protected override void OnPointerExited(PointerEventArgs e)
@@ -536,6 +653,16 @@ public class ProGantt : Control
         }
 
         var (task, depth, index) = row.Value;
+
+        // Clic droit : menu contextuel de la tâche
+        if (e.GetCurrentPoint(this).Properties.IsRightButtonPressed)
+        {
+            SelectedTask = task;
+            if (!IsReadOnly)
+                ShowTaskContextMenu(task, pos);
+            e.Handled = true;
+            return;
+        }
 
         // Chevron (dans la table) : toggle sans changer la sélection
         if (pos.X < _tableWidth && task.IsSummary &&
@@ -575,7 +702,28 @@ public class ProGantt : Control
         SelectedTask = task;
 
         if (e.ClickCount == 2)
-            TaskDoubleClicked?.Invoke(this, task);
+        {
+            // Double-clic dans la table = édition in-place de la cellule visée ;
+            // dans la timeline = événement applicatif
+            if (pos.X < _tableWidth && !IsReadOnly)
+            {
+                var columns = GetTableColumns();
+                double x = 0;
+                for (int c = 0; c < columns.Length; c++)
+                {
+                    if (pos.X < x + columns[c].Width)
+                    {
+                        BeginCellEdit(task, c);
+                        break;
+                    }
+                    x += columns[c].Width;
+                }
+            }
+            else
+            {
+                TaskDoubleClicked?.Invoke(this, task);
+            }
+        }
 
         e.Handled = true;
         base.OnPointerPressed(e);
@@ -596,6 +744,176 @@ public class ProGantt : Control
             e.Handled = true;
         }
         base.OnPointerReleased(e);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ÉDITION IN-PLACE (double-clic ou F2 sur une cellule de la table)
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>Ouvre l'éditeur de la colonne (0=nom, 1=début, 2=fin, 3=%)</summary>
+    public void BeginCellEdit(GanttTask task, int column)
+    {
+        CloseCellEditor(commit: true);
+
+        if (IsReadOnly || !_rowIndexByTask.TryGetValue(task, out var index)) return;
+
+        // Récapitulatives : seul le nom est éditable (dates/% par roll-up) ;
+        // jalons : pas de fin
+        if (task.IsSummary && column != 0) return;
+        if (task.IsMilestone && column is 2 or 3) return;
+
+        var columns = GetTableColumns();
+        if (column < 0 || column >= columns.Length) return;
+
+        double x = 0;
+        for (int c = 0; c < column; c++)
+            x += columns[c].Width;
+
+        _cellEditorRect = new Rect(x + 1, RowY(index) + 1,
+            Math.Max(40, columns[column].Width - 2), RowHeight - 2);
+
+        _cellEditor = column switch
+        {
+            0 => new ProTextBox { Text = task.Name },
+            1 => new ProDateEdit { Value = task.Start, MinWidth = 40 },
+            2 => new ProDateEdit { Value = task.End, MinWidth = 40 },
+            3 => new ProSpinEdit { MinValue = 0, MaxValue = 100, Decimals = 0, Value = (decimal)task.Progress, MinWidth = 40 },
+            _ => null
+        };
+        if (_cellEditor == null) return;
+
+        _editTask = task;
+        _editColumn = column;
+
+        _cellEditor.AddHandler(KeyDownEvent, OnCellEditorKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        VisualChildren.Add(_cellEditor);
+        LogicalChildren.Add(_cellEditor);
+        InvalidateArrange();
+
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            switch (_cellEditor)
+            {
+                case ProTextBox tb: tb.FocusTextBox(); tb.SelectAll(); break;
+                case ProEditorBase eb: eb.FocusEditor(); eb.SelectAll(); break;
+            }
+        }, Avalonia.Threading.DispatcherPriority.Loaded);
+    }
+
+    private void OnCellEditorKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            CloseCellEditor(commit: true);
+            Focus();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape)
+        {
+            CloseCellEditor(commit: false);
+            Focus();
+            e.Handled = true;
+        }
+    }
+
+    private void CloseCellEditor(bool commit)
+    {
+        if (_cellEditor == null || _editTask == null) return;
+
+        var editor = _cellEditor;
+        var task = _editTask;
+        var column = _editColumn;
+        _cellEditor = null;
+        _editTask = null;
+
+        if (commit && _project != null)
+        {
+            switch (column)
+            {
+                case 0 when editor is ProTextBox tb:
+                    if (!string.IsNullOrWhiteSpace(tb.Text))
+                        task.Name = tb.Text!.Trim();
+                    break;
+
+                case 1 when editor is ProDateEdit de && de.Value is { } newStart:
+                    ApplyDatesEdit(task, newStart,
+                        task.IsMilestone ? newStart : (task.End < newStart ? newStart : task.End));
+                    break;
+
+                case 2 when editor is ProDateEdit de && de.Value is { } newEnd:
+                    ApplyDatesEdit(task, task.Start > newEnd ? newEnd : task.Start, newEnd);
+                    break;
+
+                case 3 when editor is ProSpinEdit spin:
+                    var args = new GanttProgressChangeEventArgs(task, (double)spin.Value);
+                    ProgressChanging?.Invoke(this, args);
+                    if (!args.Cancel)
+                    {
+                        task.Progress = args.NewProgress;
+                        ProgressChanged?.Invoke(this, task);
+                    }
+                    break;
+            }
+        }
+
+        VisualChildren.Remove(editor);
+        LogicalChildren.Remove(editor);
+        InvalidateVisual();
+    }
+
+    /// <summary>Applique un changement de dates issu de l'édition (mêmes événements que le drag)</summary>
+    private void ApplyDatesEdit(GanttTask task, DateTime newStart, DateTime newEnd)
+    {
+        if (newStart == task.Start && newEnd == task.End) return;
+
+        var args = new GanttTaskChangeEventArgs(task, newStart, newEnd);
+        TaskDatesChanging?.Invoke(this, args);
+        if (args.Cancel) return;
+
+        task.SetDatesSilent(args.NewStart, args.NewEnd);
+        _project!.NotifyDataChange();
+        TaskDatesChanged?.Invoke(this, task);
+    }
+
+    /// <summary>
+    /// Menu contextuel d'une tâche : suppression des liens entrants,
+    /// bascule ordonnancement manuel
+    /// </summary>
+    private void ShowTaskContextMenu(GanttTask task, Point pos)
+    {
+        var menu = new ProContextMenu();
+        var hasItems = false;
+
+        foreach (var dep in task.Predecessors.ToList())
+        {
+            var captured = dep;
+            menu.Add($"Supprimer le lien « {captured.Predecessor.Name} » →", "🔗", null, () =>
+            {
+                var args = new GanttLinkEventArgs(captured.Predecessor, task);
+                LinkRemoving?.Invoke(this, args);
+                if (!args.Cancel)
+                {
+                    task.RemoveDependency(captured.Predecessor);
+                    LinkRemoved?.Invoke(this, args);
+                }
+            });
+            hasItems = true;
+        }
+
+        if (!task.IsSummary)
+        {
+            if (hasItems)
+                menu.AddSeparator();
+            menu.AddCheckable("Ordonnancement manuel", task.IsManuallyScheduled, isChecked =>
+            {
+                task.IsManuallyScheduled = isChecked;
+                _project?.NotifyDataChange();
+            });
+            hasItems = true;
+        }
+
+        if (hasItems)
+            menu.Show(this, pos);
     }
 
     private void CommitDrag()
@@ -662,6 +980,9 @@ public class ProGantt : Control
 
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
     {
+        // L'éditeur de cellule ne suit pas le scroll : commit et fermeture
+        CloseCellEditor(commit: true);
+
         var pos = e.GetPosition(this);
 
         if (e.KeyModifiers.HasFlag(KeyModifiers.Control))
@@ -729,6 +1050,11 @@ public class ProGantt : Control
                 break;
             case Key.Left when _selectedTask?.Parent != null:
                 SelectedTask = _selectedTask.Parent;
+                e.Handled = true;
+                break;
+
+            case Key.F2 when _selectedTask != null && !IsReadOnly:
+                BeginCellEdit(_selectedTask, 0);
                 e.Handled = true;
                 break;
         }
@@ -1101,6 +1427,30 @@ public class ProGantt : Control
                 var centerY = y + RowHeight / 2;
 
                 var isCritical = _highlightCriticalPath && task.IsCritical;
+
+                // Baseline : barre prévue en gris sous la barre réelle
+                if (_showBaseline && task.HasBaseline)
+                {
+                    var bx1 = TimelineX + Axis.ToX(task.BaselineStart!.Value);
+                    var bx2 = TimelineX + Axis.ToX(task.BaselineEnd!.Value.AddDays(1));
+                    var baselineBrush = new SolidColorBrush(
+                        ProTheme.WithOpacity(ProTheme.Text.Secondary, 110));
+
+                    if (task.IsMilestone)
+                    {
+                        var bmx = bx1 + Axis.PixelsPerDay / 2;
+                        var by = centerY + BarHeight / 2 + 5;
+                        context.DrawRectangle(null,
+                            new Pen(baselineBrush, 1.2),
+                            new Rect(bmx - 4, by - 4, 8, 8), 1, 1);
+                    }
+                    else if (!task.IsSummary)
+                    {
+                        context.DrawRectangle(baselineBrush, null,
+                            new Rect(bx1, centerY + BarHeight / 2 + 3,
+                                Math.Max(2, bx2 - bx1), 4), 2, 2);
+                    }
+                }
 
                 if (task.IsMilestone)
                 {

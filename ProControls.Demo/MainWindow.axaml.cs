@@ -161,6 +161,8 @@ public partial class MainWindow : ProWindow
             SetStatus($"« {task.Name} » : avancement {task.Progress:F0} %");
         gantt.LinkCreated += (s, e) =>
             SetStatus($"Lien créé : « {e.Predecessor.Name} » → « {e.Successor.Name} »");
+        gantt.LinkRemoved += (s, e) =>
+            SetStatus($"Lien supprimé : « {e.Predecessor.Name} » → « {e.Successor.Name} »");
 
         // Barre d'outils : test de charge 2 500 tâches + retour aujourd'hui
         var toolbar = new Avalonia.Controls.StackPanel
@@ -203,9 +205,33 @@ public partial class MainWindow : ProWindow
             gantt.Project = big;
             gantt.ScrollToToday();
         };
+        var baselineButton = new ProButton { Text = "Figer la baseline", Variant = ButtonVariant.Secondary, Size = ButtonSize.Small };
+        var baselineToggle = new ProToggleSwitch { OnLabel = "Baseline", OffLabel = "Baseline", ShowLabels = true };
+        baselineButton.Click += (s, e) =>
+        {
+            gantt.Project?.SetBaseline();
+            baselineToggle.IsOn = true;
+            gantt.ShowBaseline = true;
+            SetStatus("Baseline figée : déplace des tâches puis compare (barres grises = prévu)");
+        };
+        baselineToggle.Toggled += (s, e) => gantt.ShowBaseline = baselineToggle.IsOn;
+
+        var exportButton = new ProButton { Text = "Export PNG", Variant = ButtonVariant.Secondary, Size = ButtonSize.Small };
+        exportButton.Click += async (s, e) =>
+        {
+            var path = System.IO.Path.Combine(
+                System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile),
+                "gantt-export.png");
+            gantt.ExportPng(path, entireProject: true);
+            await ProMessageBox.ShowInfoAsync(this, $"Diagramme complet exporté :\n{path}", "Export PNG");
+        };
+
         toolbar.Children.Add(todayButton);
         toolbar.Children.Add(criticalToggle);
         toolbar.Children.Add(autoToggle);
+        toolbar.Children.Add(baselineButton);
+        toolbar.Children.Add(baselineToggle);
+        toolbar.Children.Add(exportButton);
         toolbar.Children.Add(stressButton);
 
         var layout = new Avalonia.Controls.DockPanel();

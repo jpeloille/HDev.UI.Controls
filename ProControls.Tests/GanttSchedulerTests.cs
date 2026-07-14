@@ -261,4 +261,97 @@ public class GanttSchedulerTests
         Assert.True(a.TotalFloatDays > 0);
         Assert.True(b.IsCritical);
     }
+
+    // ── Baseline ───────────────────────────────────────────────────
+
+    [Fact]
+    public void SetBaseline_SnapshotsEffectiveDates()
+    {
+        var project = NewProject(autoSchedule: false);
+        var a = project.Add("A", Mon, Mon.AddDays(4));
+
+        project.SetBaseline();
+
+        Assert.True(project.HasBaseline);
+        Assert.Equal(Mon, a.BaselineStart);
+        Assert.Equal(Mon.AddDays(4), a.BaselineEnd);
+    }
+
+    [Fact]
+    public void Baseline_SurvivesDateChanges()
+    {
+        var project = NewProject(autoSchedule: false);
+        var a = project.Add("A", Mon, Mon.AddDays(4));
+        project.SetBaseline();
+
+        a.Start = Mon.AddDays(7);
+        a.End = Mon.AddDays(11);
+
+        Assert.Equal(Mon, a.BaselineStart);          // la baseline ne bouge pas
+        Assert.Equal(Mon.AddDays(7), a.Start);       // le réel oui
+    }
+
+    [Fact]
+    public void Baseline_SnapshotsSummaryRollUp()
+    {
+        var project = NewProject(autoSchedule: false);
+        var phase = project.Add("Phase", Mon, Mon);
+        phase.Add("T", Mon, Mon.AddDays(9));
+        project.SetBaseline();
+
+        Assert.Equal(Mon, phase.BaselineStart);
+        Assert.Equal(Mon.AddDays(9), phase.BaselineEnd);
+    }
+
+    [Fact]
+    public void ClearBaseline_RemovesIt()
+    {
+        var project = NewProject(autoSchedule: false);
+        project.Add("A", Mon, Mon);
+        project.SetBaseline();
+        project.ClearBaseline();
+
+        Assert.False(project.HasBaseline);
+    }
+
+    // ── Suppression de liens ───────────────────────────────────────
+
+    [Fact]
+    public void RemoveDependency_RemovesAndReschedules()
+    {
+        var project = NewProject();
+        var a = project.Add("A", Mon, Mon.AddDays(2));
+        var b = project.Add("B", Mon, Mon);
+        b.DependsOn(a);
+        Assert.Equal(Mon.AddDays(3), b.Start);       // calé par le lien
+
+        var removed = b.RemoveDependency(a);
+
+        Assert.Equal(1, removed);
+        Assert.Empty(b.Predecessors);
+    }
+
+    [Fact]
+    public void RemoveDependency_Absent_ReturnsZero()
+    {
+        var project = NewProject();
+        var a = project.Add("A", Mon, Mon);
+        var b = project.Add("B", Mon, Mon);
+
+        Assert.Equal(0, b.RemoveDependency(a));
+    }
+
+    [Fact]
+    public void RemoveDependency_AllowsRelinking_WithoutFalseCycle()
+    {
+        var project = NewProject();
+        var a = project.Add("A", Mon, Mon);
+        var b = project.Add("B", Mon, Mon);
+        b.DependsOn(a);
+        b.RemoveDependency(a);
+
+        // Le lien inverse redevient légal après suppression
+        a.DependsOn(b);
+        Assert.Single(a.Predecessors);
+    }
 }

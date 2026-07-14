@@ -114,6 +114,27 @@ public class GanttTask
     public DateTime EffectiveEnd { get; internal set; }
     public double EffectiveProgress { get; internal set; }
 
+    // Baseline (instantané prévu, posé par GanttProject.SetBaseline)
+    /// <summary>Début prévu figé (null = pas de baseline)</summary>
+    public DateTime? BaselineStart { get; internal set; }
+
+    /// <summary>Fin prévue figée (null = pas de baseline)</summary>
+    public DateTime? BaselineEnd { get; internal set; }
+
+    public bool HasBaseline => BaselineStart.HasValue;
+
+    /// <summary>
+    /// Retire une dépendance vers ce prédécesseur (tous types confondus).
+    /// Retourne le nombre de liens retirés.
+    /// </summary>
+    public int RemoveDependency(GanttTask predecessor)
+    {
+        var removed = Predecessors.RemoveAll(d => ReferenceEquals(d.Predecessor, predecessor));
+        if (removed > 0)
+            Project?.NotifyDataChange();
+        return removed;
+    }
+
     // Résultats CPM (posés par GanttScheduler.ComputeCriticalPath)
     /// <summary>Marge totale en jours ouvrés (null = non calculée / récapitulative)</summary>
     public int? TotalFloatDays { get; internal set; }
@@ -384,6 +405,34 @@ public class GanttProject
         task.EffectiveEnd = end;
         task.EffectiveProgress = totalWeight > 0 ? weightedProgress / totalWeight : 0;
     }
+
+    /// <summary>
+    /// Fige la baseline : instantané des dates effectives courantes de toutes
+    /// les tâches (comparaison prévu/réel ensuite)
+    /// </summary>
+    public void SetBaseline()
+    {
+        foreach (var task in AllTasks())
+        {
+            task.BaselineStart = task.EffectiveStart;
+            task.BaselineEnd = task.EffectiveEnd;
+        }
+        NotifyVisualChange();
+    }
+
+    /// <summary>Efface la baseline</summary>
+    public void ClearBaseline()
+    {
+        foreach (var task in AllTasks())
+        {
+            task.BaselineStart = null;
+            task.BaselineEnd = null;
+        }
+        NotifyVisualChange();
+    }
+
+    /// <summary>Une baseline a été figée (au moins une tâche en porte une)</summary>
+    public bool HasBaseline => AllTasks().Any(t => t.HasBaseline);
 
     /// <summary>Bornes du projet (après Recalculate)</summary>
     public (DateTime Start, DateTime End) GetBounds()
