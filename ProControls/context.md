@@ -55,8 +55,8 @@ Légende : ✅ complet · 🟡 fonctionnel (trous ciblés) · 🟠 façade (API 
 | ProStatusBar | RibbonStatusBar | ✅ | panneaux gauche/droite, séparateurs, panneaux cliquables (lot 1) |
 | ProMessageBox | XtraMessageBox | ✅ | modale OK/OKCancel/YesNo/YesNoCancel, icônes, résultat typé, ShowAsync + raccourcis (lot 1) |
 | JDataGrid (réf. `../AvaloniaDataGrid`, source de vérité) | GridControl/GridView | 🟡 | voir section JDataGrid ci-dessous |
-| ProTabControl | XtraTabControl | 🔲 | — |
-| ProTreeView | (TreeList sans colonnes) | 🔲 | — |
+| ProTabControl | XtraTabControl | ✅ | onglets pilule, contenu hébergé, fermeture optionnelle (TabClosing annulable, clic milieu), clavier ←→ (lot 4a). Pas d'overflow d'onglets |
+| ProTreeView | TreeView | ✅ | expand/collapse, sélection, clavier complet (↑↓←→ Enter Home/End), événements, ExpandAll/CollapseAll (lot 4a). Non virtualisé, pas de checkboxes/édition |
 
 ### 4bis. JDataGrid — état (audit du 10/07/2026)
 
@@ -97,7 +97,11 @@ Note : le README de AvaloniaDataGrid est marketing (tout ✅), se fier au code /
 1. ~~Quick wins : ProMessageBox, ProStatusBar, ProToolbar, multiline ProTextBox + assainir les façades~~ ✅ **Fait le 10/07/2026** (validé visuellement)
 2. ~~Éditeurs : socle masque+validation → ProDateEdit → ProSpinEdit → ProComboBox éditable/autocomplete → ProLookUpEdit~~ ✅ **Fait le 14/07/2026** (benchmark masque 15/15, corrigé et validé visuellement ; restes : CalcEdit, saisie/filtre texte du LookUp, flip haut/bas des popups éditeurs)
 3. ~~JDataGrid : brancher l'UI sur le moteur existant (opérateurs de filtre, Shift+clic, pin→freeze, best-fit, sélection cellule, copier/coller, export CSV)~~ ✅ **Fait le 14/07/2026** (commit AvaloniaDataGrid f430933 ; restes : coller, réapplication des états cellule au recyclage, vitrine du mode Cell)
-4. Gros chantiers : ProTabControl/TreeView, puis arbitrage Scheduler/Gantt et Charts
+4. Gros chantiers :
+   - ~~ProTabControl/TreeView~~ ✅ **Lot 4a fait le 14/07/2026** (validé visuellement)
+   - **Arbitrages actés (14/07/2026)** :
+     - **ProGantt maison, spécialisé GESTION DE PROJET** (tâches WBS, jalons, dépendances FS/SS/FF/SF, avancement, chemin critique CPM) — PAS un planning de ressources. Architecture : moteur d'ordonnancement pur testé (roll-up, calendrier ouvré, propagation, CPM) + UI custom-rendered (table arbre à gauche façon MS Project, timeline à droite). Phase 1 = afficher, phase 2 = ordonnancer/interagir, phase 3 = baseline/export.
+     - **Charts Ovidie : LiveCharts2** (MIT, Avalonia natif, forkable) avec habillage ProTheme — pas de développement maison.
 
 **Tests unitaires du socle (14/07/2026)** : `ProControls.Tests` (ProMaskEngine, 35 tests) et `AvaloniaDataGrid/tests` (GridFilter/GridDataSource/PropertyAccessor/FormatValue, 61 tests) — `dotnet test` sur chaque projet. À maintenir : toute évolution du moteur de masque, des filtres ou du tri passe par là.
 

@@ -30,8 +30,66 @@ public partial class MainWindow : ProWindow
         InitializeStatusBar();
         InitializeComboBoxDemo();
         InitializeEditorsDemo();
+        InitializeTabsDemo();
         InitializeMessageBoxDemo();
         InitializeDataGrid();
+    }
+
+    private void InitializeTabsDemo()
+    {
+        var tabs = this.FindControl<ProTabControl>("DemoTabs");
+        if (tabs == null) return;
+
+        // Page 1 : arborescence services -> employés (données de la démo)
+        var tree = new ProTreeView();
+        foreach (var dept in Employees.GroupBy(emp => emp.Department).OrderBy(g => g.Key))
+        {
+            var deptNode = tree.Add($"{dept.Key} ({dept.Count()})", "👥");
+            foreach (var emp in dept.OrderBy(emp => emp.LastName).Take(8))
+                deptNode.Add(emp.FullName, emp.IsActive ? "🟢" : "⚪");
+        }
+        tree.SelectedNodeChanged += (s, e) =>
+        {
+            var statusBar = this.FindControl<ProStatusBar>("MainStatusBar");
+            if (statusBar != null && statusBar.Items.Count > 0 && tree.SelectedNode != null)
+                statusBar.Items[0].Text = $"Sélection : {tree.SelectedNode.Text}";
+        };
+
+        tabs.AddPage("Organisation", new Avalonia.Controls.ScrollViewer
+        {
+            Content = tree,
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto
+        }, "🌳");
+
+        // Page 2 : contenu quelconque
+        var aboutPanel = new Avalonia.Controls.StackPanel { Margin = new Avalonia.Thickness(16), Spacing = 8 };
+        aboutPanel.Children.Add(new Avalonia.Controls.TextBlock
+        {
+            Text = "Chaque page héberge un contenu arbitraire.\nNavigation : clic, flèches ←/→, clic milieu ferme les pages fermables."
+        });
+        var addButton = new ProButton { Text = "Ajouter une page fermable", Variant = ButtonVariant.Secondary };
+        aboutPanel.Children.Add(addButton);
+        tabs.AddPage("Infos", aboutPanel, "ℹ️");
+
+        // Page 3 : fermable
+        var closable = tabs.AddPage("Rapport", new Avalonia.Controls.TextBlock
+        {
+            Margin = new Avalonia.Thickness(16),
+            Text = "Page fermable : croix sur l'onglet, ou clic milieu."
+        }, "📄");
+        closable.CanClose = true;
+
+        var counter = 1;
+        addButton.Click += (s, e) =>
+        {
+            var page = tabs.AddPage($"Rapport {counter++}", new Avalonia.Controls.TextBlock
+            {
+                Margin = new Avalonia.Thickness(16),
+                Text = "Page ajoutée dynamiquement."
+            }, "📄");
+            page.CanClose = true;
+            tabs.SelectedIndex = tabs.Items.Count - 1;
+        };
     }
 
     private void InitializeEditorsDemo()

@@ -272,6 +272,13 @@
                 </pro:ProCard>
 
                 <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- TABCONTROL + TREEVIEW (LOT 4) -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <pro:ProCard Title="TabControl &amp; TreeView">
+                    <pro:ProTabControl x:Name="DemoTabs" Height="320"/>
+                </pro:ProCard>
+
+                <!-- ══════════════════════════════════════════════════════════ -->
                 <!-- DIALOGS / MESSAGEBOX -->
                 <!-- ══════════════════════════════════════════════════════════ -->
                 <pro:ProCard Title="Dialogs (ProMessageBox)">
