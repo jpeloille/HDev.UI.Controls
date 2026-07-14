@@ -50,6 +50,12 @@ public class DocRun : DocInline
     public string Text { get; set; } = "";
     public DocStyle Style { get; set; } = DocStyle.Empty;
 
+    /// <summary>
+    /// Lien porté par le run lui-même (forme normalisée utilisée par l'éditeur ;
+    /// le parseur produit des conteneurs DocLink, DocEditor les aplatit)
+    /// </summary>
+    public string? LinkHref { get; set; }
+
     public DocRun() { }
     public DocRun(string text, DocStyle? style = null)
     {

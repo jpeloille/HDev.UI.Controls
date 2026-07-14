@@ -380,6 +380,13 @@ public class DocLayoutEngine
         {
             if (run.Text.Length == 0) return;
 
+            // Lien porté par le run lui-même (forme normalisée de l'éditeur)
+            if (!string.IsNullOrEmpty(run.LinkHref))
+            {
+                href = run.LinkHref;
+                links.Add((sb.Length, run.Text.Length, run.LinkHref));
+            }
+
             var start = sb.Length;
             sb.Append(run.Text);
             var style = _baseStyle.Merge(run.Style);
