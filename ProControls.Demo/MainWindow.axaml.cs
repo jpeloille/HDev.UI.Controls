@@ -210,9 +210,36 @@ public partial class MainWindow : ProWindow
         toolbar.AddButton(null, "Semaine", () => scheduler.ViewMode = SchedulerViewMode.Week);
         toolbar.AddButton(null, "Mois", () => scheduler.ViewMode = SchedulerViewMode.Month);
 
+        // Navigateur de dates natif : clic = aller à la date, gras = jours à événements
+        var monthCalendar = new ProMonthCalendar
+        {
+            Margin = new Avalonia.Thickness(8),
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top
+        };
+        foreach (var occ in ScheduleEngine.ExpandAll(scheduler.Events,
+            System.DateTime.Today.AddMonths(-2), System.DateTime.Today.AddMonths(3)))
+        {
+            monthCalendar.BoldDates.Add(occ.Start.Date);
+        }
+        monthCalendar.SelectedDateChanged += (s, e) =>
+        {
+            if (monthCalendar.SelectedDate is { } date)
+                scheduler.DisplayDate = date;
+        };
+        scheduler.Events.CollectionChanged += (s, e) =>
+        {
+            monthCalendar.BoldDates.Clear();
+            foreach (var occ in ScheduleEngine.ExpandAll(scheduler.Events,
+                System.DateTime.Today.AddMonths(-2), System.DateTime.Today.AddMonths(3)))
+                monthCalendar.BoldDates.Add(occ.Start.Date);
+            monthCalendar.InvalidateVisual();
+        };
+
         var layout = new Avalonia.Controls.DockPanel();
         Avalonia.Controls.DockPanel.SetDock(toolbar, Avalonia.Controls.Dock.Top);
+        Avalonia.Controls.DockPanel.SetDock(monthCalendar, Avalonia.Controls.Dock.Right);
         layout.Children.Add(toolbar);
+        layout.Children.Add(monthCalendar);
         layout.Children.Add(scheduler);
         return layout;
     }
@@ -230,6 +257,13 @@ public partial class MainWindow : ProWindow
 
     private Avalonia.Controls.Control BuildInboxDemo()
     {
+        void SetStatus(string message)
+        {
+            var statusBar = this.FindControl<ProStatusBar>("MainStatusBar");
+            if (statusBar != null && statusBar.Items.Count > 0)
+                statusBar.Items[0].Text = message;
+        }
+
         // Boîte de réception générée depuis les employés de la démo
         var rng = new System.Random(7);
         var subjects = new[]
@@ -330,19 +364,121 @@ public partial class MainWindow : ProWindow
             mails.Remove((DemoMail)item); // ObservableCollection : la liste suit
         }));
 
+        // ── Shell Outlook : rail + dossiers + recherche + toasts ──
+
+        // Rail de modules
+        var navBar = new ProNavBar();
+        var mailModule = navBar.Add("📧", "Courrier");
+        navBar.Add("📅", "Agenda");
+        navBar.Add("👥", "Contacts");
+        navBar.Add("✓", "Tâches");
+
+        void UpdateUnreadBadge()
+        {
+            var unread = mails.Count(m => !m.IsRead);
+            mailModule.Badge = unread > 0 ? unread.ToString() : null;
+        }
+        UpdateUnreadBadge();
+        mails.CollectionChanged += (s, e) => UpdateUnreadBadge();
+        list.SelectionChanged += (s, e) => UpdateUnreadBadge();
+        navBar.SelectedIndexChanged += (s, e) =>
+            SetStatus($"Module : {navBar.SelectedItem?.Label}");
+
+        // Arbre de dossiers, cible de drop
+        var folders = new ProTreeView { AllowDropItems = true };
+        var inbox = folders.Add("Boîte de réception", "📥");
+        folders.Add("Archives", "🗄");
+        folders.Add("Traité", "✅");
+        folders.Add("Corbeille", "🗑");
+        folders.SelectedNode = inbox;
+
+        list.EnableDragItems = true;
+        folders.ItemDropped += (s, drop) =>
+        {
+            if (drop.Item is DemoMail mail && !ReferenceEquals(drop.Node, inbox))
+            {
+                mails.Remove(mail);
+                ProToast.Show(this, "Message déplacé",
+                    $"« {mail.Subject} » → {drop.Node.Text}", "📁");
+            }
+        };
+
+        // Recherche à suggestions (filtre la liste)
+        var search = new ProSearchControl
+        {
+            Margin = new Avalonia.Thickness(4),
+            SuggestionsProvider = query => mails
+                .Where(m => m.From.Contains(query, System.StringComparison.OrdinalIgnoreCase)
+                    || m.Subject.Contains(query, System.StringComparison.OrdinalIgnoreCase))
+                .Select(m => (object)$"{m.From} — {m.Subject}")
+                .Distinct()
+        };
+        search.SearchRequested += (s, query) =>
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                list.ItemsSource = mails;
+                return;
+            }
+            list.ItemsSource = new ObservableCollection<DemoMail>(mails.Where(m =>
+                m.From.Contains(query, System.StringComparison.OrdinalIgnoreCase)
+                || m.Subject.Contains(query, System.StringComparison.OrdinalIgnoreCase)));
+            SetStatus($"Recherche : « {query} »");
+        };
+        search.TextChanged += (s, e) =>
+        {
+            if (string.IsNullOrWhiteSpace(search.Text))
+                list.ItemsSource = mails;
+        };
+
+        // Simulation d'arrivée de mail → toast cliquable
+        var simulate = new ProButton
+        {
+            Text = "✉ Simuler un mail",
+            Variant = ButtonVariant.Ghost,
+            Size = ButtonSize.Small,
+            Margin = new Avalonia.Thickness(4, 0, 4, 4)
+        };
+        simulate.Click += (s, e) =>
+        {
+            var mail = new DemoMail
+            {
+                From = "Tour de contrôle",
+                Subject = "Créneau modifié",
+                Preview = "Le créneau du vol TY201 est avancé de 15 minutes…",
+                Date = System.DateTime.Now,
+                Body = "<h2>Créneau modifié</h2><p>Le créneau du vol <b>TY201</b> est avancé de 15 minutes.</p>"
+            };
+            mails.Insert(0, mail);
+            ProToast.Show(this, "Nouveau message", $"{mail.From} — {mail.Subject}", "📧",
+                onClick: () => list.SelectItem(mail));
+        };
+
+        // Colonne liste : recherche + bouton + liste
+        var listColumn = new Avalonia.Controls.DockPanel();
+        Avalonia.Controls.DockPanel.SetDock(search, Avalonia.Controls.Dock.Top);
+        Avalonia.Controls.DockPanel.SetDock(simulate, Avalonia.Controls.Dock.Top);
+        listColumn.Children.Add(search);
+        listColumn.Children.Add(simulate);
+        listColumn.Children.Add(list);
+
         var grid = new Avalonia.Controls.Grid
         {
-            ColumnDefinitions = new Avalonia.Controls.ColumnDefinitions("380,4,*")
+            ColumnDefinitions = new Avalonia.Controls.ColumnDefinitions("Auto,150,340,4,*")
         };
-        Avalonia.Controls.Grid.SetColumn(list, 0);
+        Avalonia.Controls.Grid.SetColumn(navBar, 0);
+        Avalonia.Controls.Grid.SetColumn(folders, 1);
+        Avalonia.Controls.Grid.SetColumn(listColumn, 2);
         var splitter = new Avalonia.Controls.GridSplitter
         {
             Background = Avalonia.Media.Brushes.Transparent,
             ResizeDirection = Avalonia.Controls.GridResizeDirection.Columns
         };
-        Avalonia.Controls.Grid.SetColumn(splitter, 1);
-        Avalonia.Controls.Grid.SetColumn(readerHost, 2);
-        grid.Children.Add(list);
+        Avalonia.Controls.Grid.SetColumn(splitter, 3);
+        Avalonia.Controls.Grid.SetColumn(readerHost, 4);
+        grid.Children.Add(navBar);
+        grid.Children.Add(folders);
+        grid.Children.Add(listColumn);
         grid.Children.Add(splitter);
         grid.Children.Add(readerHost);
         return grid;
@@ -383,9 +519,35 @@ public partial class MainWindow : ProWindow
             await window.ShowDialog(this);
         });
 
+        // Champ « À : » à jetons (suggestions = employés, validation = @)
+        var recipients = new ProTokenEdit
+        {
+            Placeholder = "Destinataires…",
+            Margin = new Avalonia.Thickness(4, 4, 4, 0),
+            SuggestionsProvider = query => Employees
+                .Where(emp => emp.FullName.Contains(query, System.StringComparison.OrdinalIgnoreCase)
+                    || emp.Email.Contains(query, System.StringComparison.OrdinalIgnoreCase))
+                .Select(emp => (object)emp),
+            TokenText = token => token is Employee emp ? emp.FullName : token.ToString() ?? "",
+            TokenValidator = text => text.Contains('@') ? text : null // texte libre = e-mail valide
+        };
+
+        var toRow = new Avalonia.Controls.DockPanel { Margin = new Avalonia.Thickness(4, 2) };
+        var toLabel = new Avalonia.Controls.TextBlock
+        {
+            Text = "À :",
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            Margin = new Avalonia.Thickness(6, 0)
+        };
+        Avalonia.Controls.DockPanel.SetDock(toLabel, Avalonia.Controls.Dock.Left);
+        toRow.Children.Add(toLabel);
+        toRow.Children.Add(recipients);
+
         var layout = new Avalonia.Controls.DockPanel();
         Avalonia.Controls.DockPanel.SetDock(toolbar, Avalonia.Controls.Dock.Top);
+        Avalonia.Controls.DockPanel.SetDock(toRow, Avalonia.Controls.Dock.Top);
         layout.Children.Add(toolbar);
+        layout.Children.Add(toRow);
         layout.Children.Add(new Avalonia.Controls.ScrollViewer
         {
             Content = edit,

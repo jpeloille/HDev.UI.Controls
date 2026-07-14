@@ -95,6 +95,16 @@ public class ProListView : Control
     /// <summary>Texte affiché quand la liste est vide</summary>
     public string EmptyText { get; set; } = "Aucun élément";
 
+    /// <summary>Les items peuvent être glissés (drag &amp; drop vers un ProTreeView...)</summary>
+    public bool EnableDragItems { get; set; }
+
+    /// <summary>Format DataObject des items glissés</summary>
+    public const string DragDataFormat = "procontrols-item";
+
+    private Point _pressPoint;
+    private object? _pressItem;
+    private bool _dragStarted;
+
     public event EventHandler? SelectionChanged;
     public event EventHandler<object>? ItemDoubleClicked;
 
@@ -320,6 +330,19 @@ public class ProListView : Control
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         var pos = e.GetPosition(this);
+
+        // Départ de drag : bouton enfoncé sur un item + dépassement du seuil
+        if (EnableDragItems && !_dragStarted && _pressItem != null &&
+            e.GetCurrentPoint(this).Properties.IsLeftButtonPressed &&
+            (Math.Abs(pos.X - _pressPoint.X) > 5 || Math.Abs(pos.Y - _pressPoint.Y) > 5))
+        {
+            _dragStarted = true;
+            var data = new DataObject();
+            data.Set(DragDataFormat, _pressItem);
+            _ = DragDrop.DoDragDrop(e, data, DragDropEffects.Move);
+            return;
+        }
+
         var row = pos.X < ContentWidth ? RowAt(pos.Y + _verticalOffset) : -1;
 
         var action = -1;
@@ -381,6 +404,11 @@ public class ProListView : Control
 
         if (row.Item == null) return;
 
+        // Mémoriser pour un éventuel départ de drag
+        _pressPoint = pos;
+        _pressItem = row.Item;
+        _dragStarted = false;
+
         var ctrl = e.KeyModifiers.HasFlag(KeyModifiers.Control);
         var shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
 
@@ -422,6 +450,13 @@ public class ProListView : Control
         _selected.Clear();
         for (int i = from; i <= to; i++)
             _selected.Add(itemRows[i]);
+    }
+
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    {
+        _pressItem = null;
+        _dragStarted = false;
+        base.OnPointerReleased(e);
     }
 
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)

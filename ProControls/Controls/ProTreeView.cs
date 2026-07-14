@@ -97,6 +97,7 @@ public class ProTreeView : Control
 
     private ProTreeNode? _selectedNode;
     private ProTreeNode? _hoveredNode;
+    private ProTreeNode? _dropTargetNode;
     private List<(ProTreeNode Node, int Depth)> _visibleRows = new();
 
     public ObservableCollection<ProTreeNode> Nodes { get; } = new();
@@ -112,6 +113,23 @@ public class ProTreeView : Control
 
     /// <summary>Déclenché au double-clic sur un nœud</summary>
     public event EventHandler<ProTreeNode>? NodeDoubleClicked;
+
+    /// <summary>Un item (ProListView...) a été déposé sur un nœud</summary>
+    public event EventHandler<(ProTreeNode Node, object Item)>? ItemDropped;
+
+    private bool _allowDropItems;
+
+    /// <summary>Accepte le dépôt d'items glissés (drag &amp; drop applicatif)</summary>
+    public bool AllowDropItems
+    {
+        get => _allowDropItems;
+        set
+        {
+            if (_allowDropItems == value) return;
+            _allowDropItems = value;
+            DragDrop.SetAllowDrop(this, value);
+        }
+    }
 
     public ProTreeNode? SelectedNode
     {
@@ -143,6 +161,44 @@ public class ProTreeView : Control
             }
             RefreshLayout();
         };
+
+        // Cible de drop (drag & drop applicatif, ex : mail -> dossier)
+        AddHandler(DragDrop.DragOverEvent, (s, e) =>
+        {
+            if (!_allowDropItems || !e.Data.Contains(ProListView.DragDataFormat))
+            {
+                e.DragEffects = DragDropEffects.None;
+                return;
+            }
+
+            var node = RowAt(e.GetPosition(this))?.Node;
+            e.DragEffects = node != null ? DragDropEffects.Move : DragDropEffects.None;
+            if (!ReferenceEquals(node, _dropTargetNode))
+            {
+                _dropTargetNode = node;
+                InvalidateVisual();
+            }
+            e.Handled = true;
+        });
+
+        AddHandler(DragDrop.DragLeaveEvent, (s, e) =>
+        {
+            _dropTargetNode = null;
+            InvalidateVisual();
+        });
+
+        AddHandler(DragDrop.DropEvent, (s, e) =>
+        {
+            var node = _dropTargetNode;
+            _dropTargetNode = null;
+            InvalidateVisual();
+
+            if (node != null && e.Data.Get(ProListView.DragDataFormat) is { } item)
+            {
+                ItemDropped?.Invoke(this, (node, item));
+                e.Handled = true;
+            }
+        });
     }
 
     /// <summary>Ajoute un nœud racine (raccourci fluent)</summary>
@@ -368,7 +424,14 @@ public class ProTreeView : Control
             var isHovered = ReferenceEquals(node, _hoveredNode);
 
             // Fond de ligne
-            if (isSelected)
+            if (ReferenceEquals(node, _dropTargetNode))
+            {
+                context.DrawRectangle(
+                    new SolidColorBrush(ProTheme.WithOpacity(ProTheme.Accent.Primary, 24)),
+                    new Pen(new SolidColorBrush(ProTheme.Accent.Primary), 1.5),
+                    rowRect.Deflate(new Thickness(2, 1)), 4, 4);
+            }
+            else if (isSelected)
             {
                 context.FillRectangle(new SolidColorBrush(
                     ProTheme.WithOpacity(ProTheme.Accent.Primary, 30)), rowRect.Deflate(new Thickness(2, 1)), 4);

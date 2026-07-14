@@ -23,7 +23,7 @@ public class ProDateEdit : ProEditorBase
 
     private readonly Popup _popup;
     private readonly Border _popupBorder;
-    private Calendar? _calendar;
+    private ProMonthCalendar? _calendar;
     private readonly ProPopupDismissGuard _guard;
     private bool _isPopupOpen;
 
@@ -174,21 +174,17 @@ public class ProDateEdit : ProEditorBase
     {
         if (!IsEnabled || IsReadOnly) return;
 
-        // Calendar recréé à CHAQUE ouverture : réutilisé dans un popup, il garde
-        // un état d'interaction périmé (2e ouverture = clics de jour ignorés) —
-        // même leçon que ProMenuPopup. Et pas de présélection : re-cliquer la
-        // date déjà choisie doit aussi déclencher SelectedDatesChanged.
-        _calendar = new Calendar
+        // ProMonthCalendar natif (le Calendar Fluent gardait un état
+        // d'interaction périmé à la réouverture — le nôtre est recréé aussi,
+        // ceinture et bretelles). Pas de présélection : n'importe quel clic,
+        // y compris la date déjà choisie, doit commiter.
+        _calendar = new ProMonthCalendar
         {
-            SelectionMode = CalendarSelectionMode.SingleDate,
-            FontFamily = new FontFamily(ProTheme.Typography.FontFamily),
-            DisplayDate = _value ?? DateTime.Today
+            DisplayMonth = _value ?? DateTime.Today,
+            MinDate = MinDate,
+            MaxDate = MaxDate
         };
-        if (MinDate > DateTime.MinValue)
-            _calendar.DisplayDateStart = MinDate;
-        if (MaxDate < DateTime.MaxValue)
-            _calendar.DisplayDateEnd = MaxDate;
-        _calendar.SelectedDatesChanged += OnCalendarDateSelected;
+        _calendar.SelectedDateChanged += OnCalendarDateSelected;
         _popupBorder.Child = _calendar;
 
         _isPopupOpen = true;
@@ -201,7 +197,7 @@ public class ProDateEdit : ProEditorBase
         _popup.IsOpen = false;
     }
 
-    private void OnCalendarDateSelected(object? sender, SelectionChangedEventArgs e)
+    private void OnCalendarDateSelected(object? sender, EventArgs e)
     {
         if (_calendar?.SelectedDate is { } date)
         {
