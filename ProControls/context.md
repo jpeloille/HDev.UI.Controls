@@ -99,6 +99,8 @@ Note : le README de AvaloniaDataGrid est marketing (tout ✅), se fier au code /
 3. ~~JDataGrid : brancher l'UI sur le moteur existant (opérateurs de filtre, Shift+clic, pin→freeze, best-fit, sélection cellule, copier/coller, export CSV)~~ ✅ **Fait le 14/07/2026** (commit AvaloniaDataGrid f430933 ; restes : coller, réapplication des états cellule au recyclage, vitrine du mode Cell)
 4. Gros chantiers : ProTabControl/TreeView, puis arbitrage Scheduler/Gantt et Charts
 
+**Tests unitaires du socle (14/07/2026)** : `ProControls.Tests` (ProMaskEngine, 35 tests) et `AvaloniaDataGrid/tests` (GridFilter/GridDataSource/PropertyAccessor/FormatValue, 61 tests) — `dotnet test` sur chaque projet. À maintenir : toute évolution du moteur de masque, des filtres ou du tri passe par là.
+
 ## Palette de couleurs Yaru (claire)
 
 ```csharp
