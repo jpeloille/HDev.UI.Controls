@@ -77,6 +77,9 @@ public partial class MainWindow : ProWindow
         // Page 4 : ProHtmlView (monstre n° 1, tête de lecture)
         tabs.AddPage("Mail", BuildHtmlViewDemo(), "📧");
 
+        // Page 5 : ProRichEdit (monstre n° 2, tête d'édition)
+        tabs.AddPage("Composer", BuildRichEditDemo(), "✍️");
+
         // Page 4 : fermable
         var closable = tabs.AddPage("Rapport", new Avalonia.Controls.TextBlock
         {
@@ -138,6 +141,53 @@ public partial class MainWindow : ProWindow
             Padding = new Avalonia.Thickness(8),
             VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto
         };
+    }
+
+    private Avalonia.Controls.Control BuildRichEditDemo()
+    {
+        var edit = new ProRichEdit
+        {
+            Html = "<h2>Brouillon</h2><p>Bonjour,</p><p>Voici un texte <b>gras</b>, " +
+                   "<i>italique</i> et <u>souligné</u> à retravailler.</p><p>Cordialement.</p>"
+        };
+
+        var toolbar = new ProToolbar();
+        toolbar.AddButton("↩", null, () => edit.Undo());
+        toolbar.AddButton("↪", null, () => edit.Redo());
+        toolbar.AddSeparator();
+        toolbar.AddButton("𝐁", null, () => edit.ToggleBold());
+        toolbar.AddButton("𝘐", null, () => edit.ToggleItalic());
+        toolbar.AddButton("U̲", null, () => edit.ToggleUnderline());
+        toolbar.AddButton("S̶", null, () => edit.ToggleStrikethrough());
+        toolbar.AddSeparator();
+        toolbar.AddButton("H2", null, () => edit.SetHeading(2));
+        toolbar.AddButton("¶", null, () => edit.SetHeading(0));
+        toolbar.AddSeparator();
+        toolbar.AddButton("👁", "Aperçu HTML", async () =>
+        {
+            // La boucle est bouclée : le HTML produit par l'éditeur est rendu par le viewer
+            var preview = new ProHtmlView { Html = edit.Html, MinWidth = 500 };
+            var window = new ProWindow
+            {
+                Title = "Aperçu (ProHtmlView sur le HTML sérialisé)",
+                Width = 560,
+                Height = 420,
+                Content = new Avalonia.Controls.ScrollViewer { Content = preview },
+                WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.CenterOwner
+            };
+            await window.ShowDialog(this);
+        });
+
+        var layout = new Avalonia.Controls.DockPanel();
+        Avalonia.Controls.DockPanel.SetDock(toolbar, Avalonia.Controls.Dock.Top);
+        layout.Children.Add(toolbar);
+        layout.Children.Add(new Avalonia.Controls.ScrollViewer
+        {
+            Content = edit,
+            Padding = new Avalonia.Thickness(4),
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto
+        });
+        return layout;
     }
 
     private Avalonia.Controls.Control BuildGanttDemo()
