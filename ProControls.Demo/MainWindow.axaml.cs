@@ -86,6 +86,9 @@ public partial class MainWindow : ProWindow
         // Page 7 : ProScheduler (4e chantier structurant Outlook)
         tabs.AddPage("Agenda", BuildSchedulerDemo(), "📅");
 
+        // Page 8 : ProMindMap (brainstorming)
+        tabs.AddPage("Carte", BuildMindMapDemo(), "🧠");
+
         // Page 4 : fermable
         var closable = tabs.AddPage("Rapport", new Avalonia.Controls.TextBlock
         {
@@ -147,6 +150,106 @@ public partial class MainWindow : ProWindow
             Padding = new Avalonia.Thickness(8),
             VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto
         };
+    }
+
+    private Avalonia.Controls.Control BuildMindMapDemo()
+    {
+        var map = new ProMindMap();
+        var root = new MindMapNode("Suite ProControls");
+
+        var synaxis = root.Add("Synaxis");
+        synaxis.Add("Planning équipages").Add("FTL");
+        synaxis.Add("Pairings");
+        synaxis.Add("Suivi J0");
+
+        var ovidie = root.Add("Ovidie");
+        ovidie.Add("Dashboards").Add("LiveCharts2");
+        ovidie.Add("Rapports");
+        ovidie.Add("Budget");
+
+        var outlook = root.Add("Cible Outlook");
+        var faits = outlook.Add("Faits ✅");
+        faits.Add("HtmlView");
+        faits.Add("RichEdit");
+        faits.Add("ListView");
+        faits.Add("Scheduler");
+        outlook.Add("Backend (IMAP, stockage)");
+
+        var qualite = root.Add("Qualité");
+        qualite.Add("176 tests");
+        qualite.Add("Dark mode");
+        qualite.Add("Raccourcis clavier");
+
+        root.Add("Idées en vrac").Add("… Tab pour ajouter !");
+
+        map.Root = root;
+
+        void SetStatus(string message)
+        {
+            var statusBar = this.FindControl<ProStatusBar>("MainStatusBar");
+            if (statusBar != null && statusBar.Items.Count > 0)
+                statusBar.Items[0].Text = message;
+        }
+
+        map.SelectedNodeChanged += (s, e) =>
+        {
+            if (map.SelectedNode != null)
+                SetStatus($"Nœud : {map.SelectedNode.Text} ({map.SelectedNode.DescendantCount} descendants)");
+        };
+        map.NodeReparenting += (s, e) =>
+            SetStatus($"« {e.Node.Text} » → sous « {e.NewParent.Text} »");
+
+        var toolbar = new ProToolbar();
+        toolbar.AddButton(null, "Radial", () => map.LayoutMode = MindMapLayoutMode.Radial);
+        toolbar.AddButton(null, "Arbre →", () => map.LayoutMode = MindMapLayoutMode.TreeRight);
+        toolbar.AddButton(null, "Arbre ↓", () => map.LayoutMode = MindMapLayoutMode.TreeDown);
+        toolbar.AddSeparator();
+        toolbar.AddButton("🎯", "Centrer", () => map.CenterOnRoot());
+        toolbar.AddButton("🔍", "Tout voir", () => map.ZoomToFit());
+        toolbar.AddSeparator();
+        toolbar.AddButton("🖼", "Export PNG", async () =>
+        {
+            var path = System.IO.Path.Combine(
+                System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile),
+                "mindmap-export.png");
+            map.ExportPng(path);
+            await ProMessageBox.ShowInfoAsync(this, $"Carte exportée :\n{path}", "Export PNG");
+        });
+        toolbar.AddSeparator();
+        toolbar.AddButton(null, "Test de charge (2 000 nœuds)", () =>
+        {
+            var big = new MindMapNode("Charge");
+            for (int i = 0; i < 10; i++)
+            {
+                var b = big.Add($"Branche {i + 1}");
+                for (int j = 0; j < 20; j++)
+                {
+                    var c = b.Add($"Sujet {i + 1}.{j + 1}");
+                    for (int k = 0; k < 9; k++)
+                        c.Add($"Idée {k + 1}");
+                }
+            }
+            map.Root = big;
+            map.ZoomToFit();
+            SetStatus("2 000 nœuds — pan/zoom/repli doivent rester fluides");
+        });
+
+        var hint = new Avalonia.Controls.TextBlock
+        {
+            Text = "Tab = enfant · Enter = frère · F2/double-clic = éditer · Suppr = retirer · glisser un nœud = re-parenter · glisser le fond = déplacer · Ctrl+molette = zoom · Espace = replier",
+            FontSize = 11,
+            Margin = new Avalonia.Thickness(8, 2),
+            Foreground = new Avalonia.Media.SolidColorBrush(
+                ProControls.Theme.ProTheme.Text.Secondary)
+        };
+
+        var layout = new Avalonia.Controls.DockPanel();
+        Avalonia.Controls.DockPanel.SetDock(toolbar, Avalonia.Controls.Dock.Top);
+        Avalonia.Controls.DockPanel.SetDock(hint, Avalonia.Controls.Dock.Top);
+        layout.Children.Add(toolbar);
+        layout.Children.Add(hint);
+        layout.Children.Add(map);
+        return layout;
     }
 
     private Avalonia.Controls.Control BuildSchedulerDemo()

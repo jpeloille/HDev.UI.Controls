@@ -107,7 +107,15 @@ Note : le README de AvaloniaDataGrid est marketing (tout ✅), se fier au code /
      - **ProGantt phase 3 ✅ faite le 14/07/2026** (validée, dont l'export hors écran) : baseline (`SetBaseline`/`ClearBaseline` instantané des dates effectives, barres grises prévues + carrés creux jalons, écart ouvré dans le tooltip, toggle `ShowBaseline`), édition in-place de la table (double-clic/F2 → ProTextBox/ProDateEdit/ProSpinEdit en dogfooding, Enter/Échap, mêmes événements annulables que le drag), clic droit → ProContextMenu (suppression de liens via `LinkRemoving`/`Removed` annulables, bascule ordonnancement manuel), `ZoomToFit()` + `ExportPng(path, entireProject)` (rendu hors écran du projet complet). **ProGantt terminé sur les 3 phases prévues.** Prochain différenciant : intégration LiveCharts2 (Ovidie).
      - **Charts Ovidie : LiveCharts2** (MIT, Avalonia natif, forkable) avec habillage ProTheme — pas de développement maison.
 
-**Tests unitaires du socle (14/07/2026)** : `ProControls.Tests` (ProMaskEngine + moteur Gantt, 85 tests) et `AvaloniaDataGrid/tests` (GridFilter/GridDataSource/PropertyAccessor/FormatValue, 61 tests) — `dotnet test` sur chaque projet. À maintenir : toute évolution du moteur de masque, des filtres, du tri ou de l'ordonnancement Gantt passe par là.
+**Tests unitaires du socle (14/07/2026)** : `ProControls.Tests` (ProMaskEngine + moteurs Gantt/Document/Scheduler/MindMap, 178 tests) et `AvaloniaDataGrid/tests` (GridFilter/GridDataSource/PropertyAccessor/FormatValue, 61 tests) — `dotnet test` sur chaque projet. À maintenir : toute évolution d'un moteur pur passe par là.
+
+## ProMindMap — carte mentale de brainstorming ✅ fait le 14/07/2026 (validé)
+
+Hors cible Outlook — demande directe. Calibrage : brainstorming libre (édition = cœur), milliers de nœuds (culling viewport + cache de mesure de texte), 3 layouts.
+- **Moteur pur testé (14 tests)** : hauteurs/largeurs de sous-arbres bottom-up, empilement sans chevauchement, **Radial** (branches équilibrées gauche/droite par hauteurs), **TreeRight** (organigramme couché), **TreeDown** (organigramme vertical, frères horizontaux centrés sous le parent), repli exclut les descendants, mesureur injecté.
+- **Contrôle** : pilules arrondies (racine accent, couleurs de branche héritées, palette 8 teintes), connecteurs Bézier (horizontaux ou verticaux selon le mode, épaisseur décroissante), pan (drag du fond), zoom Ctrl+molette centré, culling.
+- **Grammaire d'édition** (souris seule, clavier seul, ou mixte) : Tab = enfant, Enter = frère (édition immédiate ProTextBox in-place), Suppr, F2/double-clic, Espace = repli ; **pastille plier/déplier cliquable** sur le connecteur (compte de descendants repliés) ; badges de coin du nœud sélectionné : **« + » bas-extérieur** (ajout) et **« × » haut-extérieur** (suppression, racine exclue) — hors du couloir des connecteurs ; **clic droit = ProContextMenu** complet ; drag d'un nœud = re-parentage (élastique vert/rouge, descendants interdits, `NodeReparenting` annulable) ; navigation flèches transposée par mode ; undo/redo instantanés ; `ZoomToFit`/`CenterOnRoot`/`ExportPng` (hors écran). Dark mode suivi.
+- Restes v2 : sérialisation (JSON + FreeMind .mm), notes/icônes par nœud, liens transverses, multi-sélection.
 
 ## Cible « Outlook natif Linux » — cartographie des manques (stade projet, 14/07/2026)
 
