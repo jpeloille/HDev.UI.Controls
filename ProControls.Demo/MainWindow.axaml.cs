@@ -80,6 +80,9 @@ public partial class MainWindow : ProWindow
         // Page 5 : ProRichEdit (monstre n° 2, tête d'édition)
         tabs.AddPage("Composer", BuildRichEditDemo(), "✍️");
 
+        // Page 6 : mini-Outlook (ProListView + ProHtmlView)
+        tabs.AddPage("Boîte", BuildInboxDemo(), "📥");
+
         // Page 4 : fermable
         var closable = tabs.AddPage("Rapport", new Avalonia.Controls.TextBlock
         {
@@ -141,6 +144,137 @@ public partial class MainWindow : ProWindow
             Padding = new Avalonia.Thickness(8),
             VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto
         };
+    }
+
+    private sealed class DemoMail
+    {
+        public string From = "";
+        public string Subject = "";
+        public string Preview = "";
+        public System.DateTime Date;
+        public bool IsRead;
+        public bool IsFlagged;
+        public string Body = "";
+    }
+
+    private Avalonia.Controls.Control BuildInboxDemo()
+    {
+        // Boîte de réception générée depuis les employés de la démo
+        var rng = new System.Random(7);
+        var subjects = new[]
+        {
+            ("Point hebdo équipe", "Voici l'ordre du jour de la réunion de"),
+            ("Validation du planning", "Peux-tu confirmer les dates du sprint"),
+            ("Rapport mensuel", "Le rapport est disponible, montant total"),
+            ("Demande de congés", "Je souhaiterais poser des congés du"),
+            ("Incident résolu", "L'incident de production de ce matin est"),
+            ("Nouvelle procédure", "La procédure d'embarquement change à partir de")
+        };
+
+        var mails = new ObservableCollection<DemoMail>(
+            Employees.Take(40).Select((emp, i) =>
+            {
+                var (subject, preview) = subjects[rng.Next(subjects.Length)];
+                var date = System.DateTime.Now.AddHours(-rng.Next(0, 24 * 20));
+                return new DemoMail
+                {
+                    From = emp.FullName,
+                    Subject = subject,
+                    Preview = preview + "…",
+                    Date = date,
+                    IsRead = rng.Next(3) > 0,
+                    IsFlagged = rng.Next(8) == 0,
+                    Body = $"<h2>{subject}</h2><p>Bonjour,</p><p>{preview} <b>détails à suivre</b>.</p>" +
+                           $"<blockquote><p>Message précédent…</p></blockquote>" +
+                           $"<p>Cordialement,<br><i>{emp.FullName}</i> — {emp.Department}</p>"
+                };
+            }).OrderByDescending(m => m.Date));
+
+        static string GroupOf(DemoMail mail)
+        {
+            var today = System.DateTime.Today;
+            if (mail.Date.Date == today) return "Aujourd'hui";
+            if (mail.Date.Date == today.AddDays(-1)) return "Hier";
+            if (mail.Date.Date >= today.AddDays(-7)) return "Cette semaine";
+            return "Plus ancien";
+        }
+
+        var list = new ProListView
+        {
+            ItemsSource = mails,
+            SelectionMode = Avalonia.Controls.SelectionMode.Multiple,
+            GroupSelector = item => GroupOf((DemoMail)item),
+            ItemAdapter = item =>
+            {
+                var mail = (DemoMail)item;
+                var initials = string.Concat(mail.From.Split(' ').Take(2).Select(p => p[0]));
+                return new ProListItemContent
+                {
+                    Title = mail.From,
+                    Subtitle = $"{mail.Subject} — {mail.Preview}",
+                    Trailing = mail.Date.Date == System.DateTime.Today
+                        ? mail.Date.ToString("HH:mm") : mail.Date.ToString("dd/MM"),
+                    Icon = initials,
+                    Emphasized = !mail.IsRead,
+                    Badge = mail.IsFlagged ? "⚑" : null
+                };
+            }
+        };
+
+        // Volet de lecture
+        var reader = new ProHtmlView();
+        var readerHost = new Avalonia.Controls.ScrollViewer
+        {
+            Content = reader,
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto
+        };
+
+        list.SelectionChanged += (s, e) =>
+        {
+            if (list.SelectedItem is DemoMail mail)
+            {
+                reader.Html = mail.Body;
+                if (!mail.IsRead)
+                {
+                    mail.IsRead = true; // ouvrir = lu, comme Outlook
+                    list.Refresh();
+                }
+            }
+        };
+
+        // Actions au survol : lu/non-lu, drapeau, suppression
+        list.HoverActions.Add(new ProListHoverAction("✉", "Marquer non lu", item =>
+        {
+            ((DemoMail)item).IsRead = false;
+            list.Refresh();
+        }));
+        list.HoverActions.Add(new ProListHoverAction("⚑", "Drapeau", item =>
+        {
+            var mail = (DemoMail)item;
+            mail.IsFlagged = !mail.IsFlagged;
+            list.Refresh();
+        }));
+        list.HoverActions.Add(new ProListHoverAction("🗑", "Supprimer", item =>
+        {
+            mails.Remove((DemoMail)item); // ObservableCollection : la liste suit
+        }));
+
+        var grid = new Avalonia.Controls.Grid
+        {
+            ColumnDefinitions = new Avalonia.Controls.ColumnDefinitions("380,4,*")
+        };
+        Avalonia.Controls.Grid.SetColumn(list, 0);
+        var splitter = new Avalonia.Controls.GridSplitter
+        {
+            Background = Avalonia.Media.Brushes.Transparent,
+            ResizeDirection = Avalonia.Controls.GridResizeDirection.Columns
+        };
+        Avalonia.Controls.Grid.SetColumn(splitter, 1);
+        Avalonia.Controls.Grid.SetColumn(readerHost, 2);
+        grid.Children.Add(list);
+        grid.Children.Add(splitter);
+        grid.Children.Add(readerHost);
+        return grid;
     }
 
     private Avalonia.Controls.Control BuildRichEditDemo()
