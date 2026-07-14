@@ -107,7 +107,27 @@ Note : le README de AvaloniaDataGrid est marketing (tout ✅), se fier au code /
      - **ProGantt phase 3 ✅ faite le 14/07/2026** (validée, dont l'export hors écran) : baseline (`SetBaseline`/`ClearBaseline` instantané des dates effectives, barres grises prévues + carrés creux jalons, écart ouvré dans le tooltip, toggle `ShowBaseline`), édition in-place de la table (double-clic/F2 → ProTextBox/ProDateEdit/ProSpinEdit en dogfooding, Enter/Échap, mêmes événements annulables que le drag), clic droit → ProContextMenu (suppression de liens via `LinkRemoving`/`Removed` annulables, bascule ordonnancement manuel), `ZoomToFit()` + `ExportPng(path, entireProject)` (rendu hors écran du projet complet). **ProGantt terminé sur les 3 phases prévues.** Prochain différenciant : intégration LiveCharts2 (Ovidie).
      - **Charts Ovidie : LiveCharts2** (MIT, Avalonia natif, forkable) avec habillage ProTheme — pas de développement maison.
 
-**Tests unitaires du socle (14/07/2026)** : `ProControls.Tests` (ProMaskEngine, 35 tests) et `AvaloniaDataGrid/tests` (GridFilter/GridDataSource/PropertyAccessor/FormatValue, 61 tests) — `dotnet test` sur chaque projet. À maintenir : toute évolution du moteur de masque, des filtres ou du tri passe par là.
+**Tests unitaires du socle (14/07/2026)** : `ProControls.Tests` (ProMaskEngine + moteur Gantt, 85 tests) et `AvaloniaDataGrid/tests` (GridFilter/GridDataSource/PropertyAccessor/FormatValue, 61 tests) — `dotnet test` sur chaque projet. À maintenir : toute évolution du moteur de masque, des filtres, du tri ou de l'ordonnancement Gantt passe par là.
+
+## Cible « Outlook natif Linux » — cartographie des manques (stade projet, 14/07/2026)
+
+Étude de faisabilité : recréer un Outlook (shell + Courrier + Calendrier + Contacts + Tâches) 100 % natif avec la suite. **Aucun développement lancé** — cartographie de référence.
+
+**Réutilisable tel quel** : Ribbon (basique), menus/contextuels, toolbar, statusbar, TabControl, TreeView (volet dossiers), JDataGrid (tâches, vues tabulaires), toute la famille éditeurs (formulaires contact/RDV), MessageBox, badges, ProWindow.
+
+**🔴 Les 4 chantiers structurants** :
+1. **Rendu HTML des mails** (volet de lecture) — LE mur. « Totalement natif » = pas de WebView : moteur HTML/CSS maison sur Skia, même en sous-ensemble (tables, images, styles inline, liens) c'est plus gros que les lots 1-4 réunis. Décision n° 1 du projet ; compromis v1 honorable : texte brut + HTML simplifié.
+2. **ProRichEdit** (composition) — éditeur riche (gras/listes/images/tables/liens, HTML en sortie). Partage un modèle de document avec le rendu HTML : concevoir les deux ensemble.
+3. **ProScheduler** (calendrier jour/semaine/mois) — le planning de ressources écarté pour le Gantt revient : événements chevauchants, drag, récurrences. Le savoir-faire ProGantt (axe temporel, virtualisation, événements annulables) se transpose.
+4. **ProListView** (liste des messages) — liste virtualisée à templates d'items multi-lignes (non-lu en gras, aperçu, date, trombone), groupes repliables (Aujourd'hui/Hier), actions au survol. Le cheval de trait du shell (mails, contacts, recherche) — le JDataGrid ne couvre pas ce besoin.
+
+**🟠 Nécessaires, taille moyenne** : ProNavBar (rail de modules), ProSearchControl (recherche globale + suggestions), ProTokenEdit (chips destinataires À/Cc, s'appuie sur combo éditable + LookUpEdit), ProAlert/toasts + fenêtre de rappels, ProMonthCalendar natif (navigateur de dates), drag & drop applicatif (ProListView source, ProTreeView cibles de drop — absentes aujourd'hui).
+
+**🟡 Dettes existantes qui deviennent bloquantes** : raccourcis clavier RÉELS dans menus/ribbon (aujourd'hui décoratifs — rédhibitoire pour un client mail), ribbon avancé (backstage/galeries/QAT/onglets contextuels), rendu des colonnes Image/Bouton du JDataGrid + master-detail, impression (inexistante partout), dark mode ProTheme.
+
+**⚪ Hors contrôles (l'autre moitié de l'iceberg, pour mémoire)** : IMAP/SMTP (ou EWS/Graph), stockage local + indexation de recherche, iCal/récurrences, vCard.
+
+**Volume estimé** : ~6 contrôles nouveaux + 4 moyens + 2 monstres (HTML, RichEdit) dépassant à eux seuls les lots 1-4. **Ordre naturel si lancement** : ProListView → NavBar/Search/TokenEdit → ProScheduler → RichEdit → rendu HTML (décision HTML en dernier).
 
 ## Palette de couleurs Yaru (claire)
 
