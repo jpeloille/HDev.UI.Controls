@@ -92,6 +92,9 @@ public partial class MainWindow : ProWindow
         // Page 9 : ProDock (docking, phase 1) — poste dispatcher
         tabs.AddPage("Dispatcher", BuildDockDemo(), "🗂️");
 
+        // Page 10 : Accordion / Avatar / Chip / ToggleButtonGroup
+        tabs.AddPage("Composants", BuildWidgetsDemo(), "🧩");
+
         // Page 4 : fermable
         var closable = tabs.AddPage("Rapport", new Avalonia.Controls.TextBlock
         {
@@ -111,6 +114,138 @@ public partial class MainWindow : ProWindow
             page.CanClose = true;
             tabs.SelectedIndex = tabs.Items.Count - 1;
         };
+    }
+
+    private Avalonia.Controls.Control BuildWidgetsDemo()
+    {
+        void SetStatus(string message)
+        {
+            var statusBar = this.FindControl<ProStatusBar>("MainStatusBar");
+            if (statusBar != null && statusBar.Items.Count > 0)
+                statusBar.Items[0].Text = message;
+        }
+
+        // ── ProAccordion (volet gauche) : équipage + filtres + à propos ──
+        var accordion = new ProAccordion { Width = 280 };
+
+        var crewPanel = new Avalonia.Controls.StackPanel { Spacing = 6, Margin = new Avalonia.Thickness(12, 8) };
+        foreach (var (name, status) in new[]
+        {
+            ("Julien Peloille", AvatarStatus.Online),
+            ("Awa Wamytan", AvatarStatus.Busy),
+            ("Teiki Brothers", AvatarStatus.Away),
+            ("Lucie Martin", AvatarStatus.Offline),
+        })
+        {
+            var row = new Avalonia.Controls.StackPanel
+            {
+                Orientation = Avalonia.Layout.Orientation.Horizontal,
+                Spacing = 10
+            };
+            row.Children.Add(new ProAvatar { FullName = name, Status = status });
+            row.Children.Add(new Avalonia.Controls.TextBlock
+            {
+                Text = name,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+            });
+            crewPanel.Children.Add(row);
+        }
+        accordion.AddSection("Équipage", crewPanel, "👥", isExpanded: true);
+
+        // Section filtres : chips cochables
+        var filterPanel = new Avalonia.Controls.WrapPanel { Margin = new Avalonia.Thickness(10, 8) };
+        foreach (var (label, icon) in new[] { ("A320", "✈️"), ("ATR 72", "✈️"), ("Cargo", "📦"), ("Charter", "🎫") })
+        {
+            var chip = new ProChip { Text = label, Icon = icon, IsCheckable = true, Margin = new Avalonia.Thickness(2) };
+            chip.CheckedChanged += (s, e) =>
+                SetStatus($"Filtre « {label} » : {(chip.IsChecked ? "actif" : "inactif")}");
+            filterPanel.Children.Add(chip);
+        }
+        accordion.AddSection("Filtres flotte", filterPanel, "🔎");
+
+        accordion.AddSection("À propos", new Avalonia.Controls.TextBlock
+        {
+            Margin = new Avalonia.Thickness(12, 8),
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+            Text = "Mode Single : ouvrir une section ferme l'autre.\nClavier : ↑↓ puis Entrée/Espace."
+        }, "ℹ️");
+
+        accordion.SectionExpandedChanged += (s, section) =>
+            SetStatus($"Section « {section.Header} » : {(section.IsExpanded ? "ouverte" : "fermée")}");
+
+        // ── Volet droit : avatars, chips fermables, groupes segmentés ──
+        var right = new Avalonia.Controls.StackPanel { Spacing = 18, Margin = new Avalonia.Thickness(24, 12) };
+
+        // Tailles + statuts d'avatar
+        var avatarRow = new Avalonia.Controls.StackPanel
+        {
+            Orientation = Avalonia.Layout.Orientation.Horizontal,
+            Spacing = 12
+        };
+        avatarRow.Children.Add(new ProAvatar { FullName = "Julien Peloille", Size = AvatarSize.Small });
+        avatarRow.Children.Add(new ProAvatar { FullName = "Awa Wamytan", Size = AvatarSize.Medium, Status = AvatarStatus.Online });
+        avatarRow.Children.Add(new ProAvatar { FullName = "Teiki Brothers", Size = AvatarSize.Large, Status = AvatarStatus.Busy });
+        avatarRow.Children.Add(new ProAvatar { Initials = "NC", Size = AvatarSize.Large, Background = Avalonia.Media.Color.Parse("#00847E") });
+        right.Children.Add(new ProCard
+        {
+            Title = "ProAvatar — tailles, statuts, couleur stable par nom",
+            Content = avatarRow
+        });
+
+        // Chips fermables (destinataires)
+        var chipsPanel = new Avalonia.Controls.WrapPanel();
+        foreach (var dest in new[] { "ops@aircal.nc", "crew@aircal.nc", "dispatch@aircal.nc" })
+        {
+            var chip = new ProChip { Text = dest, Icon = "✉️", CanClose = true, Margin = new Avalonia.Thickness(2) };
+            chip.Closed += (s, e) =>
+            {
+                chipsPanel.Children.Remove(chip);
+                SetStatus($"Destinataire retiré : {dest}");
+            };
+            chipsPanel.Children.Add(chip);
+        }
+        right.Children.Add(new ProCard
+        {
+            Title = "ProChip — fermables (la croix retire le chip)",
+            Content = chipsPanel
+        });
+
+        // Groupes segmentés
+        var togglePanel = new Avalonia.Controls.StackPanel { Spacing = 10 };
+        var viewGroup = new ProToggleButtonGroup();
+        viewGroup.Add("Jour");
+        viewGroup.Add("Semaine", isSelected: true);
+        viewGroup.Add("Mois");
+        viewGroup.SelectionChanged += (s, e) =>
+            SetStatus($"Vue : {viewGroup.SelectedItems.FirstOrDefault()?.Text}");
+        togglePanel.Children.Add(viewGroup);
+
+        var styleGroup = new ProToggleButtonGroup { SelectionMode = ToggleGroupSelectionMode.Multiple };
+        styleGroup.Add("G", isSelected: true).Tag = "bold";
+        styleGroup.Add("I").Tag = "italic";
+        styleGroup.Add("S").Tag = "underline";
+        styleGroup.SelectionChanged += (s, e) =>
+            SetStatus($"Styles actifs : {string.Join(", ", styleGroup.SelectedItems.Select(i => i.Text))}");
+        togglePanel.Children.Add(styleGroup);
+
+        right.Children.Add(new ProCard
+        {
+            Title = "ProToggleButtonGroup — Single (vue agenda) et Multiple (styles)",
+            Content = togglePanel
+        });
+
+        var root = new Avalonia.Controls.DockPanel();
+        var accordionHost = new Avalonia.Controls.Border
+        {
+            Width = 280,
+            BorderBrush = new Avalonia.Media.SolidColorBrush(ProControls.Theme.ProTheme.Border.Subtle),
+            BorderThickness = new Avalonia.Thickness(0, 0, 1, 0),
+            Child = new Avalonia.Controls.ScrollViewer { Content = accordion }
+        };
+        Avalonia.Controls.DockPanel.SetDock(accordionHost, Avalonia.Controls.Dock.Left);
+        root.Children.Add(accordionHost);
+        root.Children.Add(new Avalonia.Controls.ScrollViewer { Content = right });
+        return root;
     }
 
     private Avalonia.Controls.Control BuildDockDemo()

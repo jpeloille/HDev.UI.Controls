@@ -56,6 +56,10 @@ Légende : ✅ complet · 🟡 fonctionnel (trous ciblés) · 🟠 façade (API 
 | ProMessageBox | XtraMessageBox | ✅ | modale OK/OKCancel/YesNo/YesNoCancel, icônes, résultat typé, ShowAsync + raccourcis (lot 1) |
 | JDataGrid (réf. `../AvaloniaDataGrid`, source de vérité) | GridControl/GridView | 🟡 | voir section JDataGrid ci-dessous |
 | ProTabControl | XtraTabControl | ✅ | onglets pilule, contenu hébergé, fermeture optionnelle (TabClosing annulable, clic milieu), clavier ←→ (lot 4a). Pas d'overflow d'onglets |
+| ProAccordion | AccordionControl/NavBarControl | ✅ | sections empilées à contenu hébergé, chevron, `ExpandMode` Single (exclusif) / Multiple, `SectionExpanding` annulable, clavier ↑↓/Home/End/Enter/Espace (14/07). Pas d'animation, pas de sous-niveaux |
+| ProAvatar | — (pas d'équivalent DX direct) | ✅ | initiales dérivées de `FullName` (pas `Name` : réservé Avalonia) ou posées, photo rognée cercle, tailles S/M/L, pastille présence, couleur stable par hash FNV du nom (14/07) |
+| ProChip | — (Tile/Tag) | ✅ | pilule cliquable/cochable (visuel accent 30/90 aligné TokenEdit)/fermable (`CloseRequested` annulable, `Closed` = à l'app de retirer), sur ProControlBase (états+clavier gratuits) (14/07) |
+| ProToggleButtonGroup | — (segmented, barre Jour/Semaine/Mois) | ✅ | segments dans une pilule, Single exclusif (flèches changent la sélection) / Multiple (flèches déplacent le focus, Espace bascule), texte inverse sur accent (14/07) |
 | ProTreeView | TreeView | ✅ | expand/collapse, sélection, clavier complet (↑↓←→ Enter Home/End), événements, ExpandAll/CollapseAll (lot 4a). Non virtualisé, pas de checkboxes/édition |
 
 ### 4bis. JDataGrid — état (audit du 10/07/2026)
@@ -85,7 +89,7 @@ Note : le README de AvaloniaDataGrid est marketing (tout ✅), se fier au code /
 - ProLookUpEdit / GridLookUpEdit (référentiels avions/équipages/comptes ; s'appuyer sur JDataGrid)
 - ProMessageBox / ProDialog (XtraMessageBox) — trivial, utilisé partout
 
-**Important (structure d'application)** : ProTreeView puis TreeList (arbre+colonnes), ProToolbar, ProStatusBar, ProSearchControl, MemoEdit (multiline via ProTextBox), AlertControl/Toast, WaitForm/Splash, Docking (gros chantier, poste dispatcher), NavBar/Accordion, ButtonEdit, TokenEdit.
+**Important (structure d'application)** : ProTreeView puis TreeList (arbre+colonnes), ProToolbar, ProStatusBar, ProSearchControl, MemoEdit (multiline via ProTextBox), AlertControl/Toast, WaitForm/Splash, Docking (gros chantier, poste dispatcher — phase 1 ✅), NavBar ✅/Accordion ✅ (14/07), ButtonEdit, TokenEdit ✅.
 
 **Gros chantiers à arbitrer** :
 - Scheduler / Gantt (planning équipages/pairings Synaxis — LE contrôle DX structurant)
