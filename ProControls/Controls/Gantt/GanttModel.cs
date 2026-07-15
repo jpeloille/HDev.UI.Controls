@@ -53,6 +53,13 @@ public class GanttTask
     internal GanttProject? Project { get; set; }
     public GanttTask? Parent { get; internal set; }
 
+    /// <summary>
+    /// Identité stable (défaut : Guid auto). L'app peut y poser sa clé métier :
+    /// les dépendances se sérialisent par Id et la sélection est restaurée par Id
+    /// après un undo (qui reconstruit tous les objets tâches).
+    /// </summary>
+    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+
     public ObservableCollection<GanttTask> Children { get; } = new();
     public List<GanttDependency> Predecessors { get; } = new();
 
@@ -223,6 +230,11 @@ public class GanttCalendar
     public void AddHoliday(DateTime date) => _holidays.Add(date.Date);
     public void RemoveHoliday(DateTime date) => _holidays.Remove(date.Date);
 
+    /// <summary>Jours fériés déclarés (pour la sérialisation)</summary>
+    public IReadOnlyCollection<DateTime> Holidays => _holidays;
+
+    public void ClearHolidays() => _holidays.Clear();
+
     public bool IsWorkingDay(DateTime date)
         => !WeekendDays.Contains(date.DayOfWeek) && !_holidays.Contains(date.Date);
 
@@ -270,7 +282,7 @@ public class GanttCalendar
 /// Les événements séparent mutation de données (recalcul + layout) et
 /// changement purement visuel (rafraîchissement).
 /// </summary>
-public class GanttProject
+public partial class GanttProject
 {
     private bool _suspendNotifications;
 
@@ -444,6 +456,9 @@ public class GanttProject
         var end = Tasks.Max(t => t.EffectiveEnd);
         return (start, end);
     }
+
+    /// <summary>Retrouve une tâche par son Id (null si absente)</summary>
+    public GanttTask? FindById(string id) => AllTasks().FirstOrDefault(t => t.Id == id);
 
     /// <summary>Toutes les tâches (préfixe, profondeur d'abord)</summary>
     public IEnumerable<GanttTask> AllTasks()

@@ -121,6 +121,55 @@ public class ProGantt : Control
     /// <summary>Après suppression d'un lien</summary>
     public event EventHandler<GanttLinkEventArgs>? LinkRemoved;
 
+    // ═══════════════════════════════════════════════════════════════
+    // HISTORIQUE UNDO/REDO (snapshots JSON du projet — voir GanttHistory)
+    // ═══════════════════════════════════════════════════════════════
+
+    private readonly GanttHistory _history = new();
+
+    /// <summary>Une annulation est disponible</summary>
+    public bool CanUndo => _history.CanUndo;
+
+    /// <summary>Un rétablissement est disponible</summary>
+    public bool CanRedo => _history.CanRedo;
+
+    /// <summary>Notifié quand la disponibilité undo/redo change</summary>
+    public event EventHandler? HistoryChanged;
+
+    /// <summary>Capture l'état AVANT une mutation (appelé juste avant chaque changement réel)</summary>
+    private void RecordUndo()
+    {
+        if (_project != null) _history.Record(_project.ToJson());
+    }
+
+    /// <summary>Annule la dernière mutation (Ctrl+Z)</summary>
+    public void Undo()
+    {
+        if (_project == null) return;
+        var restored = _history.Undo(_project.ToJson());
+        if (restored != null) ApplyRestore(restored);
+    }
+
+    /// <summary>Rétablit la mutation annulée (Ctrl+Y)</summary>
+    public void Redo()
+    {
+        if (_project == null) return;
+        var restored = _history.Redo(_project.ToJson());
+        if (restored != null) ApplyRestore(restored);
+    }
+
+    /// <summary>Vide l'historique (ex. après un chargement applicatif)</summary>
+    public void ClearHistory() => _history.Clear();
+
+    private void ApplyRestore(string json)
+    {
+        CloseCellEditor(commit: false);
+        var selectedId = _selectedTask?.Id;
+        _project!.LoadJson(json); // recharge en place → DataChanged → RebuildRows
+        _selectedTask = selectedId != null ? _project.FindById(selectedId) : null;
+        InvalidateVisual();
+    }
+
     public GanttProject? Project
     {
         get => _project;
@@ -135,6 +184,7 @@ public class ProGantt : Control
             }
 
             _project = value;
+            _history.Clear(); // nouveau projet : l'historique précédent n'a plus de sens
 
             if (_project != null)
             {
@@ -203,6 +253,8 @@ public class ProGantt : Control
         VisualChildren.Add(_hScroll);
         LogicalChildren.Add(_vScroll);
         LogicalChildren.Add(_hScroll);
+
+        _history.Changed += () => HistoryChanged?.Invoke(this, EventArgs.Empty);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -831,8 +883,12 @@ public class ProGantt : Control
             switch (column)
             {
                 case 0 when editor is ProTextBox tb:
-                    if (!string.IsNullOrWhiteSpace(tb.Text))
-                        task.Name = tb.Text!.Trim();
+                    var trimmed = tb.Text?.Trim();
+                    if (!string.IsNullOrWhiteSpace(trimmed) && trimmed != task.Name)
+                    {
+                        RecordUndo();
+                        task.Name = trimmed;
+                    }
                     break;
 
                 case 1 when editor is ProDateEdit de && de.Value is { } newStart:
@@ -847,8 +903,9 @@ public class ProGantt : Control
                 case 3 when editor is ProSpinEdit spin:
                     var args = new GanttProgressChangeEventArgs(task, (double)spin.Value);
                     ProgressChanging?.Invoke(this, args);
-                    if (!args.Cancel)
+                    if (!args.Cancel && Math.Abs(args.NewProgress - task.Progress) > 0.01)
                     {
+                        RecordUndo();
                         task.Progress = args.NewProgress;
                         ProgressChanged?.Invoke(this, task);
                     }
@@ -870,6 +927,7 @@ public class ProGantt : Control
         TaskDatesChanging?.Invoke(this, args);
         if (args.Cancel) return;
 
+        RecordUndo();
         task.SetDatesSilent(args.NewStart, args.NewEnd);
         _project!.NotifyDataChange();
         TaskDatesChanged?.Invoke(this, task);
@@ -893,6 +951,7 @@ public class ProGantt : Control
                 LinkRemoving?.Invoke(this, args);
                 if (!args.Cancel)
                 {
+                    RecordUndo();
                     task.RemoveDependency(captured.Predecessor);
                     LinkRemoved?.Invoke(this, args);
                 }
@@ -906,6 +965,7 @@ public class ProGantt : Control
                 menu.AddSeparator();
             menu.AddCheckable("Ordonnancement manuel", task.IsManuallyScheduled, isChecked =>
             {
+                RecordUndo();
                 task.IsManuallyScheduled = isChecked;
                 _project?.NotifyDataChange();
             });
@@ -940,6 +1000,7 @@ public class ProGantt : Control
                     TaskDatesChanging?.Invoke(this, args);
                     if (!args.Cancel)
                     {
+                        RecordUndo();
                         task.SetDatesSilent(args.NewStart, args.NewEnd);
                         _project.NotifyDataChange();
                         TaskDatesChanged?.Invoke(this, task);
@@ -954,6 +1015,7 @@ public class ProGantt : Control
                     ProgressChanging?.Invoke(this, args);
                     if (!args.Cancel)
                     {
+                        RecordUndo();
                         task.Progress = args.NewProgress;
                         ProgressChanged?.Invoke(this, task);
                     }
@@ -967,6 +1029,7 @@ public class ProGantt : Control
                     LinkCreating?.Invoke(this, args);
                     if (!args.Cancel)
                     {
+                        RecordUndo();
                         _linkTarget.DependsOn(task);
                         LinkCreated?.Invoke(this, args);
                     }
@@ -1019,6 +1082,14 @@ public class ProGantt : Control
             InvalidateVisual();
             e.Handled = true;
             return;
+        }
+
+        // Undo / redo (Ctrl+Z, Ctrl+Y ou Ctrl+Maj+Z)
+        if (e.KeyModifiers.HasFlag(KeyModifiers.Control) && !IsReadOnly)
+        {
+            var shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+            if (e.Key == Key.Z && !shift) { Undo(); e.Handled = true; return; }
+            if (e.Key == Key.Y || (e.Key == Key.Z && shift)) { Redo(); e.Handled = true; return; }
         }
 
         if (_visibleRows.Count == 0)
