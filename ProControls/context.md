@@ -56,9 +56,9 @@ Légende : ✅ complet · 🟡 fonctionnel (trous ciblés) · 🟠 façade (API 
 | ProMessageBox | XtraMessageBox | ✅ | modale OK/OKCancel/YesNo/YesNoCancel, icônes, résultat typé, ShowAsync + raccourcis (lot 1) |
 | JDataGrid (réf. `../AvaloniaDataGrid`, source de vérité) | GridControl/GridView | 🟡 | voir section JDataGrid ci-dessous |
 | ProTabControl | XtraTabControl | ✅ | onglets pilule, contenu hébergé, fermeture optionnelle (TabClosing annulable, clic milieu), clavier ←→ (lot 4a). Pas d'overflow d'onglets |
-| ProAccordion | AccordionControl/NavBarControl | ✅ | sections empilées à contenu hébergé, chevron, `ExpandMode` Single (exclusif) / Multiple, `SectionExpanding` annulable, clavier ↑↓/Home/End/Enter/Espace (14/07, validé). Pas d'animation, pas de sous-niveaux |
+| ProAccordion | AccordionControl/NavBarControl | ✅ | sections empilées à contenu hébergé, chevron, `ExpandMode` Single (exclusif) / Multiple, `SectionExpanding` annulable, clavier ↑↓/Home/End/Enter/Espace, `HeaderBackground` par section (états vert/rouge, hover en surcouche) (14/07, validé). Pas d'animation, pas de sous-niveaux |
 | ProAvatar | — (pas d'équivalent DX direct) | ✅ | initiales dérivées de `FullName` (pas `Name` : réservé Avalonia) ou posées, photo rognée cercle, tailles S/M/L, pastille présence, couleur stable par hash FNV du nom (14/07, validé) |
-| ProChip | — (Tile/Tag) | ✅ | pilule cliquable/cochable (visuel accent 30/90 aligné TokenEdit)/fermable (`CloseRequested` annulable, `Closed` = à l'app de retirer), sur ProControlBase (états+clavier gratuits) (14/07, validé) |
+| ProChip | — (Tile/Tag) | ✅ | pilule cliquable/cochable (visuel accent 30/90 aligné TokenEdit)/fermable (`CloseRequested` annulable, `Closed` = à l'app de retirer), badge compteur (`Badge`/`BadgeColor`), sur ProControlBase (états+clavier gratuits) (14/07, validé) |
 | ProToggleButtonGroup | — (segmented, barre Jour/Semaine/Mois) | ✅ | segments dans une pilule, Single exclusif (flèches changent la sélection) / Multiple (flèches déplacent le focus, Espace bascule), texte inverse sur accent (14/07, validé) |
 | ProTreeView | TreeView | ✅ | expand/collapse, sélection, clavier complet (↑↓←→ Enter Home/End), événements, ExpandAll/CollapseAll (lot 4a). Non virtualisé, pas de checkboxes/édition |
 
@@ -72,7 +72,7 @@ Légende : ✅ complet · 🟡 fonctionnel (trous ciblés) · 🟠 façade (API 
 - ~~Pin ≠ freeze~~ → le pin gèle réellement
 - ~~SelectCell jamais appelé~~ → mode Cell câblé (clic + ←→↑↓/Tab) ; états non réappliqués au recyclage (scroll) — connu
 - ~~AutoFitWidth TODO~~ → best-fit au double-clic (en-tête + 100 lignes)
-- Types de colonnes : toujours 10 déclarés, Image/ProgressBar/Hyperlink/Button/Custom rendus en texte ; `CellTemplate`/`HeaderTemplate` jamais consommés
+- Types de colonnes : toujours 10 déclarés, Image/ProgressBar/Hyperlink/Button/Custom rendus en texte ; ~~`CellTemplate` jamais consommé~~ → **honoré depuis le 14/07/2026 (commit AvaloniaDataGrid 571aa7a)** : le presenter reçoit l'**item de ligne** (pas seulement Value) + le template de la colonne, `ClearValue` restaure le binding texte au retrait (une valeur locale prime sur le TemplateBinding du thème), `DisplayText` reste calculé (copie TSV/export/best-fit), 4 checks headless. Limite assumée : item non-INPC édité in-place → contenu templaté non rafraîchi (même contrat que le reste de la grille). `HeaderTemplate` toujours non consommé
 - Nouveau : Ctrl+C (TSV), `ToCsv`/`ExportCsvAsync` (vue courante)
 
 **Absent** : validation d'édition, new-row/suppression, recherche globale, filter panel/dropdown Excel, master-detail, bandes d'en-têtes, formatage conditionnel, export csv/xlsx, impression, copier/coller, navigation clavier horizontale, virtualisation colonnes, réactivité `INotifyPropertyChanged` par item, persistance layout, dark mode.

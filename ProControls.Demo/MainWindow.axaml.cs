@@ -163,6 +163,17 @@ public partial class MainWindow : ProWindow
         }
         accordion.AddSection("Filtres flotte", filterPanel, "🔎");
 
+        // Section à fond d'état (HeaderBackground) + chip à badge compteur
+        var alertPanel = new Avalonia.Controls.StackPanel { Spacing = 6, Margin = new Avalonia.Thickness(12, 8) };
+        var alertChip = new ProChip { Text = "NOTAM", Icon = "⚠️", Badge = "3", BadgeColor = ProControls.Theme.ProTheme.Accent.Error };
+        alertChip.Click += (s, e) => SetStatus("3 NOTAM actifs sur NWWW");
+        alertPanel.Children.Add(alertChip);
+        var okChip = new ProChip { Text = "Messages", Icon = "✉️", Badge = "12" };
+        alertPanel.Children.Add(okChip);
+        var alertSection = accordion.AddSection("Alertes", alertPanel, "🔔");
+        alertSection.HeaderBackground = ProControls.Theme.ProTheme.WithOpacity(
+            ProControls.Theme.ProTheme.Accent.Error, 36);
+
         accordion.AddSection("À propos", new Avalonia.Controls.TextBlock
         {
             Margin = new Avalonia.Thickness(12, 8),

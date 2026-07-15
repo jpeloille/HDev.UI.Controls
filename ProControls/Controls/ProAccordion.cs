@@ -37,6 +37,18 @@ public class ProAccordionSection
     /// <summary>Contenu affiché quand la section est ouverte</summary>
     public Control? Content { get; set; }
 
+    /// <summary>
+    /// Fond d'en-tête propre à la section (états : vert OK, rouge alerte…).
+    /// null = fond standard. Passer une teinte douce, ex.
+    /// ProTheme.WithOpacity(ProTheme.Accent.Success, 36).
+    /// </summary>
+    public Avalonia.Media.Color? HeaderBackground
+    {
+        get => _headerBackground;
+        set { _headerBackground = value; Owner?.InvalidateVisual(); }
+    }
+    private Avalonia.Media.Color? _headerBackground;
+
     public bool IsExpanded
     {
         get => _isExpanded;
@@ -351,11 +363,14 @@ public class ProAccordion : Control
             var isHovered = ReferenceEquals(section, _hoveredSection);
             var isFocused = IsFocused && index == _focusIndex;
 
-            // Fond d'en-tête
-            var headerBg = isHovered
-                ? ProTheme.Background.ControlHover
-                : ProTheme.Background.Toolbar;
+            // Fond d'en-tête : couleur de section si posée, sinon standard.
+            // Le hover se fait en SURCOUCHE translucide pour rester visible
+            // au-dessus d'un fond custom (vert/rouge) comme du fond standard.
+            var headerBg = section.HeaderBackground ?? ProTheme.Background.Toolbar;
             context.FillRectangle(new SolidColorBrush(headerBg), rect);
+            if (isHovered)
+                context.FillRectangle(new SolidColorBrush(
+                    ProTheme.WithOpacity(ProTheme.Text.Primary, 16)), rect);
 
             // Séparateur bas d'en-tête
             context.DrawLine(new Pen(new SolidColorBrush(ProTheme.Border.Subtle), 1),

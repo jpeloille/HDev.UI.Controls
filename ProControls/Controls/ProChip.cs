@@ -61,6 +61,22 @@ public class ProChip : ProControlBase
         set { _canClose = value; InvalidateMeasure(); InvalidateVisual(); }
     }
 
+    /// <summary>Compteur/badge après le texte (« 3 », « 12+ », « ! »). null = pas de badge</summary>
+    public string? Badge
+    {
+        get => _badge;
+        set { _badge = value; InvalidateMeasure(); InvalidateVisual(); }
+    }
+    private string? _badge;
+
+    /// <summary>Couleur du badge (défaut : accent ; alerte = ProTheme.Accent.Error)</summary>
+    public Color? BadgeColor
+    {
+        get => _badgeColor;
+        set { _badgeColor = value; InvalidateVisual(); }
+    }
+    private Color? _badgeColor;
+
     /// <summary>Clic sur le corps du chip (hors croix)</summary>
     public event EventHandler? Click;
 
@@ -81,8 +97,15 @@ public class ProChip : ProControlBase
     protected override Size MeasureOverride(Size availableSize)
     {
         var text = CreateText(DisplayText, ProTheme.Text.Primary, 12.5);
-        var width = 12 + text.Width + 12 + (_canClose ? CloseSize + 2 : 0);
+        var width = 12 + text.Width + 12 + (_canClose ? CloseSize + 2 : 0)
+                    + (string.IsNullOrEmpty(_badge) ? 0 : BadgeWidth() + 2);
         return new Size(width, ChipHeight);
+    }
+
+    private double BadgeWidth()
+    {
+        var t = CreateText(_badge!, Colors.White, 10.5, FontWeight.SemiBold);
+        return Math.Max(16, t.Width + 9);
     }
 
     protected override void OnPointerMoved(PointerEventArgs e)
@@ -168,6 +191,20 @@ public class ProChip : ProControlBase
 
         var text = CreateText(DisplayText, textColor, 12.5);
         context.DrawText(text, Crisp.Snap(new Point(12, (rect.Height - text.Height) / 2)));
+
+        // Badge compteur après le texte
+        if (!string.IsNullOrEmpty(_badge))
+        {
+            var bw = BadgeWidth();
+            const double bh = 16;
+            var badgeRect = new Rect(12 + text.Width + 6, (rect.Height - bh) / 2, bw, bh);
+            var badgeColor = IsEnabled ? (_badgeColor ?? ProTheme.Accent.Primary) : ProTheme.Text.Disabled;
+            context.DrawRectangle(new SolidColorBrush(badgeColor), null, badgeRect, bh / 2, bh / 2);
+            var badgeText = CreateText(_badge!, Colors.White, 10.5, FontWeight.SemiBold);
+            context.DrawText(badgeText, Crisp.Snap(new Point(
+                badgeRect.Center.X - badgeText.Width / 2,
+                badgeRect.Center.Y - badgeText.Height / 2)));
+        }
 
         if (_canClose)
         {
