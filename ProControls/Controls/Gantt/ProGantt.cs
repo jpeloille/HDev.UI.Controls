@@ -122,6 +122,145 @@ public class ProGantt : Control
     public event EventHandler<GanttLinkEventArgs>? LinkRemoved;
 
     // ═══════════════════════════════════════════════════════════════
+    // ÉDITION STRUCTURELLE DU PLAN (L1)
+    //
+    // Même contrat que le drag : événement annulable AVANT, snapshot undo
+    // seulement si la mutation a réellement lieu, événement « fait » APRÈS.
+    // Le moteur pur est dans GanttStructure.cs.
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>Avant insertion (annulable). Task = référence après laquelle insérer (null = racine)</summary>
+    public event EventHandler<GanttTaskCancelEventArgs>? TaskInserting;
+
+    /// <summary>Après insertion : la tâche créée</summary>
+    public event EventHandler<GanttTask>? TaskInserted;
+
+    /// <summary>Avant suppression d'une tâche et de son sous-arbre (annulable)</summary>
+    public event EventHandler<GanttTaskCancelEventArgs>? TaskDeleting;
+
+    /// <summary>Après suppression</summary>
+    public event EventHandler<GanttTask>? TaskDeleted;
+
+    /// <summary>Avant indentation / désindentation / déplacement (annulable)</summary>
+    public event EventHandler<GanttStructureCancelEventArgs>? TaskStructureChanging;
+
+    /// <summary>Après remaniement structurel</summary>
+    public event EventHandler<GanttTask>? TaskStructureChanged;
+
+    /// <summary>
+    /// Insère une tâche après <paramref name="reference"/> (défaut : la sélection ;
+    /// null et aucune sélection = ajout en racine), la sélectionne et ouvre
+    /// l'édition de son nom. Retourne la tâche créée, ou null si refusé.
+    /// </summary>
+    public GanttTask? InsertTask(GanttTask? reference = null, bool beginEdit = true)
+    {
+        if (_project == null || IsReadOnly) return null;
+        reference ??= _selectedTask;
+
+        var args = new GanttTaskCancelEventArgs(reference);
+        TaskInserting?.Invoke(this, args);
+        if (args.Cancel) return null;
+
+        RecordUndo();
+        var task = reference != null
+            ? _project.InsertAfter(reference)
+            : _project.InsertRoot();
+
+        SelectedTask = task;
+        ScrollToTask(task);
+        TaskInserted?.Invoke(this, task);
+
+        if (beginEdit) BeginCellEdit(task, 0); // on enchaîne sur la saisie du nom
+        return task;
+    }
+
+    /// <summary>Supprime une tâche et son sous-arbre (défaut : la sélection). Les dépendances qui la visent sont purgées.</summary>
+    public bool DeleteTask(GanttTask? task = null)
+    {
+        if (_project == null || IsReadOnly) return false;
+        task ??= _selectedTask;
+        if (task == null) return false;
+
+        var args = new GanttTaskCancelEventArgs(task);
+        TaskDeleting?.Invoke(this, args);
+        if (args.Cancel) return false;
+
+        // Choisir la sélection de repli AVANT de casser la structure
+        var fallback = NeighbourAfterRemoval(task);
+
+        RecordUndo();
+        CloseCellEditor(commit: false);
+        if (!_project.Remove(task)) return false;
+
+        SelectedTask = fallback;
+        TaskDeleted?.Invoke(this, task);
+        return true;
+    }
+
+    public bool IndentTask(GanttTask? task = null) => ApplyStructure(task, GanttStructureChange.Indent);
+    public bool OutdentTask(GanttTask? task = null) => ApplyStructure(task, GanttStructureChange.Outdent);
+    public bool MoveTaskUp(GanttTask? task = null) => ApplyStructure(task, GanttStructureChange.MoveUp);
+    public bool MoveTaskDown(GanttTask? task = null) => ApplyStructure(task, GanttStructureChange.MoveDown);
+
+    private bool ApplyStructure(GanttTask? task, GanttStructureChange change)
+    {
+        if (_project == null || IsReadOnly) return false;
+        task ??= _selectedTask;
+        if (task == null || !CanApplyStructure(task, change)) return false;
+
+        var args = new GanttStructureCancelEventArgs(task, change);
+        TaskStructureChanging?.Invoke(this, args);
+        if (args.Cancel) return false;
+
+        RecordUndo();
+        CloseCellEditor(commit: true);
+
+        var done = change switch
+        {
+            GanttStructureChange.Indent => _project.Indent(task),
+            GanttStructureChange.Outdent => _project.Outdent(task),
+            GanttStructureChange.MoveUp => _project.MoveUp(task),
+            _ => _project.MoveDown(task),
+        };
+        if (!done) return false;
+
+        SelectedTask = task; // la tâche reste sélectionnée après le remaniement
+        ScrollToTask(task);
+        TaskStructureChanged?.Invoke(this, task);
+        return true;
+    }
+
+    private bool CanApplyStructure(GanttTask task, GanttStructureChange change) => change switch
+    {
+        GanttStructureChange.Indent => _project!.CanIndent(task),
+        GanttStructureChange.Outdent => _project!.CanOutdent(task),
+        GanttStructureChange.MoveUp => _project!.CanMoveUp(task),
+        _ => _project!.CanMoveDown(task),
+    };
+
+    /// <summary>Ligne à sélectionner une fois <paramref name="task"/> (et son sous-arbre) retirée.</summary>
+    private GanttTask? NeighbourAfterRemoval(GanttTask task)
+    {
+        if (!_rowIndexByTask.TryGetValue(task, out var index)) return null;
+
+        // Première ligne visible qui n'appartient pas au sous-arbre supprimé
+        for (int i = index + 1; i < _visibleRows.Count; i++)
+            if (!IsDescendantOf(_visibleRows[i].Task, task))
+                return _visibleRows[i].Task;
+        for (int i = index - 1; i >= 0; i--)
+            if (!IsDescendantOf(_visibleRows[i].Task, task))
+                return _visibleRows[i].Task;
+        return null;
+    }
+
+    private static bool IsDescendantOf(GanttTask candidate, GanttTask ancestor)
+    {
+        for (var t = candidate; t != null; t = t.Parent)
+            if (ReferenceEquals(t, ancestor)) return true;
+        return false;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     // HISTORIQUE UNDO/REDO (snapshots JSON du projet — voir GanttHistory)
     // ═══════════════════════════════════════════════════════════════
 
@@ -934,35 +1073,67 @@ public class ProGantt : Control
     }
 
     /// <summary>
-    /// Menu contextuel d'une tâche : suppression des liens entrants,
-    /// bascule ordonnancement manuel
+    /// Menu contextuel d'une tâche : édition structurelle, suppression des liens
+    /// entrants, bascule ordonnancement manuel. Les sections ne s'affichent que
+    /// si elles ont du contenu, et le séparateur est posé AVANT une section
+    /// non vide (jamais deux d'affilée, jamais en tête).
     /// </summary>
     private void ShowTaskContextMenu(GanttTask task, Point pos)
     {
         var menu = new ProContextMenu();
         var hasItems = false;
 
-        foreach (var dep in task.Predecessors.ToList())
+        void BeginSection()
         {
-            var captured = dep;
-            menu.Add($"Supprimer le lien « {captured.Predecessor.Name} » →", "🔗", null, () =>
+            if (hasItems) menu.AddSeparator();
+        }
+
+        // Édition structurelle (L1) — en tête : c'est le geste le plus courant
+        if (!IsReadOnly && _project != null)
+        {
+            menu.Add("Nouvelle tâche", "➕", "Ins", () => InsertTask(task));
+            menu.Add("Supprimer la tâche", "🗑", "Suppr", () => DeleteTask(task));
+            hasItems = true;
+
+            if (_project.CanIndent(task) || _project.CanOutdent(task) ||
+                _project.CanMoveUp(task) || _project.CanMoveDown(task))
             {
-                var args = new GanttLinkEventArgs(captured.Predecessor, task);
-                LinkRemoving?.Invoke(this, args);
-                if (!args.Cancel)
+                BeginSection();
+                if (_project.CanIndent(task))
+                    menu.Add("Indenter", "➡", "Alt+Maj+→", () => IndentTask(task));
+                if (_project.CanOutdent(task))
+                    menu.Add("Désindenter", "⬅", "Alt+Maj+←", () => OutdentTask(task));
+                if (_project.CanMoveUp(task))
+                    menu.Add("Monter", "⬆", "Alt+↑", () => MoveTaskUp(task));
+                if (_project.CanMoveDown(task))
+                    menu.Add("Descendre", "⬇", "Alt+↓", () => MoveTaskDown(task));
+            }
+        }
+
+        if (task.Predecessors.Count > 0)
+        {
+            BeginSection();
+            foreach (var dep in task.Predecessors.ToList())
+            {
+                var captured = dep;
+                menu.Add($"Supprimer le lien « {captured.Predecessor.Name} » →", "🔗", null, () =>
                 {
-                    RecordUndo();
-                    task.RemoveDependency(captured.Predecessor);
-                    LinkRemoved?.Invoke(this, args);
-                }
-            });
+                    var args = new GanttLinkEventArgs(captured.Predecessor, task);
+                    LinkRemoving?.Invoke(this, args);
+                    if (!args.Cancel)
+                    {
+                        RecordUndo();
+                        task.RemoveDependency(captured.Predecessor);
+                        LinkRemoved?.Invoke(this, args);
+                    }
+                });
+            }
             hasItems = true;
         }
 
         if (!task.IsSummary)
         {
-            if (hasItems)
-                menu.AddSeparator();
+            BeginSection();
             menu.AddCheckable("Ordonnancement manuel", task.IsManuallyScheduled, isChecked =>
             {
                 RecordUndo();
@@ -1090,6 +1261,36 @@ public class ProGantt : Control
             var shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
             if (e.Key == Key.Z && !shift) { Undo(); e.Handled = true; return; }
             if (e.Key == Key.Y || (e.Key == Key.Z && shift)) { Redo(); e.Handled = true; return; }
+        }
+
+        // Édition structurelle (L1). Alt+Maj+←/→ = indenter/désindenter, comme
+        // MS Project ; on ne détourne PAS Tab, qui doit rester la navigation de
+        // focus (le contrôle est une seule unité focalisable).
+        if (!IsReadOnly && _project != null)
+        {
+            if (e.Key == Key.Insert)
+            {
+                InsertTask();
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == Key.Delete && _selectedTask != null && _cellEditor == null)
+            {
+                DeleteTask();
+                e.Handled = true;
+                return;
+            }
+            if (e.KeyModifiers.HasFlag(KeyModifiers.Alt) && _selectedTask != null)
+            {
+                var shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+                switch (e.Key)
+                {
+                    case Key.Right when shift: IndentTask(); e.Handled = true; return;
+                    case Key.Left when shift: OutdentTask(); e.Handled = true; return;
+                    case Key.Up when !shift: MoveTaskUp(); e.Handled = true; return;
+                    case Key.Down when !shift: MoveTaskDown(); e.Handled = true; return;
+                }
+            }
         }
 
         if (_visibleRows.Count == 0)
@@ -1750,5 +1951,43 @@ public class GanttLinkEventArgs : System.ComponentModel.CancelEventArgs
     {
         Predecessor = predecessor;
         Successor = successor;
+    }
+}
+
+/// <summary>Nature d'un remaniement structurel (L1)</summary>
+public enum GanttStructureChange
+{
+    /// <summary>La tâche devient enfant de sa fratrie précédente</summary>
+    Indent,
+    /// <summary>La tâche devient la fratrie suivante de son parent</summary>
+    Outdent,
+    /// <summary>Monte d'un cran dans sa fratrie</summary>
+    MoveUp,
+    /// <summary>Descend d'un cran dans sa fratrie</summary>
+    MoveDown
+}
+
+/// <summary>
+/// Arguments d'insertion / suppression de tâche (annulable).
+/// Pour l'insertion, <see cref="Task"/> est la tâche de RÉFÉRENCE après laquelle
+/// insérer (null = ajout en racine) ; pour la suppression, la tâche à retirer.
+/// </summary>
+public class GanttTaskCancelEventArgs : System.ComponentModel.CancelEventArgs
+{
+    public GanttTask? Task { get; }
+
+    public GanttTaskCancelEventArgs(GanttTask? task) => Task = task;
+}
+
+/// <summary>Arguments d'un remaniement structurel (annulable)</summary>
+public class GanttStructureCancelEventArgs : System.ComponentModel.CancelEventArgs
+{
+    public GanttTask Task { get; }
+    public GanttStructureChange Change { get; }
+
+    public GanttStructureCancelEventArgs(GanttTask task, GanttStructureChange change)
+    {
+        Task = task;
+        Change = change;
     }
 }

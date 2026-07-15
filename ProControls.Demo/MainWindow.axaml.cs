@@ -815,6 +815,24 @@ public partial class MainWindow : ProWindow
         gantt.LinkRemoved += (s, e) =>
             SetStatus($"Lien supprimé : « {e.Predecessor.Name} » → « {e.Successor.Name} »");
 
+        // Édition structurelle (L1) : Ins / Suppr / Alt+Maj+←→ / Alt+↑↓, ou clic droit
+        gantt.TaskInserted += (s, task) =>
+            SetStatus($"Tâche insérée : saisis son nom (Entrée valide, Échap annule)");
+        gantt.TaskDeleted += (s, task) =>
+            SetStatus($"« {task.Name} » supprimée (sous-arbre et liens entrants compris) — Ctrl+Z annule");
+        gantt.TaskStructureChanged += (s, task) =>
+            SetStatus($"« {task.Name} » remaniée — Ctrl+Z annule");
+
+        // Validation métier annulable : on ne supprime pas une tâche terminée
+        gantt.TaskDeleting += (s, e) =>
+        {
+            if (e.Task is { Progress: >= 100 })
+            {
+                e.Cancel = true;
+                SetStatus($"« {e.Task.Name} » est terminée : suppression refusée (TaskDeleting.Cancel)");
+            }
+        };
+
         // Barre d'outils : test de charge 2 500 tâches + retour aujourd'hui
         var toolbar = new Avalonia.Controls.StackPanel
         {

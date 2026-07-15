@@ -142,9 +142,10 @@ D'où : ressources/coûts/EVM et interop MSP XML → **UGantt.Core/UGantt** ; im
 **ProControls** (seule exception : manque dans TOUTE la suite, capacité transverse) ; PERT/réseau et
 grille échelonnée → ProControls (rendu), leurs données → UGantt.Core.
 
-**⚑ Le constat central (audit du 14/07/2026)** : ProGantt sait tout afficher et tout modifier,
+**⚑ Le constat central (audit du 14/07/2026)** : ProGantt savait tout afficher et tout modifier,
 **sauf FABRIQUER un plan** — ni créer, ni supprimer, ni indenter une tâche depuis l'UI. Durée,
-contraintes, EVM sont des raffinements sur un plan qu'on ne peut pas encore bâtir.
+contraintes, EVM sont des raffinements sur un plan qu'on ne pouvait pas encore bâtir.
+**→ levé par L1 le 14/07/2026** (le prochain verrou est L3 : `Duration`/`Work`/types de tâches).
 
 ### La part ProControls du programme (le plan complet fait foi dans `UGantt-charte.md` §7)
 
@@ -154,7 +155,7 @@ interop) vit dans `UGantt.Core`.
 | Lot | Objet | Taille | Statut |
 |---|---|---|---|
 | **L0** | **Versionnage du schéma JSON** (`"schema": 1`, absent = v1, futur refusé) | S | ✅ **fait le 14/07/2026** |
-| **L1** | **Édition structurelle de la table** : insérer/supprimer/indenter/désindenter/réordonner (drag + clavier Ins/Suppr/Tab/Maj+Tab/Alt+↑↓) — **premier chantier quoi qu'il arrive**, il débloque l'existence d'UGantt | M | 🔲 |
+| **L1** | **Édition structurelle de la table** — ✅ **fait le 14/07/2026** (build propre, 23 tests, à valider visuellement). Moteur pur `GanttStructure.cs` : `InsertAfter`/`InsertRoot`, `Remove` (sous-arbre + **PURGE des dépendances qui le visent** = l'invariant), `Indent`/`Outdent` (sous-arbre suivi, parent déplié), `MoveUp`/`MoveDown`, + `Can*` ; scope de suspension **réentrant** (un seul Recalculate, un `BeginUpdate` applicatif englobant n'est pas cassé). UI : `InsertTask`/`DeleteTask`/`IndentTask`/`OutdentTask`/`MoveTaskUp`/`Down`, événements annulables `TaskInserting/Inserted`, `TaskDeleting/Deleted`, `TaskStructureChanging/Changed`, undo branché, **Ins / Suppr / Alt+Maj+←→ / Alt+↑↓** (Tab **non** détourné : reste la navigation de focus), menu contextuel en sections, insertion → sélection + édition immédiate du nom, suppression → sélection de repli hors sous-arbre. **Restes** : pas de réordonnancement au **drag** (clavier/menu seulement), pas de multi-sélection ni copier/coller de lignes | M | ✅ |
 | **L2** | **Modèle de colonnes configurable** — *point d'extension n° 1* (aujourd'hui : 4 colonnes en dur) | M | 🔲 |
 | **L9** | **Impression paginée + PDF** — **transverse à TOUTE la suite**, le Gantt en est le 1er client (aujourd'hui : seulement `ExportPng`) | L | 🔲 |
 | **L18** | **Grille échelonnée éditable** (vues Task/Resource Usage) + histogramme ressources — *dépend du timephased côté UGantt.Core* | L | 🔲 |
