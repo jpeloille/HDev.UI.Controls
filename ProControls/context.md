@@ -105,9 +105,14 @@ Note : le README de AvaloniaDataGrid est marketing (tout ✅), se fier au code /
      - **ProGantt phase 2a ✅ faite le 14/07/2026** (validée) : GanttScheduler — ordonnancement auto (`Project.AutoSchedule`, défaut off ; tri topologique Kahn, calage FS/SS/FF/SF + lag en jours ouvrés, durée préservée, `IsManuallyScheduled` exclut), chemin critique par dates (marge totale ouvrée `TotalFloatDays`, `IsCritical`, récapitulatives héritent), cycles refusés par `DependsOn` (`WouldCreateCycle`). 19 tests. UI : `HighlightCriticalPath` (barres rouges) + toggles démo.
      - **ProGantt phase 2b ✅ faite le 14/07/2026** (validée) : interactions souris — déplacement (fantôme pointillé + étiquette, snap jour ouvré, durée ouvrée préservée), resize par les bords, poignée d'avancement (triangle sous la barre, snap 5 %), création de liens (connecteur + ligne élastique verte/rouge, cycle refusé), Échap annule, `IsReadOnly`. Contrat « le contrôle affiche, le métier décide » : `TaskDatesChanging`/`ProgressChanging`/`LinkCreating` annulables (+ événements Changed/Created). Aucune mutation pendant le drag (commit au relâcher, un seul Recalculate).
      - **ProGantt phase 3 ✅ faite le 14/07/2026** (validée, dont l'export hors écran) : baseline (`SetBaseline`/`ClearBaseline` instantané des dates effectives, barres grises prévues + carrés creux jalons, écart ouvré dans le tooltip, toggle `ShowBaseline`), édition in-place de la table (double-clic/F2 → ProTextBox/ProDateEdit/ProSpinEdit en dogfooding, Enter/Échap, mêmes événements annulables que le drag), clic droit → ProContextMenu (suppression de liens via `LinkRemoving`/`Removed` annulables, bascule ordonnancement manuel), `ZoomToFit()` + `ExportPng(path, entireProject)` (rendu hors écran du projet complet). **ProGantt terminé sur les 3 phases prévues.** Prochain différenciant : intégration LiveCharts2 (Ovidie).
+     - **ProGantt « app-ready » ✅ fait le 14/07/2026** (build propre, +12 tests, à valider visuellement — boutons dans la page Projet) — demandé pour bâtir une app de gestion de projet pur (activités RDOV) :
+       - **Persistance** : `GanttProject.ToJson`/`FromJson`/`LoadJson` (recharge EN PLACE = garde la référence projet + abonnements, chemin de l'undo). Sérialise l'ÉTAT (WBS, dépendances **par Id**, calendrier week-ends/fériés, `AutoSchedule`, baseline) ; le dérivé (roll-up/CPM) est recalculé au load. Dates en **InvariantCulture `yyyy-MM-dd`** (jamais CurrentCulture). Cycle stocké préservé (câblage direct dans `Predecessors`) puis reclassé en `CyclicTasks`. Tests round-trip sur TOUS les champs non-défaut + fr-FR + cycle.
+       - **`GanttTask.Id`** (nouveau, défaut Guid, settable) : identité stable pour relier la clé métier de l'app et restaurer la sélection après undo. `GanttProject.FindById`.
+       - **Undo/redo** : `GanttHistory` pur testable (piles de snapshots JSON, plafond 50, ignore doublon en sommet). ProGantt snapshote AVANT chaque mutation réelle (drag dates/avancement/lien, édition table nom/dates/%, suppression de lien, bascule manuel — tous après le check `Cancel`), `Undo()`/`Redo()`/`CanUndo`/`CanRedo`/`HistoryChanged`/`ClearHistory`, **Ctrl+Z / Ctrl+Y (Ctrl+Maj+Z)**, sélection re-résolue par Id après restauration. Nouveau projet (setter `Project`) purge l'historique.
+       - **Restes app** : colonnes de table figées (nom/début/fin/%), pas d'impression paginée (seul `ExportPng`), `Tag` non sérialisé (utiliser `Id`), pas de binding MVVM (graphe construit impérativement). **→ voir la section « ProGantt → outil pro : feuille de route ProControls » (P0-P3) et `UGantt-charte.md`.**
      - **Charts Ovidie : LiveCharts2** (MIT, Avalonia natif, forkable) avec habillage ProTheme — pas de développement maison.
 
-**Tests unitaires du socle (14/07/2026)** : `ProControls.Tests` (ProMaskEngine + moteurs Gantt/Document/Scheduler/MindMap, 178 tests) et `AvaloniaDataGrid/tests` (GridFilter/GridDataSource/PropertyAccessor/FormatValue, 61 tests) — `dotnet test` sur chaque projet. À maintenir : toute évolution d'un moteur pur passe par là.
+**Tests unitaires du socle (14/07/2026)** : `ProControls.Tests` (ProMaskEngine + moteurs Gantt/Document/Scheduler/MindMap/Dock + sérialisation Gantt + GanttHistory, 206 tests) et `AvaloniaDataGrid/tests` (GridFilter/GridDataSource/PropertyAccessor/FormatValue, 61 tests) — `dotnet test` sur chaque projet. À maintenir : toute évolution d'un moteur pur passe par là.
 
 ## ProMindMap — carte mentale de brainstorming ✅ fait le 14/07/2026 (validé)
 
@@ -116,6 +121,58 @@ Hors cible Outlook — demande directe. Calibrage : brainstorming libre (éditio
 - **Contrôle** : pilules arrondies (racine accent, couleurs de branche héritées, palette 8 teintes), connecteurs Bézier (horizontaux ou verticaux selon le mode, épaisseur décroissante), pan (drag du fond), zoom Ctrl+molette centré, culling.
 - **Grammaire d'édition** (souris seule, clavier seul, ou mixte) : Tab = enfant, Enter = frère (édition immédiate ProTextBox in-place), Suppr, F2/double-clic, Espace = repli ; **pastille plier/déplier cliquable** sur le connecteur (compte de descendants repliés) ; badges de coin du nœud sélectionné : **« + » bas-extérieur** (ajout) et **« × » haut-extérieur** (suppression, racine exclue) — hors du couloir des connecteurs ; **clic droit = ProContextMenu** complet ; drag d'un nœud = re-parentage (élastique vert/rouge, descendants interdits, `NodeReparenting` annulable) ; navigation flèches transposée par mode ; undo/redo instantanés ; `ZoomToFit`/`CenterOnRoot`/`ExportPng` (hors écran). Dark mode suivi.
 - Restes v2 : sérialisation (JSON + FreeMind .mm), notes/icônes par nœud, liens transverses, multi-sélection.
+
+## ProGantt → outil pro : feuille de route ProControls (posée le 14/07/2026)
+
+Contexte : projet **UGantt** (logiciel de gestion de projet pur, activités RDOV) à bâtir sur ProGantt.
+**Charte d'architecture et partage des responsabilités : `UGantt-charte.md` (racine du dépôt).**
+
+**Cible décidée le 14/07/2026 : couvrir les catégories 1 & 2 = « MS Project MOINS `.mpp`, VBA et
+Project Server »** (~60-65 % de Project, la part utile). Hors scope assumé : format `.mpp` (passer par
+MS Project XML), VBA/modèle objet, Project Server/Online, legacy. Jalons intermédiaires *shippables* :
+**classe GanttProject/OmniPlan/Merlin** puis **« P6-lite »**. **Plan de lots complet (25 lots, tailles,
+dépendances, jalons) : `UGantt-charte.md` §7.**
+
+**Règle de partage** : *promotion sur PREUVE de réemploi, pas sur généricité théorique* — une brique
+migre dans ProControls quand un **2ᵉ consommateur existe**. Couvrir Cat 1 **ne fait PAS remonter les
+ressources dans ProControls** : un moteur PM complet (nivellement, contours de charge, EVM) est du
+**métier** (« le contrôle affiche, le métier décide ») → il vit dans **`UGantt.Core`**, couche domaine
+pure et testée. ProControls ne gagne que des **primitives de rendu + les points d'extension**.
+D'où : ressources/coûts/EVM et interop MSP XML → **UGantt.Core/UGantt** ; impression paginée →
+**ProControls** (seule exception : manque dans TOUTE la suite, capacité transverse) ; PERT/réseau et
+grille échelonnée → ProControls (rendu), leurs données → UGantt.Core.
+
+**⚑ Le constat central (audit du 14/07/2026)** : ProGantt sait tout afficher et tout modifier,
+**sauf FABRIQUER un plan** — ni créer, ni supprimer, ni indenter une tâche depuis l'UI. Durée,
+contraintes, EVM sont des raffinements sur un plan qu'on ne peut pas encore bâtir.
+
+### La part ProControls du programme (le plan complet fait foi dans `UGantt-charte.md` §7)
+
+Ne dupliquer ici que ce qui incombe à la lib — le reste (moteur PM, ressources, coûts, EVM,
+interop) vit dans `UGantt.Core`.
+
+| Lot | Objet | Taille | Statut |
+|---|---|---|---|
+| **L0** | **Versionnage du schéma JSON** (`"schema": 1`, absent = v1, futur refusé) | S | ✅ **fait le 14/07/2026** |
+| **L1** | **Édition structurelle de la table** : insérer/supprimer/indenter/désindenter/réordonner (drag + clavier Ins/Suppr/Tab/Maj+Tab/Alt+↑↓) — **premier chantier quoi qu'il arrive**, il débloque l'existence d'UGantt | M | 🔲 |
+| **L2** | **Modèle de colonnes configurable** — *point d'extension n° 1* (aujourd'hui : 4 colonnes en dur) | M | 🔲 |
+| **L9** | **Impression paginée + PDF** — **transverse à TOUTE la suite**, le Gantt en est le 1er client (aujourd'hui : seulement `ExportPng`) | L | 🔲 |
+| **L18** | **Grille échelonnée éditable** (vues Task/Resource Usage) + histogramme ressources — *dépend du timephased côté UGantt.Core* | L | 🔲 |
+| **L19** | Filtres / groupes / tris (auto-filtre, surlignage, filtres interactifs) | L | 🔲 |
+| **L20** | Tables & vues composables (définitions sauvegardables, vues combinées) | L | 🔲 |
+| **L21** | **Mise en forme** : styles de barres, styles de texte, échelle **3 niveaux**, lignes de progression — *point d'extension n° 2 (adornement par ligne)* | L | 🔲 |
+| **L22** | Vue **réseau / PERT** + diagramme de relations (rendu pur du graphe) | M | 🔲 |
+| **L23** | Vues Calendrier / Chronologie / Planificateur d'équipe | L | 🔲 |
+| — | **Sac de propriétés applicatives sérialisé** — *point d'extension n° 3* (`Tag` ne se sérialise pas ; `GanttTask.Id` porte déjà le lien métier) | S | 🔲 |
+| — | Multi-sélection + édition en masse + copier/coller de lignes ; presets d'échelle de temps ; codes WBS ; recherche/remplacement ; autoscroll au drag | M | 🔲 |
+
+> **Les 3 points d'extension priment sur la liste de features** : s'ils manquent, la première vraie
+> feature d'UGantt force une réécriture de ProControls.
+>
+> **⚠️ Le boss du programme est côté UGantt.Core** : le **moteur timephased** (L12 — répartition
+> échelonnée travail/coût + 8 contours de charge) conditionne nivellement, EVM, suivi avancé ET la
+> grille d'usage (L18) de ProControls. Tous les clones de Gantt l'esquivent — c'est ce qui les
+> empêche d'égaler Project.
 
 ## Cible « Outlook natif Linux » — cartographie des manques (stade projet, 14/07/2026)
 
@@ -143,7 +200,10 @@ Hors cible Outlook — demande directe. Calibrage : brainstorming libre (éditio
 - ~~Dark mode ProTheme~~ ✅ **Fait le 14/07/2026** (validé) : `ProTheme` à palettes commutables — l'API historique (`ProTheme.Background.Panel`…) est INTACTE, les tokens délèguent à la palette active (`ProPalette.Light`/`Dark`, 56 couleurs) ; `ProTheme.Variant` + `VariantChanged`. Propagation : ProWindow suit (RequestedThemeVariant pour les Fluent internes + invalidation récursive), 6 contrôles à brushes construits s'abonnent (Card, TextBox, EditorBase, TokenEdit, HtmlView/RichEdit = re-layout), dropdowns re-brushés (Combo/Date/Search/Token/LookUp via `RefreshThemeBrushes()` virtuel du socle), JDataGrid via ThemeDictionaries du skin Yaru (+ extraction des couleurs en dur du thème de base, commit AvaloniaDataGrid e04094c). Toggle 🌙 démo. Une 3e variante = une palette de plus.
 - Restantes : ribbon avancé (backstage/galeries/QAT/onglets contextuels), rendu des colonnes Image/Bouton du JDataGrid + master-detail, impression (inexistante partout).
 - **Migration Avalonia 12 (ajoutée au backlog le 14/07/2026)** : la suite est sur **11.2.1** ; NuGet au 14/07/2026 : ligne 11.x maintenue jusqu'à **11.3.18**, majeure actuelle **12.1.0**. Plan en deux temps : (1) bump faible risque **11.2.1 → 11.3.18** (même majeure — bump des deux projets + Avalonia.Fonts.Inter, build, 239 tests, tour de démo complet avec attention aux popups overlay et au rendu texte) ; (2) **migration 12.x = chantier dédié** : lire le guide de migration officiel, brancher, compiler, auditer nos points de contact bas niveau (OverlayPopups X11, TextLayout/ValueSpan, RenderOptions subpixel, OverlayLayer des toasts, DragDrop, RenderTargetBitmap hors écran, **snapping DPI = `GetVisualRoot()?.RenderScaling` dans Crisp.BeginFrame**). Ne pas mélanger les deux étapes.
-- **ProDock (docking de panneaux, ajouté au backlog le 14/07/2026)** : panneaux ancrables/détachables/empilables façon IDE (VS Code/Rider) — cible : postes denses type dispatcher Synaxis. Décision d'architecture actée : **PAS de MDI** (étranger aux conventions Linux, structurellement incompatible Wayland — pas de positionnement global des fenêtres par l'app) ; le modèle Linux est SDI + onglets (ProTabControl ✅) + splits (GridSplitter) + **docking** (le seul morceau manquant). Périmètre envisagé : zones d'ancrage (gauche/droite/bas + centre document), drag d'un panneau avec aperçu des cibles, empilement en onglets, redimensionnement, panneaux épinglés/auto-masqués, sérialisation du layout. Gros chantier — à lancer quand un écran Synaxis le réclame.
+- **ProDock (docking de panneaux, ajouté au backlog le 14/07/2026)** : panneaux ancrables/détachables/empilables façon IDE (VS Code/Rider) — cible : postes denses type dispatcher Synaxis. Décision d'architecture actée : **PAS de MDI** (étranger aux conventions Linux, structurellement incompatible Wayland — pas de positionnement global des fenêtres par l'app) ; le modèle Linux est SDI + onglets (ProTabControl ✅) + splits (GridSplitter) + **docking** (le seul morceau manquant). Périmètre envisagé : zones d'ancrage (gauche/droite/bas + centre document), drag d'un panneau avec aperçu des cibles, empilement en onglets, redimensionnement, panneaux épinglés/auto-masqués, sérialisation du layout.
+  - **Stance « détachable » actée (14/07/2026)** : tout le réarrangement (drag, cibles, aperçu) vivra dans l'**OverlayLayer** de la fenêtre — JAMAIS via du positionnement de fenêtres OS (c'est ce qui rend le docking Wayland-natif). « Détaché » = pop-out SDI ordinaire ; re-dock par action explicite, pas par tracking de position. Le modèle sait que les floats existent (collection `Floating` sérialisée) mais la phase 1 n'en crée pas.
+  - **Phase 1 ✅ faite le 14/07/2026** (build propre, 16 tests, à valider visuellement — page démo « Dispatcher ») : **moteur d'arbre pur** `DockLayout` (`DockSplit`/`DockTabGroup`/`DockItem`, aucune dépendance Avalonia) — `AddToRegion` (bords + centre document), `InsertRelative` (cœur ancrage/futur drag), `Remove`+**`Prune`** (invariant : groupes vides retirés, splits mono-enfant effondrés, splits imbriqués de même orientation aplatis, proportions renormalisées), `ToJson`/`FromJson` (topologie + Id, PAS le contenu). **UI** `ProDockManager` (Decorator) : construit l'arbre visuel — split → `Grid` + `GridSplitter` Avalonia (proportions étoile, relues au save), groupe → `DockTabStrip` custom-rendered (idiome pilule ProTabControl, sélection/× fermeture/clic milieu), dark mode via `VariantChanged`, `SaveLayout`/`LoadLayout` réassociant Id→Content. **Zéro drag** (phase 2).
+  - **Restes** : phase 2 = drag d'un onglet/volet avec cibles d'ancrage en OverlayLayer + réordonnancement d'onglets ; phase 3 = pop-out SDI (float) + re-dock explicite + panneaux épinglés/auto-masqués. Gros chantier — suite à lancer quand un écran Synaxis le réclame.
 
 **⚪ Hors contrôles (l'autre moitié de l'iceberg, pour mémoire)** : IMAP/SMTP (ou EWS/Graph), stockage local + indexation de recherche, iCal/récurrences, vCard.
 

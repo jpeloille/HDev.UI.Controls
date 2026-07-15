@@ -89,6 +89,9 @@ public partial class MainWindow : ProWindow
         // Page 8 : ProMindMap (brainstorming)
         tabs.AddPage("Carte", BuildMindMapDemo(), "🧠");
 
+        // Page 9 : ProDock (docking, phase 1) — poste dispatcher
+        tabs.AddPage("Dispatcher", BuildDockDemo(), "🗂️");
+
         // Page 4 : fermable
         var closable = tabs.AddPage("Rapport", new Avalonia.Controls.TextBlock
         {
@@ -108,6 +111,89 @@ public partial class MainWindow : ProWindow
             page.CanClose = true;
             tabs.SelectedIndex = tabs.Items.Count - 1;
         };
+    }
+
+    private Avalonia.Controls.Control BuildDockDemo()
+    {
+        var dock = new ProDockManager();
+
+        static Avalonia.Controls.Control Pad(string text) => new Avalonia.Controls.Border
+        {
+            Padding = new Avalonia.Thickness(12),
+            Child = new Avalonia.Controls.TextBlock
+            {
+                Text = text,
+                TextWrapping = Avalonia.Media.TextWrapping.Wrap
+            }
+        };
+
+        // Zone document (centre) : deux plans de vol en onglets.
+        dock.AddPanel(new ProDockPanel("vol-ty201", "TY201",
+            Pad("Plan de vol TY201 — Nouméa → Lifou\n\nZone document centrale : les volets ajoutés au centre s'empilent en onglets."),
+            "🛫"), DockRegion.Center);
+        dock.AddPanel(new ProDockPanel("vol-ty340", "TY340",
+            Pad("Plan de vol TY340 — Nouméa → Wallis"), "🛫"), DockRegion.Center);
+
+        // Volet gauche : la flotte (ProTreeView, dogfooding).
+        var fleet = new ProTreeView();
+        var a320 = fleet.Add("A320", "✈️");
+        a320.Add("F-OJSB", "🟢");
+        a320.Add("F-OJSC", "🟢");
+        var atr = fleet.Add("ATR 72", "✈️");
+        atr.Add("F-OIQA", "🟢");
+        atr.Add("F-OIQB", "⚪");
+        dock.AddPanel(new ProDockPanel("flotte", "Flotte",
+            new Avalonia.Controls.ScrollViewer { Content = fleet }, "🛩️"), DockRegion.Left);
+
+        // Volet droit : détails de sélection.
+        dock.AddPanel(new ProDockPanel("details", "Détails",
+            Pad("Détails de l'appareil / du vol sélectionné.\n\nRedimensionne les volets par les splitters entre eux."),
+            "🔍"), DockRegion.Right);
+
+        // Volet bas : journal.
+        dock.AddPanel(new ProDockPanel("journal", "Journal",
+            Pad("[08:15] TY201 embarquement\n[08:52] TY201 pushback\n[09:03] TY201 airborne"),
+            "📜"), DockRegion.Bottom);
+
+        // Barre d'outils : sérialisation du layout.
+        var save = new ProButton { Text = "Sauver layout", Variant = ButtonVariant.Secondary };
+        var load = new ProButton { Text = "Charger layout", Variant = ButtonVariant.Secondary, IsEnabled = false };
+        var status = new Avalonia.Controls.TextBlock
+        {
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            Foreground = new Avalonia.Media.SolidColorBrush(ProControls.Theme.ProTheme.Text.Secondary),
+            Text = "Réorganise (splitters, onglets, ×) puis sauve/recharge le layout."
+        };
+
+        string? savedLayout = null;
+        save.Click += (_, _) =>
+        {
+            savedLayout = dock.SaveLayout();
+            load.IsEnabled = true;
+            status.Text = $"Layout sauvé ({savedLayout.Length} caractères JSON).";
+        };
+        load.Click += (_, _) =>
+        {
+            if (savedLayout == null) return;
+            dock.LoadLayout(savedLayout);
+            status.Text = "Layout rechargé depuis le JSON sauvé.";
+        };
+
+        dock.PanelClosed += (_, panel) => status.Text = $"Volet fermé : {panel.Title}.";
+
+        var toolbar = new Avalonia.Controls.StackPanel
+        {
+            Orientation = Avalonia.Layout.Orientation.Horizontal,
+            Spacing = 8,
+            Margin = new Avalonia.Thickness(8),
+            Children = { save, load, status }
+        };
+
+        var root = new Avalonia.Controls.DockPanel();
+        Avalonia.Controls.DockPanel.SetDock(toolbar, Avalonia.Controls.Dock.Top);
+        root.Children.Add(toolbar);
+        root.Children.Add(dock);
+        return root;
     }
 
     private Avalonia.Controls.Control BuildHtmlViewDemo()
@@ -791,6 +877,39 @@ public partial class MainWindow : ProWindow
             await ProMessageBox.ShowInfoAsync(this, $"Diagramme complet exporté :\n{path}", "Export PNG");
         };
 
+        // Undo / redo (Ctrl+Z / Ctrl+Y aussi, contrôle focalisé)
+        var undoButton = new ProButton { Text = "↶ Annuler", Variant = ButtonVariant.Secondary, Size = ButtonSize.Small, IsEnabled = false };
+        var redoButton = new ProButton { Text = "↷ Rétablir", Variant = ButtonVariant.Secondary, Size = ButtonSize.Small, IsEnabled = false };
+        undoButton.Click += (s, e) => gantt.Undo();
+        redoButton.Click += (s, e) => gantt.Redo();
+        gantt.HistoryChanged += (s, e) =>
+        {
+            undoButton.IsEnabled = gantt.CanUndo;
+            redoButton.IsEnabled = gantt.CanRedo;
+        };
+
+        // Persistance : sauve/relit le projet en JSON
+        string? savedProject = null;
+        var saveButton = new ProButton { Text = "💾 Sauver", Variant = ButtonVariant.Secondary, Size = ButtonSize.Small };
+        var loadButton = new ProButton { Text = "📂 Charger", Variant = ButtonVariant.Secondary, Size = ButtonSize.Small, IsEnabled = false };
+        saveButton.Click += (s, e) =>
+        {
+            savedProject = gantt.Project?.ToJson();
+            loadButton.IsEnabled = savedProject != null;
+            SetStatus($"Projet sauvé ({savedProject?.Length ?? 0} caractères JSON).");
+        };
+        loadButton.Click += (s, e) =>
+        {
+            if (savedProject == null) return;
+            gantt.Project = GanttProject.FromJson(savedProject); // remplace + purge l'historique
+            gantt.ScrollToToday();
+            SetStatus("Projet rechargé depuis le JSON sauvé.");
+        };
+
+        toolbar.Children.Add(undoButton);
+        toolbar.Children.Add(redoButton);
+        toolbar.Children.Add(saveButton);
+        toolbar.Children.Add(loadButton);
         toolbar.Children.Add(todayButton);
         toolbar.Children.Add(criticalToggle);
         toolbar.Children.Add(autoToggle);
