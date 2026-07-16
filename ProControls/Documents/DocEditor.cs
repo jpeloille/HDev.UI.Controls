@@ -175,13 +175,44 @@ public class DocEditor
         RaiseChanged();
     }
 
-    /// <summary>Enter : scinde le paragraphe au caret</summary>
+    /// <summary>
+    /// Enter : scinde le paragraphe au caret. Dans une liste : crée un NOUVEL
+    /// ITEM ; sur un item vide : sort de la liste (idiome Word).
+    /// </summary>
     public void SplitParagraph()
     {
         PushUndo();
         if (HasSelection) DeleteRangeInternal();
 
         var paragraph = Paragraphs[Caret.Block];
+        var context = FindListItem(paragraph);
+
+        if (context is { } ctx)
+        {
+            // Item vide → Enter SORT de la liste
+            if (GetParagraphLength(Caret.Block) == 0 && ctx.Item.Blocks.Count == 1)
+            {
+                UnwrapFromList(paragraph);
+                Reflatten();
+                Caret = ClampCaret(Caret with { Offset = 0 });
+                Anchor = null;
+                RaiseChanged();
+                return;
+            }
+
+            // Scission en nouvel item après l'item courant
+            var itemParagraph = new DocParagraph { Alignment = paragraph.Alignment };
+            MoveTail(paragraph, Caret.Offset, itemParagraph);
+            var newItem = new DocListItem();
+            newItem.Blocks.Add(itemParagraph);
+            ctx.List.Items.Insert(ctx.ItemIndex + 1, newItem);
+            Reflatten();
+            Caret = new DocCaret(Caret.Block + 1, 0);
+            Anchor = null;
+            RaiseChanged();
+            return;
+        }
+
         var newParagraph = new DocParagraph { Alignment = paragraph.Alignment };
         MoveTail(paragraph, Caret.Offset, newParagraph);
 
@@ -201,6 +232,17 @@ public class DocEditor
             PushUndo(coalesceTyping: true);
             DeleteTextInParagraph(Paragraphs[Caret.Block], Caret.Offset - 1, 1);
             Caret = Caret with { Offset = Caret.Offset - 1 };
+            RaiseChanged();
+        }
+        // Début du premier paragraphe d'un item de liste : Backspace RETIRE la
+        // puce (le paragraphe sort de la liste) au lieu de fusionner (Word)
+        else if (FindListItem(Paragraphs[Caret.Block]) is { } ctx &&
+                 ReferenceEquals(ctx.Item.Blocks.FirstOrDefault(), Paragraphs[Caret.Block]))
+        {
+            PushUndo();
+            UnwrapFromList(Paragraphs[Caret.Block]);
+            Reflatten();
+            Caret = ClampCaret(Caret with { Offset = 0 });
             RaiseChanged();
         }
         else if (Caret.Block > 0)
@@ -289,6 +331,399 @@ public class DocEditor
             Paragraphs[b].HeadingLevel = Math.Clamp(level, 0, 6);
         RaiseChanged();
     }
+
+    // ═══════════════════════════════════════════════════════════════
+    // V2 — PARAGRAPHE : alignement
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>Alignement des paragraphes de la sélection (ou du paragraphe courant)</summary>
+    public void SetAlignment(Avalonia.Media.TextAlignment alignment)
+    {
+        PushUndo();
+        var (start, end) = SelectionRange();
+        for (int b = start.Block; b <= end.Block && b < Paragraphs.Count; b++)
+            Paragraphs[b].Alignment = alignment;
+        RaiseChanged();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // V2 — STYLE : couleurs, taille (transform = sait aussi EFFACER,
+    // ce que ApplyStyle/Merge ne permet pas — un null y hérite)
+    // ═══════════════════════════════════════════════════════════════
+
+    public void SetTextColor(Avalonia.Media.Color? color)
+        => TransformSelection(run => run.Style = run.Style with { Foreground = color });
+
+    public void SetHighlight(Avalonia.Media.Color? color)
+        => TransformSelection(run => run.Style = run.Style with { Background = color });
+
+    public void SetFontSize(double? size)
+        => TransformSelection(run => run.Style = run.Style with { FontSize = size });
+
+    // ═══════════════════════════════════════════════════════════════
+    // V2 — LIENS
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>Pose (ou retire : null) un lien sur la sélection</summary>
+    public void SetLink(string? href)
+        => TransformSelection(run => run.LinkHref = string.IsNullOrWhiteSpace(href) ? null : href);
+
+    /// <summary>Lien au caret / au début de la sélection (null si aucun)</summary>
+    public string? GetCurrentLink()
+    {
+        var (start, _) = SelectionRange();
+        var paragraph = Paragraphs[Math.Clamp(start.Block, 0, Paragraphs.Count - 1)];
+        // LocateRun est biaisé à GAUCHE aux frontières de runs : pour une
+        // sélection, sonder start+1 vise le PREMIER caractère sélectionné
+        // (sinon on lirait le run juste avant la sélection).
+        var probe = HasSelection
+            ? Math.Min(start.Offset + 1, GetParagraphLength(start.Block))
+            : Caret.Offset;
+        var (runIndex, _, _) = LocateRun(paragraph, probe);
+        return runIndex >= 0 && runIndex < paragraph.Inlines.Count &&
+               paragraph.Inlines[runIndex] is DocRun run ? run.LinkHref : null;
+    }
+
+    /// <summary>Applique une mutation aux runs couverts par la sélection (découpe aux frontières)</summary>
+    private void TransformSelection(Action<DocRun> transform)
+    {
+        if (!HasSelection) return;
+        PushUndo();
+
+        var (start, end) = SelectionRange();
+        for (int b = start.Block; b <= end.Block; b++)
+        {
+            var paragraph = Paragraphs[b];
+            var from = b == start.Block ? start.Offset : 0;
+            var to = b == end.Block ? end.Offset : GetParagraphLength(b);
+            if (to <= from) continue;
+
+            SplitRunAt(paragraph, from);
+            SplitRunAt(paragraph, to);
+
+            var position = 0;
+            foreach (var inline in paragraph.Inlines)
+            {
+                switch (inline)
+                {
+                    case DocRun run:
+                        if (position >= from && position + run.Text.Length <= to)
+                            transform(run);
+                        position += run.Text.Length;
+                        break;
+                    case DocLineBreak:
+                        position++;
+                        break;
+                }
+            }
+        }
+        RaiseChanged();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // V2 — LISTES (puces / numérotées)
+    // ═══════════════════════════════════════════════════════════════
+
+    public void ToggleBulletList() => ToggleList(ordered: false);
+    public void ToggleNumberedList() => ToggleList(ordered: true);
+
+    /// <summary>Le paragraphe courant est-il dans une liste (et de quel type) ?</summary>
+    public (bool InList, bool Ordered) GetListState()
+    {
+        var (start, _) = SelectionRange();
+        var paragraph = Paragraphs[Math.Clamp(start.Block, 0, Paragraphs.Count - 1)];
+        return FindListItem(paragraph) is { } ctx ? (true, ctx.List.Ordered) : (false, false);
+    }
+
+    private void ToggleList(bool ordered)
+    {
+        PushUndo();
+        var (start, end) = SelectionRange();
+        var targets = new List<DocParagraph>();
+        for (int b = start.Block; b <= end.Block && b < Paragraphs.Count; b++)
+            targets.Add(Paragraphs[b]);
+
+        // Tous déjà dans une liste du bon type → SORTIR de la liste
+        if (targets.All(p => FindListItem(p) is { } c && c.List.Ordered == ordered))
+        {
+            foreach (var paragraph in targets)
+                UnwrapFromList(paragraph);
+        }
+        else
+        {
+            foreach (var paragraph in targets)
+            {
+                if (FindListItem(paragraph) is { } ctx)
+                {
+                    ctx.List.Ordered = ordered; // conversion de type sur place
+                    continue;
+                }
+
+                var parent = FindParentCollection(paragraph);
+                if (parent == null) continue;
+                var index = parent.IndexOf(paragraph);
+
+                // Fusion avec une liste adjacente du même type (paragraphes
+                // consécutifs sélectionnés → UNE liste, pas N)
+                if (index > 0 && parent[index - 1] is DocList previous && previous.Ordered == ordered)
+                {
+                    parent.RemoveAt(index);
+                    var item = new DocListItem();
+                    item.Blocks.Add(paragraph);
+                    previous.Items.Add(item);
+                }
+                else
+                {
+                    var list = new DocList { Ordered = ordered };
+                    var item = new DocListItem();
+                    item.Blocks.Add(paragraph);
+                    list.Items.Add(item);
+                    parent[index] = list;
+                }
+            }
+        }
+
+        Reflatten();
+        Caret = ClampCaret(Caret);
+        if (Anchor.HasValue) Anchor = ClampCaret(Anchor.Value);
+        RaiseChanged();
+    }
+
+    /// <summary>Contexte de liste d'un paragraphe (item DIRECT uniquement)</summary>
+    private (DocList List, DocListItem Item, int ItemIndex)? FindListItem(DocParagraph paragraph)
+    {
+        foreach (var list in AllLists(Document.Blocks))
+            for (int i = 0; i < list.Items.Count; i++)
+                if (list.Items[i].Blocks.Contains(paragraph))
+                    return (list, list.Items[i], i);
+        return null;
+    }
+
+    private static IEnumerable<DocList> AllLists(List<DocBlock> blocks)
+    {
+        foreach (var block in blocks)
+        {
+            switch (block)
+            {
+                case DocList list:
+                    yield return list;
+                    foreach (var item in list.Items)
+                        foreach (var nested in AllLists(item.Blocks))
+                            yield return nested;
+                    break;
+                case DocQuote quote:
+                    foreach (var nested in AllLists(quote.Blocks))
+                        yield return nested;
+                    break;
+            }
+        }
+    }
+
+    /// <summary>Collection qui contient DIRECTEMENT ce bloc (racine, citation, item)</summary>
+    private List<DocBlock>? FindParentCollection(DocBlock block)
+        => FindParentIn(Document.Blocks, block);
+
+    private static List<DocBlock>? FindParentIn(List<DocBlock> blocks, DocBlock target)
+    {
+        if (blocks.Contains(target)) return blocks;
+        foreach (var block in blocks)
+        {
+            var found = block switch
+            {
+                DocList list => list.Items.Select(i => FindParentIn(i.Blocks, target))
+                    .FirstOrDefault(r => r != null),
+                DocQuote quote => FindParentIn(quote.Blocks, target),
+                _ => null
+            };
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Sort un paragraphe de sa liste : son item disparaît, la liste est
+    /// SCINDÉE autour de lui s'il était au milieu, supprimée si vide.
+    /// </summary>
+    private void UnwrapFromList(DocParagraph paragraph)
+    {
+        if (FindListItem(paragraph) is not { } ctx) return;
+        var parent = FindParentCollection(ctx.List);
+        if (parent == null) return;
+        var listIndex = parent.IndexOf(ctx.List);
+
+        var escaping = ctx.Item.Blocks.ToList(); // tout l'item sort ensemble
+        ctx.List.Items.RemoveAt(ctx.ItemIndex);
+
+        if (ctx.ItemIndex == 0)
+        {
+            parent.InsertRange(listIndex, escaping);
+            if (ctx.List.Items.Count == 0)
+                parent.Remove(ctx.List);
+        }
+        else if (ctx.ItemIndex >= ctx.List.Items.Count)
+        {
+            parent.InsertRange(listIndex + 1, escaping);
+        }
+        else
+        {
+            // Milieu : scinder la liste en deux autour du paragraphe sorti
+            var tail = new DocList { Ordered = ctx.List.Ordered };
+            while (ctx.List.Items.Count > ctx.ItemIndex)
+            {
+                tail.Items.Add(ctx.List.Items[ctx.ItemIndex]);
+                ctx.List.Items.RemoveAt(ctx.ItemIndex);
+            }
+            parent.InsertRange(listIndex + 1, escaping.Append((DocBlock)tail));
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // V2 — COLLAGE RICHE + IMAGES + HTML DE LA SÉLECTION
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Insère un fragment HTML au caret (collage riche). Un fragment d'un seul
+    /// paragraphe se fond dans le paragraphe courant ; plusieurs blocs sont
+    /// insérés en scindant au caret. Une seule étape d'undo.
+    /// </summary>
+    public void InsertHtml(string html)
+    {
+        var fragment = HtmlParser.Parse(html);
+        Normalize(fragment);
+        if (fragment.Blocks.Count == 0) return;
+
+        // Fragment d'un seul paragraphe sans image : fusion inline
+        if (fragment.Blocks.Count == 1 && fragment.Blocks[0] is DocParagraph single &&
+            !single.Inlines.OfType<DocImage>().Any())
+        {
+            PushUndo();
+            if (HasSelection) DeleteRangeInternal();
+            InsertInlinesAtCaret(single.Inlines);
+            RaiseChanged();
+            return;
+        }
+
+        InsertBlocksAtCaret(fragment.Blocks);
+    }
+
+    /// <summary>Insère une image (bloc dédié — les images sont des blocs dans le layout v1)</summary>
+    public void InsertImage(DocImage image)
+    {
+        var paragraph = new DocParagraph();
+        paragraph.Inlines.Add(image);
+        InsertBlocksAtCaret(new List<DocBlock> { paragraph });
+    }
+
+    /// <summary>
+    /// HTML de la sélection (copie riche). Implémenté par clonage du document
+    /// puis suppression de tout ce qui est HORS sélection sur un éditeur
+    /// temporaire : la structure (listes, titres, styles) est préservée.
+    /// </summary>
+    public string GetSelectedHtml()
+    {
+        if (!HasSelection) return "";
+        var (start, end) = SelectionRange();
+
+        var temp = new DocEditor(DocCloner.Clone(Document));
+
+        // Supprimer après la fin…
+        var last = temp.Paragraphs.Count - 1;
+        temp.Anchor = end;
+        temp.Caret = new DocCaret(last, temp.GetParagraphLength(last));
+        if (temp.HasSelection) temp.DeleteSelection();
+
+        // …puis avant le début
+        temp.Anchor = new DocCaret(0, 0);
+        temp.Caret = start;
+        if (temp.HasSelection) temp.DeleteSelection();
+
+        return temp.ToHtml();
+    }
+
+    private void InsertBlocksAtCaret(List<DocBlock> blocks)
+    {
+        if (blocks.Count == 0) return;
+        PushUndo();
+        if (HasSelection) DeleteRangeInternal();
+
+        var paragraph = Paragraphs[Caret.Block];
+        var topIndex = TopLevelIndexOf(paragraph);
+        if (topIndex < 0) return;
+
+        DocParagraph? tail = null;
+        if (ReferenceEquals(Document.Blocks[topIndex], paragraph))
+        {
+            // Paragraphe de premier niveau : scinder au caret, insérer entre les moitiés
+            tail = new DocParagraph { Alignment = paragraph.Alignment };
+            MoveTail(paragraph, Caret.Offset, tail);
+            Document.Blocks.Insert(topIndex + 1, tail);
+            Document.Blocks.InsertRange(topIndex + 1, blocks);
+        }
+        else
+        {
+            // Caret dans une structure (liste, citation) : insérer après elle
+            Document.Blocks.InsertRange(topIndex + 1, blocks);
+        }
+
+        Reflatten();
+        var target = tail != null ? Paragraphs.IndexOf(tail) : -1;
+        Caret = target >= 0 ? new DocCaret(target, 0) : ClampCaret(Caret);
+        Anchor = null;
+        RaiseChanged();
+    }
+
+    /// <summary>Insère des inlines au caret dans le paragraphe courant</summary>
+    private void InsertInlinesAtCaret(List<DocInline> inlines)
+    {
+        var paragraph = Paragraphs[Caret.Block];
+        SplitRunAt(paragraph, Caret.Offset);
+
+        // Index d'insertion : premier inline commençant à l'offset du caret
+        var position = 0;
+        var insertAt = paragraph.Inlines.Count;
+        for (int i = 0; i < paragraph.Inlines.Count; i++)
+        {
+            if (position >= Caret.Offset) { insertAt = i; break; }
+            position += paragraph.Inlines[i] switch
+            {
+                DocRun run => run.Text.Length,
+                DocLineBreak => 1,
+                _ => 0
+            };
+        }
+
+        var length = 0;
+        foreach (var inline in inlines)
+        {
+            paragraph.Inlines.Insert(insertAt++, inline);
+            length += inline switch
+            {
+                DocRun run => run.Text.Length,
+                DocLineBreak => 1,
+                _ => 0
+            };
+        }
+
+        Caret = Caret with { Offset = Caret.Offset + length };
+        Anchor = null;
+    }
+
+    /// <summary>Index du bloc de PREMIER NIVEAU contenant ce paragraphe</summary>
+    private int TopLevelIndexOf(DocParagraph paragraph)
+    {
+        for (int i = 0; i < Document.Blocks.Count; i++)
+            if (ReferenceEquals(Document.Blocks[i], paragraph) || Contains(Document.Blocks[i], paragraph))
+                return i;
+        return -1;
+    }
+
+    private static bool Contains(DocBlock block, DocParagraph paragraph) => block switch
+    {
+        DocList list => list.Items.Any(item =>
+            item.Blocks.Any(b => ReferenceEquals(b, paragraph) || Contains(b, paragraph))),
+        DocQuote quote => quote.Blocks.Any(b => ReferenceEquals(b, paragraph) || Contains(b, paragraph)),
+        _ => false
+    };
 
     // ═══════════════════════════════════════════════════════════════
     // UNDO / REDO (instantanés)
@@ -753,6 +1188,8 @@ public static class HtmlSerializer
             sb.Append(" style=\"text-align:center\"");
         else if (p.Alignment == Avalonia.Media.TextAlignment.Right)
             sb.Append(" style=\"text-align:right\"");
+        else if (p.Alignment == Avalonia.Media.TextAlignment.Justify)
+            sb.Append(" style=\"text-align:justify\"");
         sb.Append('>');
 
         string? openLink = null;
