@@ -93,6 +93,73 @@ public class ProRichEdit : Control
     public void Undo() { _editor.Undo(); FocusAndShowCaret(); }
     public void Redo() { _editor.Redo(); FocusAndShowCaret(); }
 
+    // Commandes v2
+    public void ToggleBulletList() { _editor.ToggleBulletList(); FocusAndShowCaret(); }
+    public void ToggleNumberedList() { _editor.ToggleNumberedList(); FocusAndShowCaret(); }
+    public void SetAlignment(TextAlignment alignment) { _editor.SetAlignment(alignment); FocusAndShowCaret(); }
+    public void SetTextColor(Color? color) { _editor.SetTextColor(color); FocusAndShowCaret(); }
+    public void SetHighlight(Color? color) { _editor.SetHighlight(color); FocusAndShowCaret(); }
+    public void SetFontSize(double? size) { _editor.SetFontSize(size); FocusAndShowCaret(); }
+    public void InsertImage(DocImage image) { _editor.InsertImage(image); FocusAndShowCaret(); }
+    public void InsertHtmlAtCaret(string html) { _editor.InsertHtml(html); FocusAndShowCaret(); }
+
+    /// <summary>
+    /// Pose un lien sur la sélection en demandant l'adresse (Ctrl+K).
+    /// Saisie vide = retire le lien.
+    /// </summary>
+    public async Task InsertLinkInteractiveAsync()
+    {
+        if (!_editor.HasSelection) return;
+        var owner = TopLevel.GetTopLevel(this) as Window;
+        if (owner == null) return;
+
+        var href = await ProInputBox.ShowAsync(owner,
+            "Adresse du lien (vide = retirer) :", "Insérer un lien",
+            _editor.GetCurrentLink() ?? "https://");
+        if (href == null) return; // annulé
+
+        _editor.SetLink(string.IsNullOrWhiteSpace(href) ? null : href.Trim());
+        FocusAndShowCaret();
+    }
+
+    /// <summary>Insère une image choisie sur disque (embarquée en data: → HTML portable)</summary>
+    public async Task InsertImageInteractiveAsync()
+    {
+        var top = TopLevel.GetTopLevel(this);
+        if (top == null) return;
+
+        var files = await top.StorageProvider.OpenFilePickerAsync(
+            new Avalonia.Platform.Storage.FilePickerOpenOptions
+            {
+                Title = "Insérer une image",
+                AllowMultiple = false,
+                FileTypeFilter = new[] { Avalonia.Platform.Storage.FilePickerFileTypes.ImageAll }
+            });
+        if (files.Count == 0) return;
+
+        await using var stream = await files[0].OpenReadAsync();
+        using var memory = new System.IO.MemoryStream();
+        await stream.CopyToAsync(memory);
+        var bytes = memory.ToArray();
+
+        var mime = files[0].Name.ToLowerInvariant() switch
+        {
+            var n when n.EndsWith(".jpg") || n.EndsWith(".jpeg") => "image/jpeg",
+            var n when n.EndsWith(".gif") => "image/gif",
+            var n when n.EndsWith(".webp") => "image/webp",
+            _ => "image/png"
+        };
+
+        _editor.InsertImage(new DocImage
+        {
+            // data: = l'image traverse ToHtml/Html sans dépendre du disque
+            Source = $"data:{mime};base64,{Convert.ToBase64String(bytes)}",
+            Data = bytes,
+            Alt = files[0].Name
+        });
+        FocusAndShowCaret();
+    }
+
     private void FocusAndShowCaret()
     {
         Focus();
@@ -282,6 +349,11 @@ public class ProRichEdit : Control
             case Key.C when ctrl: _ = CopyAsync(); break;
             case Key.X when ctrl: _ = CutAsync(); break;
             case Key.V when ctrl: _ = PasteAsync(); break;
+            case Key.K when ctrl: _ = InsertLinkInteractiveAsync(); break;
+            case Key.L when ctrl && shift: _editor.ToggleBulletList(); break;
+            case Key.E when ctrl: _editor.SetAlignment(TextAlignment.Center); break;
+            case Key.R when ctrl && shift: _editor.SetAlignment(TextAlignment.Right); break;
+            case Key.J when ctrl: _editor.SetAlignment(TextAlignment.Justify); break;
 
             default: handled = false; break;
         }
@@ -378,11 +450,18 @@ public class ProRichEdit : Control
         InvalidateVisual();
     }
 
+    private const string HtmlClipboardFormat = "text/html";
+
     private async Task CopyAsync()
     {
         var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
-        if (clipboard != null && _editor.HasSelection)
-            await clipboard.SetTextAsync(_editor.GetSelectedText());
+        if (clipboard == null || !_editor.HasSelection) return;
+
+        // Texte brut + HTML : un autre ProRichEdit (ou LibreOffice…) recolle riche
+        var data = new DataObject();
+        data.Set(DataFormats.Text, _editor.GetSelectedText());
+        data.Set(HtmlClipboardFormat, System.Text.Encoding.UTF8.GetBytes(_editor.GetSelectedHtml()));
+        await clipboard.SetDataObjectAsync(data);
     }
 
     private async Task CutAsync()
@@ -394,10 +473,26 @@ public class ProRichEdit : Control
     private async Task PasteAsync()
     {
         var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
-        var text = clipboard != null ? await clipboard.GetTextAsync() : null;
+        if (clipboard == null) return;
+
+        // 1) HTML riche si disponible (selon la plateforme : string ou octets UTF-8)
+        var html = await clipboard.GetDataAsync(HtmlClipboardFormat) switch
+        {
+            string s => s,
+            byte[] b => System.Text.Encoding.UTF8.GetString(b),
+            _ => null
+        };
+        if (!string.IsNullOrWhiteSpace(html))
+        {
+            _editor.InsertHtml(html!);
+            ScrollCaretIntoView();
+            return;
+        }
+
+        // 2) Repli texte brut : chaque ligne devient un paragraphe
+        var text = await clipboard.GetTextAsync();
         if (string.IsNullOrEmpty(text)) return;
 
-        // Collage multi-lignes : chaque ligne devient un paragraphe
         var lines = text.Replace("\r\n", "\n").Split('\n');
         for (int i = 0; i < lines.Length; i++)
         {

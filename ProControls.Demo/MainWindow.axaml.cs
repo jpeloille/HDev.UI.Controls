@@ -839,6 +839,27 @@ public partial class MainWindow : ProWindow
         toolbar.AddButton("H2", null, () => edit.SetHeading(2));
         toolbar.AddButton("¶", null, () => edit.SetHeading(0));
         toolbar.AddSeparator();
+        // v2 : listes, alignement, tailles, couleurs, lien, image
+        toolbar.AddButton("•≡", "Liste à puces (Ctrl+Maj+L)", () => edit.ToggleBulletList());
+        toolbar.AddButton("1≡", "Liste numérotée", () => edit.ToggleNumberedList());
+        toolbar.AddSeparator();
+        toolbar.AddButton("⯇", "Aligner à gauche", () => edit.SetAlignment(Avalonia.Media.TextAlignment.Left));
+        toolbar.AddButton("≡", "Centrer (Ctrl+E)", () => edit.SetAlignment(Avalonia.Media.TextAlignment.Center));
+        toolbar.AddButton("⯈", "Aligner à droite", () => edit.SetAlignment(Avalonia.Media.TextAlignment.Right));
+        toolbar.AddSeparator();
+        toolbar.AddButton("A⁺", "Agrandir (18 px)", () => edit.SetFontSize(18));
+        toolbar.AddButton("A⁻", "Taille normale", () => edit.SetFontSize(null));
+        toolbar.AddButton("🔴", "Texte rouge", () => edit.SetTextColor(ProControls.Theme.ProTheme.Accent.Error));
+        toolbar.AddButton("🖍", "Surligner jaune", () => edit.SetHighlight(Avalonia.Media.Color.Parse("#FFF3B0")));
+        toolbar.AddButton("⌫🎨", "Effacer couleurs", () =>
+        {
+            edit.SetTextColor(null);
+            edit.SetHighlight(null);
+        });
+        toolbar.AddSeparator();
+        toolbar.AddButton("🔗", "Lien (Ctrl+K)", () => _ = edit.InsertLinkInteractiveAsync());
+        toolbar.AddButton("🖼", "Insérer une image", () => _ = edit.InsertImageInteractiveAsync());
+        toolbar.AddSeparator();
         toolbar.AddButton("👁", "Aperçu HTML", async () =>
         {
             // La boucle est bouclée : le HTML produit par l'éditeur est rendu par le viewer
