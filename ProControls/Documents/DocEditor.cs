@@ -1121,6 +1121,9 @@ internal static class DocCloner
 /// <summary>ProDocument → HTML (sortie du ProRichEdit, envoi de mails)</summary>
 public static class HtmlSerializer
 {
+    // Constantes du dialecte TipTap (extension Link) — jamais stockées dans le modèle
+    private const string LinkAttrs = " target=\"_blank\" rel=\"noopener noreferrer nofollow\"";
+
     public static string Serialize(ProDocument document)
     {
         var sb = new StringBuilder();
@@ -1153,13 +1156,13 @@ public static class HtmlSerializer
                     sb.Append("</blockquote>");
                     break;
                 case DocCodeBlock code:
-                    sb.Append("<pre>").Append(Escape(code.Text)).Append("</pre>");
+                    sb.Append("<pre><code>").Append(Escape(code.Text)).Append("</code></pre>");
                     break;
                 case DocSeparator:
                     sb.Append("<hr>");
                     break;
                 case DocTable table:
-                    sb.Append("<table>");
+                    sb.Append("<table><tbody>");
                     foreach (var row in table.Rows)
                     {
                         sb.Append("<tr>");
@@ -1175,7 +1178,7 @@ public static class HtmlSerializer
                         }
                         sb.Append("</tr>");
                     }
-                    sb.Append("</table>");
+                    sb.Append("</tbody></table>");
                     break;
             }
         }
@@ -1207,7 +1210,8 @@ public static class HtmlSerializer
                         if (openLink != null) sb.Append("</a>");
                         openLink = string.IsNullOrEmpty(run.LinkHref) ? null : run.LinkHref;
                         if (openLink != null)
-                            sb.Append("<a href=\"").Append(Escape(openLink)).Append("\">");
+                            sb.Append("<a").Append(LinkAttrs)
+                              .Append(" href=\"").Append(Escape(openLink)).Append("\">");
                     }
                     SerializeRun(sb, run);
                     break;
@@ -1222,11 +1226,13 @@ public static class HtmlSerializer
                     if (img.Width.HasValue) sb.Append(" width=\"").Append((int)img.Width.Value).Append('"');
                     if (img.Height.HasValue) sb.Append(" height=\"").Append((int)img.Height.Value).Append('"');
                     if (!string.IsNullOrEmpty(img.Alt)) sb.Append(" alt=\"").Append(Escape(img.Alt)).Append('"');
+                    if (!string.IsNullOrEmpty(img.Title)) sb.Append(" title=\"").Append(Escape(img.Title)).Append('"');
                     sb.Append('>');
                     break;
                 case DocLink link:
                     if (openLink != null) { sb.Append("</a>"); openLink = null; }
-                    sb.Append("<a href=\"").Append(Escape(link.Href)).Append("\">");
+                    sb.Append("<a").Append(LinkAttrs)
+                      .Append(" href=\"").Append(Escape(link.Href)).Append("\">");
                     foreach (var child in link.Children)
                     {
                         if (child is DocRun childRun) SerializeRun(sb, childRun);
@@ -1248,8 +1254,6 @@ public static class HtmlSerializer
         var css = new StringBuilder();
         if (style.Foreground is { } fg)
             css.Append($"color:#{fg.R:x2}{fg.G:x2}{fg.B:x2};");
-        if (style.Background is { } bg)
-            css.Append($"background-color:#{bg.R:x2}{bg.G:x2}{bg.B:x2};");
         if (style.FontSize is { } size)
             css.Append($"font-size:{size.ToString(System.Globalization.CultureInfo.InvariantCulture)}px;");
 
@@ -1258,8 +1262,16 @@ public static class HtmlSerializer
             sb.Append("<span style=\"").Append(css).Append("\">");
             close.Push("</span>");
         }
-        if (style.Bold == true) { sb.Append("<b>"); close.Push("</b>"); }
-        if (style.Italic == true) { sb.Append("<i>"); close.Push("</i>"); }
+        if (style.Background is { } bg)
+        {
+            // Surlignage : forme TipTap Highlight multicolor
+            var hex = $"#{bg.R:x2}{bg.G:x2}{bg.B:x2}";
+            sb.Append("<mark data-color=\"").Append(hex)
+              .Append("\" style=\"background-color: ").Append(hex).Append("\">");
+            close.Push("</mark>");
+        }
+        if (style.Bold == true) { sb.Append("<strong>"); close.Push("</strong>"); }
+        if (style.Italic == true) { sb.Append("<em>"); close.Push("</em>"); }
         if (style.Underline == true) { sb.Append("<u>"); close.Push("</u>"); }
         if (style.Strikethrough == true) { sb.Append("<s>"); close.Push("</s>"); }
         if (style.IsCode == true) { sb.Append("<code>"); close.Push("</code>"); }

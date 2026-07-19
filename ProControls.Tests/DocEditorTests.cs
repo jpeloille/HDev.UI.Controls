@@ -267,8 +267,8 @@ public class DocEditorTests
     {
         var editor = FromHtml("<p>normal <b>gras</b> <i>italique</i></p>");
         var html = editor.ToHtml();
-        Assert.Contains("<b>gras</b>", html);
-        Assert.Contains("<i>italique</i>", html);
+        Assert.Contains("<strong>gras</strong>", html);
+        Assert.Contains("<em>italique</em>", html);
     }
 
     [Fact]

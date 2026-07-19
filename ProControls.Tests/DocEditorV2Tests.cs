@@ -174,7 +174,7 @@ public class DocEditorV2Tests
         e.Caret = new DocCaret(0, 12);
         e.SetLink("https://aircal.nc");
 
-        Assert.Contains("<a href=\"https://aircal.nc\">le site</a>", e.ToHtml());
+        Assert.Contains("<a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"https://aircal.nc\">le site</a>", e.ToHtml());
         Assert.Equal("https://aircal.nc", e.GetCurrentLink());
     }
 
@@ -197,7 +197,7 @@ public class DocEditorV2Tests
         e.InsertHtml("<p>du <b>gras</b></p>");
 
         Assert.Equal("avantdu grasaprès", e.GetParagraphText(0));
-        Assert.Contains("<b>gras</b>", e.ToHtml());
+        Assert.Contains("<strong>gras</strong>", e.ToHtml());
         Assert.Equal(new DocCaret(0, 12), e.Caret); // après le fragment
     }
 
@@ -248,7 +248,7 @@ public class DocEditorV2Tests
         var html = e.GetSelectedHtml();
 
         Assert.Contains("<ul>", html);              // structure liste préservée
-        Assert.Contains("<b>gras</b>", html);
+        Assert.Contains("<strong>gras</strong>", html);
         Assert.Contains("deux", html);
         Assert.DoesNotContain("avant", html);
         Assert.DoesNotContain("après", html);
@@ -275,5 +275,31 @@ public class DocEditorV2Tests
         e.Caret = new DocCaret(0, 2);
         e.SplitParagraph();
         Assert.Equal("<p>un</p><p>Deux</p>", e.ToHtml());
+    }
+
+    // ── Dialecte storage-v1 : surlignage et bloc de code ─────────────────────
+
+    [Fact]
+    public void SetHighlight_SerializesAsMark_AndRoundTrips()
+    {
+        var e = Editor("<p>surligné</p>");
+        SelectAll(e);
+        e.SetHighlight(Color.Parse("#fff3a1"));
+
+        var html = e.ToHtml();
+        Assert.Contains("<mark data-color=\"#fff3a1\" style=\"background-color: #fff3a1\">surligné</mark>", html);
+
+        // Round-trip : le collage entre deux ProRichEdit ne perd pas le surlignage
+        var e2 = Editor(html);
+        Assert.Equal(html, e2.ToHtml());
+    }
+
+    [Fact]
+    public void CodeBlock_SerializesAsPreCode_AndRoundTrips()
+    {
+        var e = Editor("<pre><code>if (x &lt; 2) return;</code></pre>");
+        var html = e.ToHtml();
+        Assert.Contains("<pre><code>if (x &lt; 2) return;</code></pre>", html);
+        Assert.Equal(html, Editor(html).ToHtml());
     }
 }
