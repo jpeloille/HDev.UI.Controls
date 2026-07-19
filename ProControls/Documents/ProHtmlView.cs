@@ -35,6 +35,11 @@ public class ProHtmlView : Control
     /// <summary>Déclenché au clic sur un lien (l'app décide : navigateur, mailto...)</summary>
     public event EventHandler<string>? LinkClicked;
 
+    /// <summary>
+    /// Contenu HTML, parsé au profil Mail (tolérant) : ce viewer est la tête
+    /// de lecture du monde extérieur (mails). Le HTML storage-v1 émis par
+    /// ProRichEdit est un sous-ensemble : il s'affiche à l'identique.
+    /// </summary>
     public string Html
     {
         get => _html;

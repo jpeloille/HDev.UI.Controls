@@ -54,20 +54,40 @@ public class ProRichEdit : Control
     /// <summary>Moteur d'édition sous-jacent (commandes avancées)</summary>
     public DocEditor Editor => _editor;
 
-    /// <summary>Contenu HTML (sortie sanitisée par construction du modèle)</summary>
+    /// <summary>
+    /// Contenu HTML. Entrée : profil Mail (tolérant — flux « répondre à un
+    /// mail », HTML legacy). Sortie : toujours du dialecte storage-v1
+    /// (TipTap), sanitisé par construction du modèle. Pour charger du
+    /// contenu stocké avec validation, voir LoadHtml.
+    /// </summary>
     public string Html
     {
         get => _editor.ToHtml();
-        set
-        {
-            _editor.Changed -= OnEditorChanged;
-            _editor = new DocEditor(HtmlParser.Parse(value ?? ""));
-            _editor.Changed += OnEditorChanged;
-            _layoutWidth = -1;
-            InvalidateMeasure();
-            InvalidateVisual();
-            TextChanged?.Invoke(this, EventArgs.Empty);
-        }
+        set => ReplaceEditor(HtmlParser.Parse(value ?? ""));
+    }
+
+    /// <summary>
+    /// Charge du HTML avec le profil demandé et retourne les diagnostics.
+    /// Canal stockage : LoadHtml(saved, HtmlParseOptions.Storage) — un
+    /// contenu hors vocabulaire storage-v1 reste affiché (jamais d'exception),
+    /// l'app décide quoi faire des diagnostics (log, migration, refus).
+    /// </summary>
+    public HtmlParseResult LoadHtml(string html, HtmlParseOptions options)
+    {
+        var result = HtmlParser.Parse(html ?? "", options);
+        ReplaceEditor(result.Document);
+        return result;
+    }
+
+    private void ReplaceEditor(ProDocument document)
+    {
+        _editor.Changed -= OnEditorChanged;
+        _editor = new DocEditor(document);
+        _editor.Changed += OnEditorChanged;
+        _layoutWidth = -1;
+        InvalidateMeasure();
+        InvalidateVisual();
+        TextChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>Texte brut du document</summary>
