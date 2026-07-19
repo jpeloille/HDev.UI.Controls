@@ -50,6 +50,7 @@ public static class HtmlParser
         var pendingHeading = 0;
         var preDepth = 0;
         var preText = new StringBuilder();
+        var emptyBlockCandidate = false; // <p>/<h*> ouvert sans contenu → matérialisé au fermant
 
         Context Ctx() => contexts.Peek();
         DocStyle CurrentStyle() => styleStack.Peek().Style;
@@ -170,16 +171,22 @@ public static class HtmlParser
 
             if (isClosing)
             {
+                var wasEmptyOpen = emptyBlockCandidate;
+                emptyBlockCandidate = false;
                 switch (lower)
                 {
                     case "p" or "div" or "h1" or "h2" or "h3" or "h4" or "h5" or "h6" or "tr":
+                        // <p></p> / <h*></h*> explicitement vides : matérialisés
+                        // (TipTap et HtmlSerializer en émettent pour les lignes vides)
+                        if (wasEmptyOpen && lower is not ("div" or "tr") && Ctx().Paragraph == null)
+                            EnsureParagraph();
                         FlushParagraph();
                         if (lower[0] == 'h' && lower.Length == 2) pendingHeading = 0;
                         if (alignStack.Count > 0 && alignStack.Peek().Tag == lower) alignStack.Pop();
                         break;
 
                     case "b" or "strong" or "i" or "em" or "u" or "s" or "strike" or "del"
-                        or "span" or "font" or "code" or "sub" or "sup" or "small" or "big":
+                        or "span" or "font" or "code" or "sub" or "sup" or "small" or "big" or "mark":
                         PopStyle(lower);
                         break;
 
@@ -188,12 +195,22 @@ public static class HtmlParser
                         break;
 
                     case "ul" or "ol":
-                        if (listStack.Count > 0) listStack.Pop();
-                        if (contexts.Count > 1) contexts.Pop(); // contexte du dernier li
+                        if (listStack.Count > 0)
+                        {
+                            var closingList = listStack.Pop();
+                            // Ne dépiler que le contexte d'un li de CETTE liste resté
+                            // ouvert — sinon on ferait sauter le contexte englobant
+                            // (li parent, blockquote) après un </li> bien formé
+                            if (contexts.Count > 1 && closingList.Items.Count > 0 &&
+                                ReferenceEquals(Ctx().Sink, closingList.Items[^1].Blocks))
+                                contexts.Pop();
+                        }
                         break;
 
                     case "li":
-                        if (contexts.Count > 1) contexts.Pop();
+                        if (contexts.Count > 1 && listStack.Count > 0 && listStack.Peek().Items.Count > 0 &&
+                            ReferenceEquals(Ctx().Sink, listStack.Peek().Items[^1].Blocks))
+                            contexts.Pop();
                         break;
 
                     case "td" or "th":
@@ -220,6 +237,7 @@ public static class HtmlParser
             }
 
             // Balises ouvrantes
+            emptyBlockCandidate = false;
             switch (lower)
             {
                 case "br":
@@ -235,12 +253,14 @@ public static class HtmlParser
                 case "p" or "div":
                     FlushParagraph();
                     PushAlign(alignStack, lower, attrs);
+                    emptyBlockCandidate = lower == "p"; // <div></div> vide ne rend rien (règle navigateur)
                     break;
 
                 case "h1" or "h2" or "h3" or "h4" or "h5" or "h6":
                     FlushParagraph();
                     pendingHeading = lower[1] - '0';
                     PushAlign(alignStack, lower, attrs);
+                    emptyBlockCandidate = true;
                     break;
 
                 case "b" or "strong":
@@ -272,6 +292,21 @@ public static class HtmlParser
                     PushStyle(lower, ApplyCss(DocStyle.Empty, attrs));
                     break;
 
+                case "mark":
+                {
+                    // Surlignage (TipTap Highlight) : style="background-color" prime,
+                    // repli sur data-color, défaut jaune navigateur
+                    var style = ApplyCss(DocStyle.Empty, attrs);
+                    if (style.Background == null &&
+                        attrs.TryGetValue("data-color", out var dataColor) &&
+                        TryParseCssColor(dataColor, out var markBg))
+                        style = style with { Background = markBg };
+                    if (style.Background == null)
+                        style = style with { Background = Colors.Yellow };
+                    PushStyle(lower, style);
+                    break;
+                }
+
                 case "font":
                 {
                     var style = DocStyle.Empty;
@@ -296,7 +331,8 @@ public static class HtmlParser
                     var image = new DocImage
                     {
                         Source = attrs.GetValueOrDefault("src", ""),
-                        Alt = attrs.GetValueOrDefault("alt", "")
+                        Alt = attrs.GetValueOrDefault("alt", ""),
+                        Title = attrs.GetValueOrDefault("title", "")
                     };
                     if (double.TryParse(attrs.GetValueOrDefault("width"), out var w)) image.Width = w;
                     if (double.TryParse(attrs.GetValueOrDefault("height"), out var h)) image.Height = h;

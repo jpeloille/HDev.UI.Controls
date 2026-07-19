@@ -95,6 +95,7 @@ public class DocImage : DocInline
     public double? Width { get; set; }
     public double? Height { get; set; }
     public string Alt { get; set; } = "";
+    public string Title { get; set; } = "";
 
     internal override void AppendText(StringBuilder sb)
     {

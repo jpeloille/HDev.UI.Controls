@@ -198,6 +198,134 @@ public class HtmlParserTests
         Assert.Equal("ligne 1\n  indent", code.Text);
     }
 
+    // ── Round-trip stockage : mark, paragraphes vides, imbrication ─
+
+    [Fact]
+    public void Mark_ReadsBackgroundFromStyle()
+    {
+        var doc = HtmlParser.Parse(
+            "<p><mark data-color=\"#fff3a1\" style=\"background-color: #fff3a1\">x</mark></p>");
+        Assert.Equal(Color.Parse("#fff3a1"), FirstRun(Para(doc)).Style.Background);
+    }
+
+    [Fact]
+    public void Mark_FallsBackToDataColor()
+    {
+        var doc = HtmlParser.Parse("<mark data-color=\"rgb(255, 192, 120)\">x</mark>");
+        Assert.Equal(Color.FromRgb(255, 192, 120), FirstRun(Para(doc)).Style.Background);
+    }
+
+    [Fact]
+    public void Mark_Bare_DefaultsToYellow()
+    {
+        var doc = HtmlParser.Parse("<mark>x</mark>y");
+        var p = Para(doc);
+        Assert.Equal(Colors.Yellow, FirstRun(p).Style.Background);
+        Assert.Null(Assert.IsType<DocRun>(p.Inlines[1]).Style.Background); // </mark> referme
+    }
+
+    [Fact]
+    public void EmptyParagraph_SurvivesParsing()
+    {
+        var doc = HtmlParser.Parse("<p>un</p><p></p><p>deux</p>");
+        Assert.Equal(3, doc.Blocks.Count);
+        Assert.Empty(Para(doc, 1).Inlines);
+    }
+
+    [Fact]
+    public void EmptyHeading_KeepsItsLevel()
+    {
+        var doc = HtmlParser.Parse("<h2></h2>");
+        Assert.Equal(2, Para(doc).HeadingLevel);
+    }
+
+    [Fact]
+    public void EmptyDiv_RendersNothing()
+    {
+        // Règle navigateur : <div></div> vide n'a pas de hauteur, <p></p> si
+        var doc = HtmlParser.Parse("<p>a</p><div></div><p>b</p>");
+        Assert.Equal(2, doc.Blocks.Count);
+    }
+
+    [Fact]
+    public void EmptyListItemParagraph_SurvivesParsing()
+    {
+        var doc = HtmlParser.Parse("<ul><li><p></p></li></ul>");
+        var list = Assert.IsType<DocList>(doc.Blocks[0]);
+        Assert.Single(list.Items[0].Blocks);
+    }
+
+    [Fact]
+    public void NestedList_CanonicalTipTapForm()
+    {
+        var doc = HtmlParser.Parse(
+            "<ul><li><p>a</p><ul><li><p>b</p></li></ul></li><li><p>c</p></li></ul>");
+        var list = Assert.IsType<DocList>(doc.Blocks[0]);
+        Assert.Equal(2, list.Items.Count);
+        Assert.Equal(2, list.Items[0].Blocks.Count);
+        var sub = Assert.IsType<DocList>(list.Items[0].Blocks[1]);
+        Assert.Equal("b", FirstRun(Assert.IsType<DocParagraph>(sub.Items[0].Blocks[0])).Text);
+        Assert.Equal("c", FirstRun(Assert.IsType<DocParagraph>(list.Items[1].Blocks[0])).Text);
+    }
+
+    [Fact]
+    public void ContentAfterNestedList_StaysInItsItem()
+    {
+        var doc = HtmlParser.Parse(
+            "<ul><li><p>a</p><ul><li><p>b</p></li></ul><p>c</p></li></ul>");
+        var list = Assert.IsType<DocList>(Assert.Single(doc.Blocks)); // rien à la racine
+        Assert.Equal(3, list.Items[0].Blocks.Count);                  // p, sous-liste, p
+    }
+
+    [Fact]
+    public void ContentAfterListInBlockquote_StaysInQuote()
+    {
+        var doc = HtmlParser.Parse(
+            "<blockquote><ul><li><p>a</p></li></ul><p>c</p></blockquote>");
+        var quote = Assert.IsType<DocQuote>(doc.Blocks[0]);
+        Assert.Equal(2, quote.Blocks.Count);
+    }
+
+    [Fact]
+    public void PreWithInnerCode_YieldsSingleCodeBlock()
+    {
+        var doc = HtmlParser.Parse("<pre><code>if (x &lt; 2) return;</code></pre>");
+        var code = Assert.IsType<DocCodeBlock>(Assert.Single(doc.Blocks));
+        Assert.Equal("if (x < 2) return;", code.Text);
+    }
+
+    [Fact]
+    public void Tbody_IsTransparent()
+    {
+        var doc = HtmlParser.Parse("<table><tbody><tr><td>a</td></tr></tbody></table>");
+        var table = Assert.IsType<DocTable>(doc.Blocks[0]);
+        Assert.Single(table.Rows);
+    }
+
+    [Fact]
+    public void CssColor_RgbWithSpaces_InSpan()
+    {
+        var doc = HtmlParser.Parse("<span style=\"color: rgb(209, 52, 56)\">x</span>");
+        Assert.Equal(Color.FromRgb(209, 52, 56), FirstRun(Para(doc)).Style.Foreground);
+    }
+
+    [Fact]
+    public void Image_TitleAttribute_IsKept()
+    {
+        var doc = HtmlParser.Parse("<img src=\"x.png\" alt=\"logo\" title=\"Logo\">");
+        var img = Assert.IsType<DocImage>(Para(doc).Inlines[0]);
+        Assert.Equal("Logo", img.Title);
+    }
+
+    [Fact]
+    public void Link_TargetAndRel_AreTolerated()
+    {
+        var doc = HtmlParser.Parse(
+            "<a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"https://aircal.nc\">x</a>");
+        var link = Assert.IsType<DocLink>(Para(doc).Inlines[0]);
+        Assert.Equal("https://aircal.nc", link.Href);
+    }
+
     // ── Sanitisation ───────────────────────────────────────────────
 
     [Fact]

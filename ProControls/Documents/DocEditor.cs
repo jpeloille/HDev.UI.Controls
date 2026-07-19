@@ -1098,7 +1098,8 @@ internal static class DocCloner
         DocLineBreak => new DocLineBreak(),
         DocImage img => new DocImage
         {
-            Source = img.Source, Data = img.Data, Width = img.Width, Height = img.Height, Alt = img.Alt
+            Source = img.Source, Data = img.Data, Width = img.Width, Height = img.Height,
+            Alt = img.Alt, Title = img.Title
         },
         DocLink link => CloneLink(link),
         _ => new DocRun("")
