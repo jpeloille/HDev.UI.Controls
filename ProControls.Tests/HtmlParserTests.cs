@@ -425,4 +425,66 @@ public class HtmlParserTests
         Assert.Equal(20, merged.FontSize); // écrasé
         Assert.True(merged.Italic);        // ajouté
     }
+
+    // ── Mode strict (storage-v1) : diagnostics ─────────────────────
+
+    [Theory]
+    [InlineData("<font color=\"red\">x</font>", HtmlDiagnosticKind.DisallowedTag, "font")]
+    [InlineData("<div>x</div>", HtmlDiagnosticKind.DisallowedTag, "div")]
+    [InlineData("<sub>x</sub>", HtmlDiagnosticKind.DisallowedTag, "sub")]
+    [InlineData("<b>x</b>", HtmlDiagnosticKind.DisallowedTag, "b")]
+    [InlineData("<script>alert(1)</script><p>x</p>", HtmlDiagnosticKind.DisallowedTag, "script")]
+    [InlineData("<p onclick=\"y()\">x</p>", HtmlDiagnosticKind.DisallowedAttribute, "onclick")]
+    [InlineData("<p class=\"lead\">x</p>", HtmlDiagnosticKind.DisallowedAttribute, "class")]
+    [InlineData("<table align=\"center\"><tr><td>x</td></tr></table>", HtmlDiagnosticKind.DisallowedAttribute, "align")]
+    [InlineData("<span style=\"position:absolute\">x</span>", HtmlDiagnosticKind.DisallowedCssProperty, "position")]
+    [InlineData("<span style=\"font-family:Arial\">x</span>", HtmlDiagnosticKind.DisallowedCssProperty, "font-family")]
+    [InlineData("<pre>x</pre>", HtmlDiagnosticKind.DisallowedStructure, "pre")]
+    public void StrictMode_FlagsOutOfVocabulary(string html, HtmlDiagnosticKind kind, string subject)
+    {
+        var result = HtmlParser.Parse(html, HtmlParseOptions.Storage);
+        Assert.Contains(result.Diagnostics, d => d.Kind == kind && d.Subject == subject);
+        Assert.False(result.IsCleanStorageHtml);
+        Assert.Contains("x", result.Document.GetText()); // le contenu n'est jamais perdu
+    }
+
+    [Fact]
+    public void StrictMode_CleanStorageHtml_HasNoDiagnostics()
+    {
+        var result = HtmlParser.Parse(
+            "<h2 style=\"text-align: center\">T</h2><p>Du <strong>gras</strong>, du " +
+            "<span style=\"color: rgb(209, 52, 56)\">rouge</span> et du " +
+            "<mark data-color=\"#fff3a1\" style=\"background-color: #fff3a1\">surligné</mark>.</p>" +
+            "<pre><code>let x = 1;</code></pre>",
+            HtmlParseOptions.Storage);
+        Assert.True(result.IsCleanStorageHtml);
+    }
+
+    [Fact]
+    public void StrictMode_ProducesSameDocumentAsTolerant()
+    {
+        const string html =
+            "<p>a</p><font color=\"red\">b</font><div style=\"margin:0\"><b>c</b></div>";
+        var strict = HtmlParser.Parse(html, HtmlParseOptions.Storage);
+        var tolerant = HtmlParser.Parse(html);
+        Assert.Equal(tolerant.GetText(), strict.Document.GetText());
+        Assert.Equal(tolerant.Blocks.Count, strict.Document.Blocks.Count);
+    }
+
+    [Fact]
+    public void StrictMode_DiagnosticCarriesPosition()
+    {
+        var result = HtmlParser.Parse("<p>ok</p><font>x</font>", HtmlParseOptions.Storage);
+        var d = Assert.Single(result.Diagnostics);
+        Assert.Equal(HtmlDiagnosticKind.DisallowedTag, d.Kind);
+        Assert.Equal(9, d.Position); // le '<' de <font>
+    }
+
+    [Fact]
+    public void MailProfile_ReportsNothing()
+    {
+        var result = HtmlParser.Parse(
+            "<font>x</font><div onclick=\"y\">z</div>", HtmlParseOptions.Mail);
+        Assert.Empty(result.Diagnostics);
+    }
 }

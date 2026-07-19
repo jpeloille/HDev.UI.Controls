@@ -29,7 +29,28 @@ public static class HtmlParser
         public Context(List<DocBlock> sink) => Sink = sink;
     }
 
-    public static ProDocument Parse(string html)
+    public static ProDocument Parse(string html) => ParseCore(html, null);
+
+    /// <summary>
+    /// Parse avec profil (HtmlParseOptions.Mail / .Storage). Le document produit
+    /// est identique dans les deux profils ; Storage remplit en plus la liste des
+    /// constructions hors vocabulaire storage-v1 (HtmlVocabulary). Jamais
+    /// d'exception : un contenu stocké dévié reste lisible, l'app décide.
+    /// </summary>
+    public static HtmlParseResult Parse(string html, HtmlParseOptions options)
+    {
+        var diagnostics = options.Profile == HtmlParseProfile.Storage
+            ? new List<HtmlDiagnostic>()
+            : null;
+        var document = ParseCore(html, diagnostics);
+        return new HtmlParseResult
+        {
+            Document = document,
+            Diagnostics = diagnostics ?? (IReadOnlyList<HtmlDiagnostic>)Array.Empty<HtmlDiagnostic>()
+        };
+    }
+
+    private static ProDocument ParseCore(string html, List<HtmlDiagnostic>? diagnostics)
     {
         var document = new ProDocument();
         if (string.IsNullOrEmpty(html))
@@ -50,6 +71,8 @@ public static class HtmlParser
         var pendingHeading = 0;
         var preDepth = 0;
         var preText = new StringBuilder();
+        var preHadCode = false; // forme canonique TipTap : <pre><code>…
+        var preOpenPos = 0;
         var emptyBlockCandidate = false; // <p>/<h*> ouvert sans contenu → matérialisé au fermant
 
         Context Ctx() => contexts.Peek();
@@ -156,9 +179,14 @@ public static class HtmlParser
                 continue;
             }
             pos = consumed;
+            var lower = tag.ToLowerInvariant();
+
+            // Profil Storage : signaler toute construction hors storage-v1
+            if (!isClosing && diagnostics != null)
+                CheckVocabulary(lower, attrs, lt, diagnostics);
 
             // Contenu entièrement ignoré (script, style...)
-            if (!isClosing && SkippedContent.Contains(tag))
+            if (!isClosing && SkippedContent.Contains(lower))
             {
                 var close = html.IndexOf($"</{tag}", pos, StringComparison.OrdinalIgnoreCase);
                 if (close < 0) break;
@@ -166,8 +194,6 @@ public static class HtmlParser
                 pos = closeEnd < 0 ? html.Length : closeEnd + 1;
                 continue;
             }
-
-            var lower = tag.ToLowerInvariant();
 
             if (isClosing)
             {
@@ -230,6 +256,9 @@ public static class HtmlParser
                         {
                             Ctx().Sink.Add(new DocCodeBlock { Text = preText.ToString().Trim('\n') });
                             preText.Clear();
+                            if (!preHadCode)
+                                diagnostics?.Add(new HtmlDiagnostic(HtmlDiagnosticKind.DisallowedStructure,
+                                    "pre", preOpenPos, "attendu <pre><code>…</code></pre> (CodeBlock TipTap)"));
                         }
                         break;
                 }
@@ -276,6 +305,7 @@ public static class HtmlParser
                     PushStyle(lower, ApplyCss(new DocStyle { Strikethrough = true }, attrs));
                     break;
                 case "code":
+                    if (preDepth > 0) preHadCode = true;
                     PushStyle(lower, ApplyCss(new DocStyle { IsCode = true }, attrs));
                     break;
                 case "small":
@@ -400,6 +430,7 @@ public static class HtmlParser
 
                 case "pre":
                     FlushParagraph();
+                    if (preDepth == 0) { preHadCode = false; preOpenPos = lt; }
                     preDepth++;
                     break;
 
@@ -516,6 +547,42 @@ public static class HtmlParser
             }
         }
         return style;
+    }
+
+    /// <summary>
+    /// Vérifie une balise ouvrante contre le vocabulaire storage-v1
+    /// (HtmlVocabulary) et consigne les écarts. Purement observatif : ne
+    /// modifie jamais la construction du document.
+    /// </summary>
+    private static void CheckVocabulary(string tag, Dictionary<string, string> attrs,
+        int position, List<HtmlDiagnostic> diagnostics)
+    {
+        if (!HtmlVocabulary.IsAllowedTag(tag))
+        {
+            diagnostics.Add(new HtmlDiagnostic(HtmlDiagnosticKind.DisallowedTag, tag, position));
+            return; // inutile de détailler les attributs d'une balise déjà rejetée
+        }
+
+        foreach (var (name, value) in attrs)
+        {
+            if (name == "style")
+            {
+                foreach (var declaration in value.Split(';'))
+                {
+                    var colon = declaration.IndexOf(':');
+                    if (colon <= 0) continue;
+                    var property = declaration[..colon].Trim().ToLowerInvariant();
+                    if (!HtmlVocabulary.IsAllowedCssProperty(tag, property))
+                        diagnostics.Add(new HtmlDiagnostic(HtmlDiagnosticKind.DisallowedCssProperty,
+                            property, position, $"sur <{tag}>"));
+                }
+            }
+            else if (!HtmlVocabulary.IsAllowedAttribute(tag, name))
+            {
+                diagnostics.Add(new HtmlDiagnostic(HtmlDiagnosticKind.DisallowedAttribute,
+                    name, position, $"sur <{tag}>"));
+            }
+        }
     }
 
     /// <summary>Alignement depuis align= ou style="text-align:..."</summary>
