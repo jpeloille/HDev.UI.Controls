@@ -238,6 +238,10 @@ public static class ProTheme
     private static ProPalette _current = ProPalette.Light;
     private static ProThemeVariant _variant = ProThemeVariant.Light;
 
+    // Palettes injectées par l'app hôte (null = défaut Yaru pour la variante).
+    private static ProPalette? _lightOverride;
+    private static ProPalette? _darkOverride;
+
     /// <summary>Palette active</summary>
     public static ProPalette Current => _current;
 
@@ -252,10 +256,30 @@ public static class ProTheme
         {
             if (_variant == value) return;
             _variant = value;
-            _current = value == ProThemeVariant.Dark ? ProPalette.Dark : ProPalette.Light;
+            _current = Resolve(value);
             VariantChanged?.Invoke(null, EventArgs.Empty);
         }
     }
+
+    /// <summary>
+    /// Substitue des palettes personnalisées à la palette Yaru par défaut. Passer
+    /// <c>null</c> pour une variante conserve le défaut d'origine. L'effet est
+    /// immédiat : la palette active est recalculée et <see cref="VariantChanged"/>
+    /// est levé pour re-brosser la suite, même quand la variante ne change pas
+    /// (cas d'une injection au démarrage, la variante restant Light).
+    /// </summary>
+    public static void SetPalettes(ProPalette? light = null, ProPalette? dark = null)
+    {
+        _lightOverride = light;
+        _darkOverride = dark;
+        _current = Resolve(_variant);
+        VariantChanged?.Invoke(null, EventArgs.Empty);
+    }
+
+    private static ProPalette Resolve(ProThemeVariant variant)
+        => variant == ProThemeVariant.Dark
+            ? _darkOverride ?? ProPalette.Dark
+            : _lightOverride ?? ProPalette.Light;
 
     public static bool IsDark => _variant == ProThemeVariant.Dark;
 
