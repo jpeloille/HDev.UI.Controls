@@ -2,10 +2,12 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Input;
+using Avalonia.Input.Raw;
 using Avalonia.Themes.Fluent;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using HDev.UI.Controls;
+using HDev.UI.Controls.Documents;
 
 // Pilote les contrôles HDev.UI.Controls via de vraies entrées simulées (pipeline
 // d'input headless) et vérifie les correctifs des 4 bugs bloquants :
@@ -419,6 +421,59 @@ Check("IsReadOnly : le glisser est inerte", vol0.Start == posee);
 roster.IsReadOnly = false;
 
 rosterWindow.Close();
+
+// ═══ Glisser-déposer applicatif HDevListView → HDevTreeView (côté dépôt) ═══
+// Le départ du drag (DoDragDropAsync) est du ressort de l'OS ; le dépôt se rejoue
+// en headless avec le même DataTransfer in-process que construit HDevListView.
+Console.WriteLine("Glisser-déposer liste → arbre");
+var dropTree = new HDevTreeView { AllowDropItems = true };
+dropTree.Add("Boîte de réception");
+var archives = dropTree.Add("Archives");
+(HDevTreeNode Node, object Item)? dropped = null;
+dropTree.ItemDropped += (_, d) => dropped = d;
+var treeWindow = new Window { Width = 300, Height = 200, Content = dropTree };
+treeWindow.Show();
+Pump(treeWindow);
+
+object mail = "mail #42";
+var itemDrag = new DataTransfer();
+itemDrag.Add(DataTransferItem.Create(HDevListView.DragDataFormat, mail));
+var archivesPt = dropTree.TranslatePoint(new Point(60, 26 + 13), treeWindow) ?? new Point();
+treeWindow.DragDrop(archivesPt, RawDragEventType.DragEnter, itemDrag, DragDropEffects.Move, RawInputModifiers.None);
+treeWindow.DragDrop(archivesPt, RawDragEventType.DragOver, itemDrag, DragDropEffects.Move, RawInputModifiers.None);
+treeWindow.DragDrop(archivesPt, RawDragEventType.Drop, itemDrag, DragDropEffects.Move, RawInputModifiers.None);
+Pump(treeWindow);
+Check("dépôt d'un item de liste sur un nœud : ItemDropped levé", dropped != null);
+Check("le dépôt vise le nœud survolé (Archives) et porte l'item glissé",
+    dropped is { } d1 && ReferenceEquals(d1.Node, archives) && ReferenceEquals(d1.Item, mail));
+
+dropTree.AllowDropItems = false;
+dropped = null;
+treeWindow.DragDrop(archivesPt, RawDragEventType.DragEnter, itemDrag, DragDropEffects.Move, RawInputModifiers.None);
+treeWindow.DragDrop(archivesPt, RawDragEventType.DragOver, itemDrag, DragDropEffects.Move, RawInputModifiers.None);
+treeWindow.DragDrop(archivesPt, RawDragEventType.Drop, itemDrag, DragDropEffects.Move, RawInputModifiers.None);
+Pump(treeWindow);
+Check("AllowDropItems=false : le dépôt est refusé", dropped == null);
+treeWindow.Close();
+
+// ═══ HDevRichEdit : copier/coller riche (texte + text/html via DataTransfer) ═══
+Console.WriteLine("HDevRichEdit copier/coller");
+var srcEdit = new HDevRichEdit { Html = "<p><strong>Gras</strong> et normal</p>", Height = 120 };
+var dstEdit = new HDevRichEdit { Height = 120 };
+var editWindow = new Window { Width = 500, Height = 300, Content = new StackPanel { Children = { srcEdit, dstEdit } } };
+editWindow.Show();
+Pump(editWindow);
+
+srcEdit.Focus();
+srcEdit.SelectAll();
+editWindow.KeyPress(Key.C, RawInputModifiers.Control, PhysicalKey.C, "c");
+Pump(editWindow);
+dstEdit.Focus();
+editWindow.KeyPress(Key.V, RawInputModifiers.Control, PhysicalKey.V, "v");
+Pump(editWindow);
+Check($"coller restitue le contenu riche (html={dstEdit.Html})",
+    dstEdit.Html.Contains("<strong>Gras</strong>") && dstEdit.Html.Contains("et normal"));
+editWindow.Close();
 
 Console.WriteLine(failed == 0 ? "Interaction HDev.UI.Controls : ALL PASS" : $"Interaction HDev.UI.Controls : {failed} FAILED");
 return failed == 0 ? 0 : 1;
