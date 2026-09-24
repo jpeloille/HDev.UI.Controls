@@ -1,0 +1,365 @@
+<hdev:HDevWindow xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:hdev="clr-namespace:HDev.UI.Controls;assembly=HDev.UI.Controls"
+        xmlns:datagrid="clr-namespace:HDev.UI.DataGrid;assembly=HDev.UI.DataGrid"
+        xmlns:models="clr-namespace:HDev.UI.DataGrid.Models;assembly=HDev.UI.DataGrid"
+        x:Class="HDev.UI.Controls.Demo.MainWindow"
+        Title="HDev.UI.Controls — Ubuntu Style Library"
+        Width="1200" Height="900"
+        WindowStartupLocation="CenterScreen">
+    
+    <Grid x:Name="RootGrid" Background="#F5F5F5" RowDefinitions="Auto,Auto,Auto,*,Auto">
+
+        <!-- Menu Bar -->
+        <hdev:HDevMenuBar x:Name="MainMenuBar" Grid.Row="0"/>
+
+        <!-- Ribbon -->
+        <hdev:HDevRibbon x:Name="MainRibbon" Grid.Row="1"/>
+
+        <!-- Toolbar -->
+        <hdev:HDevToolbar x:Name="MainToolbar" Grid.Row="2"/>
+
+        <!-- Content -->
+        <ScrollViewer Grid.Row="3" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="20" Spacing="20">
+                
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- BUTTONS SECTION -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <hdev:HDevCard Title="Buttons">
+                    <StackPanel Spacing="16">
+                        
+                        <!-- Variantes -->
+                        <TextBlock Text="Variantes" FontSize="12" Foreground="#6A6A6A"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <hdev:HDevButton Text="Secondary" Variant="Secondary"/>
+                            <hdev:HDevButton Text="Primary" Variant="Primary"/>
+                            <hdev:HDevButton Text="Ghost" Variant="Ghost"/>
+                            <hdev:HDevButton Text="Danger" Variant="Danger"/>
+                            <hdev:HDevButton Text="Disabled" Variant="Primary" IsEnabled="False"/>
+                        </StackPanel>
+                        
+                        <!-- Tailles -->
+                        <TextBlock Text="Tailles" FontSize="12" Foreground="#6A6A6A" Margin="0,16,0,0"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <hdev:HDevButton Text="Small" Variant="Primary" Size="Small"/>
+                            <hdev:HDevButton Text="Medium" Variant="Primary" Size="Medium"/>
+                            <hdev:HDevButton Text="Large" Variant="Primary" Size="Large"/>
+                        </StackPanel>
+                        
+                    </StackPanel>
+                </hdev:HDevCard>
+                
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- INPUT SECTION -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <Grid ColumnDefinitions="*,20,*">
+                    
+                    <!-- Text Inputs -->
+                    <hdev:HDevCard Title="Text Input" Grid.Column="0">
+                        <StackPanel Spacing="12">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Standard" FontSize="12" Foreground="#6A6A6A"/>
+                                <hdev:HDevTextBox Placeholder="Enter your name..." Width="250"/>
+                            </StackPanel>
+                            
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="With Value" FontSize="12" Foreground="#6A6A6A"/>
+                                <hdev:HDevTextBox Text="john.doe@example.com" Width="250"/>
+                            </StackPanel>
+                            
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Password" FontSize="12" Foreground="#6A6A6A"/>
+                                <hdev:HDevTextBox Text="password123" IsPassword="True" Width="250"/>
+                            </StackPanel>
+                            
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="With Error" FontSize="12" Foreground="#6A6A6A"/>
+                                <hdev:HDevTextBox Text="invalid-email" HasError="True" Width="250"/>
+                            </StackPanel>
+                            
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Read Only" FontSize="12" Foreground="#6A6A6A"/>
+                                <hdev:HDevTextBox Text="Read only content" IsReadOnly="True" Width="250"/>
+                            </StackPanel>
+                            
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Disabled" FontSize="12" Foreground="#6A6A6A"/>
+                                <hdev:HDevTextBox Text="Cannot edit" IsEnabled="False" Width="250"/>
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Multiline (MemoEdit)" FontSize="12" Foreground="#6A6A6A"/>
+                                <hdev:HDevTextBox IsMultiline="True" Width="250"
+                                                Placeholder="Notes multi-lignes : Entrée insère un saut de ligne..."/>
+                            </StackPanel>
+                        </StackPanel>
+                    </hdev:HDevCard>
+                    
+                    <!-- Selections -->
+                    <hdev:HDevCard Title="Selections" Grid.Column="2">
+                        <Grid ColumnDefinitions="*,*">
+                            <!-- Checkboxes -->
+                            <StackPanel Spacing="12" Grid.Column="0">
+                                <TextBlock Text="Checkboxes" FontSize="12" Foreground="#6A6A6A"/>
+                                <hdev:HDevCheckBox Label="Option 1" IsChecked="True"/>
+                                <hdev:HDevCheckBox Label="Option 2"/>
+                                <hdev:HDevCheckBox Label="Indeterminate" IsChecked="{x:Null}"/>
+                                <hdev:HDevCheckBox Label="Disabled" IsEnabled="False"/>
+                            </StackPanel>
+                            
+                            <!-- Radio Buttons -->
+                            <StackPanel Spacing="12" Grid.Column="1">
+                                <TextBlock Text="Radio Buttons" FontSize="12" Foreground="#6A6A6A"/>
+                                <hdev:HDevRadioButton Label="Choice A" GroupName="demo" IsChecked="True"/>
+                                <hdev:HDevRadioButton Label="Choice B" GroupName="demo"/>
+                                <hdev:HDevRadioButton Label="Choice C" GroupName="demo"/>
+                                <hdev:HDevRadioButton Label="Disabled" GroupName="demo2" IsEnabled="False"/>
+                            </StackPanel>
+                        </Grid>
+                    </hdev:HDevCard>
+                    
+                </Grid>
+                
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- TOGGLES & SLIDERS -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <Grid ColumnDefinitions="*,20,*">
+                    
+                    <hdev:HDevCard Title="Toggle Switches" Grid.Column="0">
+                        <StackPanel Spacing="16">
+                            <StackPanel Orientation="Horizontal" Spacing="16">
+                                <hdev:HDevToggleSwitch IsOn="True"/>
+                                <TextBlock Text="Notifications enabled" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            
+                            <StackPanel Orientation="Horizontal" Spacing="16">
+                                <hdev:HDevToggleSwitch IsOn="False"/>
+                                <TextBlock Text="Dark mode" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            
+                            <StackPanel Orientation="Horizontal" Spacing="16">
+                                <hdev:HDevToggleSwitch IsEnabled="False" IsOn="True"/>
+                                <TextBlock Text="Disabled (on)" VerticalAlignment="Center" Foreground="#8A8A8A"/>
+                            </StackPanel>
+                            
+                            <StackPanel Orientation="Horizontal" Spacing="16">
+                                <hdev:HDevToggleSwitch IsEnabled="False"/>
+                                <TextBlock Text="Disabled (off)" VerticalAlignment="Center" Foreground="#8A8A8A"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </hdev:HDevCard>
+                    
+                    <hdev:HDevCard Title="Sliders" Grid.Column="2">
+                        <StackPanel Spacing="20">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Volume: 70%" FontSize="12" Foreground="#6A6A6A"/>
+                                <hdev:HDevSlider Value="70" Minimum="0" Maximum="100" Width="300"/>
+                            </StackPanel>
+                            
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Brightness: 50%" FontSize="12" Foreground="#6A6A6A"/>
+                                <hdev:HDevSlider Value="50" Minimum="0" Maximum="100" Width="300"/>
+                            </StackPanel>
+                            
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Disabled" FontSize="12" Foreground="#8A8A8A"/>
+                                <hdev:HDevSlider Value="30" Minimum="0" Maximum="100" Width="300" IsEnabled="False"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </hdev:HDevCard>
+                    
+                </Grid>
+                
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- PROGRESS INDICATORS -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <hdev:HDevCard Title="Progress Indicators">
+                    <StackPanel Spacing="16">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Download Progress: 65%" FontSize="12" Foreground="#6A6A6A"/>
+                            <hdev:HDevProgressBar Value="65" Width="400" HorizontalAlignment="Left"/>
+                        </StackPanel>
+                        
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Upload Complete: 100%" FontSize="12" Foreground="#6A6A6A"/>
+                            <hdev:HDevProgressBar Value="100" Width="400" HorizontalAlignment="Left"/>
+                        </StackPanel>
+                        
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Processing..." FontSize="12" Foreground="#6A6A6A"/>
+                            <hdev:HDevProgressBar IsIndeterminate="True" Width="400" HorizontalAlignment="Left"/>
+                        </StackPanel>
+                    </StackPanel>
+                </hdev:HDevCard>
+                
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- BADGES -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <hdev:HDevCard Title="Badges">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <hdev:HDevBadge Text="Default"/>
+                        <hdev:HDevBadge Text="Primary" Variant="Primary"/>
+                        <hdev:HDevBadge Text="Success" Variant="Success"/>
+                        <hdev:HDevBadge Text="Warning" Variant="Warning"/>
+                        <hdev:HDevBadge Text="Error" Variant="Error"/>
+                        <hdev:HDevBadge Text="Info" Variant="Info"/>
+                        <hdev:HDevBadge Text="99+" Variant="Primary"/>
+                    </StackPanel>
+                </hdev:HDevCard>
+
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- COMBOBOX -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <hdev:HDevCard Title="ComboBox">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="États" FontSize="12" Foreground="#6A6A6A"/>
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Normal" FontSize="11" Foreground="#888"/>
+                                <hdev:HDevComboBox x:Name="ComboCountries" Width="200"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Avec sélection" FontSize="11" Foreground="#888"/>
+                                <hdev:HDevComboBox x:Name="ComboWithSelection" Width="200"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Disabled" FontSize="11" Foreground="#888"/>
+                                <hdev:HDevComboBox x:Name="ComboDisabled" IsEnabled="False" Width="200"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="ReadOnly" FontSize="11" Foreground="#888"/>
+                                <hdev:HDevComboBox x:Name="ComboReadOnly" Width="200"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Sorted + type-to-select" FontSize="11" Foreground="#888"/>
+                                <hdev:HDevComboBox x:Name="ComboSorted" Width="200"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </hdev:HDevCard>
+
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- EDITORS (LOT 2) -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <hdev:HDevCard Title="Editors — masque, validation, lookup">
+                    <StackPanel Spacing="12">
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="HDevDateEdit (2020–2030)" FontSize="11" Foreground="#888"/>
+                                <hdev:HDevDateEdit x:Name="DateEditDemo" Width="140"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="HDevTimeEdit" FontSize="11" Foreground="#888"/>
+                                <hdev:HDevTimeEdit x:Name="TimeEditDemo"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="HDevSpinEdit (0–10 000, pas 0,5)" FontSize="11" Foreground="#888"/>
+                                <hdev:HDevSpinEdit x:Name="SpinEditDemo" Width="130"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Combo éditable (SuggestAppend)" FontSize="11" Foreground="#888"/>
+                                <hdev:HDevComboBox x:Name="ComboEditable" Width="200"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="HDevLookUpEdit (employés)" FontSize="11" Foreground="#888"/>
+                                <hdev:HDevLookUpEdit x:Name="LookUpDemo" Width="220"/>
+                            </StackPanel>
+                        </StackPanel>
+                        <TextBlock x:Name="EditorsResult" FontSize="12" Foreground="#6A6A6A"
+                                   Text="Saisis une date invalide puis quitte le champ : bordure rouge + tooltip."/>
+                    </StackPanel>
+                </hdev:HDevCard>
+
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- TABCONTROL + TREEVIEW (LOT 4) -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <hdev:HDevCard Title="TabControl &amp; TreeView">
+                    <hdev:HDevTabControl x:Name="DemoTabs" Height="320"/>
+                </hdev:HDevCard>
+
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- DIALOGS / MESSAGEBOX -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <hdev:HDevCard Title="Dialogs (HDevMessageBox)">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <hdev:HDevButton x:Name="BtnMsgInfo" Text="Information" Variant="Secondary"/>
+                        <hdev:HDevButton x:Name="BtnMsgWarning" Text="Avertissement" Variant="Secondary"/>
+                        <hdev:HDevButton x:Name="BtnMsgError" Text="Erreur" Variant="Danger"/>
+                        <hdev:HDevButton x:Name="BtnMsgQuestion" Text="Question Oui/Non" Variant="Primary"/>
+                        <TextBlock x:Name="MsgBoxResult" VerticalAlignment="Center" Margin="12,0,0,0"
+                                   FontSize="12" Foreground="#6A6A6A"/>
+                    </StackPanel>
+                </hdev:HDevCard>
+
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- CARDS / ELEVATIONS -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <Grid ColumnDefinitions="*,*,*,*">
+                    <hdev:HDevCard Title="Flat" Elevation="Flat" Grid.Column="0">
+                        <TextBlock Text="Elevation=Flat" FontSize="12" Foreground="#6A6A6A"/>
+                    </hdev:HDevCard>
+                    <hdev:HDevCard Title="Low" Elevation="Low" Grid.Column="1">
+                        <TextBlock Text="Elevation=Low" FontSize="12" Foreground="#6A6A6A"/>
+                    </hdev:HDevCard>
+                    <hdev:HDevCard Title="Medium" Elevation="Medium" Grid.Column="2">
+                        <TextBlock Text="Elevation=Medium" FontSize="12" Foreground="#6A6A6A"/>
+                    </hdev:HDevCard>
+                    <hdev:HDevCard Title="High" Elevation="High" Grid.Column="3">
+                        <TextBlock Text="Elevation=High" FontSize="12" Foreground="#6A6A6A"/>
+                    </hdev:HDevCard>
+                </Grid>
+
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- DATAGRID -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <hdev:HDevCard Title="DataGrid - Employee Management">
+                    <StackPanel Spacing="12">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <hdev:HDevButton x:Name="BtnExportCsv" Text="Exporter CSV" Variant="Secondary" Size="Small"/>
+                            <TextBlock VerticalAlignment="Center" FontSize="12" Foreground="#6A6A6A"
+                                       Text="Shift+clic en-tête = multi-tri · pin = colonne figée · double-clic bord d'en-tête = largeur auto · bouton ≈ de la ligne de filtre = opérateur · Ctrl+C = copier la sélection"/>
+                        </StackPanel>
+                        <datagrid:HDevDataGrid x:Name="EmployeeDataGrid"
+                                             Height="400"
+                                             ShowFilterRow="True"
+                                             ShowGroupPanel="True"
+                                             AllowSorting="True">
+                            <datagrid:HDevDataGrid.Columns>
+                                <models:GridColumn FieldName="Id" Header="ID" Width="80" />
+                                <models:GridColumn FieldName="FirstName" Header="First Name" Width="150" />
+                                <models:GridColumn FieldName="LastName" Header="Last Name" Width="150" />
+                                <models:GridColumn FieldName="Email" Header="Email" Width="250" />
+                                <models:GridColumn FieldName="Department" Header="Department" Width="120" />
+                                <models:GridColumn FieldName="Position" Header="Position" Width="120" />
+                                <models:GridColumn FieldName="Salary" Header="Salary" Width="100" FormatString="C0" />
+                                <models:GridColumn FieldName="HireDate" Header="Hire Date" Width="120" ColumnType="DateTime" />
+                                <models:GridColumn FieldName="IsActive" Header="Active" Width="80" ColumnType="Boolean" />
+                                <models:GridColumn FieldName="Country" Header="Country" Width="120" />
+                            </datagrid:HDevDataGrid.Columns>
+                        </datagrid:HDevDataGrid>
+                    </StackPanel>
+                </hdev:HDevCard>
+
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <!-- FOOTER -->
+                <!-- ══════════════════════════════════════════════════════════ -->
+                <Border Background="#E8E8E8" Padding="16" CornerRadius="4" Margin="0,20,0,0">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel>
+                            <TextBlock Text="HDev.UI.Controls for Avalonia" FontWeight="SemiBold"/>
+                            <TextBlock Text="Professional VS2022-style UI controls" FontSize="12" Foreground="#6A6A6A"/>
+                        </StackPanel>
+                        <TextBlock Text="Built with ❤ for Synaxis &amp; Ovidie" 
+                                   FontSize="12" Foreground="#8A8A8A" 
+                                   HorizontalAlignment="Right"/>
+                    </Grid>
+                </Border>
+                
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Status Bar -->
+        <hdev:HDevStatusBar x:Name="MainStatusBar" Grid.Row="4"/>
+    </Grid>
+</hdev:HDevWindow>

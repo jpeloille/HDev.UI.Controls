@@ -1,0 +1,221 @@
+using Avalonia;
+using Avalonia.Media;
+using Avalonia.Threading;
+using HDev.UI.Controls.Theme;
+using System.Diagnostics;
+
+namespace HDev.UI.Controls;
+
+public enum ProgressVariant
+{
+    Default,
+    Success,
+    Warning,
+    Error
+}
+
+/// <summary>
+/// Barre de progression professionnelle style VS2022
+/// Avec variantes de couleur et mode indéterminé
+/// </summary>
+public class HDevProgressBar : HDevControlBase
+{
+    // ═══════════════════════════════════════════════════════════════
+    // PROPRIÉTÉS
+    // ═══════════════════════════════════════════════════════════════
+    
+    public static readonly StyledProperty<double> ValueProperty =
+        AvaloniaProperty.Register<HDevProgressBar, double>(nameof(Value), 0);
+    
+    public static readonly StyledProperty<double> MinimumProperty =
+        AvaloniaProperty.Register<HDevProgressBar, double>(nameof(Minimum), 0);
+    
+    public static readonly StyledProperty<double> MaximumProperty =
+        AvaloniaProperty.Register<HDevProgressBar, double>(nameof(Maximum), 100);
+    
+    public static readonly StyledProperty<bool> IsIndeterminateProperty =
+        AvaloniaProperty.Register<HDevProgressBar, bool>(nameof(IsIndeterminate), false);
+    
+    public static readonly StyledProperty<bool> ShowValueProperty =
+        AvaloniaProperty.Register<HDevProgressBar, bool>(nameof(ShowValue), false);
+    
+    public static readonly StyledProperty<ProgressVariant> VariantProperty =
+        AvaloniaProperty.Register<HDevProgressBar, ProgressVariant>(nameof(Variant), ProgressVariant.Default);
+
+    public double Value
+    {
+        get => GetValue(ValueProperty);
+        set => SetValue(ValueProperty, Math.Clamp(value, Minimum, Maximum));
+    }
+    
+    public double Minimum
+    {
+        get => GetValue(MinimumProperty);
+        set => SetValue(MinimumProperty, value);
+    }
+    
+    public double Maximum
+    {
+        get => GetValue(MaximumProperty);
+        set => SetValue(MaximumProperty, value);
+    }
+    
+    public bool IsIndeterminate
+    {
+        get => GetValue(IsIndeterminateProperty);
+        set => SetValue(IsIndeterminateProperty, value);
+    }
+    
+    public bool ShowValue
+    {
+        get => GetValue(ShowValueProperty);
+        set => SetValue(ShowValueProperty, value);
+    }
+    
+    public ProgressVariant Variant
+    {
+        get => GetValue(VariantProperty);
+        set => SetValue(VariantProperty, value);
+    }
+    
+    static HDevProgressBar()
+    {
+        AffectsRender<HDevProgressBar>(ValueProperty, MinimumProperty, MaximumProperty, 
+            IsIndeterminateProperty, ShowValueProperty, VariantProperty);
+    }
+    
+    public HDevProgressBar()
+    {
+        Focusable = false;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ANIMATION (mode indéterminé)
+    // ═══════════════════════════════════════════════════════════════
+
+    private static readonly Stopwatch AnimClock = Stopwatch.StartNew();
+    private DispatcherTimer? _animTimer;
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        UpdateAnimTimer();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        _animTimer?.Stop();
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == IsIndeterminateProperty)
+            UpdateAnimTimer();
+    }
+
+    private void UpdateAnimTimer()
+    {
+        if (IsIndeterminate && VisualRoot != null)
+        {
+            if (_animTimer == null)
+            {
+                _animTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33) };
+                _animTimer.Tick += (s, e) => InvalidateVisual();
+            }
+            _animTimer.Start();
+        }
+        else
+        {
+            _animTimer?.Stop();
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // MESURE
+    // ═══════════════════════════════════════════════════════════════
+    
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        var height = ShowValue ? 24.0 : 8.0;
+        return new Size(Math.Min(200, availableSize.Width), height);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // RENDU
+    // ═══════════════════════════════════════════════════════════════
+    
+    public override void Render(DrawingContext context)
+    {
+        Crisp.BeginFrame(this);
+        var bounds = new Rect(Bounds.Size);
+        var trackHeight = ShowValue ? 6.0 : 4.0;
+        var cornerRadius = trackHeight / 2;
+        
+        // Position du track
+        var trackY = ShowValue ? bounds.Height - trackHeight - 2 : (bounds.Height - trackHeight) / 2;
+        var trackRect = new Rect(2, trackY, bounds.Width - 4, trackHeight);
+        
+        // Couleur selon la variante
+        var progressColor = Variant switch
+        {
+            ProgressVariant.Success => HDevTheme.Accent.Success,
+            ProgressVariant.Warning => HDevTheme.Accent.Warning,
+            ProgressVariant.Error => HDevTheme.Accent.Error,
+            _ => HDevTheme.Accent.Primary
+        };
+        
+        // Track (fond)
+        var trackColor = HDevTheme.Background.ControlDisabled;
+        context.DrawRectangle(
+            new SolidColorBrush(trackColor),
+            null,
+            trackRect,
+            cornerRadius, cornerRadius);
+        
+        // Bordure du track
+        var trackBorderPen = new Pen(new SolidColorBrush(HDevTheme.Border.Subtle), 0.5);
+        context.DrawRectangle(null, trackBorderPen, trackRect.Deflate(0.25), cornerRadius, cornerRadius);
+        
+        // Progression
+        var progress = (Value - Minimum) / (Maximum - Minimum);
+        progress = Math.Clamp(progress, 0, 1);
+        
+        if (progress > 0 || IsIndeterminate)
+        {
+            using (context.PushClip(new RoundedRect(trackRect, cornerRadius)))
+            {
+                Rect progressRect;
+                
+                if (IsIndeterminate)
+                {
+                    // Cycle de 1,4 s basé sur une horloge monotone ; le DispatcherTimer
+                    // invalide le rendu tant que la barre est indéterminée et attachée
+                    const double cycleSeconds = 1.4;
+                    var animProgress = AnimClock.Elapsed.TotalSeconds % cycleSeconds / cycleSeconds;
+                    var barWidth = trackRect.Width * 0.3;
+                    var barX = trackRect.X + (trackRect.Width + barWidth) * animProgress - barWidth;
+                    progressRect = new Rect(barX, trackRect.Y, barWidth, trackRect.Height);
+                }
+                else
+                {
+                    var progressWidth = trackRect.Width * progress;
+                    progressRect = new Rect(trackRect.X, trackRect.Y, progressWidth, trackRect.Height);
+                }
+                
+                // Remplissage plat (style GNOME)
+                context.DrawRectangle(new SolidColorBrush(progressColor), null, progressRect, cornerRadius, cornerRadius);
+            }
+        }
+        
+        // Valeur textuelle
+        if (ShowValue && !IsIndeterminate)
+        {
+            var percentage = (int)(progress * 100);
+            var valueText = CreateText($"{percentage}%", HDevTheme.Text.Secondary, 11);
+            var textX = (bounds.Width - valueText.Width) / 2;
+            context.DrawText(valueText, Crisp.Snap(new Point(textX, 0)));
+        }
+    }
+}

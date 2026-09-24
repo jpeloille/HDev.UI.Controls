@@ -1,6 +1,6 @@
 # UGantt — charte de projet
 
-> Logiciel de gestion de projet pur (activités RDOV), bâti sur ProControls/ProGantt.
+> Logiciel de gestion de projet pur (activités RDOV), bâti sur HDev.UI.Controls/HDevGantt.
 > Document d'architecture posé le 14/07/2026, **avant** toute ligne de code.
 
 ## 1. La cible — décidée le 14/07/2026 : catégories 1 & 2
@@ -23,35 +23,35 @@ c'est que ~1/3 de Project est du legacy ou de l'écosystème serveur non désir�
 Jalons intermédiaires nommés : **classe GanttProject / OmniPlan / Merlin** (jalon 2),
 puis **« P6-lite »** (jalon 3).
 
-## 2. La règle de partage ProControls ↔ UGantt
+## 2. La règle de partage HDev.UI.Controls ↔ UGantt
 
 > **Promotion sur PREUVE de réemploi, pas sur généricité théorique.**
-> Une brique migre dans ProControls quand un **second consommateur existe** —
+> Une brique migre dans HDev.UI.Controls quand un **second consommateur existe** —
 > pas quand elle est « théoriquement générique ».
 
-- **ProControls** = le moteur + le contrôle **génériques** : planifier, calculer, rendre, interagir.
+- **HDev.UI.Controls** = le moteur + le contrôle **génériques** : planifier, calculer, rendre, interagir.
 - **UGantt** = **le produit** : shell, fichiers, interop, rapports, domaine.
 
-C'est la règle qu'applique déjà la suite : ProGantt a été *délibérément* scopé
+C'est la règle qu'applique déjà la suite : HDevGantt a été *délibérément* scopé
 « pas de ressources », le moteur pur vit dans la lib et gagne des tests, l'UI est dessus.
 
 ### Les quatre arbitrages, tranchés par cette règle
 
 | Brique | Ressort | Pourquoi |
 |---|---|---|
-| **Ressources / coûts / EVM** | **UGantt** | Double la surface du modèle et contredit une décision écrite (« ProGantt n'est pas un planificateur de ressources »). Le besoin ressources de Synaxis est **déjà servi par ProScheduler** — fondre des ressources dans ProGantt brouillerait deux contrôles séparés exprès. Le calcul EVM est trivialement liftable plus tard. |
+| **Ressources / coûts / EVM** | **UGantt** | Double la surface du modèle et contredit une décision écrite (« HDevGantt n'est pas un planificateur de ressources »). Le besoin ressources de Synaxis est **déjà servi par HDevScheduler** — fondre des ressources dans HDevGantt brouillerait deux contrôles séparés exprès. Le calcul EVM est trivialement liftable plus tard. |
 | **Interop MSP XML / XER / CSV** | **UGantt** | « Mapping pur » ≠ « dans la lib partagée maintenant ». Module de mapping pur **à l'intérieur** d'UGantt : testable et liftable. On apprend le format en s'en servant ; on promeut si un 2ᵉ consommateur le lit. |
-| **Impression paginée + PDF** | **ProControls** | **La seule exception** — elle a déjà gagné sa promotion : l'impression manque dans **toute** la suite. C'est une capacité **transverse** (imprimer n'importe quel contrôle custom-rendered), pas une feature Gantt. Le Gantt en est juste le premier client. |
-| **Vues alternatives** | **ça se scinde** | **PERT / réseau → ProControls** (rendu pur du graphe de dépendances, générique). **Histogramme / usage ressources → UGantt** (dépend du modèle ressources, donc suit les ressources). Ne pas les mettre dans le même seau. |
+| **Impression paginée + PDF** | **HDev.UI.Controls** | **La seule exception** — elle a déjà gagné sa promotion : l'impression manque dans **toute** la suite. C'est une capacité **transverse** (imprimer n'importe quel contrôle custom-rendered), pas une feature Gantt. Le Gantt en est juste le premier client. |
+| **Vues alternatives** | **ça se scinde** | **PERT / réseau → HDev.UI.Controls** (rendu pur du graphe de dépendances, générique). **Histogramme / usage ressources → UGantt** (dépend du modèle ressources, donc suit les ressources). Ne pas les mettre dans le même seau. |
 
 ## 3. Les points d'extension — la colonne vertébrale
 
 Séparer un contrôle de son app, ce n'est pas d'abord « qui possède quelle feature » :
-c'est **quels points d'extension ProControls doit exposer pour qu'UGantt construise le
-produit SANS modifier ProControls**.
+c'est **quels points d'extension HDev.UI.Controls doit exposer pour qu'UGantt construise le
+produit SANS modifier HDev.UI.Controls**.
 
-Puisque **UGantt possède les ressources/coûts** mais que **ProGantt possède le rendu**,
-ProGantt DOIT exposer :
+Puisque **UGantt possède les ressources/coûts** mais que **HDevGantt possède le rendu**,
+HDevGantt DOIT exposer :
 
 1. **Modèle de colonnes configurable** — pour qu'UGantt ajoute ses colonnes coût/ressource
    sans toucher à la lib. (Aujourd'hui : 4 colonnes en dur — nom/début/fin/%.)
@@ -62,11 +62,11 @@ ProGantt DOIT exposer :
    un sac de propriétés applicatives sérialisé.
 
 > **Si ces trois points manquent, la première vraie feature d'UGantt force une réécriture
-> de ProControls.** Ils priment sur toute liste de features.
+> de HDev.UI.Controls.** Ils priment sur toute liste de features.
 
 ## 4. Ce qu'UGantt possède
 
-- **Shell** : ProWindow + ruban + **ProDock** + multi-projet
+- **Shell** : HDevWindow + ruban + **HDevDock** + multi-projet
 - **Fichiers** : ouvrir/enregistrer/récents/autosave ; format `.ugantt`
   (la sérialisation JSON du `GanttProject` existe déjà)
 - **Interop** : MS Project XML, Primavera XER, CSV/Excel
@@ -78,38 +78,38 @@ ProGantt DOIT exposer :
 
 ### Dogfooding — le bénéfice caché
 
-UGantt serait le **premier vrai consommateur de ProDock** (phase 1 faite le 14/07/2026),
+UGantt serait le **premier vrai consommateur de HDevDock** (phase 1 faite le 14/07/2026),
 et donc le **driver naturel de ses phases 2 et 3** (drag + cibles d'ancrage, float/auto-masqué).
-Idem pour ProRibbon avancé (backstage/QAT) et l'impression, aujourd'hui inexistante.
+Idem pour HDevRibbon avancé (backstage/QAT) et l'impression, aujourd'hui inexistante.
 
 ## 5. Prérequis de démarrage (câblage vérifié le 14/07/2026)
 
-Un projet tiers qui consomme ProControls **doit** :
+Un projet tiers qui consomme HDev.UI.Controls **doit** :
 
-1. **Vivre en frère** : `RiderProjects/UGantt`, référençant `..\ProControls\ProControls\ProControls.csproj`.
-   ProControls tire en dur `..\..\AvaloniaDataGrid\src\Julien.Avalonia.DataGrid.csproj` —
-   les deux dépôts doivent rester en place. `PackageId ProControls.Avalonia` existe mais
+1. **Vivre en frère** : `RiderProjects/UGantt`, référençant `..\HDev.UI.Controls\HDev.UI.Controls\HDev.UI.Controls.csproj`.
+   HDev.UI.Controls tire en dur `..\..\HDev.UI.DataGrid\src\HDev.UI.DataGrid.csproj` —
+   les deux dépôts doivent rester en place. `PackageId HDev.UI.Controls` existe mais
    **n'est pas publié** : c'est du `ProjectReference`.
 2. **Bootstrap non négociable** (sinon écran cassé) :
    ```csharp
    .With(new X11PlatformOptions { OverlayPopups = true })  // sinon menus/dropdowns INVISIBLES sous Linux
-   .WithInterFont()                                        // ProTheme cible fonts:Inter#Inter
+   .WithInterFont()                                        // HDevTheme cible fonts:Inter#Inter
    ```
-3. **App.axaml** : `<FluentTheme />` + `StyleInclude avares://ProControls/Theme/DataGrid/Index.axaml`
+3. **App.axaml** : `<FluentTheme />` + `StyleInclude avares://HDev.UI.Controls/Theme/DataGrid/Index.axaml`
    + les `SystemAccentColor` Ubuntu (#E95420…).
 4. **Versions** : `net8.0`, Avalonia **11.2.1** partout (+ `Avalonia.Desktop`,
    `Avalonia.Themes.Fluent`, `Avalonia.Fonts.Inter`).
 
 ## 6. Le préalable qui conditionne tout
 
-**Aujourd'hui, ProGantt ne sait pas *fabriquer* un plan** : ni créer, ni supprimer, ni
+**Aujourd'hui, HDevGantt ne sait pas *fabriquer* un plan** : ni créer, ni supprimer, ni
 indenter une tâche depuis l'UI. Durée, contraintes, EVM sont des raffinements sur un plan
 qu'on ne peut pas encore bâtir.
 
-→ **P0 #1 = édition structurelle de la table** (ProControls). C'est le premier chantier
+→ **P0 #1 = édition structurelle de la table** (HDev.UI.Controls). C'est le premier chantier
 quoi qu'il arrive : il débloque l'existence même d'UGantt.
 
-La feuille de route ProControls (P0 → P3) vit dans `ProControls/context.md`.
+La feuille de route HDev.UI.Controls (P0 → P3) vit dans `HDev.UI.Controls/context.md`.
 
 ---
 
@@ -119,7 +119,7 @@ La feuille de route ProControls (P0 → P3) vit dans `ProControls/context.md`.
 wall-clock serait une fiction. Ce qui pilote, ce sont les **jalons livrables** : la séquence
 est construite pour que **s'arrêter à n'importe quel jalon laisse un outil shippable**.
 
-Ressort : **[PC]** = ProControls (rendu, interaction, points d'extension) ·
+Ressort : **[PC]** = HDev.UI.Controls (rendu, interaction, points d'extension) ·
 **[UC]** = `UGantt.Core` (domaine pur testé) · **[UG]** = app UGantt.
 
 ### Lot 0 — Versionnage du schéma · S · ✅ **FAIT le 14/07/2026** [PC]

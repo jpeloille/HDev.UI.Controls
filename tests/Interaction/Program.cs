@@ -5,9 +5,9 @@ using Avalonia.Input;
 using Avalonia.Themes.Fluent;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using ProControls.Controls;
+using HDev.UI.Controls;
 
-// Pilote les contrôles ProControls via de vraies entrées simulées (pipeline
+// Pilote les contrôles HDev.UI.Controls via de vraies entrées simulées (pipeline
 // d'input headless) et vérifie les correctifs des 4 bugs bloquants :
 //   1. Les boutons du ruban déclenchent Click (hit-test partagé avec le rendu)
 //   2. Les sous-menus s'ouvrent et la fermeture remonte la chaîne de popups
@@ -60,8 +60,8 @@ Console.WriteLine("Ruban :");
 int runClicks = 0, copyClicks = 0, disabledClicks = 0;
 bool dropdownOpening = false;
 
-var ribbon = new ProRibbon();
-var tab = new ProRibbonTab("Home");
+var ribbon = new HDevRibbon();
+var tab = new HDevRibbonTab("Home");
 tab.AddGroup("Actions", g =>
 {
     g.AddLargeButton("Run", "R", () => runClicks++);
@@ -72,18 +72,18 @@ tab.AddGroup("Actions", g =>
 });
 ribbon.Tabs.Add(tab);
 
-var toggleBtn = (ProRibbonButton)tab.Groups[0].Items[1];
+var toggleBtn = (HDevRibbonButton)tab.Groups[0].Items[1];
 toggleBtn.IsToggle = true;
-var disabledBtn = (ProRibbonButton)tab.Groups[0].Items[3];
+var disabledBtn = (HDevRibbonButton)tab.Groups[0].Items[3];
 disabledBtn.IsEnabled = false;
-var dropdownBtn = (ProRibbonButton)tab.Groups[0].Items[4];
+var dropdownBtn = (HDevRibbonButton)tab.Groups[0].Items[4];
 dropdownBtn.DropdownMenu!.Opening += (s, e) => dropdownOpening = true;
 
 var window = new Window { Width = 800, Height = 200, Content = ribbon };
 window.Show();
 Pump(window);
 
-Point CenterOf(ProRibbonButton btn)
+Point CenterOf(HDevRibbonButton btn)
 {
     foreach (var (item, rect) in ribbon.GetContentLayout())
         if (ReferenceEquals(item, btn))
@@ -91,10 +91,10 @@ Point CenterOf(ProRibbonButton btn)
     throw new InvalidOperationException($"Bouton '{btn.Label}' introuvable dans le layout");
 }
 
-ClickAt(window, CenterOf((ProRibbonButton)tab.Groups[0].Items[0]));
+ClickAt(window, CenterOf((HDevRibbonButton)tab.Groups[0].Items[0]));
 Check("clic sur grand bouton déclenche OnClick", runClicks == 1);
 
-ClickAt(window, CenterOf((ProRibbonButton)tab.Groups[0].Items[2]));
+ClickAt(window, CenterOf((HDevRibbonButton)tab.Groups[0].Items[2]));
 Check("clic sur petit bouton déclenche OnClick", copyClicks == 1);
 
 ClickAt(window, CenterOf(toggleBtn));
@@ -119,20 +119,20 @@ window.Close();
 Console.WriteLine("Menus :");
 
 int newClicks = 0, subClicks = 0;
-var newItem = new ProMenuItem("New", onClick: () => newClicks++);
-var subActionItem = new ProMenuItem("Recent file A", onClick: () => subClicks++);
-var recentItem = new ProMenuItem("Recent")
+var newItem = new HDevMenuItem("New", onClick: () => newClicks++);
+var subActionItem = new HDevMenuItem("Recent file A", onClick: () => subClicks++);
+var recentItem = new HDevMenuItem("Recent")
 {
-    Items = new System.Collections.ObjectModel.ObservableCollection<ProMenuItem> { subActionItem }
+    Items = new System.Collections.ObjectModel.ObservableCollection<HDevMenuItem> { subActionItem }
 };
-var gridItem = new ProMenuItem { Header = "Show Grid", IsCheckable = true, IsChecked = true };
+var gridItem = new HDevMenuItem { Header = "Show Grid", IsCheckable = true, IsChecked = true };
 
-var fileMenu = new ProMenuBarItem("File");
+var fileMenu = new HDevMenuBarItem("File");
 fileMenu.Items.Add(newItem);
 fileMenu.Items.Add(recentItem);
 fileMenu.Items.Add(gridItem);
 
-var menuBar = new ProMenuBar();
+var menuBar = new HDevMenuBar();
 menuBar.Items.Add(fileMenu);
 
 var menuWindow = new Window { Width = 600, Height = 300, Content = menuBar };
@@ -186,12 +186,12 @@ menuWindow.Close();
 // ═════════════════════════════════════════════════════════════════
 Console.WriteLine("ProgressBar :");
 
-var progress = new ProProgressBar { IsIndeterminate = true, Width = 400 };
+var progress = new HDevProgressBar { IsIndeterminate = true, Width = 400 };
 var pbWindow = new Window { Width = 500, Height = 100, Content = progress };
 pbWindow.Show();
 Pump(pbWindow);
 
-var timerField = typeof(ProProgressBar).GetField("_animTimer",
+var timerField = typeof(HDevProgressBar).GetField("_animTimer",
     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
 var timer = timerField.GetValue(progress) as DispatcherTimer;
 Check("timer d'animation démarré quand indéterminée + attachée", timer is { IsEnabled: true });
@@ -224,24 +224,24 @@ pbWindow.Close();
 Console.WriteLine("Clavier & événements :");
 
 int btnClicks = 0;
-var kbButton = new ProButton { Text = "OK" };
+var kbButton = new HDevButton { Text = "OK" };
 kbButton.Click += (s, e) => btnClicks++;
 
-var kbCheck = new ProCheckBox { Label = "Option" };
+var kbCheck = new HDevCheckBox { Label = "Option" };
 var checkEvents = new List<bool?>();
 kbCheck.CheckedChanged += (s, v) => checkEvents.Add(v);
 
-var kbToggle = new ProToggleSwitch();
+var kbToggle = new HDevToggleSwitch();
 int toggleEvents = 0;
 kbToggle.Toggled += (s, v) => toggleEvents++;
 
-var kbSlider = new ProSlider { Minimum = 0, Maximum = 100, Step = 5, Value = 50 };
+var kbSlider = new HDevSlider { Minimum = 0, Maximum = 100, Step = 5, Value = 50 };
 var sliderEvents = new List<double>();
 kbSlider.ValueChanged += (s, v) => sliderEvents.Add(v);
 
-var radioA = new ProRadioButton { Label = "A", IsChecked = true };
-var radioB = new ProRadioButton { Label = "B" };
-var radioC = new ProRadioButton { Label = "C" };
+var radioA = new HDevRadioButton { Label = "A", IsChecked = true };
+var radioB = new HDevRadioButton { Label = "B" };
+var radioC = new HDevRadioButton { Label = "C" };
 
 var kbPanel = new StackPanel();
 kbPanel.Children.Add(kbButton);
@@ -265,20 +265,20 @@ void PressKey(PhysicalKey key)
 
 kbButton.Focus();
 PressKey(PhysicalKey.Space);
-Check("Espace active ProButton", btnClicks == 1);
+Check("Espace active HDevButton", btnClicks == 1);
 PressKey(PhysicalKey.Enter);
-Check("Entrée active ProButton", btnClicks == 2);
+Check("Entrée active HDevButton", btnClicks == 2);
 
 kbCheck.Focus();
 PressKey(PhysicalKey.Space);
-Check("Espace coche ProCheckBox", kbCheck.IsChecked == true);
+Check("Espace coche HDevCheckBox", kbCheck.IsChecked == true);
 Check("CheckedChanged déclenché par le clavier", checkEvents.Count == 1 && checkEvents[0] == true);
 kbCheck.IsChecked = false;
 Check("CheckedChanged déclenché par set programmatique", checkEvents.Count == 2 && checkEvents[1] == false);
 
 kbToggle.Focus();
 PressKey(PhysicalKey.Space);
-Check("Espace bascule ProToggleSwitch", kbToggle.IsOn);
+Check("Espace bascule HDevToggleSwitch", kbToggle.IsOn);
 kbToggle.IsOn = false;
 Check("Toggled déclenché aussi par set programmatique", toggleEvents == 2);
 
@@ -305,7 +305,7 @@ kbWindow.Close();
 // ═════════════════════════════════════════════════════════════════
 // N. PROROSTER — survol, clic, glisser, annulation, voie cible
 // ═════════════════════════════════════════════════════════════════
-Console.WriteLine("ProRoster :");
+Console.WriteLine("HDevRoster :");
 
 var jour = new DateTime(2026, 9, 14);   // lundi
 var rosterModel = new RosterModel { Origin = jour };
@@ -316,7 +316,7 @@ var vol0 = new RosterBlock(jour.AddHours(9), jour.AddHours(11), "TY201");
 rosterModel.Lanes[0].Bands.Add(new RosterBand(jour.AddHours(5), jour.AddHours(15), "AM"));
 rosterModel.Lanes[0].Blocks.Add(vol0);
 
-var roster = new ProRoster { Model = rosterModel };
+var roster = new HDevRoster { Model = rosterModel };
 
 var rosterWindow = new Window { Width = 1000, Height = 400, Content = roster };
 rosterWindow.Show();
@@ -420,7 +420,7 @@ roster.IsReadOnly = false;
 
 rosterWindow.Close();
 
-Console.WriteLine(failed == 0 ? "Interaction ProControls : ALL PASS" : $"Interaction ProControls : {failed} FAILED");
+Console.WriteLine(failed == 0 ? "Interaction HDev.UI.Controls : ALL PASS" : $"Interaction HDev.UI.Controls : {failed} FAILED");
 return failed == 0 ? 0 : 1;
 
 static byte[] FramePixels(global::Avalonia.Media.Imaging.WriteableBitmap bmp)

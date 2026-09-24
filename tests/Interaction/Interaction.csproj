@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../ProControls/ProControls.csproj" />
+    <ProjectReference Include="../../HDev.UI.Controls/HDev.UI.Controls.csproj" />
   </ItemGroup>
 
 </Project>
