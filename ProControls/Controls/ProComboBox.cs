@@ -863,7 +863,7 @@ public class ProComboBox : Control
     {
         if (_editTextBox != null)
         {
-            _editTextBox.Watermark = _properties.NullValuePrompt;
+            _editTextBox.PlaceholderText = _properties.NullValuePrompt;
             _editTextBox.IsReadOnly = _properties.ReadOnly;
         }
         InvalidateVisual();
@@ -905,7 +905,7 @@ public class ProComboBox : Control
             CaretBrush = new SolidColorBrush(ProTheme.Text.Primary),
             SelectionBrush = new SolidColorBrush(ProTheme.WithOpacity(ProTheme.Accent.Primary, 80)),
             SelectionForegroundBrush = new SolidColorBrush(Colors.White),
-            Watermark = _properties.NullValuePrompt,
+            PlaceholderText = _properties.NullValuePrompt,
             IsReadOnly = _properties.ReadOnly,
             Text = _text
         };
@@ -1502,14 +1502,14 @@ public class ProComboBox : Control
         }
     }
 
-    protected override void OnGotFocus(GotFocusEventArgs e)
+    protected override void OnGotFocus(FocusChangedEventArgs e)
     {
         _oldEditValue = _editValue;
         InvalidateVisual();
         base.OnGotFocus(e);
     }
 
-    protected override void OnLostFocus(RoutedEventArgs e)
+    protected override void OnLostFocus(FocusChangedEventArgs e)
     {
         DoValidate();
         InvalidateVisual();

@@ -55,12 +55,8 @@ public class ProWindow : Window
     public static readonly StyledProperty<bool> ShowIconProperty =
         AvaloniaProperty.Register<ProWindow, bool>(nameof(ShowIcon), true);
     
-    public static readonly StyledProperty<bool> CanMinimizeProperty =
-        AvaloniaProperty.Register<ProWindow, bool>(nameof(CanMinimize), true);
-    
-    public static readonly StyledProperty<bool> CanMaximizeProperty =
-        AvaloniaProperty.Register<ProWindow, bool>(nameof(CanMaximize), true);
-    
+    // CanMinimize / CanMaximize : hérités de Window depuis Avalonia 12 (pilotent aussi la fenêtre native).
+
     public static readonly StyledProperty<object?> TitleBarContentProperty =
         AvaloniaProperty.Register<ProWindow, object?>(nameof(TitleBarContent));
 
@@ -100,18 +96,6 @@ public class ProWindow : Window
         set => SetValue(ShowIconProperty, value);
     }
     
-    public bool CanMinimize
-    {
-        get => GetValue(CanMinimizeProperty);
-        set => SetValue(CanMinimizeProperty, value);
-    }
-    
-    public bool CanMaximize
-    {
-        get => GetValue(CanMaximizeProperty);
-        set => SetValue(CanMaximizeProperty, value);
-    }
-    
     public object? TitleBarContent
     {
         get => GetValue(TitleBarContentProperty);
@@ -131,7 +115,7 @@ public class ProWindow : Window
         // le subpixel y est redevenu sûr, et il complète l'alignement pixel des
         // origines de texte (Crisp.Snap) pour la netteté maximale.
         // Si une app hôte force une fenêtre transparente, repasser en Antialias.
-        RenderOptions.SetTextRenderingMode(this, TextRenderingMode.SubpixelAntialias);
+        TextOptions.SetTextRenderingMode(this, TextRenderingMode.SubpixelAntialias);
 
         // Police système Ubuntu : FontFamily est héritée, tout l'arbre (grille,
         // TextBox natifs...) l'utilise sans configuration par contrôle
@@ -387,15 +371,16 @@ public class ProWindow : Window
             // (ex. TitleBarHeightHint = 0) suffit à réveiller la comptabilité CSD
             // du backend X11 et décale PointToScreen/le placement des popups
             ExtendClientAreaToDecorationsHint = false;
-            ExtendClientAreaChromeHints = Avalonia.Platform.ExtendClientAreaChromeHints.Default;
             ExtendClientAreaTitleBarHeightHint = -1;
-            SystemDecorations = SystemDecorations.Full;
+            WindowDecorations = WindowDecorations.Full;
         }
         else
         {
+            // Bordure système seule (redimensionnement) : barre de titre et boutons
+            // sont dessinés par ProWindow (équivalent 12 de l'ancien NoChrome)
             ExtendClientAreaToDecorationsHint = true;
-            ExtendClientAreaChromeHints = Avalonia.Platform.ExtendClientAreaChromeHints.NoChrome;
             ExtendClientAreaTitleBarHeightHint = -1;
+            WindowDecorations = WindowDecorations.BorderOnly;
         }
 
         if (_titleBar != null)

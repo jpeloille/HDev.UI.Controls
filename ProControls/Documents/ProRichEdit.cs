@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Media;
 using Avalonia.Threading;
 using ProControls.Documents;
@@ -470,7 +471,8 @@ public class ProRichEdit : Control
         InvalidateVisual();
     }
 
-    private const string HtmlClipboardFormat = "text/html";
+    private static readonly DataFormat<byte[]> HtmlClipboardFormat =
+        DataFormat.CreateBytesPlatformFormat("text/html");
 
     private async Task CopyAsync()
     {
@@ -478,10 +480,12 @@ public class ProRichEdit : Control
         if (clipboard == null || !_editor.HasSelection) return;
 
         // Texte brut + HTML : un autre ProRichEdit (ou LibreOffice…) recolle riche
-        var data = new DataObject();
-        data.Set(DataFormats.Text, _editor.GetSelectedText());
-        data.Set(HtmlClipboardFormat, System.Text.Encoding.UTF8.GetBytes(_editor.GetSelectedHtml()));
-        await clipboard.SetDataObjectAsync(data);
+        var item = new DataTransferItem();
+        item.SetText(_editor.GetSelectedText());
+        item.Set(HtmlClipboardFormat, System.Text.Encoding.UTF8.GetBytes(_editor.GetSelectedHtml()));
+        var data = new DataTransfer();
+        data.Add(item);
+        await clipboard.SetDataAsync(data);
     }
 
     private async Task CutAsync()
@@ -495,13 +499,9 @@ public class ProRichEdit : Control
         var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
         if (clipboard == null) return;
 
-        // 1) HTML riche si disponible (selon la plateforme : string ou octets UTF-8)
-        var html = await clipboard.GetDataAsync(HtmlClipboardFormat) switch
-        {
-            string s => s,
-            byte[] b => System.Text.Encoding.UTF8.GetString(b),
-            _ => null
-        };
+        // 1) HTML riche si disponible (octets UTF-8)
+        var htmlBytes = await clipboard.TryGetValueAsync(HtmlClipboardFormat);
+        var html = htmlBytes is null ? null : System.Text.Encoding.UTF8.GetString(htmlBytes);
         if (!string.IsNullOrWhiteSpace(html))
         {
             _editor.InsertHtml(html!);
@@ -510,7 +510,7 @@ public class ProRichEdit : Control
         }
 
         // 2) Repli texte brut : chaque ligne devient un paragraphe
-        var text = await clipboard.GetTextAsync();
+        var text = await clipboard.TryGetTextAsync();
         if (string.IsNullOrEmpty(text)) return;
 
         var lines = text.Replace("\r\n", "\n").Split('\n');
@@ -553,7 +553,7 @@ public class ProRichEdit : Control
         InvalidateVisual();
     }
 
-    protected override void OnGotFocus(GotFocusEventArgs e)
+    protected override void OnGotFocus(FocusChangedEventArgs e)
     {
         _caretVisible = true;
         _caretTimer.Start();
@@ -561,7 +561,7 @@ public class ProRichEdit : Control
         base.OnGotFocus(e);
     }
 
-    protected override void OnLostFocus(Avalonia.Interactivity.RoutedEventArgs e)
+    protected override void OnLostFocus(FocusChangedEventArgs e)
     {
         _caretTimer.Stop();
         _caretVisible = false;

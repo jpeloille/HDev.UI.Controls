@@ -32,7 +32,7 @@ internal static class Crisp
 
     /// <summary>Facteur d'échelle DPI du device pour ce Visual (1.0 s'il n'est pas encore attaché).</summary>
     public static double GetRenderScaling(Visual visual)
-        => visual.GetVisualRoot()?.RenderScaling ?? 1.0;
+        => TopLevel.GetTopLevel(visual)?.RenderScaling ?? 1.0;
 
     /// <summary>
     /// À appeler en tête de chaque override <c>Render(DrawingContext)</c> : fige le
@@ -169,14 +169,14 @@ public abstract class ProControlBase : Control
         }
     }
 
-    protected override void OnGotFocus(GotFocusEventArgs e)
+    protected override void OnGotFocus(FocusChangedEventArgs e)
     {
         _isFocusedState = true;
         InvalidateVisual();
         base.OnGotFocus(e);
     }
 
-    protected override void OnLostFocus(RoutedEventArgs e)
+    protected override void OnLostFocus(FocusChangedEventArgs e)
     {
         _isFocusedState = false;
         InvalidateVisual();

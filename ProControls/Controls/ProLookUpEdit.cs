@@ -337,13 +337,13 @@ public class ProLookUpEdit : Control
         base.OnKeyDown(e);
     }
 
-    protected override void OnGotFocus(GotFocusEventArgs e)
+    protected override void OnGotFocus(FocusChangedEventArgs e)
     {
         InvalidateVisual();
         base.OnGotFocus(e);
     }
 
-    protected override void OnLostFocus(Avalonia.Interactivity.RoutedEventArgs e)
+    protected override void OnLostFocus(FocusChangedEventArgs e)
     {
         InvalidateVisual();
         base.OnLostFocus(e);

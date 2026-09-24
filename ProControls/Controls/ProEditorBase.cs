@@ -218,7 +218,7 @@ public abstract class ProEditorBase : Border
     static ProEditorBase()
     {
         PlaceholderProperty.Changed.AddClassHandler<ProEditorBase>((x, _) =>
-            x.InnerTextBox.Watermark = x.Placeholder);
+            x.InnerTextBox.PlaceholderText = x.Placeholder);
         IsReadOnlyProperty.Changed.AddClassHandler<ProEditorBase>((x, _) =>
             x.InnerTextBox.IsReadOnly = x.IsReadOnly);
         IsEnabledProperty.Changed.AddClassHandler<ProEditorBase>((x, _) => x.UpdateVisualState());

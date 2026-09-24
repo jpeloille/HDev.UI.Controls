@@ -98,11 +98,14 @@ public class ProListView : Control
     /// <summary>Les items peuvent être glissés (drag &amp; drop vers un ProTreeView...)</summary>
     public bool EnableDragItems { get; set; }
 
-    /// <summary>Format DataObject des items glissés</summary>
-    public const string DragDataFormat = "procontrols-item";
+    /// <summary>Format de glisser-déposer des items (reste dans le processus)</summary>
+    public static readonly DataFormat<object> DragDataFormat =
+        DataFormat.CreateInProcessFormat<object>("procontrols-item");
 
     private Point _pressPoint;
     private object? _pressItem;
+    // DoDragDropAsync exige l'appui d'origine ; le seuil n'est franchi qu'au Moved
+    private PointerPressedEventArgs? _pressArgs;
     private bool _dragStarted;
 
     public event EventHandler? SelectionChanged;
@@ -332,14 +335,15 @@ public class ProListView : Control
         var pos = e.GetPosition(this);
 
         // Départ de drag : bouton enfoncé sur un item + dépassement du seuil
-        if (EnableDragItems && !_dragStarted && _pressItem != null &&
+        if (EnableDragItems && !_dragStarted && _pressItem != null && _pressArgs != null &&
             e.GetCurrentPoint(this).Properties.IsLeftButtonPressed &&
             (Math.Abs(pos.X - _pressPoint.X) > 5 || Math.Abs(pos.Y - _pressPoint.Y) > 5))
         {
             _dragStarted = true;
-            var data = new DataObject();
-            data.Set(DragDataFormat, _pressItem);
-            _ = DragDrop.DoDragDrop(e, data, DragDropEffects.Move);
+            var data = new DataTransfer();
+            data.Add(DataTransferItem.Create(DragDataFormat, _pressItem));
+            _ = DragDrop.DoDragDropAsync(_pressArgs, data, DragDropEffects.Move);
+            _pressArgs = null;
             return;
         }
 
@@ -407,6 +411,7 @@ public class ProListView : Control
         // Mémoriser pour un éventuel départ de drag
         _pressPoint = pos;
         _pressItem = row.Item;
+        _pressArgs = e;
         _dragStarted = false;
 
         var ctrl = e.KeyModifiers.HasFlag(KeyModifiers.Control);
@@ -455,6 +460,7 @@ public class ProListView : Control
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         _pressItem = null;
+        _pressArgs = null;
         _dragStarted = false;
         base.OnPointerReleased(e);
     }

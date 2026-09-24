@@ -165,7 +165,7 @@ public class ProTextBox : Border
             _innerTextBox.Text = Text;
     }
     
-    private void OnPlaceholderChanged() => _innerTextBox.Watermark = Placeholder;
+    private void OnPlaceholderChanged() => _innerTextBox.PlaceholderText = Placeholder;
     private void OnIsReadOnlyChanged() => _innerTextBox.IsReadOnly = IsReadOnly;
     private void OnIsPasswordChanged() => _innerTextBox.PasswordChar = IsPassword ? '●' : '\0';
     private void OnMaxLengthChanged() => _innerTextBox.MaxLength = MaxLength;

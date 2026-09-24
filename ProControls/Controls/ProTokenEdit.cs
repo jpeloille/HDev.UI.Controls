@@ -38,8 +38,8 @@ public class ProTokenEdit : Border
 
     public string Placeholder
     {
-        get => _input.Watermark ?? "";
-        set => _input.Watermark = value;
+        get => _input.PlaceholderText ?? "";
+        set => _input.PlaceholderText = value;
     }
 
     /// <summary>Déclenché quand la collection de jetons change</summary>

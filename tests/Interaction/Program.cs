@@ -109,7 +109,7 @@ ClickAt(window, CenterOf(dropdownBtn));
 Check("bouton dropdown ouvre son menu (Opening)", dropdownOpening);
 var dropdownItem = dropdownBtn.DropdownMenu.Items[0];
 Check("le menu du dropdown est réellement rendu",
-    dropdownItem.GetVisualRoot() != null && dropdownItem.Bounds.Width > 0);
+    dropdownItem.IsAttachedToVisualTree() && dropdownItem.Bounds.Width > 0);
 
 window.Close();
 
@@ -152,7 +152,7 @@ Check("le popup affiche les items ORIGINAUX (pas de copie)",
     newItem.Parent is Panel panel && panel.Children.Contains(newItem)
     && panel.Children.Contains(gridItem));
 Check("le contenu du popup est réellement rendu (layout non vide)",
-    newItem.GetVisualRoot() != null && newItem.Bounds.Width > 0);
+    newItem.IsAttachedToVisualTree() && newItem.Bounds.Width > 0);
 
 // Clic réel sur un item du popup → Click + fermeture du menu
 ClickAt(menuWindow, WindowCenter(menuWindow, newItem));
@@ -172,7 +172,7 @@ Pump(menuWindow);
 var subPopup = subActionItem.OwnerPopup;
 Check("le survol ouvre le sous-menu", subPopup is { IsOpen: true });
 Check("le sous-menu est chaîné à son parent", subPopup?.ParentPopup == newItem.OwnerPopup);
-Check("le sous-menu est réellement rendu", subActionItem.GetVisualRoot() != null && subActionItem.Bounds.Width > 0);
+Check("le sous-menu est réellement rendu", subActionItem.IsAttachedToVisualTree() && subActionItem.Bounds.Width > 0);
 
 ClickAt(menuWindow, WindowCenter(menuWindow, subActionItem));
 Check("clic dans le sous-menu déclenche son handler", subClicks == 1);

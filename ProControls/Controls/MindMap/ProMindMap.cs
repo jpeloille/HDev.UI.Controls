@@ -221,7 +221,7 @@ public class ProMindMap : Control
         using var bitmap = new Avalonia.Media.Imaging.RenderTargetBitmap(
             new PixelSize((int)size.Width, (int)size.Height), new Vector(96, 96));
         bitmap.Render(offscreen);
-        bitmap.Save(path);
+        bitmap.Save(path, Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
     }
 
     // ═══════════════════════════════════════════════════════════════

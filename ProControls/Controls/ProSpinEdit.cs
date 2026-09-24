@@ -166,7 +166,7 @@ public class ProSpinEdit : ProEditorBase
         base.OnPointerWheelChanged(e);
     }
 
-    protected override void OnLostFocus(RoutedEventArgs e)
+    protected override void OnLostFocus(FocusChangedEventArgs e)
     {
         // Reformater proprement à la sortie (ex : "5," -> "5,00")
         if (ErrorText == null)

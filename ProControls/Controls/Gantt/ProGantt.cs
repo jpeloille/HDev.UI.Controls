@@ -575,7 +575,7 @@ public class ProGantt : Control
         using var bitmap = new global::Avalonia.Media.Imaging.RenderTargetBitmap(
             pixelSize, new Vector(96, 96));
         bitmap.Render(visual);
-        bitmap.Save(path);
+        bitmap.Save(path, global::Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
     }
 
     /// <summary>Rend une tâche visible (scroll vertical + horizontal)</summary>

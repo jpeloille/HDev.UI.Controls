@@ -165,7 +165,7 @@ public class ProTreeView : Control
         // Cible de drop (drag & drop applicatif, ex : mail -> dossier)
         AddHandler(DragDrop.DragOverEvent, (s, e) =>
         {
-            if (!_allowDropItems || !e.Data.Contains(ProListView.DragDataFormat))
+            if (!_allowDropItems || !e.DataTransfer.Contains(ProListView.DragDataFormat))
             {
                 e.DragEffects = DragDropEffects.None;
                 return;
@@ -193,7 +193,7 @@ public class ProTreeView : Control
             _dropTargetNode = null;
             InvalidateVisual();
 
-            if (node != null && e.Data.Get(ProListView.DragDataFormat) is { } item)
+            if (node != null && e.DataTransfer.TryGetValue(ProListView.DragDataFormat) is { } item)
             {
                 ItemDropped?.Invoke(this, (node, item));
                 e.Handled = true;

@@ -287,14 +287,14 @@ public class ProToggleButtonGroup : Control
         return -1;
     }
 
-    protected override void OnGotFocus(GotFocusEventArgs e)
+    protected override void OnGotFocus(FocusChangedEventArgs e)
     {
         if (_focusIndex < 0) _focusIndex = Math.Max(0, SelectedIndex);
         InvalidateVisual();
         base.OnGotFocus(e);
     }
 
-    protected override void OnLostFocus(Avalonia.Interactivity.RoutedEventArgs e)
+    protected override void OnLostFocus(FocusChangedEventArgs e)
     {
         InvalidateVisual();
         base.OnLostFocus(e);
