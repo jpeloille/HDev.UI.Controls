@@ -302,6 +302,124 @@ Check("exclusivité de groupe aussi en programmatique", !radioB.IsChecked && rad
 
 kbWindow.Close();
 
+// ═════════════════════════════════════════════════════════════════
+// N. PROROSTER — survol, clic, glisser, annulation, voie cible
+// ═════════════════════════════════════════════════════════════════
+Console.WriteLine("ProRoster :");
+
+var jour = new DateTime(2026, 9, 14);   // lundi
+var rosterModel = new RosterModel { Origin = jour };
+foreach (var l in RosterEngine.BuildDailyLanes(jour, 5, d => d.ToString("ddd dd/MM")))
+    rosterModel.Lanes.Add(l);
+
+var vol0 = new RosterBlock(jour.AddHours(9), jour.AddHours(11), "TY201");
+rosterModel.Lanes[0].Bands.Add(new RosterBand(jour.AddHours(5), jour.AddHours(15), "AM"));
+rosterModel.Lanes[0].Blocks.Add(vol0);
+
+var roster = new ProRoster { Model = rosterModel };
+
+var rosterWindow = new Window { Width = 1000, Height = 400, Content = roster };
+rosterWindow.Show();
+Pump(rosterWindow);
+
+// Geometrie attendue : gouttiere 120, en-tete 26, voie 40, 60 px/heure.
+//   09:00 -> x = 120 + 9*60 = 660 ; voie 0 -> y du bloc ~ 41
+Point OnBlock() => new(700, 41);
+Point OnLane1() => new(700, 81);
+
+int blockClicks = 0, laneClicks = 0, summaries = 0, moving = 0, moved = 0;
+roster.BlockClicked += (_, _) => blockClicks++;
+roster.LaneClicked += (_, _) => laneClicks++;
+roster.LaneSummaryRequested += (_, _) => summaries++;
+roster.BlockMoving += (_, _) => moving++;
+roster.BlockMoved += (_, _) => moved++;
+
+// Le hit-test ne depend PAS d'un rendu prealable : la frise d'origine remplissait
+// ses regions pendant Render et ne repondait a rien avant la premiere peinture.
+ClickAt(rosterWindow, OnBlock());
+Check("clic sur un bloc : BlockClicked", blockClicks == 1);
+Check("clic sur un bloc : selection posee", ReferenceEquals(roster.SelectedBlock, vol0));
+
+BreakClickChain();
+ClickAt(rosterWindow, new Point(300, 41));
+Check("clic hors bloc : LaneClicked", laneClicks == 1);
+
+BreakClickChain();
+rosterWindow.MouseMove(OnBlock(), RawInputModifiers.None);
+rosterWindow.MouseDown(OnBlock(), MouseButton.Left, RawInputModifiers.Shift);
+rosterWindow.MouseUp(OnBlock(), MouseButton.Left, RawInputModifiers.Shift);
+Pump(rosterWindow);
+Check("Maj + clic : LaneSummaryRequested", summaries == 1);
+
+// Deux appuis rapproches au MEME endroit sont un double-clic — comportement voulu.
+// Le harnais doit donc rompre la chaine de clics entre deux gestes, sinon le second
+// appui part dans la branche double-clic et n'arme jamais le glisser.
+void BreakClickChain() => System.Threading.Thread.Sleep(600);
+
+int doubleClicks = 0;
+roster.BlockDoubleClicked += (_, _) => doubleClicks++;
+BreakClickChain();
+ClickAt(rosterWindow, OnBlock());
+rosterWindow.MouseDown(OnBlock(), MouseButton.Left, RawInputModifiers.None);
+rosterWindow.MouseUp(OnBlock(), MouseButton.Left, RawInputModifiers.None);
+Pump(rosterWindow);
+Check("double-clic sur un bloc : BlockDoubleClicked", doubleClicks == 1);
+
+// Glisser d'une heure vers la droite (60 px), aimante a 5 min.
+void Drag(Point from, Point to, RawInputModifiers mods = RawInputModifiers.None)
+{
+    BreakClickChain();
+    rosterWindow.MouseMove(from, RawInputModifiers.None);
+    rosterWindow.MouseDown(from, MouseButton.Left, mods);
+    rosterWindow.MouseMove(new Point((from.X + to.X) / 2, (from.Y + to.Y) / 2), RawInputModifiers.LeftMouseButton);
+    rosterWindow.MouseMove(to, RawInputModifiers.LeftMouseButton);
+    rosterWindow.MouseUp(to, MouseButton.Left, mods);
+    Pump(rosterWindow);
+}
+
+var clicsAvantGlisser = blockClicks;
+Drag(OnBlock(), new Point(760, 41));
+Check("glisser : BlockMoving puis BlockMoved", moving == 1 && moved == 1);
+Check("glisser : le bloc a avance d'une heure", vol0.Start == jour.AddHours(10) && vol0.End == jour.AddHours(12));
+Check("glisser : la duree est preservee", vol0.End - vol0.Start == TimeSpan.FromHours(2));
+Check("glisser : pas de clic parasite", blockClicks == clicsAvantGlisser);
+
+// Annulation : le metier refuse, le modele ne bouge pas.
+var avant = vol0.Start;
+EventHandler<RosterBlockMoveEventArgs> refuse = (_, e) => e.Cancel = true;
+roster.BlockMoving += refuse;
+Drag(new Point(760, 41), new Point(880, 41));
+Check("BlockMoving annulable : le bloc n'a pas bouge", vol0.Start == avant);
+Check("BlockMoving annule : pas de BlockMoved", moved == 1);
+roster.BlockMoving -= refuse;
+
+// Correction par le metier : le gestionnaire reecrit les dates proposees.
+EventHandler<RosterBlockMoveEventArgs> recale = (_, e) => e.NewStart = e.NewStart.Date.AddHours(6);
+roster.BlockMoving += recale;
+Drag(new Point(760, 41), new Point(820, 41));
+Check("BlockMoving : le metier peut corriger la date proposee", vol0.Start.Hour == 6);
+roster.BlockMoving -= recale;
+
+// Voie cible : le geste qui distingue une frise multi-voies d'un agenda.
+vol0.Start = jour.AddHours(9);
+vol0.End = jour.AddHours(11);
+rosterModel.Touch();
+Pump(rosterWindow);
+Drag(OnBlock(), OnLane1());
+Check("glisser d'une voie a l'autre : le bloc a change de voie",
+    rosterModel.Lanes[1].Blocks.Contains(vol0) && !rosterModel.Lanes[0].Blocks.Contains(vol0));
+Check("glisser d'une voie a l'autre : la date suit la voie cible",
+    vol0.Start.Date == rosterModel.Lanes[1].WindowStart.Date);
+
+// Lecture seule : on selectionne, on ne deplace pas.
+var posee = vol0.Start;
+roster.IsReadOnly = true;
+Drag(new Point(700, 81), new Point(880, 81));
+Check("IsReadOnly : le glisser est inerte", vol0.Start == posee);
+roster.IsReadOnly = false;
+
+rosterWindow.Close();
+
 Console.WriteLine(failed == 0 ? "Interaction ProControls : ALL PASS" : $"Interaction ProControls : {failed} FAILED");
 return failed == 0 ? 0 : 1;
 

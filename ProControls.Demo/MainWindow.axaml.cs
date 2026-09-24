@@ -86,7 +86,10 @@ public partial class MainWindow : ProWindow
         // Page 7 : ProScheduler (4e chantier structurant Outlook)
         tabs.AddPage("Agenda", BuildSchedulerDemo(), "📅");
 
-        // Page 8 : ProMindMap (brainstorming)
+        // Page 8 : ProRoster (frise roster — voies x temps)
+        tabs.AddPage("Roster", BuildRosterDemo(), "🗓");
+
+        // Page 9 : ProMindMap (brainstorming)
         tabs.AddPage("Carte", BuildMindMapDemo(), "🧠");
 
         // Page 9 : ProDock (docking, phase 1) — poste dispatcher
@@ -482,6 +485,324 @@ public partial class MainWindow : ProWindow
         layout.Children.Add(hint);
         layout.Children.Add(map);
         return layout;
+    }
+
+
+    /// <summary>
+    /// Vitrine de ProRoster : un mois de roster equipage, une voie par journee.
+    /// </summary>
+    /// <remarks>
+    /// Les teintes de statut vivent ICI, pas dans la bibliotheque : le controle ne connait
+    /// que des Color? poses par l'application. C'est ce qui lui permet de servir aussi bien
+    /// un roster aerien qu'un planning d'atelier.
+    /// </remarks>
+    private Avalonia.Controls.Control BuildRosterDemo()
+    {
+        var roster = new ProRoster { LaneSpan = RosterEngine.Day };
+
+        // Palette d'exemple, cote application (reprise de la frise d'origine).
+        Avalonia.Media.Color Duty(byte r, byte g, byte b) => Avalonia.Media.Color.FromArgb(128, r, g, b);
+        var amPm = Duty(65, 105, 225);
+        var jour = Duty(139, 90, 43);
+        var astreinte = Duty(255, 165, 0);
+        var repos = Duty(128, 128, 128);
+        var conge = Duty(169, 169, 169);
+        var bureau = Duty(0, 128, 128);
+        var fdp = Avalonia.Media.Color.FromArgb(204, 0, 128, 0);
+        var vol = Avalonia.Media.Color.FromArgb(255, 30, 144, 255);
+        var sol = Avalonia.Media.Color.FromArgb(255, 139, 90, 43);
+        var reunion = Avalonia.Media.Color.FromArgb(255, 0, 128, 128);
+
+        var first = new System.DateTime(System.DateTime.Today.Year, System.DateTime.Today.Month, 1);
+
+        var model = new RosterModel { Origin = first };
+        foreach (var lane in RosterEngine.BuildDailyLanes(
+            first, 31,
+            d => d.ToString("ddd dd/MM"),
+            d => d.Day == 1 ? d.ToString("MMMM") : null))
+        {
+            model.Lanes.Add(lane);
+        }
+
+        void Duty0(int day, string code, Avalonia.Media.Color color, double from, double to)
+        {
+            if (day >= model.Lanes.Count) return;
+            var lane = model.Lanes[day];
+            lane.Bands.Add(new RosterBand(lane.WindowStart.AddHours(from), lane.WindowStart.AddHours(to), code)
+            {
+                Color = color,
+                StartLabel = lane.WindowStart.AddHours(from).ToString("HH:mm"),
+                EndLabel = lane.WindowStart.AddHours(to).ToString("HH:mm"),
+            });
+        }
+
+        void Fdp(int day, double from, double to)
+        {
+            if (day >= model.Lanes.Count) return;
+            var lane = model.Lanes[day];
+            lane.Bars.Add(new RosterBar(lane.WindowStart.AddHours(from), lane.WindowStart.AddHours(to)) { Color = fdp });
+        }
+
+        void Leg(int day, string label, double from, double to, Avalonia.Media.Color color, int track = 1)
+        {
+            if (day >= model.Lanes.Count) return;
+            var lane = model.Lanes[day];
+            lane.Blocks.Add(new RosterBlock(lane.WindowStart.AddHours(from), lane.WindowStart.AddHours(to), label, track)
+            {
+                Color = color,
+            });
+        }
+
+        // Un mois plausible : rotations, astreintes, bureau, repos.
+        for (int d = 0; d < 31; d++)
+        {
+            switch (d % 7)
+            {
+                case 0:
+                    Duty0(d, "AM", amPm, 5, 15);
+                    Fdp(d, 5.75, 14.5);
+                    Leg(d, "TY201", 6.5, 8, vol);
+                    Leg(d, "TY204", 9, 10.5, vol);
+                    Leg(d, "TY211", 12, 13.75, vol);
+                    break;
+                case 1:
+                    Duty0(d, "PM", amPm, 12, 22);
+                    Fdp(d, 12.75, 21.5);
+                    Leg(d, "TY320", 13.5, 15.25, vol);
+                    Leg(d, "TY327", 17, 19, vol);
+                    break;
+                case 2:
+                    Duty0(d, "JOUR", jour, 8, 17.5);
+                    Fdp(d, 8.75, 17);
+                    Leg(d, "TY105", 9.5, 11, vol);
+                    Leg(d, "Briefing", 8.25, 8.75, sol, 0);
+                    break;
+                case 3:
+                    Duty0(d, "AST", astreinte, 5, 19);
+                    break;
+                case 4:
+                    Duty0(d, "BUREAU", bureau, 9, 17);
+                    Leg(d, "Prod PN", 10, 11.5, reunion, 0);
+                    Leg(d, "BEO", 14, 15, reunion, 0);
+                    break;
+                case 5:
+                    Duty0(d, "REP", repos, 0, 24);
+                    break;
+                default:
+                    Duty0(d, "OFF", conge, 0, 24);
+                    break;
+            }
+        }
+
+        // Cas 1 : un jour de repos qui porte tout de meme une activite. La bande couvre
+        // 00:00-24:00, les crochets marquent l'amplitude reelle. Sans eux, l'info se perd.
+        if (model.Lanes.Count > 12)
+        {
+            var lane = model.Lanes[12];
+            lane.Bands.Clear();
+            lane.Bands.Add(new RosterBand(lane.WindowStart, lane.WindowStart.AddHours(24), "REP")
+            {
+                Color = repos,
+                MarkerStart = lane.WindowStart.AddHours(14),
+                MarkerEnd = lane.WindowStart.AddHours(17),
+            });
+            lane.HasWarning = true;
+            Leg(12, "Simu", 14.5, 16.5, sol, 0);
+        }
+
+        // Cas 2 : un service de nuit. Decision du 17/09/2026 : on le COUPE sur deux voies
+        // au lieu de le tronquer a minuit comme le faisait la frise d'origine.
+        if (model.Lanes.Count > 20)
+        {
+            var start = model.Lanes[19].WindowStart.AddHours(21);
+            var end = model.Lanes[19].WindowStart.AddHours(29);
+
+            foreach (var segment in RosterEngine.Split(start, end, model.Lanes[19].WindowStart, RosterEngine.Day))
+            {
+                var index = 19 + segment.LaneOffset;
+                if (index < 0 || index >= model.Lanes.Count) continue;
+
+                var lane = model.Lanes[index];
+                lane.Bands.Clear();
+                lane.Bands.Add(new RosterBand(segment.Start, segment.End, "NUIT")
+                {
+                    Color = Avalonia.Media.Color.FromArgb(128, 90, 60, 140),
+                    StartLabel = segment.Start.ToString("HH:mm"),
+                    EndLabel = segment.End.ToString("HH:mm"),
+                });
+                lane.Blocks.Add(new RosterBlock(segment.Start.AddMinutes(45), segment.End.AddMinutes(-45), "TY900", 1)
+                {
+                    Color = vol,
+                });
+            }
+        }
+
+        roster.Model = model;
+        roster.ScrollToToday();
+
+        void SetStatus(string message)
+        {
+            var statusBar = this.FindControl<ProStatusBar>("MainStatusBar");
+            if (statusBar != null && statusBar.Items.Count > 0)
+                statusBar.Items[0].Text = message;
+        }
+
+        // Le controle affiche, le metier decide : chaque mutation passe par un *ing annulable.
+        roster.BlockClicked += (s, e) =>
+            SetStatus($"{e.Block.Label} — {e.Block.Start:ddd dd/MM HH:mm} → {e.Block.End:HH:mm} ({e.Lane.Label})");
+
+        roster.BlockDoubleClicked += async (s, e) =>
+            await ProMessageBox.ShowInfoAsync(this,
+                $"{e.Block.Label}\n{e.Block.Start:dddd dd MMMM, HH:mm} → {e.Block.End:HH:mm}\nVoie : {e.Lane.Label}",
+                "Activite");
+
+        roster.LaneSummaryRequested += (s, e) =>
+        {
+            var blocs = e.Lane.Blocks.Count;
+            var total = System.TimeSpan.Zero;
+            foreach (var b in e.Lane.Blocks) total += b.End - b.Start;
+            SetStatus($"Bilan {e.Lane.Label} : {blocs} activite(s), {total.TotalHours:0.0} h cumulees");
+        };
+
+        roster.EmptySlotDoubleClicked += (s, e) =>
+            SetStatus($"Creneau libre vise : {e.Lane.Label} a {e.Time:HH:mm}");
+
+        // Un refus metier : on n'accepte pas de poser une activite avant 04:00.
+        roster.BlockMoving += (s, e) =>
+        {
+            if (e.NewStart.TimeOfDay < System.TimeSpan.FromHours(4))
+            {
+                e.Cancel = true;
+                SetStatus($"Refuse : {e.Block.Label} ne peut pas commencer avant 04:00");
+            }
+        };
+
+        roster.BlockMoved += (s, e) =>
+            SetStatus($"{e.Block.Label} deplace sur {e.TargetLane.Label} a {e.NewStart:HH:mm}");
+
+        roster.BlockContextMenuRequested += (s, e) =>
+        {
+            var menu = new ProContextMenu();
+            menu.Add($"« {e.Block.Label} »", null, null, null);
+            menu.AddSeparator();
+            menu.Add("Dupliquer", "\u29C9", null, () =>
+            {
+                e.Lane.Blocks.Add(new RosterBlock(e.Block.Start, e.Block.End, e.Block.Label, e.Block.Track)
+                {
+                    Color = e.Block.Color,
+                });
+                roster.Model?.Touch();
+                SetStatus($"{e.Block.Label} duplique");
+            });
+            menu.Add("Supprimer", "\u2716", null, () =>
+            {
+                e.Lane.Blocks.Remove(e.Block);
+                roster.Model?.Touch();
+                SetStatus($"{e.Block.Label} supprime");
+            });
+            menu.Show(roster, e.Position);
+        };
+
+        var toolbar = new ProToolbar();
+        toolbar.AddButton(null, "Aujourd'hui", () => { roster.ScrollToToday(); SetStatus("Roster recadre sur aujourd'hui"); });
+        toolbar.AddToggle(null, "Lecture seule", false).Click += (s, e) => roster.IsReadOnly = !roster.IsReadOnly;
+        toolbar.AddSeparator();
+        toolbar.AddButton("−", null, () => { roster.Axis.PixelsPerHour /= 1.25; roster.InvalidateVisual(); });
+        toolbar.AddButton("+", null, () => { roster.Axis.PixelsPerHour *= 1.25; roster.InvalidateVisual(); });
+        toolbar.AddButton(null, "Ajuster", () => roster.ZoomToFit());
+        toolbar.AddSeparator();
+        // Les deux formes que le meme controle sait rendre. Elles ne se melangent pas :
+        // des voies journalieres avec LaneSpan > 1 jour se chevaucheraient.
+        var parJour = model;
+        var parNavigant = BuildCrewRosterModel(first, vol, sol, reunion, fdp);
+
+        toolbar.AddButton(null, "Par journee", () =>
+        {
+            roster.LaneSpan = RosterEngine.Day;
+            roster.Model = parJour;
+            roster.ZoomToFit();
+            SetStatus("Une voie = une journee : l'axe redemarre a 00:00 sur chaque ligne");
+        });
+        toolbar.AddButton(null, "Par navigant", () =>
+        {
+            roster.LaneSpan = System.TimeSpan.FromDays(7);
+            roster.Model = parNavigant;
+            roster.ZoomToFit();
+            SetStatus("Une voie = un navigant sur sept jours : axe continu, deux niveaux de graduations");
+        });
+
+        var layout = new Grid
+        {
+            RowDefinitions = new RowDefinitions("Auto,*"),
+        };
+        Grid.SetRow(toolbar, 0);
+        layout.Children.Add(toolbar);
+        Grid.SetRow(roster, 1);
+        layout.Children.Add(roster);
+
+        return layout;
+    }
+
+
+    /// <summary>
+    /// Seconde forme : une voie par navigant, toutes sur la MEME origine, sur sept jours.
+    /// </summary>
+    /// <remarks>
+    /// C'est la forme dont myFlightOpsBoard a besoin, et la preuve de reemploi que la charte
+    /// exige : meme controle, meme modele, une geometrie differente portee par WindowStart.
+    /// </remarks>
+    private static RosterModel BuildCrewRosterModel(
+        System.DateTime origin,
+        Avalonia.Media.Color vol,
+        Avalonia.Media.Color sol,
+        Avalonia.Media.Color reunion,
+        Avalonia.Media.Color fdp)
+    {
+        var model = new RosterModel { Origin = origin };
+        var equipages = new[] { "PLL", "BRT", "KAO", "MNU", "TVA", "WLS", "LIF", "MAR" };
+        var amplitude = Avalonia.Media.Color.FromArgb(110, 65, 105, 225);
+        var random = new System.Random(17);
+
+        foreach (var code in equipages)
+        {
+            var lane = new RosterLane(code, code, origin) { SubLabel = "CDB" };
+
+            for (int day = 0; day < 7; day++)
+            {
+                if (random.Next(4) == 0) continue;   // jour de repos
+
+                var start = origin.AddDays(day).AddHours(5 + random.Next(9));
+                var end = start.AddHours(8 + random.Next(3));
+
+                lane.Bands.Add(new RosterBand(start, end, null) { Color = amplitude });
+                lane.Bars.Add(new RosterBar(start.AddMinutes(45), end.AddMinutes(-30)) { Color = fdp });
+
+                var legs = 1 + random.Next(3);
+                for (int leg = 0; leg < legs; leg++)
+                {
+                    var legStart = start.AddHours(1 + leg * 2.2);
+                    if (legStart.AddHours(1.4) >= end) break;
+
+                    lane.Blocks.Add(new RosterBlock(legStart, legStart.AddHours(1.4), $"TY{200 + random.Next(99)}", 1)
+                    {
+                        Color = leg % 3 == 2 ? sol : vol,
+                    });
+                }
+            }
+
+            if (lane.Blocks.Count == 0)
+            {
+                lane.HasWarning = true;
+                lane.Bands.Add(new RosterBand(origin, origin.AddDays(7), "Sans activite")
+                {
+                    Color = Avalonia.Media.Color.FromArgb(60, 128, 128, 128),
+                });
+            }
+
+            model.Lanes.Add(lane);
+        }
+
+        return model;
     }
 
     private Avalonia.Controls.Control BuildSchedulerDemo()
