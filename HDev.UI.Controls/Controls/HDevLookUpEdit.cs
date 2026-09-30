@@ -94,7 +94,7 @@ public class HDevLookUpEdit : Control
 
     public HDevLookUpEdit()
     {
-        Height = 28;
+        Height = HDevTheme.Size.EditorHeight;
         MinWidth = 160;
 
         _grid = new HDevDataGrid
@@ -409,21 +409,20 @@ public class HDevLookUpEdit : Control
             var text = new FormattedText(displayText, CultureInfo.CurrentCulture,
                 FlowDirection.LeftToRight, new Typeface(HDevTheme.Typography.FontFamily),
                 HDevTheme.Typography.FontSizeBody,
-                new SolidColorBrush(isPlaceholder ? HDevTheme.Text.Secondary : textColor));
+                new SolidColorBrush(isPlaceholder ? HDevTheme.Text.Placeholder : textColor));
 
-            var textBounds = new Rect(8, 0, Math.Max(0, bounds.Width - 32), bounds.Height);
+            // Même retrait texte et même chevron que HDevComboBox (24 px de bouton)
+            var textInset = HDevTheme.Size.BorderThin + HDevTheme.Size.EditorTextInset;
+            var textBounds = new Rect(textInset, 0, Math.Max(0, bounds.Width - 24 - textInset), bounds.Height);
             using (context.PushClip(textBounds))
             {
-                context.DrawText(text, Crisp.Snap(new Point(8, (bounds.Height - text.Height) / 2)));
+                context.DrawText(text, Crisp.Snap(new Point(textInset, (bounds.Height - text.Height) / 2)));
             }
         }
 
-        // Chevron
-        var pen = new Pen(new SolidColorBrush(HDevTheme.Text.Secondary), 1.4);
-        var cx = bounds.Width - 13;
-        var cy = bounds.Height / 2 + (_isDropDownOpen ? 1.5 : -1.5);
-        var dir = _isDropDownOpen ? -3.0 : 3.0;
-        context.DrawLine(pen, new Point(cx - 4, cy), new Point(cx, cy + dir));
-        context.DrawLine(pen, new Point(cx, cy + dir), new Point(cx + 4, cy));
+        HDevEditorGlyphButton.DrawIcon(context,
+            _isDropDownOpen ? HDevEditorIcon.ChevronUp : HDevEditorIcon.ChevronDown,
+            new Point(bounds.Width - 12, bounds.Height / 2),
+            IsEnabled ? HDevTheme.Text.Secondary : HDevTheme.Text.Disabled);
     }
 }

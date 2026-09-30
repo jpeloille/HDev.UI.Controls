@@ -94,11 +94,14 @@ public class HDevCheckBox : HDevControlBase
         
         if (string.IsNullOrEmpty(Label))
         {
-            return new Size(boxSize + 6, boxSize + 6);
+            return new Size(boxSize + 6, Math.Max(boxSize + 6, HDevTheme.Size.EditorHeight));
         }
         
         var labelText = CreateText(Label, HDevTheme.Text.Primary, HDevTheme.Typography.FontSizeBody);
-        return new Size(boxSize + spacing + labelText.Width + 6, Math.Max(boxSize, labelText.Height) + 6);
+        // Hauteur de ligne des champs : une case à cocher s'aligne sur le
+        // rythme d'un formulaire (Début : [x] [date] [heure])
+        return new Size(boxSize + spacing + labelText.Width + 6,
+            Math.Max(Math.Max(boxSize, labelText.Height) + 6, HDevTheme.Size.EditorHeight));
     }
 
     // ═══════════════════════════════════════════════════════════════

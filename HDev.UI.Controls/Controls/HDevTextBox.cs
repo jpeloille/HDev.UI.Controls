@@ -103,14 +103,14 @@ public class HDevTextBox : Border
     {
         CornerRadius = new CornerRadius(HDevTheme.Size.CornerRadiusSmall);
         BorderThickness = new Thickness(1);
-        MinHeight = HDevTheme.Size.ControlHeightMedium;
-        ClipToBounds = true;
+        MinHeight = HDevTheme.Size.EditorHeight;
+        // Pas de clip sur l'hôte : il couperait le halo de focus (BoxShadow) ;
+        // le TextBox interne clippe son propre contenu
         
         _innerTextBox = new TextBox
         {
-            BorderThickness = new Thickness(0),
-            Background = Brushes.Transparent,
-            Padding = new Thickness(10, 6),
+            Padding = new Thickness(HDevTheme.Size.EditorTextInset, 0),
+            ClipToBounds = true,
             Margin = new Thickness(0),
             VerticalAlignment = VerticalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
@@ -120,6 +120,7 @@ public class HDevTextBox : Border
             SelectionBrush = new SolidColorBrush(HDevTheme.WithOpacity(HDevTheme.Accent.Primary, 80)),
             SelectionForegroundBrush = new SolidColorBrush(Colors.White)
         };
+        HDevInputChrome.Neutralize(_innerTextBox);
         
         _innerTextBox.TextChanged += (s, e) =>
         {
@@ -178,7 +179,8 @@ public class HDevTextBox : Border
             _innerTextBox.TextWrapping = TextWrapping.Wrap;
             _innerTextBox.VerticalAlignment = VerticalAlignment.Stretch;
             _innerTextBox.VerticalContentAlignment = VerticalAlignment.Top;
-            MinHeight = HDevTheme.Size.ControlHeightMedium * 2.6; // ~3 lignes
+            _innerTextBox.Padding = new Thickness(HDevTheme.Size.EditorTextInset, 5);
+            MinHeight = HDevTheme.Size.EditorHeight * 3; // ~3 lignes
         }
         else
         {
@@ -186,7 +188,8 @@ public class HDevTextBox : Border
             _innerTextBox.TextWrapping = TextWrapping.NoWrap;
             _innerTextBox.VerticalAlignment = VerticalAlignment.Center;
             _innerTextBox.VerticalContentAlignment = VerticalAlignment.Center;
-            MinHeight = HDevTheme.Size.ControlHeightMedium;
+            _innerTextBox.Padding = new Thickness(HDevTheme.Size.EditorTextInset, 0);
+            MinHeight = HDevTheme.Size.EditorHeight;
         }
     }
     
@@ -210,6 +213,7 @@ public class HDevTextBox : Border
     {
         _innerTextBox.CaretBrush = new SolidColorBrush(HDevTheme.Text.Primary);
         _innerTextBox.SelectionBrush = new SolidColorBrush(HDevTheme.WithOpacity(HDevTheme.Accent.Primary, 80));
+        HDevInputChrome.Neutralize(_innerTextBox);
         UpdateVisualState();
     }
 
@@ -238,75 +242,9 @@ public class HDevTextBox : Border
     // ═══════════════════════════════════════════════════════════════
     
     private void UpdateVisualState()
-    {
-        Color bgColor, borderColor;
-        double borderThickness = 1;
-        
-        if (!IsEnabled)
-        {
-            bgColor = HDevTheme.Background.ControlDisabled;
-            borderColor = HDevTheme.Border.Disabled;
-            _innerTextBox.Foreground = new SolidColorBrush(HDevTheme.Text.Disabled);
-            _innerTextBox.IsEnabled = false;
-        }
-        else if (HasError)
-        {
-            bgColor = HDevTheme.Background.Error;
-            borderColor = HDevTheme.Accent.Error;
-            borderThickness = 1.5;
-            _innerTextBox.Foreground = new SolidColorBrush(HDevTheme.Text.Primary);
-            _innerTextBox.IsEnabled = true;
-        }
-        else if (_isFocusedState)
-        {
-            bgColor = HDevTheme.Background.Control;
-            borderColor = HDevTheme.Border.Focused;
-            borderThickness = 1.5;
-            _innerTextBox.Foreground = new SolidColorBrush(HDevTheme.Text.Primary);
-            _innerTextBox.IsEnabled = true;
-        }
-        else if (_isHovered)
-        {
-            bgColor = HDevTheme.Background.Control;
-            borderColor = HDevTheme.Border.Hover;
-            _innerTextBox.Foreground = new SolidColorBrush(HDevTheme.Text.Primary);
-            _innerTextBox.IsEnabled = true;
-        }
-        else
-        {
-            bgColor = HDevTheme.Background.Control;
-            borderColor = HDevTheme.Border.Default;
-            _innerTextBox.Foreground = new SolidColorBrush(HDevTheme.Text.Primary);
-            _innerTextBox.IsEnabled = true;
-        }
-        
-        Background = new SolidColorBrush(bgColor);
-        BorderBrush = new SolidColorBrush(borderColor);
-        BorderThickness = new Thickness(borderThickness);
-        
-        // Focus ring via BoxShadow
-        if (_isFocusedState && IsEnabled && !HasError)
-        {
-            BoxShadow = new BoxShadows(new BoxShadow
-            {
-                Blur = 0, Spread = 2,
-                Color = HDevTheme.WithOpacity(HDevTheme.Border.Focused, 50)
-            });
-        }
-        else if (HasError)
-        {
-            BoxShadow = new BoxShadows(new BoxShadow
-            {
-                Blur = 0, Spread = 2,
-                Color = HDevTheme.WithOpacity(HDevTheme.Accent.Error, 40)
-            });
-        }
-        else
-        {
-            BoxShadow = new BoxShadows();
-        }
-    }
-    
+        => HDevInputChrome.ApplyState(this, _innerTextBox,
+            IsEnabled, HasError, _isFocusedState, _isHovered);
+
     // ═══════════════════════════════════════════════════════════════
     // MÉTHODES PUBLIQUES
     // ═══════════════════════════════════════════════════════════════

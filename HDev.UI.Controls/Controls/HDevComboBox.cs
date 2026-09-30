@@ -533,7 +533,7 @@ public class HDevComboBox : Control
     public HDevComboBox()
     {
         _properties = new HDevComboBoxProperties(this);
-        Height = 28;
+        Height = HDevTheme.Size.EditorHeight;
         MinWidth = 120;
 
         CreatePopup();
@@ -694,6 +694,9 @@ public class HDevComboBox : Control
 
     private void OnThemeVariantChanged(object? sender, EventArgs e)
     {
+        if (_editTextBox != null)
+            HDevInputChrome.Neutralize(_editTextBox);
+
         // Le dropdown est construit une fois : re-brusher fond, bordure, liste
         if (_listBox != null)
             _listBox.Background = new SolidColorBrush(HDevTheme.Background.Panel);
@@ -894,10 +897,8 @@ public class HDevComboBox : Control
     {
         _editTextBox = new TextBox
         {
-            BorderThickness = new Thickness(0),
-            Background = Brushes.Transparent,
-            Padding = new Thickness(8, 0, 0, 0),
-            MinHeight = 0,
+            // Arrangé à x = 1 (dans le filet) : même retrait que le texte dessiné
+            Padding = new Thickness(HDevTheme.Size.EditorTextInset, 0, 0, 0),
             VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
             FontFamily = new FontFamily(HDevTheme.Typography.FontFamily),
             FontSize = HDevTheme.Typography.FontSizeBody,
@@ -909,6 +910,7 @@ public class HDevComboBox : Control
             IsReadOnly = _properties.ReadOnly,
             Text = _text
         };
+        HDevInputChrome.Neutralize(_editTextBox);
 
         _editTextBox.TextChanged += (s, e) => OnEditTextChanged();
         _editTextBox.AddHandler(KeyDownEvent, OnEditTextBoxKeyDown, RoutingStrategies.Tunnel);
@@ -1108,7 +1110,7 @@ public class HDevComboBox : Control
 
     protected override Size MeasureOverride(Size availableSize)
     {
-        var height = Height > 0 ? Height : 28;
+        var height = Height > 0 ? Height : HDevTheme.Size.EditorHeight;
         var width = Width > 0 ? Width : (MinWidth > 0 ? MinWidth : 120);
 
         _editTextBox?.Measure(availableSize);
@@ -1176,6 +1178,15 @@ public class HDevComboBox : Control
             textColor = HDevTheme.Text.Primary;
         }
 
+        // Éditable = champ de saisie : fond de champ, le survol ne passe que par
+        // le filet. Non éditable = liste déroulante : garde le gris des boutons
+        if (IsEditable && IsEnabled)
+        {
+            bgColor = HDevTheme.Background.Input;
+            if (_isHovered && !_isDropDownOpen)
+                borderColor = HDevTheme.Border.Hover;
+        }
+
         // Focus (en mode éditable, c'est le TextBox interne qui porte le focus)
         if ((IsFocused || _editTextBox?.IsFocused == true) && IsEnabled)
         {
@@ -1201,7 +1212,8 @@ public class HDevComboBox : Control
 
         // Zone de texte
         var arrowWidth = _properties.ShowDropDown ? 24 : 0;
-        var textBounds = new Rect(8, 0, bounds.Width - arrowWidth - 8, bounds.Height);
+        var textInset = HDevTheme.Size.BorderThin + HDevTheme.Size.EditorTextInset;
+        var textBounds = new Rect(textInset, 0, bounds.Width - arrowWidth - textInset, bounds.Height);
 
         // Déterminer le texte à afficher — en mode Standard c'est le TextBox
         // interne qui affiche texte et placeholder ; en HideTextEditor, rien
@@ -1252,7 +1264,7 @@ public class HDevComboBox : Control
                 FlowDirection.LeftToRight,
                 new Typeface(HDevTheme.Typography.FontFamily),
                 HDevTheme.Typography.FontSizeBody,
-                new SolidColorBrush(isPlaceholder ? HDevTheme.Text.Secondary : textColor));
+                new SolidColorBrush(isPlaceholder ? HDevTheme.Text.Placeholder : textColor));
 
             var textY = (bounds.Height - formattedText.Height) / 2;
 
@@ -1265,33 +1277,10 @@ public class HDevComboBox : Control
         // Flèche dropdown
         if (_properties.ShowDropDown)
         {
-            var arrowX = bounds.Width - arrowWidth / 2;
-            var arrowY = bounds.Height / 2;
-            var arrowSize = 4.0;
-
-            var arrowGeometry = new StreamGeometry();
-            using (var ctx = arrowGeometry.Open())
-            {
-                if (_isDropDownOpen)
-                {
-                    ctx.BeginFigure(new Point(arrowX - arrowSize, arrowY + arrowSize / 2), true);
-                    ctx.LineTo(new Point(arrowX, arrowY - arrowSize / 2));
-                    ctx.LineTo(new Point(arrowX + arrowSize, arrowY + arrowSize / 2));
-                    ctx.EndFigure(true);
-                }
-                else
-                {
-                    ctx.BeginFigure(new Point(arrowX - arrowSize, arrowY - arrowSize / 2), true);
-                    ctx.LineTo(new Point(arrowX, arrowY + arrowSize / 2));
-                    ctx.LineTo(new Point(arrowX + arrowSize, arrowY - arrowSize / 2));
-                    ctx.EndFigure(true);
-                }
-            }
-
-            context.DrawGeometry(
-                new SolidColorBrush(IsEnabled ? HDevTheme.Text.Secondary : HDevTheme.Text.Disabled),
-                null,
-                arrowGeometry);
+            HDevEditorGlyphButton.DrawIcon(context,
+                _isDropDownOpen ? HDevEditorIcon.ChevronUp : HDevEditorIcon.ChevronDown,
+                new Point(bounds.Width - arrowWidth / 2.0, bounds.Height / 2),
+                IsEnabled ? HDevTheme.Text.Secondary : HDevTheme.Text.Disabled);
         }
     }
 

@@ -47,26 +47,25 @@ public class HDevTokenEdit : Border
 
     public HDevTokenEdit()
     {
-        Background = new SolidColorBrush(HDevTheme.Background.Control);
+        Background = new SolidColorBrush(HDevTheme.Background.Input);
         BorderBrush = new SolidColorBrush(HDevTheme.Border.Default);
         BorderThickness = new Thickness(1);
         CornerRadius = new CornerRadius(HDevTheme.Size.CornerRadiusSmall);
         Padding = new Thickness(4, 2);
-        MinHeight = HDevTheme.Size.ControlHeightSmall;
+        MinHeight = HDevTheme.Size.EditorHeight;
 
         _panel = new WrapPanel { Orientation = Avalonia.Layout.Orientation.Horizontal };
 
         _input = new TextBox
         {
-            BorderThickness = new Thickness(0),
-            Background = Brushes.Transparent,
             MinWidth = 90,
-            MinHeight = 0,
-            Padding = new Thickness(4, 3),
+            // 4 (Padding hôte) + 4 + filet = même retrait que les autres champs
+            Padding = new Thickness(HDevTheme.Size.EditorTextInset - 4, 3),
             FontFamily = new FontFamily(HDevTheme.Typography.FontFamily),
-            FontSize = 13,
+            FontSize = HDevTheme.Typography.FontSizeBody,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
         };
+        HDevInputChrome.Neutralize(_input);
         _input.AddHandler(KeyDownEvent, OnInputKeyDown, RoutingStrategies.Tunnel);
         _input.TextChanged += (s, e) => UpdateSuggestions();
 
@@ -140,8 +139,9 @@ public class HDevTokenEdit : Border
 
     private void OnThemeVariantChanged(object? sender, EventArgs e)
     {
-        Background = new SolidColorBrush(HDevTheme.Background.Control);
+        Background = new SolidColorBrush(HDevTheme.Background.Input);
         BorderBrush = new SolidColorBrush(HDevTheme.Border.Default);
+        HDevInputChrome.Neutralize(_input);
         RebuildChips(); // les chips portent des brushes construits
 
         // Dropdown de suggestions

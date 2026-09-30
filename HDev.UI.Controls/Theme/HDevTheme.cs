@@ -305,6 +305,13 @@ public static class HDevTheme
         public static Color Warning => _current.BackgroundWarning;
         public static Color Error => _current.BackgroundError;
         public static Color Info => _current.BackgroundInfo;
+
+        /// <summary>
+        /// Fond des champs de saisie : celui du panneau (blanc en clair), comme
+        /// les entrées GTK/libadwaita. Le gris <see cref="Control"/> reste
+        /// réservé aux boutons et aux listes déroulantes non éditables.
+        /// </summary>
+        public static Color Input => _current.BackgroundPanel;
     }
 
     public static class Border
@@ -393,6 +400,12 @@ public static class HDevTheme
         public const double ControlHeightSmall = 26;
         public const double ControlHeightMedium = 34;
         public const double ControlHeightLarge = 42;
+
+        // Champs de saisie mono-ligne (TextBox, ComboBox, Date/Time/Spin...) :
+        // une hauteur unique et un retrait texte unique pour que les champs d'un
+        // formulaire s'empilent au même rythme et que le texte tombe d'aplomb
+        public const double EditorHeight = 28;
+        public const double EditorTextInset = 8;   // entre le filet et le 1er glyphe
 
         // Rayons de coins (libadwaita : boutons 6, popovers 8, cartes 12)
         public const double CornerRadiusSmall = 6;
