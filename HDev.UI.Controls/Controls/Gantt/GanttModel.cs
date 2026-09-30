@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Avalonia.Media;
 
 namespace HDev.UI.Controls;
 
@@ -49,6 +50,7 @@ public class GanttTask
     private DateTime _end = DateTime.Today;
     private double _progress;
     private bool _isExpanded = true;
+    private Color? _color;
 
     internal GanttProject? Project { get; set; }
     public GanttTask? Parent { get; internal set; }
@@ -102,6 +104,16 @@ public class GanttTask
             _isExpanded = value;
             Project?.NotifyVisualChange();
         }
+    }
+
+    /// <summary>
+    /// Couleur propre de la barre ou du jalon (null = couleur d'accent du thème).
+    /// Ignorée sur une récapitulative ; le surlignage du chemin critique reste prioritaire.
+    /// </summary>
+    public Color? Color
+    {
+        get => _color;
+        set { _color = value; Project?.NotifyVisualChange(); }
     }
 
     public object? Tag { get; set; }

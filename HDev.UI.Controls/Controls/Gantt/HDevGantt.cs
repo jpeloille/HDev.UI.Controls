@@ -88,6 +88,27 @@ public class HDevGantt : Control
         }
     }
 
+    /// <summary>Largeur minimale du tableau des tâches (séparateur ou <see cref="TableWidth"/>)</summary>
+    public const double MinTableWidth = 140;
+
+    /// <summary>
+    /// Largeur du tableau des tâches (colonnes Tâche / Début / Fin / %), séparateur
+    /// compris dans le déplacement souris. Le surplus au-delà du défaut (340) va à
+    /// la colonne « Tâche ». Bornée à <see cref="MinTableWidth"/>.
+    /// </summary>
+    public double TableWidth
+    {
+        get => _tableWidth;
+        set
+        {
+            var width = Math.Max(MinTableWidth, value);
+            if (_tableWidth == width) return;
+            _tableWidth = width;
+            UpdateScrollBars();
+            InvalidateVisual();
+        }
+    }
+
     /// <summary>Déclenché quand la sélection change</summary>
     public event EventHandler? SelectedTaskChanged;
 
@@ -504,11 +525,14 @@ public class HDevGantt : Control
     // API PUBLIQUE
     // ═══════════════════════════════════════════════════════════════
 
-    /// <summary>Amène « aujourd'hui » au tiers gauche de la timeline</summary>
-    public void ScrollToToday()
+    /// <summary>
+    /// Amène « aujourd'hui » à la fraction <paramref name="position"/> de la largeur
+    /// de la timeline (défaut : tiers gauche ; vers 1 pour privilégier le passé)
+    /// </summary>
+    public void ScrollToToday(double position = 1.0 / 3)
     {
         Axis.ViewOffset = (DateTime.Today - Axis.Origin).TotalDays * Axis.PixelsPerDay
-            - TimelineWidth / 3;
+            - TimelineWidth * Math.Clamp(position, 0, 1);
         UpdateScrollBars();
         InvalidateVisual();
     }
@@ -687,7 +711,7 @@ public class HDevGantt : Control
 
         if (_draggingSplitter)
         {
-            _tableWidth = Math.Clamp(pos.X, 140, Math.Max(140, Bounds.Width - 200));
+            _tableWidth = Math.Clamp(pos.X, MinTableWidth, Math.Max(MinTableWidth, Bounds.Width - 200));
             UpdateScrollBars();
             InvalidateVisual();
             return;
@@ -1739,7 +1763,7 @@ public class HDevGantt : Control
                         g.EndFigure(true);
                     }
                     context.DrawGeometry(new SolidColorBrush(
-                        isCritical ? HDevTheme.Accent.Error : HDevTheme.Accent.Secondary), null, geometry);
+                        isCritical ? HDevTheme.Accent.Error : task.Color ?? HDevTheme.Accent.Secondary), null, geometry);
                 }
                 else if (task.IsSummary)
                 {
@@ -1768,7 +1792,7 @@ public class HDevGantt : Control
                     var barRect = new Rect(x1, centerY - BarHeight / 2,
                         Math.Max(2, x2 - x1), BarHeight);
 
-                    var barColor = isCritical ? HDevTheme.Accent.Error : HDevTheme.Accent.Primary;
+                    var barColor = isCritical ? HDevTheme.Accent.Error : task.Color ?? HDevTheme.Accent.Primary;
                     context.DrawRectangle(
                         new SolidColorBrush(HDevTheme.WithOpacity(barColor, 70)),
                         new Pen(new SolidColorBrush(barColor), 1),

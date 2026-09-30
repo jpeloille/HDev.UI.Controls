@@ -134,6 +134,7 @@ public partial class GanttProject
             ["milestone"] = task.IsMilestone,
             ["expanded"] = task.IsExpanded,
             ["manual"] = task.IsManuallyScheduled,
+            ["color"] = task.Color?.ToString(),
             ["baselineStart"] = task.BaselineStart.HasValue ? Fmt(task.BaselineStart.Value) : null,
             ["baselineEnd"] = task.BaselineEnd.HasValue ? Fmt(task.BaselineEnd.Value) : null,
             ["deps"] = new JsonArray(task.Predecessors.Select(p => (JsonNode)new JsonObject
@@ -160,6 +161,7 @@ public partial class GanttProject
         // Dates via SetDatesSilent : évite de déclencher NotifyDataChange par propriété.
         task.SetDatesSilent(Parse((string)node["start"]!), Parse((string)node["end"]!));
         task.Progress = (double?)node["progress"] ?? 0;
+        if (node["color"] is JsonValue c && Avalonia.Media.Color.TryParse((string?)c, out var color)) task.Color = color;
         if (node["baselineStart"] is JsonValue bs) task.BaselineStart = Parse((string)bs!);
         if (node["baselineEnd"] is JsonValue be) task.BaselineEnd = Parse((string)be!);
 

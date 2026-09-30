@@ -26,6 +26,7 @@ public class GanttSerializationTests
         var cahier = etude.Add("Cahier", new DateTime(2026, 7, 1), new DateTime(2026, 7, 5), 40);
         cahier.Id = "cahier";
         cahier.IsManuallyScheduled = true;
+        cahier.Color = Avalonia.Media.Color.FromRgb(0xC0, 0x39, 0x2B);
         var maquette = etude.Add("Maquette", new DateTime(2026, 7, 6), new DateTime(2026, 7, 10));
         maquette.Id = "maquette";
         // Dépendance type ≠ FinishToStart avec lag ≠ 0
@@ -61,6 +62,8 @@ public class GanttSerializationTests
         Assert.Equal(new DateTime(2026, 7, 5), cahier.End);
         Assert.Equal(40, cahier.Progress);
         Assert.True(cahier.IsManuallyScheduled);
+        Assert.Equal(Avalonia.Media.Color.FromRgb(0xC0, 0x39, 0x2B), cahier.Color);
+        Assert.Null(back.FindById("maquette")!.Color);
         Assert.True(cahier.HasBaseline);
 
         var dev = back.FindById("dev")!;
