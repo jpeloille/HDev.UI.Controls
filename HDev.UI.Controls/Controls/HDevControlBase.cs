@@ -184,7 +184,19 @@ public abstract class HDevControlBase : Control
     }
     
     protected virtual void OnClick() { }
-    
+
+    /// <summary>
+    /// Fige l'état visuel sans souris ni clavier : réservé à la planche visuelle
+    /// headless (tests/Gallery), qui montre survol, pression et focus côte à côte
+    /// </summary>
+    internal void ForceVisualState(bool hovered = false, bool pressed = false, bool focused = false)
+    {
+        _isHovered = hovered;
+        _isPressed = pressed;
+        _isFocusedState = focused;
+        InvalidateVisual();
+    }
+
     // ═══════════════════════════════════════════════════════════════
     // HELPERS DE RENDU
     // ═══════════════════════════════════════════════════════════════

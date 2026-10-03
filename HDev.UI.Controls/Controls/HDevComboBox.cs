@@ -1288,6 +1288,14 @@ public class HDevComboBox : Control
     // INTERACTIONS
     // ═══════════════════════════════════════════════════════════════
 
+    /// <summary>Fige survol et pression pour la planche visuelle headless (tests/Gallery)</summary>
+    internal void ForceVisualState(bool hovered = false, bool pressed = false)
+    {
+        _isHovered = hovered;
+        _isPressed = pressed;
+        InvalidateVisual();
+    }
+
     protected override void OnPointerEntered(PointerEventArgs e)
     {
         _isHovered = true;

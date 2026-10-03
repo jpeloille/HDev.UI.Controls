@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Interaction" />
+    <InternalsVisibleTo Include="Gallery" />
     <InternalsVisibleTo Include="HDev.UI.Controls.Tests" />
   </ItemGroup>
 

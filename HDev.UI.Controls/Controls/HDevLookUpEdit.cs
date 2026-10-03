@@ -280,6 +280,13 @@ public class HDevLookUpEdit : Control
     // INTERACTIONS
     // ═══════════════════════════════════════════════════════════════
 
+    /// <summary>Fige le survol pour la planche visuelle headless (tests/Gallery)</summary>
+    internal void ForceVisualState(bool hovered = false)
+    {
+        _isHovered = hovered;
+        InvalidateVisual();
+    }
+
     protected override void OnPointerEntered(PointerEventArgs e)
     {
         _isHovered = true;

@@ -422,6 +422,14 @@ public abstract class HDevEditorBase : Border
         => HDevInputChrome.ApplyState(this, InnerTextBox,
             IsEnabled, HasError, _isFocusedState, _isHovered);
 
+    /// <summary>Fige survol et focus pour la planche visuelle headless (tests/Gallery)</summary>
+    internal void ForceVisualState(bool hovered = false, bool focused = false)
+    {
+        _isHovered = hovered;
+        _isFocusedState = focused;
+        UpdateVisualState();
+    }
+
     public void FocusEditor() => InnerTextBox.Focus();
     public void SelectAll() => InnerTextBox.SelectAll();
 }
