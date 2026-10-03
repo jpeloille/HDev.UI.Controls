@@ -7,10 +7,12 @@ namespace HDev.UI.Controls;
 
 public enum ButtonVariant
 {
-    Primary,    // Fond accent, texte blanc
-    Secondary,  // Fond blanc, bordure grise
-    Ghost,      // Transparent, bordure au hover
-    Danger      // Rouge pour actions destructives
+    Primary,        // Fond accent, texte blanc
+    Secondary,      // Fond blanc, bordure grise
+    Ghost,          // Transparent, bordure au hover
+    Danger,         // Rouge pour actions destructives
+    Outline,        // Fond panneau, bordure grise, texte primaire (« Annuler »)
+    OutlineAccent   // Fond panneau, bordure et texte accent (action secondaire)
 }
 
 public enum ButtonSize
@@ -39,6 +41,10 @@ public class HDevButton : HDevControlBase
     public static readonly StyledProperty<ButtonSize> SizeProperty =
         AvaloniaProperty.Register<HDevButton, ButtonSize>(nameof(Size), ButtonSize.Medium);
 
+    /// <summary>Graisse du libellé (Regular par défaut ; SemiBold pour une action appuyée)</summary>
+    public static readonly StyledProperty<FontWeight> TextWeightProperty =
+        AvaloniaProperty.Register<HDevButton, FontWeight>(nameof(TextWeight), FontWeight.Regular);
+
     public string Text
     {
         get => GetValue(TextProperty);
@@ -56,6 +62,12 @@ public class HDevButton : HDevControlBase
         get => GetValue(SizeProperty);
         set => SetValue(SizeProperty, value);
     }
+
+    public FontWeight TextWeight
+    {
+        get => GetValue(TextWeightProperty);
+        set => SetValue(TextWeightProperty, value);
+    }
     
     // ═══════════════════════════════════════════════════════════════
     // ÉVÉNEMENTS
@@ -70,8 +82,8 @@ public class HDevButton : HDevControlBase
     
     static HDevButton()
     {
-        AffectsRender<HDevButton>(TextProperty, VariantProperty, SizeProperty);
-        AffectsMeasure<HDevButton>(TextProperty, SizeProperty);
+        AffectsRender<HDevButton>(TextProperty, VariantProperty, SizeProperty, TextWeightProperty);
+        AffectsMeasure<HDevButton>(TextProperty, SizeProperty, TextWeightProperty);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -87,7 +99,7 @@ public class HDevButton : HDevControlBase
             _ => (HDevTheme.Size.ControlHeightMedium, 14.0, 16.0)
         };
         
-        var text = CreateText(Text, HDevTheme.Text.Primary, fontSize);
+        var text = CreateText(Text, HDevTheme.Text.Primary, fontSize, TextWeight);
         var width = text.Width + paddingH * 2 + 8; // Extra pour marge de manœuvre
         
         return new Size(Math.Max(80, width), height + 8); // +8 pour ombre
@@ -132,18 +144,21 @@ public class HDevButton : HDevControlBase
         }
         
         // Texte
-        var formattedText = CreateText(Text, textColor, fontSize, FontWeight.Regular);
+        var formattedText = CreateText(Text, textColor, fontSize, TextWeight);
         var textOffset = IsPressed ? 0.5 : 0.0;
         DrawTextCentered(context, formattedText, buttonRect.Translate(new Vector(0, textOffset)));
     }
     
-    private (Color background, Color border, Color text) ResolveColors()
+    /// <summary>Couleurs de la variante pour l'état courant (partagé avec <see cref="HDevIconButton"/>)</summary>
+    protected (Color background, Color border, Color text) ResolveColors()
     {
         return Variant switch
         {
             ButtonVariant.Primary => ResolvePrimaryColors(),
             ButtonVariant.Ghost => ResolveGhostColors(),
             ButtonVariant.Danger => ResolveDangerColors(),
+            ButtonVariant.Outline => ResolveOutlineColors(),
+            ButtonVariant.OutlineAccent => ResolveOutlineAccentColors(),
             _ => ResolveSecondaryColors()
         };
     }
@@ -190,5 +205,34 @@ public class HDevButton : HDevControlBase
         if (IsHovered)
             return (HDevTheme.Danger.Hover, HDevTheme.Danger.Hover, HDevTheme.Text.OnAccent);
         return (HDevTheme.Danger.Default, HDevTheme.Danger.Default, HDevTheme.Text.OnAccent);
+    }
+
+    private (Color, Color, Color) ResolveOutlineColors()
+    {
+        // Fond panneau (blanc en clair) et non Background.Control : c'est ce qui
+        // distingue Outline de Secondary, dont le fond est gris dans les palettes
+        if (!IsEnabled)
+            return (HDevTheme.Background.Panel, HDevTheme.Border.Disabled, HDevTheme.Text.Disabled);
+        if (IsPressed)
+            return (HDevTheme.Background.ControlPressed, HDevTheme.Border.Pressed, HDevTheme.Text.Primary);
+        if (IsHovered)
+            return (HDevTheme.Background.ControlHover, HDevTheme.Border.Hover, HDevTheme.Text.Primary);
+        return (HDevTheme.Background.Panel, HDevTheme.Border.Default, HDevTheme.Text.Primary);
+    }
+
+    private (Color, Color, Color) ResolveOutlineAccentColors()
+    {
+        var panel = HDevTheme.Background.Panel;
+        // Texte un cran plus soutenu que le filet en clair ; en sombre, la teinte
+        // « pressée » assombrit au lieu d'éclaircir : on garde l'accent plein
+        var text = HDevTheme.IsDark ? HDevTheme.Accent.Primary : HDevTheme.Accent.PrimaryPressed;
+
+        if (!IsEnabled)
+            return (panel, HDevTheme.Border.Disabled, HDevTheme.Text.Disabled);
+        if (IsPressed)
+            return (HDevTheme.Lerp(panel, HDevTheme.Accent.Primary, 0.16), HDevTheme.Accent.PrimaryPressed, text);
+        if (IsHovered)
+            return (HDevTheme.Lerp(panel, HDevTheme.Accent.Primary, 0.08), HDevTheme.Accent.PrimaryHover, text);
+        return (panel, HDevTheme.Accent.Primary, text);
     }
 }

@@ -101,7 +101,9 @@ public enum HDevEditorIcon
     None,
     Calendar,
     ChevronDown,
-    ChevronUp
+    ChevronUp,
+    ChevronLeft,
+    ChevronRight
 }
 
 /// <summary>
@@ -214,6 +216,16 @@ public class HDevEditorGlyphButton : Control
             case HDevEditorIcon.ChevronUp:
                 context.DrawLine(pen, new Point(cx - 4, cy + 2), new Point(cx, cy - 2));
                 context.DrawLine(pen, new Point(cx, cy - 2), new Point(cx + 4, cy + 2));
+                break;
+
+            case HDevEditorIcon.ChevronLeft:
+                context.DrawLine(pen, new Point(cx + 2, cy - 4), new Point(cx - 2, cy));
+                context.DrawLine(pen, new Point(cx - 2, cy), new Point(cx + 2, cy + 4));
+                break;
+
+            case HDevEditorIcon.ChevronRight:
+                context.DrawLine(pen, new Point(cx - 2, cy - 4), new Point(cx + 2, cy));
+                context.DrawLine(pen, new Point(cx + 2, cy), new Point(cx - 2, cy + 4));
                 break;
 
             case HDevEditorIcon.Calendar:

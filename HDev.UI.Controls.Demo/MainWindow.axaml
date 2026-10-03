@@ -36,7 +36,27 @@
                             <hdev:HDevButton Text="Primary" Variant="Primary"/>
                             <hdev:HDevButton Text="Ghost" Variant="Ghost"/>
                             <hdev:HDevButton Text="Danger" Variant="Danger"/>
+                            <hdev:HDevButton Text="Outline" Variant="Outline"/>
+                            <hdev:HDevButton Text="Outline accent" Variant="OutlineAccent" TextWeight="SemiBold"/>
                             <hdev:HDevButton Text="Disabled" Variant="Primary" IsEnabled="False"/>
+                        </StackPanel>
+
+                        <!-- Boutons-icônes -->
+                        <TextBlock Text="Boutons-icônes" FontSize="12" Foreground="#6A6A6A" Margin="0,16,0,0"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <hdev:HDevIconButton Icon="ChevronLeft" ToolTip.Tip="Précédent"/>
+                            <hdev:HDevIconButton Icon="ChevronRight" ToolTip.Tip="Suivant"/>
+                            <hdev:HDevIconButton Icon="ChevronDown" Variant="Ghost" Size="Small"/>
+                            <hdev:HDevIconButton Icon="ChevronUp" Variant="Primary" Size="Large"/>
+                            <hdev:HDevIconButton Icon="Calendar" IsEnabled="False"/>
+                        </StackPanel>
+
+                        <!-- Cartes-radio -->
+                        <TextBlock Text="Cartes-radio" FontSize="12" Foreground="#6A6A6A" Margin="0,16,0,0"/>
+                        <StackPanel Spacing="8" Width="340" HorizontalAlignment="Left">
+                            <hdev:HDevRadioCard GroupName="doc" Title="Ordre du jour" Subtitle="Avant la séance · convocation · 1 page"/>
+                            <hdev:HDevRadioCard GroupName="doc" Title="Support de séance" Subtitle="Pendant · feuille à annoter · 5 pages" IsChecked="True"/>
+                            <hdev:HDevRadioCard GroupName="doc" Title="Registre de suivi" Subtitle="Aucun registre rattaché" IsEnabled="False"/>
                         </StackPanel>
                         
                         <!-- Tailles -->
