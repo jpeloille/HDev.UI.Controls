@@ -14,6 +14,7 @@ Interdits.
 - Toucher `RiderProjects/HDev.UI.Controls`, `RiderProjects/HDev.UI.DataGrid` (branche hdev), Synaxis, myFlightOpsBoard.
 - Modifier `orchestration/`, `Plan-Suite.md`, `plans/` sauf si la fiche le demande.
 - Contourner une permission refusée.
+- Mettre une ligne `Co-Authored-By: Claude …` dans un message de commit.
 
 Communication, par SendMessage vers <nom-orchestratrice> (si ce nom n'est pas joignable, réponds à l'adresse `from` du message reçu), première ligne préfixée :
 - `QUESTION M-<nn> :` dès qu'un choix n'est pas tranché par la fiche ou le plan. Donne le contexte, les options, ta recommandation. Attends la réponse avant de poursuivre ce point (avance sur le reste si c'est indépendant).
