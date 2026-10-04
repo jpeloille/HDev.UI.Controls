@@ -4,7 +4,7 @@ Table de correspondance contrôle par contrôle, état au **04/10/2026**.
 
 ## En bref
 
-- **Catalogue.** 166 fonctions DevExpress recensées (union WinForms, WPF et VCL v26.1). HDev en couvre **34** pour l'usage courant et **25** en partie. **107** sont absentes, dont **11** par décision. Score : **28 %**, ou **30 %** hors absences décidées.
+- **Catalogue.** 166 fonctions DevExpress recensées (union WinForms, WPF et VCL v26.1). HDev en couvre **34** pour l'usage courant et **25** en partie. **107** sont absentes, dont **10** par décision. Score : **28 %**, ou **30 %** hors absences décidées.
 - **Profondeur des contrôles phares**, mesurée sur les capacités que DevExpress met en avant :
 
   | Contrôle | Score |
@@ -79,12 +79,12 @@ Score d'une famille = (✅ + ½ 🟡) / nombre de lignes.
 | 3.6 Mise en page | 6 | 2 | 0 | 4 | 0 | 33 % |
 | 3.7 Docking et documents | 5 | 0 | 2 | 2 | 1 | 20 % |
 | 3.8 Fenêtres, dialogues, notifications | 13 | 4 | 2 | 7 | 0 | 38 % |
-| 3.9 Planification | 10 | 0 | 4 | 5 | 1 | 20 % |
+| 3.9 Planification | 10 | 0 | 4 | 6 | 0 | 20 % |
 | 3.10 Visualisation de données | 13 | 0 | 1 | 9 | 3 | 4 % |
 | 3.11 Documents | 6 | 1 | 1 | 1 | 3 | 25 % |
 | 3.12 Rapports, impression, export | 4 | 0 | 1 | 1 | 2 | 13 % |
 | 3.13 Composants transverses | 10 | 0 | 3 | 7 | 0 | 15 % |
-| **Total** | **166** | **34** | **25** | **96** | **11** | **28 %** |
+| **Total** | **166** | **34** | **25** | **97** | **10** | **28 %** |
 
 - Hors absences décidées (⚪ retirés du dénominateur), le score monte à **30 %**.
 - Parmi les ✅, trois relèvent du socle Avalonia.
@@ -332,7 +332,7 @@ Détail de la liaison MVVM côté HDev (relevé exhaustif des propriétés de va
 | Navigateur de dates | `DateNavigator` | `DateNavigationPanel` | `TcxDateNavigator` | `HDevMonthCalendar` | 🟡 | à coupler à la main avec l'agenda |
 | Arbre ou filtre de ressources | `ResourcesTree`, `ResourcesCheckedListBoxControl`, `ResourcesComboBoxEdit` | `ResourceTreeControl` | navigateur de ressources | — | ❌ | |
 | Gantt de projet | `GanttControl` | `GanttControl` | `TdxGanttControl` | `HDevGantt` | 🟡 | voir § 4.5 |
-| Feuille de ressources | — | `GanttResourceControl` | `TdxGanttControlResourceSheetView` | — | ⚪ | renvoyée à UGantt.Core (décision du 14/07/2026) |
+| Feuille de ressources | — | `GanttResourceControl` | `TdxGanttControlResourceSheetView` | — | ❌ | prévue dans la suite (lot L10) : alignement sur MS Project, décision du 04/10/2026 |
 | Chronologie du projet | Timeline du `GanttControl` (nv) | — | `TdxGanttControlTimelineView` | — | ❌ | lot L23 |
 
 ### 3.10 Visualisation de données
@@ -400,7 +400,7 @@ Le score mesure l'étendue couverte, pas l'effort restant. Un seul item DevExpre
 | Ruban, barres, menus | `RibbonControl` + `BarManager`, `TdxRibbon` + `TdxBarManager` | 26 | 11 | 1 | 13 | 1 | 44 % |
 | Docking (`HDevDockManager`) | `DockManager`, `DockLayoutManager`, `TdxDockingManager` | 16 | 7 | 0 | 7 | 2 | 44 % |
 | Agenda (`HDevScheduler` + `HDevRoster`) | `SchedulerControl`, `TcxScheduler` | 23 | 7 | 3 | 13 | 0 | 37 % |
-| Gantt (`HDevGantt`) | `GanttControl`, `TdxGanttControl` | 27 | 15 | 1 | 8 | 3 | 57 % |
+| Gantt (`HDevGantt`) | `GanttControl`, `TdxGanttControl` | 27 | 15 | 1 | 11 | 0 | 57 % |
 | Texte riche (`HDevRichEdit`) | `RichEditControl`, `TdxRichEditControl` | 23 | 7 | 4 | 12 | 0 | 39 % |
 | Socle des éditeurs | `BaseEdit` + `RepositoryItem`, `EditSettings`, `TcxEditRepository` | 17 | 7 | 4 | 6 | 0 | 53 % |
 
@@ -553,17 +553,17 @@ Le score mesure l'étendue couverte, pas l'effort restant. Un seul item DevExpre
 | Couleur par tâche | ✅ | |
 | Persistance | ✅ | JSON versionné ; DevExpress passe par la liaison de données |
 | Liaison de données (mappings) | ❌ | |
-| Ressources et affectations | ⚪ | renvoyées à UGantt.Core |
-| Feuille de ressources | ⚪ | idem |
+| Ressources et affectations | ❌ | prévues dans la suite (lots L10, L11) |
+| Feuille de ressources | ❌ | prévue dans la suite (lot L10) |
 | Contraintes typées (8 types) | ❌ | VCL |
 | Tâches fractionnées | ❌ | WinForms |
 | Tâches récurrentes | ❌ | VCL |
 | Colonnes configurables | ❌ | lot L2 |
 | Vue chronologie | ❌ | lot L23 |
-| Import et export MS Project XML | ❌ | VCL ; prévu côté UGantt |
+| Import et export MS Project XML | ❌ | VCL ; prévu dans la suite (lot L24) |
 | Impression, export | 🟡 | PNG seulement |
 | Gabarits ou dessin personnalisé des barres | ❌ | lot L21 |
-| Coûts, champs personnalisés | ⚪ | renvoyés à UGantt.Core |
+| Coûts, champs personnalisés | ❌ | prévus dans la suite (lots L14, L17) |
 
 ### 4.6 Texte riche : `HDevRichEdit`
 

@@ -1,0 +1,241 @@
+# Destination de chaque ligne du benchmark : (lot ou décision, état cible, jalon)
+# État cible : C ✅, P 🟡, Q ⚪ proposé (non couvert), D ⚪ acté, A reste absent.
+# Lot « — » : ligne déjà couverte, rien de prévu. Jalon None : pas de changement d'état.
+A = {}
+def s(sec, *rows):
+    for label, dest, cible, jalon in rows:
+        A[f'{sec}|{label}'] = (dest, cible, jalon)
+
+s('4.1',
+  ('Grille de données, vue tableau', 'G3', 'C', 'S3'),
+  ('Vue à bandes (en-têtes multi-niveaux)', 'G7', 'C', 'S5'),
+  ('Vue fiches, cartes', 'G7', 'C', 'S5'),
+  ('Vue tuiles, Kanban, explorateur', 'G7', 'C', 'S5'),
+  ('Graphique intégré à la grille', 'Q7', 'Q', None),
+  ('Gros volumes (server mode, instant feedback, sources virtuelles)', 'G6', 'C', 'S5'),
+  ('Master-detail', 'G6', 'C', 'S5'),
+  ('Pagination', 'G6', 'C', 'S5'),
+  ("Navigateur d'enregistrements", 'G5', 'C', 'S4'),
+  ('Constructeur de filtre', 'G3', 'C', 'S3'),
+  ('Arbre multi-colonnes (TreeList)', 'G4', 'C', 'S3'),
+  ('Grille verticale', 'G4', 'C', 'S3'),
+  ('Inspecteur de propriétés', 'G4', 'C', 'S3'),
+  ('Tableau croisé dynamique', 'G8', 'C', 'S5'))
+
+s('4.2',
+  ('Texte mono-ligne', 'E3', 'C', None), ('Texte masqué', 'E5', 'C', 'S2'),
+  ('Mot de passe', 'E3', 'C', None), ('Multi-ligne', 'E3', 'C', None),
+  ('Mémo en popup', 'E9', 'C', 'S4'), ('Texte avec boutons', 'E2', 'C', 'S1'),
+  ('Historique des saisies (MRU)', 'E10', 'C', 'S4'), ('Lien hypertexte', 'E9', 'C', 'S4'),
+  ('Recherche, auto-suggestion', 'E3', 'C', None), ('Jetons', 'E3', 'C', None),
+  ('Liste déroulante', 'E3', 'C', None), ('Liste déroulante à images', 'E4', 'C', 'S2'),
+  ('Liste déroulante à cases', 'E4', 'C', 'S2'), ('Choix de police', 'Q7', 'Q', None),
+  ('Lookup (popup tabulaire)', 'E7', 'C', 'S2'), ('Lookup avec recherche', 'E7', 'C', 'S2'),
+  ('Lookup multi-valeurs', 'E7', 'C', 'S2'), ('Lookup arborescent', 'G9', 'C', 'S5'),
+  ('Popup à contenu libre', 'E2', 'C', 'S1'), ('Galerie en popup', 'Q7', 'Q', None),
+  ('Liste', '—', 'C', None), ('Liste à cases', 'E4', 'C', 'S2'),
+  ('Compteur', 'E3', 'C', None), ('Calculatrice', 'E5', 'C', 'S2'),
+  ('Monétaire', 'E5', 'C', 'S2'), ('Curseur', '—', 'C', None),
+  ('Curseur de plage', 'E9', 'C', 'S4'), ('Curseur de zoom', 'E10', 'C', 'S4'),
+  ('Roues tactiles', 'Q7', 'Q', None), ('Date', 'E6', 'C', None), ('Heure', 'E6', 'C', None),
+  ('Durée', 'E6', 'C', 'S2'), ('Date avec décalage horaire', 'E6', 'C', 'S2'),
+  ('Plage de dates', 'E6', 'C', 'S2'), ('Calendrier intégré', 'E6', 'C', None),
+  ('Case à cocher', '—', 'C', None), ('Interrupteur', '—', 'C', None), ('Groupe radio', '—', 'C', None),
+  ('Notation', 'E10', 'C', 'S4'), ('Image', 'E10', 'C', 'S4'), ('Image en popup', 'E10', 'C', 'S4'),
+  ('Couleur', 'E9', 'C', 'S4'), ('Pinceau (dégradés)', 'Q7', 'Q', None),
+  ('Chemin de fichier ou de dossier', 'E9', 'C', 'S4'),
+  ('Progression', '—', 'C', None), ('Progression indéterminée', '—', 'C', None),
+  ('Code-barres', 'Q7', 'Q', None), ('Webcam', 'Q7', 'Q', None))
+
+s('4.3',
+  ('Bouton', '—', 'C', None), ('Bouton à icône seule', '—', 'C', None),
+  ('Bouton à menu', 'C2', 'C', 'S4'), ('Bouton partagé (split)', 'C2', 'C', 'S4'),
+  ('Bouton bascule, groupe segmenté', '—', 'C', None), ('Libellé formaté', '—', 'C', None))
+
+s('4.4',
+  ('Ruban', 'C3', 'C', 'S4'), ('Onglets contextuels', 'C3', 'C', 'S4'),
+  ('Menu application, Backstage', 'C3', 'C', 'S4'), ("Barre d'accès rapide (QAT)", 'C3', 'C', 'S4'),
+  ('Galeries', 'C3', 'C', 'S4'), ('Mini-barre contextuelle', 'C5', 'C', 'S5'),
+  ('Recherche de commandes', 'C4', 'C', 'S4'), ("Barres d'outils", 'C4', 'C', 'S4'),
+  ('Éditeurs dans les barres', 'C4', 'C', 'S4'), ('Menu principal', '—', 'C', None),
+  ('Menu contextuel', '—', 'C', None), ('Menu radial', 'Q7', 'Q', None),
+  ('Popup de contrôles', 'C2', 'C', 'S4'), ("Barre d'état", '—', 'C', None),
+  ('Fusion MDI des barres', 'acté', 'D', None), ('Infobulles riches', 'C4', 'C', 'S4'),
+  ('Accélérateurs clavier', '—', 'C', None))
+
+s('4.5',
+  ('Onglets', 'N4', 'C', None), ('Onglets dans la barre de titre', 'Q7', 'Q', None),
+  ('Pages avec transitions', 'N4', 'C', 'S4'), ('Accordéon, barre latérale à groupes', 'N2', 'C', 'S4'),
+  ('Barre de modules (Outlook)', '—', 'C', None), ('Menu hamburger', 'N2', 'C', 'S4'),
+  ('Tuiles', 'N5', 'C', 'S5'), ('Barre et menu de tuiles', 'N5', 'C', 'S5'),
+  ('Arbre', 'N1', 'C', 'S4'), ("Fil d'Ariane", 'N3', 'C', 'S4'),
+  ("Étapes d'un processus", 'N3', 'C', 'S4'), ('Assistant', 'N3', 'C', 'S4'),
+  ('Boîte à outils', 'Q7', 'Q', None), ('Diaporama, carrousel', 'N5', 'C', 'S5'))
+
+s('4.6',
+  ('Mise en page de formulaire', 'M1', 'C', 'S3'), ('Formulaire généré depuis les données', 'M3', 'C', 'S4'),
+  ('Groupe titré, panneau', '—', 'C', None),
+  ('Conteneurs de base (pile, tableau, défilement, séparateur)', '—', 'C', None),
+  ('Panneau latéral redimensionnable', 'M2', 'C', 'S3'), ('Panneau ou dialogue volant', 'M2', 'C', 'S3'))
+
+s('4.7',
+  ('Panneaux ancrables', 'A2', 'C', 'S4'), ('Documents à onglets', 'A1', 'C', 'S4'),
+  ('MDI natif (fenêtres enfants)', 'acté', 'D', None),
+  ('UI « Modern » (modules plein écran)', 'Q7', 'Q', None), ('Tableau de bord à widgets', 'A4', 'C', 'S5'))
+
+s('4.8',
+  ('Fenêtre thémée', 'W2', 'C', 'S4'), ('Ruban ou commandes dans la barre de titre', 'Q7', 'Q', None),
+  ('Fenêtre Fluent', 'Q7', 'Q', None), ('Boîte de message', '—', 'C', None), ('Boîte de saisie', '—', 'C', None),
+  ('Dialogue qui héberge une vue', 'W1', 'C', 'S3'), ('Dialogues de fichiers', '—', 'C', None),
+  ('Explorateur de fichiers embarqué', 'Q7', 'Q', None), ("Alertes dans l'application", '—', 'C', None),
+  ('Notifications système', 'W5', 'C', 'S4'), ('Écran de démarrage, attente', 'W3', 'C', 'S4'),
+  ('Badges et guides posés sur un contrôle', 'W4', 'C', 'S4'),
+  ('Barre des tâches, zone de notification', 'W5', 'P', 'S4'))
+
+s('4.9',
+  ('Agenda', 'T1', 'C', 'S5'), ('Vue chronologique par ressources', 'T1', 'C', 'S5'),
+  ('Vue année', 'T3', 'C', 'S5'), ('Vue agenda (liste)', 'T3', 'C', 'S5'),
+  ("Vue Gantt de l'agenda", 'Q7', 'Q', None), ('Navigateur de dates', 'T1', 'C', 'S5'),
+  ('Arbre ou filtre de ressources', 'T1', 'C', 'S5'), ('Gantt de projet', 'L21', 'C', 'S5'),
+  ('Feuille de ressources', 'L10', 'C', 'S5'), ('Chronologie du projet', 'L23', 'C', 'S6'))
+
+s('4.10',
+  ('Graphiques 2D', 'V1', 'C', 'S2'), ('Graphiques 3D', 'Q7', 'Q', None),
+  ('Jauges', 'V1', 'C', 'S2'), ('Sparklines', 'V1', 'C', 'S2'),
+  ('Carte géographique', 'Q7', 'Q', None), ('Diagrammes, logigrammes', 'V2', 'C', 'S5'),
+  ('Organigramme, carte mentale', 'V2', 'C', 'S5'), ('TreeMap', 'V3', 'C', 'S5'),
+  ('Sunburst', 'V3', 'C', 'S5'), ('Sankey', 'V3', 'C', 'S5'), ('Heatmap', 'V1', 'C', 'S2'),
+  ('Sélection de plage sur un aperçu', 'V4', 'C', 'S5'), ('SVG interactif', 'Q7', 'Q', None))
+
+s('4.11',
+  ('Traitement de texte', 'R3', 'C', 'S5'), ('Mémo riche léger', '—', 'C', None),
+  ('Tableur', 'acté', 'D', None), ('Visionneuse PDF', 'Q8', 'D', None),
+  ('Correcteur orthographique', 'R5', 'C', 'S5'), ('API de documents (Word, Excel, PDF)', 'acté', 'D', None))
+
+s('4.12',
+  ('Impression et aperçu de tout contrôle', 'I3', 'C', 'S2'), ('Export de données', 'I2', 'C', 'S2'),
+  ('Concepteur de rapports', 'acté', 'D', None), ('Tableaux de bord BI', 'acté', 'D', None))
+
+s('4.13',
+  ('Thèmes', 'F8', 'C', 'S5'), ('Validation centralisée', 'E8', 'C', 'S3'),
+  ("Dépôt d'éditeurs partagé (in-place)", 'E11', 'C', 'S3'), ('Persistance de layout', 'F6', 'C', 'S3'),
+  ('Behaviors', 'F7', 'C', 'S4'), ("Gabarits d'UI HTML-CSS", 'Q7', 'Q', None),
+  ('Transitions animées', 'F7', 'C', 'S4'), ("Banque d'icônes", 'F4', 'C', 'S2'),
+  ('Chat IA', 'Q6', 'Q', None), ('Extensions IA (assistant, Smart Paste…)', 'Q6', 'Q', None))
+
+s('5.1',
+  ('Vue tableau, colonnes générées automatiquement', '—', 'C', None),
+  ('Vues alternatives (bandes, cartes, tuiles, explorateur)', 'G7', 'C', 'S5'),
+  ('Liaison à une collection observable', '—', 'C', None),
+  ("Mise à jour quand une propriété d'un item change", 'G2', 'C', 'S2'),
+  ('Gros volumes côté serveur', 'G6', 'C', 'S5'),
+  ('Virtualisation des lignes, recyclage des cellules', '—', 'C', None),
+  ('Tri multi-colonnes', '—', 'C', None), ('Ligne de filtre, opérateurs par type', '—', 'C', None),
+  ('Filtre déroulant style Excel', 'G2', 'C', 'S2'), ('Constructeur de filtre (ET/OU)', 'G3', 'C', 'S3'),
+  ('Panneau du filtre actif', 'G2', 'C', 'S2'), ('Recherche globale (Find Panel, Search Panel)', 'G2', 'C', 'S2'),
+  ('Groupement multi-niveaux par glisser-déposer', '—', 'C', None),
+  ('Groupement par intervalles ou personnalisé', 'G3', 'C', 'S3'),
+  ('Résumés de pied et de groupe', '—', 'C', None), ('Résumés personnalisés', 'G3', 'C', 'S3'),
+  ('Master-detail', 'G6', 'C', 'S5'), ('Édition in-place, événements annulables', 'G1', 'C', None),
+  ('Éditeurs in-place communs à la suite', 'E11', 'C', 'S3'),
+  ("Formulaire d'édition (Edit Form)", 'G5', 'C', 'S4'), ("Ligne d'ajout, suppression", 'G2', 'C', 'S2'),
+  ('Validation', 'G2', 'C', 'S2'), ('Sélection multiple, cellule courante', '—', 'C', None),
+  ('Sélection de plages rectangulaires de cellules', 'G3', 'C', 'S3'),
+  ('Navigation clavier complète', '—', 'C', None), ('Copier', 'G3', 'C', 'S3'), ('Coller', 'G3', 'C', 'S3'),
+  ('Glisser-déposer de lignes', 'G5', 'C', 'S4'), ('Colonnes figées', 'G3', 'C', 'S3'),
+  ('Redimensionnement, réordonnancement, best-fit, verrouillage', '—', 'C', None),
+  ("Sélecteur de colonnes, menu d'en-tête", 'G2', 'C', 'S2'), ('Formatage conditionnel', 'G3', 'C', 'S3'),
+  ('Fusion de cellules', 'G5', 'C', 'S4'),
+  ('Hauteur de ligne automatique, retour à la ligne, aperçu de ligne', 'G5', 'C', 'S4'),
+  ('Colonnes non liées ou calculées', 'G5', 'C', 'S4'), ('Gabarits de cellule', '—', 'C', None),
+  ('Export', 'I3', 'C', 'S2'), ('Impression, aperçu', 'I3', 'C', 'S2'),
+  ('Sauvegarde et restauration du layout', 'G2', 'C', 'S2'), ('Pagination', 'G6', 'C', 'S5'),
+  ('Habillage clair et sombre', '—', 'C', None),
+  ('Indicateur et numéros de ligne, états « vide » et « chargement »', '—', 'C', None),
+  ('Accessibilité (UI Automation)', 'G3', 'C', 'S3'), ('IA (Smart Paste, recherche sémantique)', 'Q6', 'Q', None))
+
+s('5.2',
+  ('Onglets et groupes', '—', 'C', None), ('Boutons grands et petits', '—', 'C', None),
+  ('Boutons déroulants', '—', 'C', None), ('Boutons bascule', '—', 'C', None),
+  ('Lanceur de dialogue de groupe', '—', 'C', None), ('Repli du ruban', '—', 'C', None),
+  ('Onglets contextuels', 'C3', 'C', 'S4'), ('Key tips (Alt)', 'C3', 'C', 'S4'),
+  ('Menu application, Backstage', 'C3', 'C', 'S4'), ("Barre d'accès rapide", 'C3', 'C', 'S4'),
+  ('Galeries', 'C3', 'C', 'S4'), ('Éditeurs dans le ruban et les barres', 'C4', 'C', 'S4'),
+  ('Ruban simplifié, groupes adaptatifs', 'C3', 'C', 'S4'), ('Mini-barre, menu radial', 'C5', 'P', 'S5'),
+  ('Recherche de commandes', 'C4', 'C', 'S4'), ("Personnalisation par l'utilisateur", 'C5', 'C', 'S5'),
+  ('Fusion MDI', 'acté', 'D', None),
+  ('Modèle de commandes partagé entre ruban, barres et menus', 'C1', 'C', 'S4'),
+  ('Infobulles riches', 'C4', 'C', 'S4'), ('Accélérateurs clavier', '—', 'C', None),
+  ('Barre de menus, navigation clavier complète', '—', 'C', None),
+  ('Menus contextuels (sous-menus, cochables)', '—', 'C', None), ("Barres d'outils", '—', 'C', None),
+  ('Débordement, barres flottantes ou ancrables', 'C4', 'C', 'S4'),
+  ("Barre d'état à panneaux", '—', 'C', None), ('Construction déclarative (`ItemsSource`)', 'C1', 'C', 'S4'))
+
+s('5.3',
+  ('Ancrage aux bords, région centrale de documents', '—', 'C', None), ("Groupes d'onglets", '—', 'C', None),
+  ('Splitters à proportions', '—', 'C', None), ("Fermeture d'un panneau", '—', 'C', None),
+  ('Sauvegarde et restauration du layout', '—', 'C', None), ('API de manipulation en code', '—', 'C', None),
+  ("Glisser un panneau avec indicateurs d'ancrage", 'A1', 'C', 'S4'),
+  ('Réordonnancement des onglets', 'A1', 'C', 'S4'), ('Panneaux flottants', 'A2', 'C', 'S4'),
+  ('Auto-masquage, épinglage', 'A2', 'C', 'S4'),
+  ("Boutons d'en-tête (maximiser, personnalisés)", 'A3', 'C', 'S4'),
+  ('Panneaux fermés restaurables', 'A3', 'C', 'S4'), ('Sélecteur de documents (Ctrl+Tab)', 'A3', 'C', 'S4'),
+  ('MDI (onglets ou fenêtres)', 'acté', 'D', None), ('Fusion des barres et du ruban', 'acté', 'D', None),
+  ('Habillage clair et sombre', '—', 'C', None))
+
+s('5.4',
+  ('Vue jour', '—', 'C', None), ('Vues semaine ouvrée et semaine', '—', 'C', None), ('Vue mois', '—', 'C', None),
+  ('Vue timeline', 'T1', 'C', 'S5'), ('Vue année', 'T3', 'C', 'S5'), ('Vue agenda (liste)', 'T3', 'C', 'S5'),
+  ("Vue Gantt de l'agenda", 'Q7', 'Q', None), ('Ressources, groupement par ressource', 'T1', 'C', 'S5'),
+  ('Récurrences', 'T2', 'C', 'S5'), ("Modification d'une seule occurrence", 'T2', 'C', 'S5'),
+  ('Bandeau « toute la journée »', '—', 'C', None),
+  ('Ligne « maintenant », heures non ouvrées ombrées', '—', 'C', None),
+  ('Glisser et redimensionner, événements annulables', '—', 'C', None),
+  ("Formulaire d'édition de rendez-vous", 'T3', 'C', 'S5'), ('Rappels', 'T4', 'C', 'S5'),
+  ('Fuseaux horaires', 'T4', 'C', 'S5'), ('Import et export iCalendar', 'T4', 'C', 'S5'),
+  ('Synchronisation Google ou Microsoft', 'Q7', 'Q', None), ('Libellés, statuts, catégories', 'T3', 'C', 'S5'),
+  ('Navigateur de dates couplé', 'T1', 'C', 'S5'), ('Liaison par mappings', 'T5', 'C', 'S5'),
+  ('Lecture seule', '—', 'C', None), ('Impression', 'I4', 'C', 'S4'))
+
+s('5.5',
+  ('Table-arbre et diagramme', '—', 'C', None), ('Tâches récapitulatives, jalons', '—', 'C', None),
+  ('Dépendances FS, SS, FF, SF avec décalage', '—', 'C', None), ('Ordonnancement automatique', '—', 'C', None),
+  ('Calendrier ouvré (week-ends, jours fériés)', '—', 'C', None), ('Chemin critique', '—', 'C', None),
+  ('Baseline', '—', 'C', None),
+  ('Édition graphique (déplacer, redimensionner, avancement, liens)', '—', 'C', None),
+  ('Édition in-place de la table', '—', 'C', None),
+  ('Édition structurelle (insérer, supprimer, indenter, déplacer)', '—', 'C', None),
+  ('Annuler, rétablir', '—', 'C', None), ("Zoom de l'échelle de temps", '—', 'C', None),
+  ('Gros volumes', '—', 'C', None), ('Couleur par tâche', '—', 'C', None), ('Persistance', '—', 'C', None),
+  ('Liaison de données (mappings)', 'T5', 'C', 'S5'), ('Ressources et affectations', 'L11', 'C', 'S6'),
+  ('Feuille de ressources', 'L10', 'C', 'S5'), ('Contraintes typées (8 types)', 'L5', 'C', 'S3'),
+  ('Tâches fractionnées', 'L7', 'C', 'S3'), ('Tâches récurrentes', 'L7', 'C', 'S3'),
+  ('Colonnes configurables', 'L2', 'C', 'S2'), ('Vue chronologie', 'L23', 'C', 'S6'),
+  ('Import et export MS Project XML', 'L24', 'C', 'S6'), ('Impression, export', 'I3', 'C', 'S2'),
+  ('Gabarits ou dessin personnalisé des barres', 'L21', 'C', 'S5'),
+  ('Coûts, champs personnalisés', 'L17', 'C', 'S6'))
+
+s('5.6',
+  ('Mise en forme des caractères', '—', 'C', None), ('Titres, styles de paragraphe', 'R1', 'C', 'S4'),
+  ('Listes', 'R1', 'C', 'S4'), ('Alignement, justification', '—', 'C', None), ('Liens', '—', 'C', None),
+  ('Images', 'R2', 'C', 'S5'), ('Tableaux', 'R2', 'C', 'S5'), ('Annuler, rétablir', '—', 'C', None),
+  ('Presse-papiers riche', '—', 'C', None), ('Import et export HTML', '—', 'C', None),
+  ('DOCX, RTF, ODT', 'R4', 'C', 'S5'), ('Export PDF', 'I4', 'C', 'S4'),
+  ('Mise en page (sections, marges, colonnes, en-têtes et pieds de page)', 'R3', 'C', 'S5'),
+  ('Vue page, impression', 'R3', 'C', 'S5'), ('Champs, publipostage', 'Q7', 'Q', None),
+  ('Commentaires, suivi des modifications', 'R5', 'C', 'S5'), ('Rechercher, remplacer', 'R1', 'C', 'S4'),
+  ('Orthographe', 'R5', 'C', 'S5'), ('Protection du document', 'R5', 'C', 'S5'),
+  ('Règle, tabulations', 'R3', 'C', 'S5'), ("Barre d'outils ou ruban intégré", 'R1', 'C', 'S4'),
+  ('Raccourcis clavier', '—', 'C', None), ('IA (assistant)', 'Q6', 'Q', None))
+
+s('5.7',
+  ('Valeur liable en XAML (`EditValue`)', 'E3', 'C', 'S1'), ('Masques simples', 'E2', 'C', 'S1'),
+  ('Masques numériques, date-heure, regex', 'E5', 'C', 'S2'),
+  ("Validation annulable, texte et rendu d'erreur", '—', 'C', None),
+  ('Validation centralisée, `IDataErrorInfo`', 'E8', 'C', 'S3'), ("Texte d'invite", '—', 'C', None),
+  ('Lecture seule', '—', 'C', None), ("Boutons d'éditeur configurables", 'E2', 'C', 'S1'),
+  ('Popups qui se retournent vers le haut', 'E2', 'C', None), ('Autocomplétion', '—', 'C', None),
+  ('Même éditeur en autonome et in-place (grille, arbre, barres)', 'E11', 'C', 'S3'),
+  ('Socle commun à tous les éditeurs', 'E3', 'C', 'S1'), ('Thème clair et sombre à chaud', '—', 'C', None),
+  ('États visuels cohérents, halo de focus', '—', 'C', None), ('Libellé flottant', 'Q7', 'Q', None),
+  ('Accessibilité (UI Automation)', 'E12', 'C', 'S3'), ('IA (autocomplétion, assistant)', 'Q6', 'Q', None))
