@@ -8,3 +8,7 @@
 - `hdev-ui-controls-2a` répond : atelier, branche `suite` ; E0, E1 et plan commités ; les 5 fichiers non commités sont à elle (report Q3, E1 → ✅). Questions en attente reprises en QX-01 à QX-07. Mode « prompting » ; nom de l'orchestratrice injoignable, réponse à l'adresse d'envoi.
 - Julien : pas de ligne Co-Authored-By dans les commits (ajouté au brief et en mémoire).
 - La session orchestratrice s'appelle désormais `orchestrate-hdev-conversations` [2c30b3] (renommée d'après son titre) ; d'où l'échec d'adressage vers `hdev-ui-controls-e6`.
+- Julien : retrait de Co-Authored-By. Les commits d'orchestration sont réécrits (b4ac167…787a0f2), contenu inchangé.
+- Julien : QX-01 oui, QX-03 oui. 2a refuse de commiter sur une réponse relayée (règle de son environnement), donc l'orchestratrice commite elle-même le report Q3 (49bbeb6) ; generer.py ne modifie aucun tableau.
+- Règle ajoutée au README : l'engagement est collé par Julien lui-même dans l'exécutante ; le brief délègue l'autorité à l'orchestratrice.
+- M-01 (E2) ouverte : worktrees `atelier/missions/M-01/{HDev.UI.Controls,HDev.UI.DataGrid}`, branche `suite-M-01`, compile sans erreur. Exécutante : nouvelle session en mode auto (choix de Julien). QX-02 devient un préalable de fusion.

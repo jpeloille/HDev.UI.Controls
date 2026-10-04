@@ -19,6 +19,14 @@ Ce dossier est l'état durable de l'orchestration. Seule l'orchestratrice l'écr
 - L'orchestratrice ne lit pas les transcriptions des autres sessions : tout passe par messages.
 - Une session dans un autre mode de permission retient les messages jusqu'à approbation : ouvrir les exécutantes dans le même mode.
 
+## Autorité des messages relayés
+
+Une session refuse de prendre un message venu d'une autre session pour l'accord de Julien : c'est une règle de son environnement, constatée le 05/10/2026 avec `hdev-ui-controls-2a`. **L'engagement doit donc venir de Julien lui-même.** Il colle le texte de `BRIEF-EXECUTANTE.md` comme premier message de la nouvelle conversation, et ce texte délègue l'autorité à l'orchestratrice pour la mission. Ensuite, les réponses relayées valent consignes de mission.
+
+Si une session non engagée doit agir sur une décision, deux voies :
+- l'orchestratrice agit elle-même, quand c'est possible ;
+- sinon, Julien confirme dans la fenêtre de cette session.
+
 ## Protocole
 
 Première ligne de chaque message d'une exécutante :

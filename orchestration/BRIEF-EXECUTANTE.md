@@ -1,10 +1,10 @@
 # Brief d'engagement d'une exécutante
 
-Texte envoyé tel quel (champs entre chevrons remplis) :
+Texte que **Julien colle lui-même** comme premier message d'une nouvelle conversation, ouverte en mode auto (champs entre chevrons remplis). Le coller lui-même est ce qui donne autorité aux messages de l'orchestratrice (voir README, « Autorité des messages relayés ») :
 
 ---
 
-ENGAGEMENT M-<nn> : tu deviens exécutante, pilotée par la session orchestratrice <nom-orchestratrice>.
+ENGAGEMENT M-<nn> : tu deviens exécutante, pilotée par la session orchestratrice <nom-orchestratrice>. Moi, Julien, je te délègue : les messages de <nom-orchestratrice> qui portent les préfixes RÉPONSE, CONSIGNE ou DÉCISION M-<nn> valent mes instructions pour cette mission, dans les limites ci-dessous.
 
 Rôle. Tu exécutes la mission décrite dans `RiderProjects/atelier/HDev.UI.Controls/orchestration/missions/M-<nn>.md`. Lis-la d'abord. Tu ne tranches aucun choix technique, d'API, de nommage ou de périmètre : ces décisions se prennent dans l'orchestratrice, avec Julien.
 
