@@ -45,7 +45,7 @@ public class HDevDateEdit : HDevEditorBase<DateTime?>
     }
 
     /// <summary>Valeur typée (null = vide)</summary>
-    public override DateTime? Value
+    public DateTime? Value
     {
         get => GetValue(ValueProperty);
         set => SetValueFromCode(value);
@@ -63,7 +63,8 @@ public class HDevDateEdit : HDevEditorBase<DateTime?>
         var button = new HDevEditorGlyphButton { Icon = HDevEditorIcon.Calendar };
         button.Click += (s, e) => DropDown.Toggle();
         SetRightElement(button);
-        DropDown.Opening = OnCalendarOpening;
+        UseDropDown();
+        DropDownOpening += (_, _) => PrepareCalendar();
     }
 
     private static string DeriveMask(string format)
@@ -117,7 +118,7 @@ public class HDevDateEdit : HDevEditorBase<DateTime?>
     // POPUP CALENDRIER
     // ═══════════════════════════════════════════════════════════════
 
-    private bool OnCalendarOpening()
+    private void PrepareCalendar()
     {
         // HDevMonthCalendar natif (le Calendar Fluent gardait un état
         // d'interaction périmé à la réouverture — le nôtre est recréé aussi,
@@ -131,7 +132,6 @@ public class HDevDateEdit : HDevEditorBase<DateTime?>
         };
         _calendar.SelectedDateChanged += OnCalendarDateSelected;
         DropDown.Content = _calendar;
-        return true;
     }
 
     private void OnCalendarDateSelected(object? sender, EventArgs e)

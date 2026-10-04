@@ -6,6 +6,8 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using HDev.UI.Controls.Theme;
 using System.Globalization;
+using System.ComponentModel;
+using System.Windows.Input;
 
 namespace HDev.UI.Controls;
 
@@ -202,20 +204,14 @@ public class HDevEditorGlyphButton : Control
         Crisp.BeginFrame(this);
         var bounds = new Rect(Bounds.Size);
 
-        if (_isHovered)
-        {
-            var bg = _isPressed ? HDevTheme.Background.ControlPressed : HDevTheme.Background.ControlHover;
-            context.FillRectangle(new SolidColorBrush(bg),
-                bounds.Deflate(new Thickness(2, 3)), 4);
-        }
-
-        var color = IsEffectivelyEnabled ? HDevTheme.Text.Secondary : HDevTheme.Text.Disabled;
-
         if (Icon != HDevEditorIcon.None)
         {
-            DrawIcon(context, Icon, bounds.Center, color);
+            RenderButton(context, bounds, _isHovered, _isPressed, IsEffectivelyEnabled, Icon);
             return;
         }
+
+        RenderButton(context, bounds, _isHovered, _isPressed, IsEffectivelyEnabled, HDevEditorIcon.None);
+        var color = IsEffectivelyEnabled ? HDevTheme.Text.Secondary : HDevTheme.Text.Disabled;
 
         var text = new FormattedText(Glyph, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
             new Typeface(HDevTheme.Typography.FontFamily), GlyphSize,
@@ -223,6 +219,23 @@ public class HDevEditorGlyphButton : Control
         context.DrawText(text, Crisp.Snap(new Point(
             (bounds.Width - text.Width) / 2,
             (bounds.Height - text.Height) / 2)));
+    }
+
+    /// <summary>Fond de survol et de pression, puis glyphe : rendu commun des boutons d'éditeur</summary>
+    internal static void RenderButton(DrawingContext context, Rect bounds, bool hovered, bool pressed,
+        bool enabled, HDevEditorIcon icon)
+    {
+        // Toute la surface du bouton est cliquable, pas seulement les traits du glyphe :
+        // le test de clic d'Avalonia suit ce qui est dessiné
+        context.FillRectangle(Brushes.Transparent, bounds);
+        if (hovered && enabled)
+        {
+            var bg = pressed ? HDevTheme.Background.ControlPressed : HDevTheme.Background.ControlHover;
+            context.FillRectangle(new SolidColorBrush(bg), bounds.Deflate(new Thickness(2, 3)), 4);
+        }
+        if (icon != HDevEditorIcon.None)
+            DrawIcon(context, icon, bounds.Center,
+                enabled ? HDevTheme.Text.Secondary : HDevTheme.Text.Disabled);
     }
 
     /// <summary>
@@ -342,6 +355,187 @@ public class HDevEditorGlyphButton : Control
     }
 }
 
+/// <summary>Type d'un bouton d'éditeur : son glyphe et son action par défaut</summary>
+public enum HDevEditorButtonKind
+{
+    /// <summary>Chevron : bascule le popup de l'éditeur</summary>
+    DropDown,
+    /// <summary>Croix : vide la valeur, sauf si ButtonClick est marqué traité</summary>
+    Clear,
+    /// <summary>« … » : ouvrir un dialogue (ButtonClick)</summary>
+    Ellipsis,
+    /// <summary>Loupe (ButtonClick)</summary>
+    Search,
+    Plus,
+    Minus,
+    /// <summary>Glyphe donné par <see cref="HDevEditorButton.Icon"/> (ButtonClick)</summary>
+    Custom
+}
+
+/// <summary>Clic d'un bouton d'éditeur (<see cref="HDevEditorBase.ButtonClick"/>)</summary>
+public class HDevEditorButtonClickEventArgs : EventArgs
+{
+    public HDevEditorButtonClickEventArgs(HDevEditorButton button) => Button = button;
+
+    public HDevEditorButton Button { get; }
+
+    /// <summary>Vrai : l'action par défaut du bouton (popup, effacement) n'a pas lieu</summary>
+    public bool Handled { get; set; }
+}
+
+/// <summary>
+/// Bouton d'éditeur (pièce du socle, D1) : se déclare dans <see cref="HDevEditorBase.Buttons"/>
+/// de n'importe quel éditeur. Infobulle, visibilité et activation sont celles d'Avalonia
+/// (<c>ToolTip.Tip</c>, <c>IsVisible</c>, <c>IsEnabled</c>), comme la commande.
+/// <code>
+/// &lt;h:HDevButtonEdit Text="{Binding Chemin}"&gt;
+///   &lt;h:HDevButtonEdit.Buttons&gt;
+///     &lt;h:HDevEditorButton Kind="Clear" ToolTip.Tip="Effacer" /&gt;
+///   &lt;/h:HDevButtonEdit.Buttons&gt;
+/// &lt;/h:HDevButtonEdit&gt;
+/// </code>
+/// Il ne prend pas le focus : le clavier reste au champ (F4, Alt+↓ pour le popup).
+/// </summary>
+public class HDevEditorButton : Control
+{
+    private bool _isHovered;
+    private bool _isPressed;
+    private bool _canExecute = true;
+
+    public static readonly StyledProperty<HDevEditorButtonKind> KindProperty =
+        AvaloniaProperty.Register<HDevEditorButton, HDevEditorButtonKind>(nameof(Kind), HDevEditorButtonKind.Ellipsis);
+
+    public static readonly StyledProperty<HDevEditorIcon> IconProperty =
+        AvaloniaProperty.Register<HDevEditorButton, HDevEditorIcon>(nameof(Icon));
+
+    public static readonly StyledProperty<ICommand?> CommandProperty =
+        AvaloniaProperty.Register<HDevEditorButton, ICommand?>(nameof(Command));
+
+    public static readonly StyledProperty<object?> CommandParameterProperty =
+        AvaloniaProperty.Register<HDevEditorButton, object?>(nameof(CommandParameter));
+
+    public HDevEditorButtonKind Kind
+    {
+        get => GetValue(KindProperty);
+        set => SetValue(KindProperty, value);
+    }
+
+    /// <summary>Glyphe d'un bouton <see cref="HDevEditorButtonKind.Custom"/></summary>
+    public HDevEditorIcon Icon
+    {
+        get => GetValue(IconProperty);
+        set => SetValue(IconProperty, value);
+    }
+
+    /// <summary>Exécutée au clic, après ButtonClick ; son CanExecute grise le bouton</summary>
+    public ICommand? Command
+    {
+        get => GetValue(CommandProperty);
+        set => SetValue(CommandProperty, value);
+    }
+
+    public object? CommandParameter
+    {
+        get => GetValue(CommandParameterProperty);
+        set => SetValue(CommandParameterProperty, value);
+    }
+
+    /// <summary>L'éditeur qui porte le bouton</summary>
+    internal HDevEditorBase? Owner { get; set; }
+
+    static HDevEditorButton()
+    {
+        AffectsRender<HDevEditorButton>(KindProperty, IconProperty, IsEffectivelyEnabledProperty);
+    }
+
+    public HDevEditorButton()
+    {
+        Width = 26;
+        Cursor = new Cursor(StandardCursorType.Hand);
+    }
+
+    /// <summary>Glyphe dessiné : celui du type, ou <see cref="Icon"/> pour un bouton personnalisé</summary>
+    public HDevEditorIcon EffectiveIcon => Kind switch
+    {
+        HDevEditorButtonKind.DropDown => HDevEditorIcon.ChevronDown,
+        HDevEditorButtonKind.Clear => HDevEditorIcon.Clear,
+        HDevEditorButtonKind.Ellipsis => HDevEditorIcon.Ellipsis,
+        HDevEditorButtonKind.Search => HDevEditorIcon.Search,
+        HDevEditorButtonKind.Plus => HDevEditorIcon.Plus,
+        HDevEditorButtonKind.Minus => HDevEditorIcon.Minus,
+        _ => Icon
+    };
+
+    protected override bool IsEnabledCore => base.IsEnabledCore && _canExecute;
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == CommandProperty)
+        {
+            if (change.OldValue is ICommand old) old.CanExecuteChanged -= OnCanExecuteChanged;
+            if (change.NewValue is ICommand now) now.CanExecuteChanged += OnCanExecuteChanged;
+            OnCanExecuteChanged(this, EventArgs.Empty);
+        }
+        else if (change.Property == CommandParameterProperty)
+            OnCanExecuteChanged(this, EventArgs.Empty);
+    }
+
+    private void OnCanExecuteChanged(object? sender, EventArgs e)
+    {
+        var can = Command?.CanExecute(CommandParameter) ?? true;
+        if (can == _canExecute) return;
+        _canExecute = can;
+        UpdateIsEffectivelyEnabled();
+    }
+
+    /// <summary>Simule un clic (tests, accessibilité) : ButtonClick, commande, action par défaut</summary>
+    internal void PerformClick()
+    {
+        if (IsEffectivelyEnabled) Owner?.OnEditorButtonClick(this);
+    }
+
+    protected override void OnPointerEntered(PointerEventArgs e)
+    {
+        _isHovered = true;
+        InvalidateVisual();
+        base.OnPointerEntered(e);
+    }
+
+    protected override void OnPointerExited(PointerEventArgs e)
+    {
+        _isHovered = false;
+        _isPressed = false;
+        InvalidateVisual();
+        base.OnPointerExited(e);
+    }
+
+    protected override void OnPointerPressed(PointerPressedEventArgs e)
+    {
+        _isPressed = true;
+        InvalidateVisual();
+        e.Handled = true;
+        base.OnPointerPressed(e);
+    }
+
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    {
+        var click = _isPressed && _isHovered;
+        _isPressed = false;
+        InvalidateVisual();
+        e.Handled = true;
+        base.OnPointerReleased(e);
+        if (click) PerformClick();
+    }
+
+    public override void Render(DrawingContext context)
+    {
+        Crisp.BeginFrame(this);
+        HDevEditorGlyphButton.RenderButton(context, new Rect(Bounds.Size), _isHovered, _isPressed,
+            IsEffectivelyEnabled, EffectiveIcon);
+    }
+}
+
 /// <summary>
 /// Boutons spin (▲/▼) empilés pour les éditeurs numériques
 /// </summary>
@@ -439,7 +633,7 @@ public class HDevSpinButtons : Control
 }
 
 /// <summary>Cause d'une fermeture du popup d'un éditeur</summary>
-internal enum HDevDropDownCloseReason
+public enum HDevDropDownCloseReason
 {
     /// <summary>Un choix fait dans le popup : la valeur est acceptée</summary>
     Accept,
@@ -449,6 +643,36 @@ internal enum HDevDropDownCloseReason
 
     /// <summary>Clic extérieur ou fenêtre désactivée (garde de fermeture)</summary>
     Outside
+}
+
+/// <summary>Fermeture à venir du popup d'un éditeur (<see cref="HDevEditorBase.DropDownClosing"/>)</summary>
+public class HDevDropDownClosingEventArgs : CancelEventArgs
+{
+    public HDevDropDownClosingEventArgs(HDevDropDownCloseReason reason)
+    {
+        Reason = reason;
+        AcceptValue = reason == HDevDropDownCloseReason.Accept;
+    }
+
+    public HDevDropDownCloseReason Reason { get; }
+
+    /// <summary>Le choix fait dans le popup vaut ; vrai par défaut pour <see cref="HDevDropDownCloseReason.Accept"/></summary>
+    public bool AcceptValue { get; set; }
+}
+
+/// <summary>Popup d'un éditeur fermé (<see cref="HDevEditorBase.DropDownClosed"/>)</summary>
+public class HDevDropDownClosedEventArgs : EventArgs
+{
+    public HDevDropDownClosedEventArgs(HDevDropDownCloseReason reason, bool acceptValue)
+    {
+        Reason = reason;
+        AcceptValue = acceptValue;
+    }
+
+    public HDevDropDownCloseReason Reason { get; }
+
+    /// <summary>Le choix fait dans le popup a valu (tel que laissé par DropDownClosing)</summary>
+    public bool AcceptValue { get; }
 }
 
 /// <summary>
@@ -496,8 +720,16 @@ internal sealed class HDevEditorDropDown
         // pas le champ, d'où ce second point d'écoute, après le contenu (qui peut garder Échap)
         _chrome.AddHandler(InputElement.KeyDownEvent, (_, e) =>
         {
+            // Entrée valide le choix, même quand le contenu l'a prise (une liste sélectionne
+            // l'élément courant) ; seul un texte multiligne la garde pour ses sauts de ligne
+            if (e.Key == Key.Enter && e.KeyModifiers == KeyModifiers.None && IsOpen
+                && e.Source is not TextBox { AcceptsReturn: true })
+            {
+                e.Handled = Close(HDevDropDownCloseReason.Accept) || e.Handled;
+                return;
+            }
             if (!e.Handled && HandleKey(e)) e.Handled = true;
-        });
+        }, RoutingStrategies.Bubble, handledEventsToo: true);
     }
 
     public Avalonia.Controls.Primitives.Popup Popup { get; }

@@ -676,6 +676,7 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         PopupOuvert = () => Champ<bool>(e, "_isOpen"), ContenuPopup = () => EnfantPopup(e)
     };
     int NbSuggestions(HDevSearchControl e) => Champ<ListBox>(e, "_listBox").ItemCount;
+    TextBox InterieurDe(HDevEditorBase e) => Champ<TextBox>(e, "InnerTextBox");
     void ViderSaisieJeton(HDevTokenEdit e) => Champ<TextBox>(e, "_input").Text = "";
     Editeur AdTokenEdit(HDevTokenEdit e) => new()
     {
@@ -1102,6 +1103,114 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
             focusDedans && !nu.DropDown.IsOpen && nu.IsKeyboardFocusWithin);
         nu.IsReadOnly = true; Touche(w, PhysicalKey.F4); var lectureSeule = nu.DropDown.IsOpen; nu.IsReadOnly = false;
         Check("popup du socle : pas d'ouverture en lecture seule", !lectureSeule);
+        w.Close();
+    }
+
+    // ═══ SOCLE COMPOSITE (E2) : boutons d'éditeur et popup public, en XAML compilé ═══
+    {
+        var vm = new FormulaireE2Vm();
+        var vue = new FormulaireE2 { DataContext = vm };
+        var w = new Window { Width = 500, Height = 420, Content = vue }; w.Show(); Pump(w);
+        var be = vue.FindControl<HDevButtonEdit>("Chemin")!;
+        var pc = vue.FindControl<HDevPopupContainerEdit>("Equipage")!;
+        var clics = new List<HDevEditorButtonKind>();
+        be.ButtonClick += (_, e) => clics.Add(e.Button.Kind);
+        HDevEditorButton Bouton(HDevEditorBase e, HDevEditorButtonKind k) => e.Buttons.First(b => b.Kind == k);
+
+        // ─── HDevButtonEdit : texte liable, boutons ───
+        Check("ButtonEdit : Text lié sans Mode, un bouton « … » par défaut, puis ceux du XAML dans l'ordre",
+            be.Text == "/data/vols" && be.Buttons.Select(b => b.Kind).SequenceEqual(new[]
+                { HDevEditorButtonKind.Ellipsis, HDevEditorButtonKind.Clear, HDevEditorButtonKind.Custom }));
+        be.FocusEditor(); InterieurDe(be).CaretIndex = 0; Tape(w, "/mnt");
+        var saisie = vm.Chemin;
+        vm.Chemin = "/srv"; Pump(w);
+        Check("ButtonEdit : la saisie remonte au ViewModel, le ViewModel redescend", saisie == "/mnt/data/vols" && be.Text == "/srv");
+
+        var effacer = Bouton(be, HDevEditorButtonKind.Clear); var dossier = Bouton(be, HDevEditorButtonKind.Custom);
+        var cacheAvant = effacer.IsEffectivelyVisible; vm.EffacerVisible = true; Pump(w);
+        Check("bouton d'éditeur : visibilité liée au ViewModel, infobulle d'Avalonia, glyphe du type ou Icon",
+            !cacheAvant && effacer.IsEffectivelyVisible && (string?)ToolTip.GetTip(effacer) == "Effacer"
+            && effacer.EffectiveIcon == HDevEditorIcon.Clear && dossier.EffectiveIcon == HDevEditorIcon.Folder);
+        var champ = Boite(w, be); var bDossier = Boite(w, dossier);
+        Check($"boutons à droite du champ, à sa hauteur (dossier {bDossier})",
+            Math.Abs(bDossier.Right - (champ.Right - 1)) < 0.5 && bDossier.Height == 26 && Boite(w, effacer).Right <= bDossier.Left);
+
+        var journal = new List<HDevValueChangedEventArgs>(); be.ValueChanged += (_, e) => journal.Add(e);
+        ClickAt(w, WindowCenter(w, effacer));
+        Check("clic réel sur Effacer : ButtonClick, puis la valeur est vidée par l'utilisateur, jusqu'au ViewModel",
+            clics.LastOrDefault() == HDevEditorButtonKind.Clear && be.Text == "" && vm.Chemin == ""
+            && journal.Count == 1 && journal[0].IsUserChange);
+        vm.Chemin = "/srv"; Pump(w);
+        EventHandler<HDevEditorButtonClickEventArgs> garde = (_, e) => e.Handled = true;
+        be.ButtonClick += garde; ClickAt(w, WindowCenter(w, effacer)); be.ButtonClick -= garde;
+        Check("Effacer marqué traité dans ButtonClick : la valeur reste", be.Text == "/srv" && vm.Chemin == "/srv");
+
+        var nClics = clics.Count; var pe = WindowCenter(w, Bouton(be, HDevEditorButtonKind.Ellipsis)); ClickAt(w, pe);
+        Check("« … » ne fait que lever ButtonClick", clics.Count == nClics + 1 && clics[^1] == HDevEditorButtonKind.Ellipsis
+            && be.Text == "/srv" && !be.IsDropDownOpen);
+        ClickAt(w, WindowCenter(w, dossier)); var executee = vm.Parcourir.Executions;
+        vm.Parcourir.Active = false; Pump(w); ClickAt(w, WindowCenter(w, dossier));
+        Check("Command du bouton exécutée au clic ; CanExecute faux grise le bouton, qui ne fait plus rien",
+            executee == 1 && vm.Parcourir.Executions == 1 && !dossier.IsEffectivelyEnabled);
+        be.IsReadOnly = true; vm.Chemin = "/srv"; Pump(w); effacer.PerformClick(); var lectureSeule = be.Text; be.IsReadOnly = false;
+        Check("lecture seule : Effacer ne vide pas", lectureSeule == "/srv");
+
+        // ─── HDevPopupContainerEdit : valeur libre, popup public ───
+        var ouvertures = 0; var fermetures = new List<HDevDropDownClosedEventArgs>();
+        pc.DropDownOpened += (_, _) => ouvertures++; pc.DropDownClosed += (_, e) => fermetures.Add(e);
+        var liste = (ListBox)pc.DropDownContent!;
+        var presentateur = Champ<ContentControl>(pc, "_presenter");
+        Check("PopupContainerEdit : valeur vide, l'invite est affichée, pas de champ texte",
+            pc.Value == null && Equals(presentateur.Content, "Choisir un équipier") && !InterieurDe(pc).IsVisible);
+        ClickAt(w, WindowCenter(w, pc)); Pump(w);
+        var boitePc = Boite(w, pc); var boitePop = Boite(w, pc.DropDown.Chrome);
+        Check($"un clic sur le champ ouvre le popup sous lui, à sa largeur (lu {boitePop})",
+            pc.IsDropDownOpen && ouvertures == 1 && boitePop.Top - boitePc.Bottom == 2 && boitePop.Width >= boitePc.Width);
+        var journalPc = new List<HDevValueChangedEventArgs>(); pc.ValueChanged += (_, e) => journalPc.Add(e);
+        ClickAt(w, WindowCenter(w, (Control)liste.ContainerFromIndex(1)!));
+        Check("le contenu, lié à Value, la pose : jusqu'au ViewModel, origine Utilisateur, affichée par ToString()",
+            Equals(pc.Value, "Teiki Brothers") && Equals(vm.Equipage, "Teiki Brothers") && journalPc.Count == 1
+            && journalPc[0].IsUserChange && Equals(presentateur.Content, "Teiki Brothers") && pc.IsDropDownOpen);
+        Touche(w, PhysicalKey.Escape);
+        Check("Échap depuis le contenu ferme : Reason Cancel, AcceptValue faux, la valeur n'est pas touchée",
+            !pc.IsDropDownOpen && fermetures.Count == 1 && fermetures[0].Reason == HDevDropDownCloseReason.Cancel
+            && !fermetures[0].AcceptValue && Equals(pc.Value, "Teiki Brothers") && pc.IsKeyboardFocusWithin);
+        Touche(w, PhysicalKey.F4); var element = (Control)liste.ContainerFromIndex(2)!; element.Focus(); Pump(w); Touche(w, PhysicalKey.Enter);
+        Check("Entrée dans la liste du popup choisit l'élément et ferme en acceptant (Reason Accept, AcceptValue vrai)",
+            Equals(vm.Equipage, "Lucie Martin") && !pc.IsDropDownOpen && fermetures[^1].Reason == HDevDropDownCloseReason.Accept && fermetures[^1].AcceptValue);
+
+        EventHandler<System.ComponentModel.CancelEventArgs> refuseOuverture = (_, e) => e.Cancel = true;
+        pc.DropDownOpening += refuseOuverture; pc.IsDropDownOpen = true; Pump(w); var refusee = !pc.IsDropDownOpen && !pc.DropDown.IsOpen;
+        pc.DropDownOpening -= refuseOuverture;
+        Check("DropDownOpening annulé : le popup reste fermé, IsDropDownOpen revient à faux", refusee);
+        EventHandler<HDevDropDownClosingEventArgs> retient = (_, e) => { if (e.Reason == HDevDropDownCloseReason.Outside) e.Cancel = true; };
+        pc.DropDownClosing += retient; pc.IsDropDownOpen = true; Pump(w); ClickAt(w, horsChamp); var retenu = pc.IsDropDownOpen;
+        pc.DropDownClosing -= retient; ClickAt(w, horsChamp);
+        Check("DropDownClosing annulé sur clic extérieur : reste ouvert ; sinon le clic extérieur ferme (Reason Outside)",
+            retenu && !pc.IsDropDownOpen && fermetures[^1].Reason == HDevDropDownCloseReason.Outside);
+        pc.IsDropDownOpen = true; Pump(w); var parCode = pc.DropDown.IsOpen; pc.IsDropDownOpen = false; Pump(w);
+        Check("IsDropDownOpen posé par le code ouvre et ferme", parCode && !pc.DropDown.IsOpen && fermetures[^1].Reason == HDevDropDownCloseReason.Cancel);
+        pc.ValueTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<object>((o, _) => new TextBlock { Text = "★ " + o }); Pump(w);
+        Check("ValueTemplate affiche la valeur", presentateur.ContentTemplate != null
+            && presentateur.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "★ Lucie Martin"));
+        w.Close();
+    }
+
+    // ═══ SOCLE COMPOSITE (E2) : un popup sur n'importe quel éditeur (forme B) ═══
+    {
+        var be = new HDevButtonEdit { Width = 200 }; var w = Hote(be, top: 380);
+        be.Buttons.Clear(); be.Buttons.Add(new HDevEditorButton { Kind = HDevEditorButtonKind.DropDown });
+        be.DropDownContent = new TextBlock { Text = "Aide", Width = 120 };
+        be.FocusEditor(); Touche(w, PhysicalKey.F4);
+        var champ = Boite(w, be); var pop = Boite(w, be.DropDown.Chrome);
+        Check($"ButtonEdit + bouton déroulant + DropDownContent : F4 ouvre, retourné au-dessus avec 2 px (lu {champ.Top - pop.Bottom})",
+            be.IsDropDownOpen && champ.Top - pop.Bottom == 2);
+        ClickAt(w, WindowCenter(w, be.Buttons[0]));
+        Check("le bouton déroulant referme", !be.IsDropDownOpen);
+        be.IsMultiline = true; be.Text = "1\n2\n3\n4\n5"; Pump(w);
+        var bouton = Boite(w, be.Buttons[0]); champ = Boite(w, be);
+        Check($"multiligne : les boutons restent sur la première ligne (bouton {bouton}, champ {champ})",
+            champ.Height > 84 && bouton.Top == champ.Top + 1 && bouton.Height == 26);
         w.Close();
     }
 
