@@ -4,13 +4,13 @@ Table de correspondance contrôle par contrôle, état au **04/10/2026**.
 
 ## En bref
 
-- **Catalogue.** 166 fonctions DevExpress recensées (union WinForms, WPF et VCL v26.1). HDev en couvre **34** pour l'usage courant et **25** en partie. **107** sont absentes, dont **10** par décision. Score : **28 %**, ou **30 %** hors absences décidées.
+- **Catalogue.** 166 fonctions DevExpress recensées (union WinForms, WPF et VCL v26.1). HDev en couvre **36** pour l'usage courant et **25** en partie. **105** sont absentes, dont **10** par décision. Score : **29 %**, ou **31 %** hors absences décidées.
 - **Profondeur des contrôles phares**, mesurée sur les capacités que DevExpress met en avant :
 
   | Contrôle | Score |
   |---|---:|
+  | Socle des éditeurs | 62 % |
   | Gantt | 57 % |
-  | Socle des éditeurs | 53 % |
   | Ruban et barres | 44 % |
   | Docking | 44 % |
   | Texte riche | 39 % |
@@ -35,7 +35,7 @@ Table de correspondance contrôle par contrôle, état au **04/10/2026**.
 
 | | Version | Référence |
 |---|---|---|
-| HDev.UI.Controls | commit `4fc218e` (accessibilité et contraste commités le 04/10 : `HDevFocus`, `HDevRadioGroup`, jetons de contraste, `ThemeContrastTests`, `HDevButtonAutomationPeer`), puis les lots E0 et E1 des éditeurs (04/10) | code et tests |
+| HDev.UI.Controls | commit `4fc218e` (accessibilité et contraste commités le 04/10 : `HDevFocus`, `HDevRadioGroup`, jetons de contraste, `ThemeContrastTests`, `HDevButtonAutomationPeer`), puis les lots E0 et E1 des éditeurs (04/10) et le lot E2, socle composite (05/10, branche `suite-M-01`) | code et tests |
 | HDev.UI.DataGrid | commit `7dd3ae1` | code et tests |
 | DevExpress WinForms | v26.1, build 26.1.5 du 18/09/2026 | docs.devexpress.com |
 | DevExpress WPF | v26.1, build 26.1.5 | docs.devexpress.com |
@@ -72,7 +72,7 @@ Score d'une famille = (✅ + ½ 🟡) / nombre de lignes.
 | Famille | Lignes | ✅ | 🟡 | ❌ | ⚪ | Score |
 |---|---:|---:|---:|---:|---:|---:|
 | 3.1 Grilles et données | 14 | 0 | 2 | 12 | 0 | 7 % |
-| 3.2 Éditeurs | 48 | 17 | 3 | 28 | 0 | 39 % |
+| 3.2 Éditeurs | 48 | 19 | 3 | 26 | 0 | 43 % |
 | 3.3 Boutons et libellés | 6 | 4 | 0 | 2 | 0 | 67 % |
 | 3.4 Rubans, barres et menus | 17 | 4 | 3 | 9 | 1 | 32 % |
 | 3.5 Navigation | 14 | 2 | 3 | 9 | 0 | 25 % |
@@ -84,9 +84,9 @@ Score d'une famille = (✅ + ½ 🟡) / nombre de lignes.
 | 3.11 Documents | 6 | 1 | 1 | 1 | 3 | 25 % |
 | 3.12 Rapports, impression, export | 4 | 0 | 1 | 1 | 2 | 13 % |
 | 3.13 Composants transverses | 10 | 0 | 3 | 7 | 0 | 15 % |
-| **Total** | **166** | **34** | **25** | **97** | **10** | **28 %** |
+| **Total** | **166** | **36** | **25** | **95** | **10** | **29 %** |
 
-- Hors absences décidées (⚪ retirés du dénominateur), le score monte à **30 %**.
+- Hors absences décidées (⚪ retirés du dénominateur), le score monte à **31 %**.
 - Parmi les ✅, trois relèvent du socle Avalonia.
 
 ## 2. Dimensions transverses
@@ -151,11 +151,11 @@ Détail de la liaison MVVM côté HDev (relevé exhaustif des propriétés de va
 | Fonction | WinForms | WPF | VCL | HDev | État | Écart / remarque |
 |---|---|---|---|---|---|---|
 | Texte mono-ligne | `TextEdit` | `TextEdit` | `TcxTextEdit` | `HDevTextBox` | ✅ | |
-| Texte masqué | `TextEdit` (`MaskSettings`) | `TextEdit` (masques) | `TcxMaskEdit` | `HDevEditorBase.Mask` | 🟡 | masque simple (0/9/L/A) sur les éditeurs du socle ; ni numérique, ni regex ; aucun champ texte masqué autonome ; le collage contourne le masque |
+| Texte masqué | `TextEdit` (`MaskSettings`) | `TextEdit` (masques) | `TcxMaskEdit` | `HDevEditorBase.Mask` | 🟡 | masque simple (0/9/L/A) sur les éditeurs du socle, collage compris ; ni numérique, ni regex ; aucun champ texte masqué autonome |
 | Mot de passe | `TextEdit` | `PasswordBoxEdit` | `TcxTextEdit` | `HDevTextBox` (`IsPassword`) | ✅ | |
 | Multi-ligne | `MemoEdit` | `TextEdit` (nv) | `TcxMemo` | `HDevTextBox` (`IsMultiline`) | ✅ | |
 | Mémo en popup | `MemoExEdit` | `MemoEdit` | `TcxBlobEdit` | — | ❌ | |
-| Texte avec boutons | `ButtonEdit` | `ButtonEdit` | `TcxButtonEdit` | — | ❌ | boutons-glyphes internes seulement, aucune collection publique |
+| Texte avec boutons | `ButtonEdit` | `ButtonEdit` | `TcxButtonEdit` | `HDevButtonEdit` | ✅ | `Buttons` sur tout éditeur du socle : déroulant, effacer, « … », loupe, plus, moins, glyphe libre ; infobulle, commande, visibilité liables ; boutons à droite seulement |
 | Historique des saisies (MRU) | `MRUEdit` | — | `TcxMRUEdit` | — | ❌ | |
 | Lien hypertexte | `HyperLinkEdit`, `HyperlinkLabelControl` | `HyperlinkEdit` | `TcxHyperLinkEdit` | — | ❌ | |
 | Recherche, auto-suggestion | `SearchControl` | `SearchControl`, `AutoSuggestEdit` | `TdxOfficeSearchBox` | `HDevSearchControl` | ✅ | suggestions par callback, croix d'effacement |
@@ -173,7 +173,7 @@ Détail de la liaison MVVM côté HDev (relevé exhaustif des propriétés de va
 | Lookup avec recherche | `SearchLookUpEdit` | `LookUpEdit` (mode search) | — | — | ❌ | |
 | Lookup multi-valeurs | — | `LookUpEdit` (modes multi-select, token) | — | — | ❌ | |
 | Lookup arborescent | `TreeListLookUpEdit` | — | — | — | ❌ | |
-| Popup à contenu libre | `PopupContainerEdit` | `PopupBaseEdit` (nv) | `TcxPopupEdit` | — | ❌ | `AttachPopup` reste protégé dans le socle |
+| Popup à contenu libre | `PopupContainerEdit` | `PopupBaseEdit` (nv) | `TcxPopupEdit` | `HDevPopupContainerEdit` | ✅ | `DropDownContent` sur tout éditeur du socle ; `IsDropDownOpen` liable, ouverture et fermeture annulables, acceptation de la valeur |
 | Galerie en popup | `PopupGalleryEdit` | — | — | — | ❌ | |
 | Liste | `ListBoxControl`, `ImageListBoxControl` | `ListBoxEdit` | `TcxListBox`, `TdxListViewControl` | `HDevListView` | ✅ | items riches, groupes repliables, multi-sélection, virtualisée |
 | Liste à cases | `CheckedListBoxControl` | `ListBoxEdit` (mode checked) | `TcxCheckListBox`, `TcxCheckGroup` | — | ❌ | |
@@ -402,7 +402,7 @@ Le score mesure l'étendue couverte, pas l'effort restant. Un seul item DevExpre
 | Agenda (`HDevScheduler` + `HDevRoster`) | `SchedulerControl`, `TcxScheduler` | 23 | 7 | 3 | 13 | 0 | 37 % |
 | Gantt (`HDevGantt`) | `GanttControl`, `TdxGanttControl` | 27 | 15 | 1 | 11 | 0 | 57 % |
 | Texte riche (`HDevRichEdit`) | `RichEditControl`, `TdxRichEditControl` | 23 | 7 | 4 | 12 | 0 | 39 % |
-| Socle des éditeurs | `BaseEdit` + `RepositoryItem`, `EditSettings`, `TcxEditRepository` | 17 | 7 | 4 | 6 | 0 | 53 % |
+| Socle des éditeurs | `BaseEdit` + `RepositoryItem`, `EditSettings`, `TcxEditRepository` | 17 | 9 | 3 | 5 | 0 | 62 % |
 
 ### 4.1 Grille : `HDevDataGrid` ↔ `GridControl` / `TcxGrid`
 
@@ -597,18 +597,18 @@ Le score mesure l'étendue couverte, pas l'effort restant. Un seul item DevExpre
 
 | Capacité DevExpress | HDev | Remarque |
 |---|---|---|
-| Valeur liable en XAML (`EditValue`) | 🟡 | oui pour TextBox, DateEdit (contrat de valeur, lot E1), CheckBox, RadioButton, ToggleSwitch, Slider ; non pour TimeEdit, SpinEdit, ComboBox, LookUpEdit, TokenEdit, SearchControl, MonthCalendar (propriétés CLR) |
-| Masques simples | 🟡 | 0, 9, L, A et littéraux ; le collage contourne le masque, seule la validation le rattrape (test d'interaction) |
+| Valeur liable en XAML (`EditValue`) | 🟡 | oui pour TextBox, DateEdit (contrat de valeur, lot E1), ButtonEdit, PopupContainerEdit (lot E2), CheckBox, RadioButton, ToggleSwitch, Slider ; non pour TimeEdit, SpinEdit, ComboBox, LookUpEdit, TokenEdit, SearchControl, MonthCalendar (propriétés CLR) |
+| Masques simples | ✅ | 0, 9, L, A et littéraux ; le collage passe par le masque, et par le filtre numérique de SpinEdit (lot E2, test d'interaction) |
 | Masques numériques, date-heure, regex | 🟡 | DateEdit et SpinEdit formatent eux-mêmes ; pas de regex |
 | Validation annulable, texte et rendu d'erreur | ✅ | |
 | Validation centralisée, `IDataErrorInfo` | ❌ | |
 | Texte d'invite | ✅ | |
 | Lecture seule | ✅ | |
-| Boutons d'éditeur configurables | ❌ | |
-| Popups qui se retournent vers le haut | ✅ | tous (test d'interaction) ; la ComboBox bascule elle-même, les autres s'en remettent à Avalonia, qui ne reflète pas leur décalage de 1 à 2 px |
+| Boutons d'éditeur configurables | ✅ | `Buttons` et `ButtonClick` sur tout éditeur du socle (lot E2) ; les boutons propres aux éditeurs existants y passent en E3 |
+| Popups qui se retournent vers le haut | ✅ | tous (test d'interaction) ; écart au champ identique dessous et dessus, mesuré au pixel (lot E2) ; la ComboBox bascule encore elle-même jusqu'à son portage (E3) |
 | Autocomplétion | ✅ | ComboBox : Suggest, Append |
 | Même éditeur en autonome et in-place (grille, arbre, barres) | ❌ | |
-| Socle commun à tous les éditeurs | 🟡 | `HDevEditorBase` porte DateEdit, TimeEdit, SpinEdit et SearchControl ; TextBox, ComboBox, LookUpEdit et TokenEdit sont à part |
+| Socle commun à tous les éditeurs | 🟡 | `HDevEditorBase` porte zone de valeur, multiligne, boutons, popup, masque et validation (lot E2) ; il porte DateEdit, TimeEdit, SpinEdit, SearchControl, ButtonEdit et PopupContainerEdit ; TextBox, ComboBox, LookUpEdit et TokenEdit sont à part jusqu'à E3 |
 | Thème clair et sombre à chaud | ✅ | |
 | États visuels cohérents, halo de focus | ✅ | |
 | Libellé flottant | ❌ | WinForms |

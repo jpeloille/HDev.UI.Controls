@@ -67,10 +67,10 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
 ## 2. Table des noms
 
 « Conservé » signifie que le nom ne change pas. Le lot indique quand la rupture a lieu.
-- **Seules les lignes marquées « E1, fait » sont faites.** Toutes les autres sont des propositions, confirmées au lot indiqué.
+- **Seules les lignes marquées « E1, fait » ou « E2, fait » sont faites.** Toutes les autres sont des propositions, confirmées au lot indiqué.
 - **Une fonction n'est retirée que si elle a un équivalent** (décision du 05/10/2026). Une ligne « supprimé » donne donc toujours l'équivalent.
 
-### 2.1 Socle (HDevEditorBase : DateEdit, TimeEdit, SpinEdit, SearchControl)
+### 2.1 Socle (HDevEditorBase : DateEdit, TimeEdit, SpinEdit, SearchControl, ButtonEdit, PopupContainerEdit)
 
 | Avant | Après | Lot |
 |---|---|---|
@@ -80,6 +80,14 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
 | `TextChanged` (`EventHandler`) | conservé | — |
 | `Validating`, `HDevValidatingEventArgs` | conservés (revus en E8, validation centralisée) | E8 |
 | `Mask`, `IsMaskComplete`, `Placeholder`, `IsReadOnly`, `FocusEditor()`, `SelectAll()` | conservés | — |
+| `HDevEditorBase<T>.Value` (abstrait, public) | retiré ; chaque éditeur déclare sa valeur sous le nom D3 (`Value`, ou `Text` pour un éditeur de texte) ; le code générique passe par `IHDevEditor.EditValue` | **E2, fait** |
+| `Text` (CLR) | conservé, surchargeable : un éditeur de texte le porte par sa StyledProperty liable (HDevButtonEdit) | **E2, fait** |
+| — | `IsMultiline` : la hauteur n'est fixée qu'en monoligne | **E2, fait** |
+| — | `Buttons` (`HDevEditorButton` : `Kind`, `Icon`, `Command`, `CommandParameter`, et `ToolTip.Tip`, `IsVisible`, `IsEnabled` d'Avalonia) et `ButtonClick` (`HDevEditorButtonClickEventArgs`, `Handled`) | **E2, fait** |
+| — | `IsDropDownOpen` (liable dans les deux sens), `DropDownContent`, `DropDownOpening` (`CancelEventArgs`), `DropDownOpened`, `DropDownClosing` (`HDevDropDownClosingEventArgs` : `Cancel`, `Reason`, `AcceptValue`), `DropDownClosed` (`HDevDropDownClosedEventArgs` : `Reason`, `AcceptValue`) | **E2, fait** |
+| `SetRightElement` (protégé, un seul élément utile) | conservé ; les éléments s'alignent de gauche à droite, avant les `Buttons` | **E2, fait** |
+| — | `SetValuePresenter(Control?)` (protégé) : un présentateur à la place du champ texte | **E2, fait** |
+| `HDevEditorIcon` | conservé ; s'y ajoutent `Clear`, `Ellipsis`, `Search`, `Clock`, `Calculator`, `Link`, `Folder`, `Swatch`, `Plus`, `Minus` | **E2, fait** |
 
 ### 2.2 HDevDateEdit et HDevTimeEdit
 
@@ -125,16 +133,16 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
 | `Properties.TextEditStyle` | `TextEditStyle`, propriété directe : conservé avec ses trois modes, car `HideTextEditor` n'a pas d'équivalent dans Avalonia, qui n'a que `IsEditable` ; décidé le 05/10/2026 | E3 |
 | `Properties.AutoComplete`, `CaseSensitiveSearch`, `ImmediatePopup`, `AllowNullInput`, `DropDownRows` | conservés, en propriétés directes | E3 |
 | `Properties.Sorted` | `Sorted`, propriété directe : conservé | E3 |
-| `Properties.ShowDropDown` | remplacé par les boutons d'éditeur (`Buttons`) | E2 |
+| `Properties.ShowDropDown` | remplacé par les boutons d'éditeur (`Buttons`) | E3 (pièce du socle : E2, fait) |
 | `EditValue` | `Value` (et `IHDevEditor.EditValue`) | E3 |
 | `OldEditValue` | supprimé : `OldValue` des arguments de `ValueChanged` | E3 |
 | `EditValueChanged`, `SelectedIndexChanged`, `SelectedValueChanged` | `ValueChanged`, levé aussi pour un changement par le code (constat E0 n° 1) | E3 |
 | `EditValueChanging` | `ValueChanging` | E3 |
-| `IsPopupOpen` (lecture seule) | `IsDropDownOpen`, StyledProperty liable | E2 |
-| `ShowPopup()`, `ClosePopup()`, `HidePopup()` | `IsDropDownOpen = true / false` | E2 |
-| `Popup` (annulable), `PopupOpened` | `DropDownOpening` (annulable), `DropDownOpened` | E2 |
-| `QueryCloseUp`, `CloseUp`, `PopupClosed` | `DropDownClosing` (annulable, avec acceptation de la valeur), `DropDownClosed` | E2 |
-| `ButtonClick` | `ButtonClick` des boutons d'éditeur du socle | E2 |
+| `IsPopupOpen` (lecture seule) | `IsDropDownOpen`, StyledProperty liable | E3 (pièce du socle : E2, fait) |
+| `ShowPopup()`, `ClosePopup()`, `HidePopup()` | `IsDropDownOpen = true / false` | E3 (pièce du socle : E2, fait) |
+| `Popup` (annulable), `PopupOpened` | `DropDownOpening` (annulable), `DropDownOpened` | E3 (pièce du socle : E2, fait) |
+| `QueryCloseUp`, `CloseUp`, `PopupClosed` | `DropDownClosing` (annulable, avec acceptation de la valeur), `DropDownClosed` | E3 (pièce du socle : E2, fait) |
+| `ButtonClick` | `ButtonClick` des boutons d'éditeur du socle | E3 (pièce du socle : E2, fait) |
 | `DoValidate()` | `Validate()` | E3 |
 | `RefreshEditValue()` | supprimé : les liaisons s'en chargent | E3 |
 | `SelectedIndex`, `SelectedItem`, `Text`, `TextChanged`, `IsModified`, `CustomDisplayText`, `Reset()`, `SelectAll()`, `DeselectAll()`, `FindItem()`, `FindItemByPrefix()`, `GetItemText()` | conservés | — |
@@ -151,7 +159,7 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
 | `NullText` | `Placeholder` | E3 |
 | `ReadOnly` | `IsReadOnly` | E3 |
 | `EditValueChanged` | `ValueChanged` | E3 |
-| `ShowPopup()`, `ClosePopup()` | `IsDropDownOpen` | E2 |
+| `ShowPopup()`, `ClosePopup()` | `IsDropDownOpen` | E3 (pièce du socle : E2, fait) |
 | `Columns`, `DropDownRows`, `DropDownWidth` | conservés | — |
 
 ### 2.7 HDevSearchControl et HDevTokenEdit
@@ -179,6 +187,8 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
 
 ## 3. Ruptures, lot par lot
 
+Les renvois « E3 (pièce du socle : E2, fait) » de la table : la pièce existe sur le socle depuis E2 ; la ComboBox et le LookUpEdit, hors socle, la reçoivent à leur portage (E3), qui retire alors leur ancienne API.
+
 ### E1 (04/10/2026)
 
 1. **`DoValidate()` devient `Validate()`** sur le socle : DateEdit, TimeEdit, SpinEdit et SearchControl.
@@ -193,3 +203,25 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
 8. **Encapsulation des événements de valeur** des pièces internes, sur tout le socle.
 
 Le Gantt, qui édite ses dates avec HDevDateEdit, n'est pas touché par le point 6 : son modèle ramène toujours le début et la fin des tâches à minuit (`GanttModel.cs`).
+
+### E2 (05/10/2026)
+
+**Ruptures**
+1. **`HDevEditorBase<T>` ne déclare plus `public abstract T Value`** (rupture d'E1, décision du 05/10/2026). Chaque éditeur déclare sa propriété publique de valeur sous le nom D3 : `Value` pour HDevDateEdit (inchangé pour ses appelants), `Text` pour HDevButtonEdit. Le code qui lisait `Value` sur la base générique passe par `IHDevEditor.EditValue`. Restent sur la couche typée : `ValuePropertyCore` (protégé), `CommitUserValue`, `SetValueFromCode`, `EditValue`, les événements et les erreurs.
+2. **`Text` du socle devient surchargeable** (`virtual`). Sans effet pour les appelants ; un éditeur de texte le porte par sa StyledProperty, sans masquer le `Text` du socle.
+3. **Le collage passe par le masque et les filtres** (constat E0 n° 6). Il entre en entier ou pas du tout, comme une frappe en bloc ; en monoligne, seule la première ligne compte.
+   - « 20092026 » donne « 20/09/2026 » ; « 2026-09-21 » et « abc » sont refusés par DateEdit ; « 1745 » donne « 17:45 » dans TimeEdit ; SpinEdit refuse « 12a,5 ».
+   - **Écart voulu d'un test E1.** « reposer la valeur courante par code réaffiche son texte » fabriquait un texte invalide en collant « abc », désormais refusé. Il passe par une saisie incomplète (« 15 ») ; l'intention (constat E0 n° 5) est inchangée.
+4. **Une saisie sous masque réduit la sélection au curseur** (constat E0 n° 7) : après un collage, une frappe en bloc puis Retour arrière n'efface plus qu'un caractère.
+5. **Les popups de DateEdit, SearchControl, TokenEdit et LookUpEdit gardent leur écart au champ quand ils se retournent** (constat E0 n° 4) : 2 px de jour dessous comme dessus, ou la bordure fusionnée (−1 px) du LookUpEdit. Retourné, un popup est donc 4 px (LookUpEdit : 2 px) plus haut qu'avant.
+6. **Une seule garde de fermeture** (`HDevPopupDismissGuard`) pour toute la suite : HDevComboBox et les menus (HDevMenuPopup) quittent leur copie. Comportement inchangé (clic extérieur, désactivation débouncée de 250 ms) ; la survie à une brève désactivation sur le bureau réel reste à vérifier (QX-02).
+7. **HDevDateEdit passe sur le popup du socle.** Il reçoit `IsDropDownOpen`, `DropDownOpening`, `DropDownOpened`, `DropDownClosing` et `DropDownClosed` ; Alt+↑ ferme désormais aussi le calendrier. Son bouton calendrier reste interne jusqu'au portage des boutons d'éditeur (E3).
+8. **Les boutons-glyphes des éditeurs (`HDevEditorGlyphButton`) sont cliquables sur toute leur surface**, et plus seulement sur les traits de leur glyphe : le test de clic d'Avalonia suit ce qui est dessiné.
+
+**Ajouts**
+- Sur tout éditeur du socle : `IsMultiline`, `Buttons` et `ButtonClick`, le popup public (`IsDropDownOpen`, `DropDownContent` et ses quatre événements).
+  - Clavier du popup : F4 et Alt+↓ ouvrent ou ferment, Alt+↑ et Échap ferment, depuis le champ comme depuis le contenu ; Entrée dans le contenu ferme en acceptant (`Reason = Accept`), sauf dans un texte multiligne.
+  - Un bouton `DropDown` bascule le popup ; `Clear` vide la valeur, sauf si `ButtonClick` est marqué traité (et jamais en lecture seule) ; les autres types ne font que lever `ButtonClick`. La commande du bouton s'exécute après `ButtonClick`.
+  - `AcceptValue` dit si le choix fait dans le popup vaut ; le socle ne réécrit jamais la valeur à la fermeture.
+- **HDevButtonEdit** : champ texte à boutons ; `Text` liable dans les deux sens ; un bouton `Ellipsis` par défaut.
+- **HDevPopupContainerEdit** : `Value` (`object?`) liable, non éditable, affichée par `ValueTemplate`, à défaut par `ToString()`, sinon l'invite ; un bouton `DropDown` par défaut ; un clic sur le champ ouvre. Le contenu se lie à `Value` de l'éditeur, et ce qu'il y écrit, popup ouvert, est un changement de l'utilisateur (`Origin = User`, sans `ValueChanging`).
