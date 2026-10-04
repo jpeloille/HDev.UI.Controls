@@ -306,7 +306,7 @@ public abstract class HDevEditorBase : Border
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         HDevTheme.VariantChanged -= OnThemeVariantChanged;
-        _dropDown?.Close(HDevDropDownCloseReason.Cancel, force: true);
+        _dropDown?.Close(HDevDropDownCloseReason.Canceled, force: true);
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -406,7 +406,7 @@ public abstract class HDevEditorBase : Border
 
     public event EventHandler? DropDownOpened;
 
-    /// <summary>Avant la fermeture du popup ; <c>Cancel</c> le garde ouvert, <c>AcceptValue</c> dit si le choix vaut</summary>
+    /// <summary>Avant la fermeture du popup ; <c>Cancel</c> le garde ouvert, <c>IsValueAccepted</c> dit si le choix vaut</summary>
     public event EventHandler<HDevDropDownClosingEventArgs>? DropDownClosing;
 
     public event EventHandler<HDevDropDownClosedEventArgs>? DropDownClosed;
@@ -431,7 +431,7 @@ public abstract class HDevEditorBase : Border
     internal void UseDropDown() => _ = DropDown;
 
     private bool _syncingDropDown;
-    private bool _closingAcceptValue;
+    private bool _closingIsValueAccepted;
 
     /// <summary>Branche la pièce popup sur les propriétés et événements publics du socle</summary>
     private void WireDropDown(HDevEditorDropDown dropDown)
@@ -451,13 +451,13 @@ public abstract class HDevEditorBase : Border
         {
             var args = new HDevDropDownClosingEventArgs(reason);
             DropDownClosing?.Invoke(this, args);
-            _closingAcceptValue = args.AcceptValue;
+            _closingIsValueAccepted = args.IsValueAccepted;
             return !args.Cancel;
         };
         dropDown.Closed = reason =>
         {
             SyncIsDropDownOpen(false);
-            DropDownClosed?.Invoke(this, new HDevDropDownClosedEventArgs(reason, _closingAcceptValue));
+            DropDownClosed?.Invoke(this, new HDevDropDownClosedEventArgs(reason, _closingIsValueAccepted));
         };
     }
 
@@ -474,7 +474,7 @@ public abstract class HDevEditorBase : Border
         var wanted = IsDropDownOpen;
         // Ouverture annulée (DropDownOpening, lecture seule) ou fermeture refusée (DropDownClosing) :
         // la propriété revient à l'état réel du popup
-        var done = wanted ? DropDown.Open() : _dropDown?.Close(HDevDropDownCloseReason.Cancel) ?? true;
+        var done = wanted ? DropDown.Open() : _dropDown?.Close(HDevDropDownCloseReason.Canceled) ?? true;
         if (!done || (_dropDown?.IsOpen ?? false) != wanted)
             SyncIsDropDownOpen(_dropDown?.IsOpen ?? false);
     }
@@ -486,13 +486,11 @@ public abstract class HDevEditorBase : Border
     /// <summary>
     /// Boutons d'éditeur, à droite du champ, après les éléments propres à l'éditeur.
     /// Un bouton <see cref="HDevEditorButtonKind.DropDown"/> bascule le popup ;
-    /// <see cref="HDevEditorButtonKind.Clear"/> vide la valeur, sauf si <see cref="ButtonClick"/>
-    /// est marqué traité ; les autres types ne font que lever <see cref="ButtonClick"/>.
+    /// <see cref="HDevEditorButtonKind.Clear"/> vide la valeur, sauf si <see cref="HDevEditorButton.Click"/>
+    /// est marqué traité ; les autres types ne font que lever <see cref="HDevEditorButton.Click"/>,
+    /// routé : l'éditeur ou le formulaire l'écoute par <c>AddHandler(HDevEditorButton.ClickEvent, …)</c>.
     /// </summary>
     public AvaloniaList<HDevEditorButton> Buttons { get; } = new();
-
-    /// <summary>Un bouton d'éditeur a été cliqué (avant son action par défaut)</summary>
-    public event EventHandler<HDevEditorButtonClickEventArgs>? ButtonClick;
 
     private void OnButtonsChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
@@ -512,16 +510,13 @@ public abstract class HDevEditorBase : Border
         _buttonZone.Children.AddRange(Buttons);
     }
 
-    /// <summary>Clic d'un bouton d'éditeur : ButtonClick, la commande, puis l'action par défaut</summary>
-    internal void OnEditorButtonClick(HDevEditorButton button)
+    /// <summary>Après le Click routé d'un bouton : la commande, puis l'action par défaut si Click n'est pas traité</summary>
+    internal void OnEditorButtonClick(HDevEditorButton button, bool handled)
     {
-        var args = new HDevEditorButtonClickEventArgs(button);
-        ButtonClick?.Invoke(this, args);
-
         if (button.Command is { } command && command.CanExecute(button.CommandParameter))
             command.Execute(button.CommandParameter);
 
-        if (args.Handled) return;
+        if (handled) return;
         switch (button.Kind)
         {
             case HDevEditorButtonKind.DropDown:

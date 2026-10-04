@@ -13,12 +13,12 @@
         <h:HDevEditorButton Kind="Custom" Icon="Folder" ToolTip.Tip="Parcourir" Command="{Binding Parcourir}" />
       </h:HDevButtonEdit.Buttons>
     </h:HDevButtonEdit>
-    <h:HDevPopupContainerEdit x:Name="Equipage" Canvas.Left="20" Canvas.Top="80" Width="200"
+    <h:HDevDropDownEdit x:Name="Equipage" Canvas.Left="20" Canvas.Top="80" Width="200"
                               Value="{Binding Equipage}" Placeholder="Choisir un équipier">
-      <h:HDevPopupContainerEdit.DropDownContent>
+      <h:HDevDropDownEdit.DropDownContent>
         <ListBox x:Name="Membres" ItemsSource="{Binding Membres}"
-                 SelectedItem="{Binding $parent[h:HDevPopupContainerEdit].Value}" />
-      </h:HDevPopupContainerEdit.DropDownContent>
-    </h:HDevPopupContainerEdit>
+                 SelectedItem="{Binding $parent[h:HDevDropDownEdit].Value}" />
+      </h:HDevDropDownEdit.DropDownContent>
+    </h:HDevDropDownEdit>
   </Canvas>
 </UserControl>

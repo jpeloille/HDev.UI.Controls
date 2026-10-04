@@ -139,7 +139,7 @@ public class HDevDateEdit : HDevEditorBase<DateTime?>
         if (_calendar?.SelectedDate is { } date)
         {
             CommitUserValue(AtCurrentTime(date));
-            DropDown.Close(HDevDropDownCloseReason.Accept);
+            DropDown.Close(HDevDropDownCloseReason.Accepted);
             FocusEditor();
         }
     }

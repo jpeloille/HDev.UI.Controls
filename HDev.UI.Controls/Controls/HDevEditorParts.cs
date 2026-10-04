@@ -360,27 +360,16 @@ public enum HDevEditorButtonKind
 {
     /// <summary>Chevron : bascule le popup de l'éditeur</summary>
     DropDown,
-    /// <summary>Croix : vide la valeur, sauf si ButtonClick est marqué traité</summary>
+    /// <summary>Croix : vide la valeur, sauf si Click est marqué traité</summary>
     Clear,
-    /// <summary>« … » : ouvrir un dialogue (ButtonClick)</summary>
+    /// <summary>« … » : ouvrir un dialogue (Click)</summary>
     Ellipsis,
-    /// <summary>Loupe (ButtonClick)</summary>
+    /// <summary>Loupe (Click)</summary>
     Search,
     Plus,
     Minus,
-    /// <summary>Glyphe donné par <see cref="HDevEditorButton.Icon"/> (ButtonClick)</summary>
+    /// <summary>Glyphe donné par <see cref="HDevEditorButton.Icon"/> (Click)</summary>
     Custom
-}
-
-/// <summary>Clic d'un bouton d'éditeur (<see cref="HDevEditorBase.ButtonClick"/>)</summary>
-public class HDevEditorButtonClickEventArgs : EventArgs
-{
-    public HDevEditorButtonClickEventArgs(HDevEditorButton button) => Button = button;
-
-    public HDevEditorButton Button { get; }
-
-    /// <summary>Vrai : l'action par défaut du bouton (popup, effacement) n'a pas lieu</summary>
-    public bool Handled { get; set; }
 }
 
 /// <summary>
@@ -427,7 +416,7 @@ public class HDevEditorButton : Control
         set => SetValue(IconProperty, value);
     }
 
-    /// <summary>Exécutée au clic, après ButtonClick ; son CanExecute grise le bouton</summary>
+    /// <summary>Exécutée au clic, après Click ; son CanExecute grise le bouton</summary>
     public ICommand? Command
     {
         get => GetValue(CommandProperty);
@@ -489,10 +478,27 @@ public class HDevEditorButton : Control
         UpdateIsEffectivelyEnabled();
     }
 
-    /// <summary>Simule un clic (tests, accessibilité) : ButtonClick, commande, action par défaut</summary>
+    /// <summary>
+    /// Clic du bouton, routé et remontant (comme <c>Button.Click</c>) : l'éditeur ou le formulaire
+    /// l'écoute par <c>AddHandler</c>, le bouton se lit sur <c>Source</c>. <c>Handled = true</c>
+    /// empêche l'action par défaut (popup, effacement) ; la commande s'exécute dans tous les cas.
+    /// </summary>
+    public static readonly RoutedEvent<RoutedEventArgs> ClickEvent =
+        RoutedEvent.Register<HDevEditorButton, RoutedEventArgs>(nameof(Click), RoutingStrategies.Bubble);
+
+    public event EventHandler<RoutedEventArgs>? Click
+    {
+        add => AddHandler(ClickEvent, value);
+        remove => RemoveHandler(ClickEvent, value);
+    }
+
+    /// <summary>Simule un clic (tests, accessibilité) : Click, commande, action par défaut</summary>
     internal void PerformClick()
     {
-        if (IsEffectivelyEnabled) Owner?.OnEditorButtonClick(this);
+        if (!IsEffectivelyEnabled) return;
+        var args = new RoutedEventArgs(ClickEvent, this);
+        RaiseEvent(args);
+        Owner?.OnEditorButtonClick(this, args.Handled);
     }
 
     protected override void OnPointerEntered(PointerEventArgs e)
@@ -635,14 +641,14 @@ public class HDevSpinButtons : Control
 /// <summary>Cause d'une fermeture du popup d'un éditeur</summary>
 public enum HDevDropDownCloseReason
 {
-    /// <summary>Un choix fait dans le popup : la valeur est acceptée</summary>
-    Accept,
+    /// <summary>Un choix fait dans le popup (Entrée, clic sur un jour…) : la valeur est acceptée</summary>
+    Accepted,
 
-    /// <summary>Échap, Alt+↑, F4, le bouton ou le code : rien n'est accepté</summary>
-    Cancel,
+    /// <summary>Échap, Alt+↑, F4, le bouton ou le code : la valeur d'avant reste</summary>
+    Canceled,
 
-    /// <summary>Clic extérieur ou fenêtre désactivée (garde de fermeture)</summary>
-    Outside
+    /// <summary>Clic extérieur ou fenêtre désactivée (garde de fermeture) : le choix est gardé</summary>
+    LightDismiss
 }
 
 /// <summary>Fermeture à venir du popup d'un éditeur (<see cref="HDevEditorBase.DropDownClosing"/>)</summary>
@@ -650,29 +656,32 @@ public class HDevDropDownClosingEventArgs : CancelEventArgs
 {
     public HDevDropDownClosingEventArgs(HDevDropDownCloseReason reason)
     {
-        Reason = reason;
-        AcceptValue = reason == HDevDropDownCloseReason.Accept;
+        CloseReason = reason;
+        IsValueAccepted = reason != HDevDropDownCloseReason.Canceled;
     }
 
-    public HDevDropDownCloseReason Reason { get; }
+    public HDevDropDownCloseReason CloseReason { get; }
 
-    /// <summary>Le choix fait dans le popup vaut ; vrai par défaut pour <see cref="HDevDropDownCloseReason.Accept"/></summary>
-    public bool AcceptValue { get; set; }
+    /// <summary>
+    /// Le choix fait dans le popup vaut ; vrai par défaut pour <see cref="HDevDropDownCloseReason.Accepted"/>
+    /// et <see cref="HDevDropDownCloseReason.LightDismiss"/>, faux pour <see cref="HDevDropDownCloseReason.Canceled"/>
+    /// </summary>
+    public bool IsValueAccepted { get; set; }
 }
 
 /// <summary>Popup d'un éditeur fermé (<see cref="HDevEditorBase.DropDownClosed"/>)</summary>
 public class HDevDropDownClosedEventArgs : EventArgs
 {
-    public HDevDropDownClosedEventArgs(HDevDropDownCloseReason reason, bool acceptValue)
+    public HDevDropDownClosedEventArgs(HDevDropDownCloseReason reason, bool isValueAccepted)
     {
-        Reason = reason;
-        AcceptValue = acceptValue;
+        CloseReason = reason;
+        IsValueAccepted = isValueAccepted;
     }
 
-    public HDevDropDownCloseReason Reason { get; }
+    public HDevDropDownCloseReason CloseReason { get; }
 
     /// <summary>Le choix fait dans le popup a valu (tel que laissé par DropDownClosing)</summary>
-    public bool AcceptValue { get; }
+    public bool IsValueAccepted { get; }
 }
 
 /// <summary>
@@ -707,13 +716,13 @@ internal sealed class HDevEditorDropDown
         };
         HDevPopupPlacement.Apply(Popup, HDevPopupPlacement.Gap);
 
-        _guard = new HDevPopupDismissGuard(() => IsOpen, () => Close(HDevDropDownCloseReason.Outside));
+        _guard = new HDevPopupDismissGuard(() => IsOpen, () => Close(HDevDropDownCloseReason.LightDismiss));
         Popup.Opened += (_, _) => _guard.Install(owner);
         Popup.Closed += (_, _) =>
         {
             _guard.Remove();
             // Fermé par Avalonia (éditeur détaché…) sans passer par Close
-            if (IsOpen) { IsOpen = false; Closed?.Invoke(HDevDropDownCloseReason.Cancel); }
+            if (IsOpen) { IsOpen = false; Closed?.Invoke(HDevDropDownCloseReason.Canceled); }
         };
 
         // Le contenu vit en overlay, hors de l'arbre visuel de l'éditeur : ses touches n'atteignent
@@ -725,7 +734,7 @@ internal sealed class HDevEditorDropDown
             if (e.Key == Key.Enter && e.KeyModifiers == KeyModifiers.None && IsOpen
                 && e.Source is not TextBox { AcceptsReturn: true })
             {
-                e.Handled = Close(HDevDropDownCloseReason.Accept) || e.Handled;
+                e.Handled = Close(HDevDropDownCloseReason.Accepted) || e.Handled;
                 return;
             }
             if (!e.Handled && HandleKey(e)) e.Handled = true;
@@ -786,7 +795,7 @@ internal sealed class HDevEditorDropDown
 
         IsOpen = false;
         Popup.IsOpen = false;
-        if (focusInside && reason != HDevDropDownCloseReason.Outside)
+        if (focusInside && reason != HDevDropDownCloseReason.LightDismiss)
             _owner.FocusEditor();
         Closed?.Invoke(reason);
         return true;
@@ -795,7 +804,7 @@ internal sealed class HDevEditorDropDown
     /// <summary>Bouton ou F4 : ouvre ou ferme ; ne rouvre pas sur le clic qui vient de fermer</summary>
     public void Toggle()
     {
-        if (IsOpen) Close(HDevDropDownCloseReason.Cancel);
+        if (IsOpen) Close(HDevDropDownCloseReason.Canceled);
         else if (!_guard.JustClosed) Open();
     }
 
@@ -807,11 +816,11 @@ internal sealed class HDevEditorDropDown
         {
             case Key.F4 when e.KeyModifiers == KeyModifiers.None:
             case Key.Down when alt:
-                if (IsOpen) Close(HDevDropDownCloseReason.Cancel); else Open();
+                if (IsOpen) Close(HDevDropDownCloseReason.Canceled); else Open();
                 return true;
             case Key.Up when alt && IsOpen:
             case Key.Escape when IsOpen:
-                Close(HDevDropDownCloseReason.Cancel);
+                Close(HDevDropDownCloseReason.Canceled);
                 return true;
             default:
                 return false;

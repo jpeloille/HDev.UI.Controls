@@ -1112,9 +1112,10 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         var vue = new FormulaireE2 { DataContext = vm };
         var w = new Window { Width = 500, Height = 420, Content = vue }; w.Show(); Pump(w);
         var be = vue.FindControl<HDevButtonEdit>("Chemin")!;
-        var pc = vue.FindControl<HDevPopupContainerEdit>("Equipage")!;
+        var pc = vue.FindControl<HDevDropDownEdit>("Equipage")!;
         var clics = new List<HDevEditorButtonKind>();
-        be.ButtonClick += (_, e) => clics.Add(e.Button.Kind);
+        // Click est routé : le formulaire écoute tous les boutons d'éditeur d'un seul AddHandler
+        vue.AddHandler(HDevEditorButton.ClickEvent, (object? _, Avalonia.Interactivity.RoutedEventArgs e) => clics.Add(((HDevEditorButton)e.Source!).Kind));
         HDevEditorButton Bouton(HDevEditorBase e, HDevEditorButtonKind k) => e.Buttons.First(b => b.Kind == k);
 
         // ─── HDevButtonEdit : texte liable, boutons ───
@@ -1137,16 +1138,16 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
 
         var journal = new List<HDevValueChangedEventArgs>(); be.ValueChanged += (_, e) => journal.Add(e);
         ClickAt(w, WindowCenter(w, effacer));
-        Check("clic réel sur Effacer : ButtonClick, puis la valeur est vidée par l'utilisateur, jusqu'au ViewModel",
+        Check("clic réel sur Effacer : Click routé jusqu'au formulaire, puis la valeur est vidée par l'utilisateur, jusqu'au ViewModel",
             clics.LastOrDefault() == HDevEditorButtonKind.Clear && be.Text == "" && vm.Chemin == ""
             && journal.Count == 1 && journal[0].IsUserChange);
         vm.Chemin = "/srv"; Pump(w);
-        EventHandler<HDevEditorButtonClickEventArgs> garde = (_, e) => e.Handled = true;
-        be.ButtonClick += garde; ClickAt(w, WindowCenter(w, effacer)); be.ButtonClick -= garde;
-        Check("Effacer marqué traité dans ButtonClick : la valeur reste", be.Text == "/srv" && vm.Chemin == "/srv");
+        EventHandler<Avalonia.Interactivity.RoutedEventArgs> garde = (_, e) => e.Handled = true;
+        be.AddHandler(HDevEditorButton.ClickEvent, garde); ClickAt(w, WindowCenter(w, effacer)); be.RemoveHandler(HDevEditorButton.ClickEvent, garde);
+        Check("Effacer marqué traité dans Click : la valeur reste", be.Text == "/srv" && vm.Chemin == "/srv");
 
         var nClics = clics.Count; var pe = WindowCenter(w, Bouton(be, HDevEditorButtonKind.Ellipsis)); ClickAt(w, pe);
-        Check("« … » ne fait que lever ButtonClick", clics.Count == nClics + 1 && clics[^1] == HDevEditorButtonKind.Ellipsis
+        Check("« … » ne fait que lever Click", clics.Count == nClics + 1 && clics[^1] == HDevEditorButtonKind.Ellipsis
             && be.Text == "/srv" && !be.IsDropDownOpen);
         ClickAt(w, WindowCenter(w, dossier)); var executee = vm.Parcourir.Executions;
         vm.Parcourir.Active = false; Pump(w); ClickAt(w, WindowCenter(w, dossier));
@@ -1155,12 +1156,12 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         be.IsReadOnly = true; vm.Chemin = "/srv"; Pump(w); effacer.PerformClick(); var lectureSeule = be.Text; be.IsReadOnly = false;
         Check("lecture seule : Effacer ne vide pas", lectureSeule == "/srv");
 
-        // ─── HDevPopupContainerEdit : valeur libre, popup public ───
+        // ─── HDevDropDownEdit : valeur libre, popup public ───
         var ouvertures = 0; var fermetures = new List<HDevDropDownClosedEventArgs>();
         pc.DropDownOpened += (_, _) => ouvertures++; pc.DropDownClosed += (_, e) => fermetures.Add(e);
         var liste = (ListBox)pc.DropDownContent!;
         var presentateur = Champ<ContentControl>(pc, "_presenter");
-        Check("PopupContainerEdit : valeur vide, l'invite est affichée, pas de champ texte",
+        Check("DropDownEdit : valeur vide, l'invite est affichée, pas de champ texte",
             pc.Value == null && Equals(presentateur.Content, "Choisir un équipier") && !InterieurDe(pc).IsVisible);
         ClickAt(w, WindowCenter(w, pc)); Pump(w);
         var boitePc = Boite(w, pc); var boitePop = Boite(w, pc.DropDown.Chrome);
@@ -1172,24 +1173,24 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
             Equals(pc.Value, "Teiki Brothers") && Equals(vm.Equipage, "Teiki Brothers") && journalPc.Count == 1
             && journalPc[0].IsUserChange && Equals(presentateur.Content, "Teiki Brothers") && pc.IsDropDownOpen);
         Touche(w, PhysicalKey.Escape);
-        Check("Échap depuis le contenu ferme : Reason Cancel, AcceptValue faux, la valeur n'est pas touchée",
-            !pc.IsDropDownOpen && fermetures.Count == 1 && fermetures[0].Reason == HDevDropDownCloseReason.Cancel
-            && !fermetures[0].AcceptValue && Equals(pc.Value, "Teiki Brothers") && pc.IsKeyboardFocusWithin);
+        Check("Échap depuis le contenu ferme : CloseReason Canceled, IsValueAccepted faux, la valeur n'est pas touchée",
+            !pc.IsDropDownOpen && fermetures.Count == 1 && fermetures[0].CloseReason == HDevDropDownCloseReason.Canceled
+            && !fermetures[0].IsValueAccepted && Equals(pc.Value, "Teiki Brothers") && pc.IsKeyboardFocusWithin);
         Touche(w, PhysicalKey.F4); var element = (Control)liste.ContainerFromIndex(2)!; element.Focus(); Pump(w); Touche(w, PhysicalKey.Enter);
-        Check("Entrée dans la liste du popup choisit l'élément et ferme en acceptant (Reason Accept, AcceptValue vrai)",
-            Equals(vm.Equipage, "Lucie Martin") && !pc.IsDropDownOpen && fermetures[^1].Reason == HDevDropDownCloseReason.Accept && fermetures[^1].AcceptValue);
+        Check("Entrée dans la liste du popup choisit l'élément et ferme en acceptant (CloseReason Accepted, IsValueAccepted vrai)",
+            Equals(vm.Equipage, "Lucie Martin") && !pc.IsDropDownOpen && fermetures[^1].CloseReason == HDevDropDownCloseReason.Accepted && fermetures[^1].IsValueAccepted);
 
         EventHandler<System.ComponentModel.CancelEventArgs> refuseOuverture = (_, e) => e.Cancel = true;
         pc.DropDownOpening += refuseOuverture; pc.IsDropDownOpen = true; Pump(w); var refusee = !pc.IsDropDownOpen && !pc.DropDown.IsOpen;
         pc.DropDownOpening -= refuseOuverture;
         Check("DropDownOpening annulé : le popup reste fermé, IsDropDownOpen revient à faux", refusee);
-        EventHandler<HDevDropDownClosingEventArgs> retient = (_, e) => { if (e.Reason == HDevDropDownCloseReason.Outside) e.Cancel = true; };
+        EventHandler<HDevDropDownClosingEventArgs> retient = (_, e) => { if (e.CloseReason == HDevDropDownCloseReason.LightDismiss) e.Cancel = true; };
         pc.DropDownClosing += retient; pc.IsDropDownOpen = true; Pump(w); ClickAt(w, horsChamp); var retenu = pc.IsDropDownOpen;
         pc.DropDownClosing -= retient; ClickAt(w, horsChamp);
-        Check("DropDownClosing annulé sur clic extérieur : reste ouvert ; sinon le clic extérieur ferme (Reason Outside)",
-            retenu && !pc.IsDropDownOpen && fermetures[^1].Reason == HDevDropDownCloseReason.Outside);
+        Check("DropDownClosing annulé sur clic extérieur : reste ouvert ; sinon le clic extérieur ferme (CloseReason LightDismiss)",
+            retenu && !pc.IsDropDownOpen && fermetures[^1].CloseReason == HDevDropDownCloseReason.LightDismiss);
         pc.IsDropDownOpen = true; Pump(w); var parCode = pc.DropDown.IsOpen; pc.IsDropDownOpen = false; Pump(w);
-        Check("IsDropDownOpen posé par le code ouvre et ferme", parCode && !pc.DropDown.IsOpen && fermetures[^1].Reason == HDevDropDownCloseReason.Cancel);
+        Check("IsDropDownOpen posé par le code ouvre et ferme", parCode && !pc.DropDown.IsOpen && fermetures[^1].CloseReason == HDevDropDownCloseReason.Canceled);
         pc.ValueTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<object>((o, _) => new TextBlock { Text = "★ " + o }); Pump(w);
         Check("ValueTemplate affiche la valeur", presentateur.ContentTemplate != null
             && presentateur.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "★ Lucie Martin"));

@@ -16,19 +16,19 @@ namespace HDev.UI.Controls;
 /// <see cref="ValueTemplate"/>, à défaut par <c>ToString()</c>, sinon l'invite.</item>
 /// <item>Le contenu (<see cref="HDevEditorBase.DropDownContent"/>) se lie à <c>Value</c> de
 /// l'éditeur : ce qu'il y écrit est un changement de l'utilisateur. La fermeture ne touche
-/// jamais à la valeur, quelle que soit <c>AcceptValue</c>.</item>
+/// jamais à la valeur, quelle que soit <c>IsValueAccepted</c>.</item>
 /// <item>Un clic sur le champ, le bouton, F4 ou Alt+↓ ouvrent ; Entrée (non prise par le
 /// contenu) ferme en acceptant ; Échap, Alt+↑ et le clic extérieur ferment.</item>
 /// </list>
 /// </summary>
-public class HDevPopupContainerEdit : HDevEditorBase<object?>
+public class HDevDropDownEdit : HDevEditorBase<object?>
 {
     public static readonly StyledProperty<object?> ValueProperty =
-        AvaloniaProperty.Register<HDevPopupContainerEdit, object?>(nameof(Value),
+        AvaloniaProperty.Register<HDevDropDownEdit, object?>(nameof(Value),
             defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
 
     public static readonly StyledProperty<IDataTemplate?> ValueTemplateProperty =
-        AvaloniaProperty.Register<HDevPopupContainerEdit, IDataTemplate?>(nameof(ValueTemplate));
+        AvaloniaProperty.Register<HDevDropDownEdit, IDataTemplate?>(nameof(ValueTemplate));
 
     private readonly ContentControl _presenter;
 
@@ -47,7 +47,7 @@ public class HDevPopupContainerEdit : HDevEditorBase<object?>
         set => SetValue(ValueTemplateProperty, value);
     }
 
-    public HDevPopupContainerEdit()
+    public HDevDropDownEdit()
     {
         MinWidth = 120;
         _presenter = new ContentControl

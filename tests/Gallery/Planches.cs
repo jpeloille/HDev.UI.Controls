@@ -266,8 +266,8 @@ static class Planches
         var rows = new List<(string, Control?[])>
         {
             ("HDevButtonEdit", Cells(s => EditorIn(new HDevButtonEdit(), s, e => e.Text = "/data/vols"))),
-            ("HDevPopupContainerEdit", Cells(s => EditorIn(new HDevPopupContainerEdit { Placeholder = "Équipier" }, s,
-                e => ((HDevPopupContainerEdit)e).Value = "Awa Wamytan"))),
+            ("HDevDropDownEdit", Cells(s => EditorIn(new HDevDropDownEdit { Placeholder = "Équipier" }, s,
+                e => ((HDevDropDownEdit)e).Value = "Awa Wamytan"))),
         };
 
         HDevButtonEdit WithButtons(params HDevEditorButton[] buttons)
