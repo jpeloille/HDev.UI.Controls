@@ -34,12 +34,24 @@ Un sous-agent meurt avec l'orchestratrice. À la reprise, relancer la mission de
 
 ### M-01 : décisions attendues avant fusion
 
+Nommage, 10 noms à trancher sur 49 (le reste est conforme) :
+
+| N° | Actuel | Proposé (nom ou patron Avalonia) |
+|---|---|---|
+| N1 | `ButtonClick`, un événement CLR sur l'éditeur, avec `HDevEditorButtonClickEventArgs` | `HDevEditorButton.Click`, un événement routé qui remonte, avec `RoutedEventArgs` (`Source`, `Handled`) |
+| N2 | `Reason` | `CloseReason` (`WindowClosingEventArgs`) |
+| N3 | `Accept` / `Cancel` / `Outside` | `Accepted` / `Canceled` / `LightDismiss` |
+| N4 | `AcceptValue` | `IsValueAccepted` |
+| N5 | `HDevPopupContainerEdit` | `HDevDropDownEdit` |
+| N6 | `HDevButtonEdit` | à garder (règle 3) |
+| N7 | `Buttons` | à garder |
+
+Comportement :
+
 | N° | Question |
 |---|---|
-| M-01-N1 | Renommer `Reason` en `CloseReason` (nom d'Avalonia, `WindowClosingEventArgs.CloseReason`) dans les arguments de DropDownClosing et DropDownClosed ? Recommandation de l'exécutante : oui. |
-| M-01-E2 | PopupContainerEdit : la valeur suit le contenu en direct, sans `ValueChanging`, et `AcceptValue` n'annule rien. L'orchestratrice propose : lever `ValueChanging`, ou ne valider qu'à la fermeture. |
-| M-01-NOM | Garder HDevPopupContainerEdit, ou HDevDropDownEdit / HDevPopupEdit ? |
-| M-01-E | Valider les écarts E1, E3 à E7. |
+| C1 | PopupContainerEdit : la valeur suit le contenu sans `ValueChanging`, et `AcceptValue` n'annule rien. L'orchestratrice propose de lever `ValueChanging`, ou de ne valider qu'à la fermeture. |
+| C2 | Valider les autres écarts : Entrée ferme en acceptant ; `DropDownContent` est un `Control?` ; garde unique étendue ; boutons-glyphes cliquables sur toute leur surface ; lignes MIGRATION notées E3 ; glyphes Plus et Minus ; Alt+↑ ferme ; test E1 adapté. |
 
 ## Fusions à décider
 
