@@ -24,7 +24,8 @@ public class HDevMenuPopup : Popup
     /// </summary>
     internal HDevMenuPopup? ParentPopup { get; set; }
 
-    private TopLevel? _guardRoot;
+    /// <summary>Garde de fermeture commune à toute la suite (clic extérieur, désactivation débouncée)</summary>
+    private readonly HDevPopupDismissGuard _guard;
 
     /// <summary>true si la dernière fermeture vient d'un clic extérieur (garde)</summary>
     internal bool WasClosedByGuard { get; private set; }
@@ -37,6 +38,8 @@ public class HDevMenuPopup : Popup
         // Remplacé par un garde : clic extérieur + désactivation avec délai de grâce.
         IsLightDismissEnabled = false;
         Placement = PlacementMode.BottomEdgeAlignedLeft;
+        // Seul le clic extérieur arme l'anti-réouverture du bar-item, pas la désactivation
+        _guard = new HDevPopupDismissGuard(() => IsOpen, () => { WasClosedByGuard = _guard!.JustClosed; Close(); });
 
         Opened += (s, e) => { WasClosedByGuard = false; InstallDismissGuard(); };
 
@@ -101,53 +104,11 @@ public class HDevMenuPopup : Popup
 
     private void InstallDismissGuard()
     {
-        _guardRoot = PlacementTarget != null ? TopLevel.GetTopLevel(PlacementTarget) : null;
-        if (_guardRoot == null) return;
-
-        _guardRoot.AddHandler(PointerPressedEvent, OnRootPointerPressed,
-            Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
-        if (_guardRoot is Window w)
-            w.Deactivated += OnRootDeactivated;
+        if (PlacementTarget != null)
+            _guard.Install(PlacementTarget);
     }
 
-    private void RemoveDismissGuard()
-    {
-        if (_guardRoot == null) return;
-        _guardRoot.RemoveHandler(PointerPressedEvent, OnRootPointerPressed);
-        if (_guardRoot is Window w)
-            w.Deactivated -= OnRootDeactivated;
-        _guardRoot = null;
-    }
-
-    private void OnRootPointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        // En mode overlay (headless), le contenu des popups vit dans l'arbre de
-        // la fenêtre : ignorer les presses venant de l'intérieur d'un popup
-        if (e.Source is Visual v && IsInsidePopupHost(v)) return;
-
-        WasClosedByGuard = true;
-        Close();
-    }
-
-    internal static bool IsInsidePopupHost(Visual v)
-    {
-        foreach (var a in v.GetVisualAncestors())
-        {
-            if (a is Avalonia.Controls.Primitives.OverlayPopupHost) return true;
-        }
-        return false;
-    }
-
-    private void OnRootDeactivated(object? sender, EventArgs e)
-    {
-        // Certains bureaux (GNOME/XWayland) font rebondir l'activation de la
-        // fenêtre en permanence : ne fermer que si elle reste inactive 250 ms
-        Avalonia.Threading.DispatcherTimer.RunOnce(() =>
-        {
-            if (IsOpen && _guardRoot is Window { IsActive: false })
-                Close();
-        }, TimeSpan.FromMilliseconds(250));
-    }
+    private void RemoveDismissGuard() => _guard.Remove();
 
     /// <summary>
     /// Ferme ce popup et tous ses parents (clic sur un item de sous-menu)

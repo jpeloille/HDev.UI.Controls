@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.VisualTree;
 using HDev.UI.Controls.Theme;
 using System.Globalization;
 
@@ -353,8 +354,8 @@ public class HDevSpinButtons : Control
 }
 
 /// <summary>
-/// Garde de fermeture de popup factorisée (cf. HDevMenuPopup/HDevComboBox) :
-/// clic extérieur + désactivation de fenêtre avec délai de grâce 250 ms.
+/// La garde de fermeture des popups, unique pour toute la suite (menus, combo, popups des
+/// éditeurs) : clic extérieur + désactivation de fenêtre avec délai de grâce 250 ms.
 /// Remplace le light dismiss Avalonia, instable sous GNOME/XWayland.
 /// </summary>
 internal sealed class HDevPopupDismissGuard
@@ -398,10 +399,21 @@ internal sealed class HDevPopupDismissGuard
 
     private void OnRootPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (e.Source is Visual v && HDevMenuPopup.IsInsidePopupHost(v)) return;
+        if (e.Source is Visual v && IsInsidePopupHost(v)) return;
 
         LastOutsideClose = DateTime.UtcNow;
         _close();
+    }
+
+    /// <summary>
+    /// Vrai si le visuel est dans un popup : en overlay, le contenu des popups vit dans l'arbre
+    /// de la fenêtre, et un clic dans un popup (même imbriqué) n'est pas un clic extérieur
+    /// </summary>
+    internal static bool IsInsidePopupHost(Visual v)
+    {
+        foreach (var a in v.GetVisualAncestors())
+            if (a is Avalonia.Controls.Primitives.OverlayPopupHost) return true;
+        return false;
     }
 
     private void OnRootDeactivated(object? sender, EventArgs e)
