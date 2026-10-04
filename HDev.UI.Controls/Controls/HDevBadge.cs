@@ -147,39 +147,43 @@ public class HDevBadge : HDevControlBase
                 cornerRadius, cornerRadius);
         }
         
-        // Texte
-        var formattedText = CreateText(Text, IsOutlined ? borderColor : textColor, fontSize, FontWeight.Medium);
+        // Texte : sur fond plein, la couleur « on » de la variante ; en contour, la
+        // couleur du filet ramenée à ≥ 4,5:1 sur le panneau
+        var outlinedText = HDevTheme.EnsureContrast(borderColor, HDevTheme.Background.Panel);
+        var formattedText = CreateText(Text, IsOutlined ? outlinedText : textColor, fontSize, FontWeight.Medium);
         DrawTextCentered(context, formattedText, bounds);
     }
-    
+
+    // Fonds pleins à contraste garanti sous leur texte (≥ 4,5:1) ; le filet garde
+    // la teinte d'indicateur de la variante
     private (Color background, Color text, Color border) ResolveColors()
     {
         return Variant switch
         {
             BadgeVariant.Primary => (
-                HDevTheme.Accent.Primary,
+                HDevTheme.Accent.Fill,
                 HDevTheme.Text.OnAccent,
                 HDevTheme.Accent.Primary
             ),
             BadgeVariant.Success => (
-                HDevTheme.Accent.Success,
+                HDevTheme.Accent.SuccessFill,
                 HDevTheme.Text.OnAccent,
                 HDevTheme.Accent.Success
             ),
             BadgeVariant.Warning => (
                 HDevTheme.Accent.Warning,
-                HDevTheme.Text.OnAccent,
+                HDevTheme.Text.OnWarning,
                 HDevTheme.Accent.Warning
             ),
             BadgeVariant.Error => (
-                HDevTheme.Accent.Error,
+                HDevTheme.EnsureContrast(HDevTheme.Accent.Error, HDevTheme.Text.OnAccent),
                 HDevTheme.Text.OnAccent,
                 HDevTheme.Accent.Error
             ),
             BadgeVariant.Info => (
-                HDevTheme.Accent.Primary,
+                HDevTheme.Accent.InfoFill,
                 HDevTheme.Text.OnAccent,
-                HDevTheme.Accent.Primary
+                HDevTheme.Accent.Info
             ),
             _ => (
                 HDevTheme.Background.Toolbar,

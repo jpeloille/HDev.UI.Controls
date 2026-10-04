@@ -1,3 +1,6 @@
+using System.Runtime.CompilerServices;
+using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Media;
 
 namespace HDev.UI.Controls.Theme;
@@ -10,9 +13,10 @@ public enum HDevThemeVariant
 }
 
 /// <summary>
-/// Palette complète d'une variante (les deux instances : Light et Dark)
+/// Palette complète d'une variante (les deux instances : Light et Dark). Record : une
+/// palette hôte se dérive d'une palette existante, <c>HDevPalette.Light with { … }</c>
 /// </summary>
-public sealed class HDevPalette
+public sealed record HDevPalette
 {
     // Backgrounds
     public Color BackgroundWindow { get; init; }
@@ -86,6 +90,18 @@ public sealed class HDevPalette
     public Color ShadowColor { get; init; }
     public Color ShadowColorStrong { get; init; }
 
+    // Tokens à contraste garanti. Facultatifs : une palette qui ne les fixe pas (palette
+    // hôte antérieure à leur création) les voit dérivés de ses propres couleurs — jamais
+    // de l'orange Yaru (cf. HDevTheme.Accent.Fill)
+    public Color? AccentFill { get; init; }
+    public Color? AccentFillHover { get; init; }
+    public Color? AccentFillPressed { get; init; }
+    public Color? AccentInfo { get; init; }
+    public Color? AccentSuccessFill { get; init; }
+    public Color? AccentInfoFill { get; init; }
+    public Color? TextOnWarning { get; init; }
+    public Color? BackgroundTextSelection { get; init; }
+
     /// <summary>Yaru / libadwaita clair (palette d'origine)</summary>
     public static readonly HDevPalette Light = new()
     {
@@ -118,7 +134,7 @@ public sealed class HDevPalette
 
         TextPrimary = Color.Parse("#333333"),
         TextSecondary = Color.Parse("#5E5C64"),
-        TextTertiary = Color.Parse("#77767B"),
+        TextTertiary = Color.Parse("#706F74"),       // 4,8:1 sur Window (#77767B : 4,3)
         TextDisabled = Color.Parse("#9A9996"),
         TextPlaceholder = Color.Parse("#8B8A8D"),
         TextOnAccent = Color.Parse("#FFFFFF"),
@@ -152,7 +168,17 @@ public sealed class HDevPalette
         DisabledText = Color.Parse("#9A9996"),
 
         ShadowColor = Color.Parse("#1A000000"),
-        ShadowColorStrong = Color.Parse("#33000000")
+        ShadowColorStrong = Color.Parse("#33000000"),
+
+        // Orange assombri sous le texte blanc : 4,9 / 5,8 / 6,4:1 (#E95420 n'en fait que 3,65)
+        AccentFill = Color.Parse("#C64614"),
+        AccentFillHover = Color.Parse("#B53C12"),
+        AccentFillPressed = Color.Parse("#A93811"),
+        AccentInfo = Color.Parse("#1C71D8"),
+        AccentSuccessFill = Color.Parse("#1E8254"),
+        AccentInfoFill = Color.Parse("#1C71D8"),
+        TextOnWarning = Color.Parse("#333333"),
+        BackgroundTextSelection = Color.Parse("#F8CCBC")
     };
 
     /// <summary>
@@ -224,7 +250,17 @@ public sealed class HDevPalette
         DisabledText = Color.Parse("#6F6E73"),
 
         ShadowColor = Color.Parse("#40000000"),
-        ShadowColorStrong = Color.Parse("#66000000")
+        ShadowColorStrong = Color.Parse("#66000000"),
+
+        // Le survol éclaircit en sombre, sans repasser sous 4,5:1 (4,9 / 4,7 / 5,8:1)
+        AccentFill = Color.Parse("#C64614"),
+        AccentFillHover = Color.Parse("#CD4414"),
+        AccentFillPressed = Color.Parse("#B53C12"),
+        AccentInfo = Color.Parse("#62A0EA"),
+        AccentSuccessFill = Color.Parse("#1E8254"),
+        AccentInfoFill = Color.Parse("#1C71D8"),
+        TextOnWarning = Color.Parse("#333333"),
+        BackgroundTextSelection = Color.Parse("#7A3E2A")
     };
 }
 
@@ -312,6 +348,12 @@ public static class HDevTheme
         /// réservé aux boutons et aux listes déroulantes non éditables.
         /// </summary>
         public static Color Input => _current.BackgroundPanel;
+
+        /// <summary>
+        /// Surlignage du texte sélectionné dans un champ, sous <see cref="Text.Primary"/>
+        /// (jamais de texte blanc : sur une teinte claire, il devient illisible)
+        /// </summary>
+        public static Color TextSelection => Derived.TextSelection;
     }
 
     public static class Border
@@ -340,6 +382,9 @@ public static class HDevTheme
         public static Color Success => _current.TextSuccess;
         public static Color Warning => _current.TextWarning;
         public static Color Error => _current.TextError;
+
+        /// <summary>Texte posé sur <see cref="Accent.Warning"/> (foncé : l'ambre ne porte pas le blanc)</summary>
+        public static Color OnWarning => Derived.TextOnWarning;
     }
 
     public static class Accent
@@ -353,6 +398,25 @@ public static class HDevTheme
         public static Color Success => _current.AccentSuccess;
         public static Color Warning => _current.AccentWarning;
         public static Color Error => _current.AccentError;
+
+        /// <summary>
+        /// Accent sous du texte <see cref="Text.OnAccent"/> (bouton Primary, segment
+        /// choisi, jour sélectionné, badge) : ≥ 4,5:1. <see cref="Primary"/> reste
+        /// l'accent des indicateurs sans texte (focus, coches, progression, curseurs)
+        /// </summary>
+        public static Color Fill => Derived.AccentFill;
+        public static Color FillHover => Derived.AccentFillHover;
+        public static Color FillPressed => Derived.AccentFillPressed;
+
+        /// <summary>Accent employé comme texte ou glyphe sur Background.Panel : ≥ 4,5:1</summary>
+        public static Color Foreground => Derived.AccentForeground;
+
+        /// <summary>Information (bleu), distincte de l'accent de marque</summary>
+        public static Color Info => Derived.AccentInfo;
+
+        /// <summary>Fonds de statut sous du texte <see cref="Text.OnAccent"/> : ≥ 4,5:1</summary>
+        public static Color SuccessFill => Derived.AccentSuccessFill;
+        public static Color InfoFill => Derived.AccentInfoFill;
     }
 
     public static class Danger
@@ -396,8 +460,9 @@ public static class HDevTheme
 
     public static class Size
     {
-        // Hauteurs de contrôles
-        public const double ControlHeightSmall = 26;
+        // Hauteurs de contrôles. Small = EditorHeight : un bouton Small s'aligne sur
+        // les champs d'une rangée de formulaire
+        public const double ControlHeightSmall = 28;
         public const double ControlHeightMedium = 34;
         public const double ControlHeightLarge = 42;
 
@@ -416,6 +481,10 @@ public static class HDevTheme
         public const double BorderThin = 1;
         public const double BorderMedium = 1.5;
         public const double BorderThick = 2;
+
+        // Anneau de focus clavier (couleur : Border.FocusOuter pleine, ≥ 3:1)
+        public const double FocusRingWidth = 2;
+        public const double FocusRingOffset = 1;
 
         // Espacements
         public const double SpacingXS = 4;
@@ -451,6 +520,7 @@ public static class HDevTheme
             "fonts:Inter#Inter, Inter, Ubuntu Sans, Ubuntu, Segoe UI, sans-serif";
 
         public const double FontSizeCaption = 12;
+        public const double FontSizeDense = 13;    // texte secondaire des listes et cartes
         public const double FontSizeBody = 14;     // Ubuntu Sans 11 pt ≈ 14,7 px à 96 dpi
         public const double FontSizeSubtitle = 16;
         public const double FontSizeTitle = 19;
@@ -482,5 +552,215 @@ public static class HDevTheme
             (byte)(a.R + (b.R - a.R) * t),
             (byte)(a.G + (b.G - a.G) * t),
             (byte)(a.B + (b.B - a.B) * t));
+    }
+
+    /// <summary>Couleur <paramref name="top"/>, alpha compris, posée sur un fond opaque</summary>
+    public static Color Composite(Color top, Color bottom)
+    {
+        var a = top.A / 255.0;
+        return Color.FromRgb(
+            (byte)Math.Round(top.R * a + bottom.R * (1 - a)),
+            (byte)Math.Round(top.G * a + bottom.G * (1 - a)),
+            (byte)Math.Round(top.B * a + bottom.B * (1 - a)));
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // CONTRASTE (WCAG 2.x)
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>Rapport de contraste entre deux couleurs opaques, de 1 à 21</summary>
+    public static double Contrast(Color a, Color b)
+    {
+        var la = RelativeLuminance(a);
+        var lb = RelativeLuminance(b);
+        return (Math.Max(la, lb) + 0.05) / (Math.Min(la, lb) + 0.05);
+    }
+
+    /// <summary>Luminance relative : 0 pour le noir, 1 pour le blanc</summary>
+    public static double RelativeLuminance(Color color)
+    {
+        static double Channel(byte value)
+        {
+            var s = value / 255.0;
+            return s <= 0.04045 ? s / 12.92 : Math.Pow((s + 0.055) / 1.055, 2.4);
+        }
+        return 0.2126 * Channel(color.R) + 0.7152 * Channel(color.G) + 0.0722 * Channel(color.B);
+    }
+
+    /// <summary>
+    /// Assombrit (contre un fond plus clair) ou éclaircit (contre un fond plus sombre)
+    /// <paramref name="color"/>, teinte et saturation conservées, jusqu'à atteindre
+    /// <paramref name="ratio"/>. Rendue telle quelle si le contraste est déjà atteint.
+    /// </summary>
+    public static Color EnsureContrast(Color color, Color against, double ratio = 4.5)
+    {
+        if (Contrast(color, against) >= ratio) return color;
+
+        var (h, s, l) = ToHsl(color);
+        var darken = RelativeLuminance(against) > RelativeLuminance(color);
+        for (var step = 1; step <= 100; step++)
+        {
+            var candidate = FromHsl(h, s, Math.Clamp(darken ? l - step * 0.01 : l + step * 0.01, 0, 1));
+            if (Contrast(candidate, against) >= ratio) return candidate;
+        }
+        return darken ? Colors.Black : Colors.White;
+    }
+
+    /// <summary>
+    /// Texte le plus lisible sur un fond de donnée quelconque (barre, événement,
+    /// pastille) : blanc ou quasi-noir. Composer d'abord un fond translucide
+    /// (<see cref="Composite"/>) sur ce qu'il recouvre.
+    /// </summary>
+    public static Color OnColor(Color fill)
+        => Contrast(Colors.White, fill) >= Contrast(NearBlack, fill) ? Colors.White : NearBlack;
+
+    private static readonly Color NearBlack = Color.FromRgb(0x1E, 0x1E, 0x1E);
+
+    private static (double H, double S, double L) ToHsl(Color c)
+    {
+        double r = c.R / 255.0, g = c.G / 255.0, b = c.B / 255.0;
+        double max = Math.Max(r, Math.Max(g, b)), min = Math.Min(r, Math.Min(g, b));
+        double h = 0, s = 0, l = (max + min) / 2;
+        if (max > min)
+        {
+            var d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            h = max == r ? (g - b) / d + (g < b ? 6 : 0)
+                : max == g ? (b - r) / d + 2
+                : (r - g) / d + 4;
+            h /= 6;
+        }
+        return (h, s, l);
+    }
+
+    private static Color FromHsl(double h, double s, double l)
+    {
+        if (s == 0)
+        {
+            var v = (byte)Math.Round(l * 255);
+            return Color.FromRgb(v, v, v);
+        }
+
+        static double Hue(double p, double q, double t)
+        {
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            if (t < 1.0 / 6) return p + (q - p) * 6 * t;
+            if (t < 1.0 / 2) return q;
+            if (t < 2.0 / 3) return p + (q - p) * (2.0 / 3 - t) * 6;
+            return p;
+        }
+
+        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        var p = 2 * l - q;
+        return Color.FromRgb(
+            (byte)Math.Round(Hue(p, q, h + 1.0 / 3) * 255),
+            (byte)Math.Round(Hue(p, q, h) * 255),
+            (byte)Math.Round(Hue(p, q, h - 1.0 / 3) * 255));
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // TOKENS DÉRIVÉS
+    // ═══════════════════════════════════════════════════════════════
+
+    private sealed record DerivedTokens(
+        Color AccentFill, Color AccentFillHover, Color AccentFillPressed, Color AccentForeground,
+        Color AccentInfo, Color AccentSuccessFill, Color AccentInfoFill,
+        Color TextOnWarning, Color TextSelection);
+
+    // Une entrée par instance de palette, calculée à la première lecture
+    private static readonly ConditionalWeakTable<HDevPalette, DerivedTokens> DerivedCache = new();
+
+    private static DerivedTokens Derived => DerivedCache.GetValue(_current, Derive);
+
+    /// <summary>
+    /// Valeurs fixées par la palette, à défaut dérivées de ses propres couleurs avec le
+    /// contraste garanti : une palette hôte (accent teal de Synaxis…) n'hérite jamais
+    /// de l'orange Yaru
+    /// </summary>
+    private static DerivedTokens Derive(HDevPalette p)
+    {
+        var onAccent = p.TextOnAccent;
+        var fill = p.AccentFill ?? EnsureContrast(p.AccentPrimary, onAccent);
+        var info = p.AccentInfo ?? p.TextLink;
+        var isDark = RelativeLuminance(p.BackgroundPanel) < 0.2;
+
+        return new DerivedTokens(
+            AccentFill: fill,
+            // Survol et pression assombrissent : le contraste ne peut que croître
+            AccentFillHover: p.AccentFillHover ?? EnsureContrast(Darken(fill, 0.06), onAccent),
+            AccentFillPressed: p.AccentFillPressed ?? EnsureContrast(Darken(fill, 0.12), onAccent),
+            AccentForeground: EnsureContrast(EnsureContrast(p.AccentPrimary, p.BackgroundPanel), p.BackgroundWindow),
+            AccentInfo: info,
+            AccentSuccessFill: p.AccentSuccessFill ?? EnsureContrast(p.AccentSuccess, onAccent),
+            AccentInfoFill: p.AccentInfoFill ?? EnsureContrast(info, onAccent),
+            TextOnWarning: p.TextOnWarning ?? OnColor(p.AccentWarning),
+            TextSelection: p.BackgroundTextSelection
+                ?? Lerp(p.BackgroundPanel, p.AccentPrimary, isDark ? 0.40 : 0.30));
+    }
+
+    private static Color Darken(Color color, double amount)
+    {
+        var (h, s, l) = ToHsl(color);
+        return FromHsl(h, s, Math.Max(0, l - amount));
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // PROPAGATION
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Tient un contrôle à jour des changements de palette tant qu'il est attaché à
+    /// l'arbre visuel : action facultative (re-brosser ce qui a été construit avec la
+    /// palette précédente), puis invalidation de la mesure et du rendu. À appeler depuis
+    /// le constructeur.
+    /// </summary>
+    public static void Track(Control control, Action? onChanged = null)
+    {
+        void OnVariantChanged(object? sender, EventArgs e)
+        {
+            onChanged?.Invoke();
+            control.InvalidateMeasure();
+            control.InvalidateVisual();
+        }
+
+        control.AttachedToVisualTree += (_, _) => VariantChanged += OnVariantChanged;
+        control.DetachedFromVisualTree += (_, _) => VariantChanged -= OnVariantChanged;
+    }
+
+    /// <summary>
+    /// Publie la palette active dans les ressources de l'application hôte et l'y tient à
+    /// jour : accent des contrôles Fluent internes (<c>SystemAccentColor*</c>) et un
+    /// pinceau par couleur de palette (<c>{DynamicResource HDevTextSecondaryBrush}</c>…).
+    /// Remplace le bloc SystemAccentColor recopié à la main dans chaque App.axaml.
+    /// </summary>
+    public static void ApplyTo(Application application)
+    {
+        Publish(application.Resources);
+        VariantChanged += (_, _) => Publish(application.Resources);
+    }
+
+    private static void Publish(IResourceDictionary resources)
+    {
+        var accent = Accent.Primary;
+        resources["SystemAccentColor"] = accent;
+        resources["SystemAccentColorDark1"] = Lerp(accent, Colors.Black, 0.06);
+        resources["SystemAccentColorDark2"] = Lerp(accent, Colors.Black, 0.15);
+        resources["SystemAccentColorDark3"] = Lerp(accent, Colors.Black, 0.28);
+        resources["SystemAccentColorLight1"] = Lerp(accent, Colors.White, 0.2);
+        resources["SystemAccentColorLight2"] = Lerp(accent, Colors.White, 0.4);
+        resources["SystemAccentColorLight3"] = Lerp(accent, Colors.White, 0.6);
+
+        foreach (var property in typeof(HDevPalette).GetProperties())
+        {
+            if (property.GetValue(_current) is Color color)
+                resources[$"HDev{property.Name}Brush"] = new SolidColorBrush(color);
+        }
+
+        // Tokens dérivés : publiés même quand la palette ne les fixe pas
+        resources["HDevAccentFillBrush"] = new SolidColorBrush(Accent.Fill);
+        resources["HDevAccentForegroundBrush"] = new SolidColorBrush(Accent.Foreground);
+        resources["HDevAccentInfoBrush"] = new SolidColorBrush(Accent.Info);
+        resources["HDevBackgroundTextSelectionBrush"] = new SolidColorBrush(Background.TextSelection);
     }
 }

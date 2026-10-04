@@ -196,7 +196,7 @@ public class HDevCheckBox : HDevControlBase
         }
         
         // Focus ring
-        if (IsFocused && IsEnabled)
+        if (IsFocusVisible && IsEnabled)
         {
             DrawFocusRing(context, boxRect, cornerRadius);
         }

@@ -224,7 +224,7 @@ public class HDevMonthCalendar : Control
                 var isDisabled = date < MinDate || date > MaxDate;
 
                 if (isSelected)
-                    context.DrawEllipse(new SolidColorBrush(HDevTheme.Accent.Primary), null,
+                    context.DrawEllipse(new SolidColorBrush(HDevTheme.Accent.Fill), null,
                         center, CellSize / 2 - 3, CellSize / 2 - 3);
                 else if (isToday)
                     context.DrawEllipse(null, new Pen(new SolidColorBrush(HDevTheme.Accent.Primary), 1.4),
@@ -233,7 +233,7 @@ public class HDevMonthCalendar : Control
                     context.DrawEllipse(new SolidColorBrush(HDevTheme.Background.ControlHover), null,
                         center, CellSize / 2 - 3, CellSize / 2 - 3);
 
-                var color = isSelected ? Colors.White
+                var color = isSelected ? HDevTheme.Text.OnAccent
                     : isDisabled ? HDevTheme.Text.Disabled
                     : isCurrentMonth ? HDevTheme.Text.Primary
                     : HDevTheme.Text.Secondary;

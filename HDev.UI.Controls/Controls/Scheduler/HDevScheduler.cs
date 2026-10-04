@@ -698,10 +698,10 @@ public class HDevScheduler : Control
 
                 // Numéro du jour (pastille accent = aujourd'hui)
                 var number = Text(date.Day.ToString(),
-                    isToday ? Colors.White : isCurrentMonth ? HDevTheme.Text.Primary : HDevTheme.Text.Secondary,
+                    isToday ? HDevTheme.Text.OnAccent : isCurrentMonth ? HDevTheme.Text.Primary : HDevTheme.Text.Secondary,
                     12, isToday ? FontWeight.SemiBold : FontWeight.Regular);
                 if (isToday)
-                    context.DrawEllipse(new SolidColorBrush(HDevTheme.Accent.Primary), null,
+                    context.DrawEllipse(new SolidColorBrush(HDevTheme.Accent.Fill), null,
                         new Point(cell.Right - 14, cell.Y + 12), 10, 10);
                 context.DrawText(number, Crisp.Snap(new Point(
                     cell.Right - 14 - number.Width / 2, cell.Y + 12 - number.Height / 2)));
@@ -744,15 +744,19 @@ public class HDevScheduler : Control
         var color = master.Color ?? HDevTheme.Accent.Primary;
         var isSelected = ReferenceEquals(master, _selectedEvent);
         var isHovered = ReferenceEquals(master, _hoveredEvent);
+        var fill = HDevTheme.WithOpacity(color, isSelected ? (byte)230 : isHovered ? (byte)190 : (byte)160);
 
         context.DrawRectangle(
-            new SolidColorBrush(HDevTheme.WithOpacity(color, isSelected ? (byte)230 : isHovered ? (byte)190 : (byte)160)),
+            new SolidColorBrush(fill),
             isSelected ? new Pen(new SolidColorBrush(HDevTheme.Text.Primary), 1.5) : null,
             rect, 4, 4);
 
+        // Libellé lisible sur la couleur de l'événement, quelle qu'elle soit (le blanc
+        // imposé tombait à 2,3:1 sur l'orange translucide par défaut)
+        var labelColor = HDevTheme.OnColor(HDevTheme.Composite(fill, HDevTheme.Background.Panel));
         var prefix = master.IsRecurring ? "↻ " : "";
         var timeText = compact || occ.AllDay ? "" : $"{occ.Start:HH:mm} ";
-        var label = Text($"{prefix}{timeText}{master.Subject}", Colors.White, compact ? 10 : 11,
+        var label = Text($"{prefix}{timeText}{master.Subject}", labelColor, compact ? 10 : 11,
             FontWeight.SemiBold);
         label.MaxTextWidth = Math.Max(8, rect.Width - 8);
         label.Trimming = TextTrimming.CharacterEllipsis;

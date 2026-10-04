@@ -1538,17 +1538,9 @@ public partial class MainWindow : HDevWindow
         var darkToggle = toolbar.AddToggle("🌙", "Sombre",
             isChecked: HDev.UI.Controls.Theme.HDevTheme.IsDark);
         darkToggle.Click += (s, e) =>
-        {
             HDev.UI.Controls.Theme.HDevTheme.Variant = darkToggle.IsChecked
                 ? HDev.UI.Controls.Theme.HDevThemeVariant.Dark
                 : HDev.UI.Controls.Theme.HDevThemeVariant.Light;
-
-            // Fond racine de la démo (hors HDevWindow)
-            var root = this.FindControl<Avalonia.Controls.Grid>("RootGrid");
-            if (root != null)
-                root.Background = new Avalonia.Media.SolidColorBrush(
-                    HDev.UI.Controls.Theme.HDevTheme.Background.Window);
-        };
     }
 
     private void InitializeStatusBar()

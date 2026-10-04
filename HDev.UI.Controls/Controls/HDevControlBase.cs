@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using HDev.UI.Controls.Theme;
@@ -65,10 +66,14 @@ public abstract class HDevControlBase : Control
     private bool _isHovered;
     private bool _isPressed;
     private bool _isFocusedState;
-    
+    private bool _isFocusVisible;
+
     protected bool IsHovered => _isHovered;
     protected bool IsPressed => _isPressed;
     protected new bool IsFocused => _isFocusedState;
+
+    /// <summary>Focus arrivé au clavier : l'anneau de focus se dessine (cf. <see cref="HDevFocus"/>)</summary>
+    protected bool IsFocusVisible => _isFocusedState && _isFocusVisible;
     
     // ═══════════════════════════════════════════════════════════════
     // PROPRIÉTÉS
@@ -87,6 +92,12 @@ public abstract class HDevControlBase : Control
     {
         AffectsRender<HDevControlBase>(InputElement.IsEnabledProperty);
         FocusableProperty.OverrideDefaultValue<HDevControlBase>(true);
+
+        // Contrôles à hauteur intrinsèque (bouton, case, radio, chip, badge…) : dans une
+        // rangée plus haute, ils se centrent au lieu de s'étirer
+        VerticalAlignmentProperty.OverrideDefaultValue<HDevControlBase>(VerticalAlignment.Center);
+
+        HDevFocus.EnsureInitialized();
     }
 
     protected HDevControlBase()
@@ -172,6 +183,7 @@ public abstract class HDevControlBase : Control
     protected override void OnGotFocus(FocusChangedEventArgs e)
     {
         _isFocusedState = true;
+        _isFocusVisible = HDevFocus.IsVisible(e);
         InvalidateVisual();
         base.OnGotFocus(e);
     }
@@ -179,6 +191,7 @@ public abstract class HDevControlBase : Control
     protected override void OnLostFocus(FocusChangedEventArgs e)
     {
         _isFocusedState = false;
+        _isFocusVisible = false;
         InvalidateVisual();
         base.OnLostFocus(e);
     }
@@ -194,6 +207,7 @@ public abstract class HDevControlBase : Control
         _isHovered = hovered;
         _isPressed = pressed;
         _isFocusedState = focused;
+        _isFocusVisible = focused;
         InvalidateVisual();
     }
 
@@ -232,102 +246,7 @@ public abstract class HDevControlBase : Control
         context.DrawText(text, origin);
     }
     
-    protected static LinearGradientBrush CreateVerticalGradient(Color top, Color bottom)
-    {
-        return new LinearGradientBrush
-        {
-            StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
-            EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
-            GradientStops =
-            {
-                new GradientStop(top, 0),
-                new GradientStop(bottom, 1)
-            }
-        };
-    }
-    
-    protected void DrawRoundedRect(
-        DrawingContext context, 
-        Rect rect, 
-        Color? fill, 
-        Color? stroke, 
-        double cornerRadius = 2,
-        double strokeThickness = 1)
-    {
-        var fillBrush = fill.HasValue ? new SolidColorBrush(fill.Value) : null;
-        var strokePen = stroke.HasValue ? new Pen(new SolidColorBrush(stroke.Value), strokeThickness) : null;
-        
-        context.DrawRectangle(fillBrush, strokePen, rect, cornerRadius, cornerRadius);
-    }
-    
-    protected void DrawShadow(DrawingContext context, Rect rect, double cornerRadius, double intensity = 1.0)
-    {
-        var layers = 3;
-        for (int i = layers; i >= 0; i--)
-        {
-            var opacity = (byte)(15 * intensity - i * 4);
-            var expand = i * 1.0;
-            var offset = i * 0.5 + 1;
-            var shadowRect = rect.Inflate(expand).Translate(new Vector(0, offset));
-            var shadowBrush = new SolidColorBrush(Color.FromArgb(opacity, 0, 0, 0));
-            context.DrawRectangle(shadowBrush, null, shadowRect, cornerRadius + expand, cornerRadius + expand);
-        }
-    }
-    
+    /// <summary>Anneau de focus clavier extérieur, commun à la suite (cf. <see cref="HDevFocus"/>)</summary>
     protected void DrawFocusRing(DrawingContext context, Rect rect, double cornerRadius)
-    {
-        var focusRect = rect.Inflate(2);
-        var focusPen = new Pen(
-            new SolidColorBrush(HDevTheme.WithOpacity(HDevTheme.Border.FocusOuter, 100)), 
-            1.5);
-        context.DrawRectangle(null, focusPen, focusRect, cornerRadius + 2, cornerRadius + 2);
-    }
-    
-    protected void DrawInnerHighlight(DrawingContext context, Rect rect, double cornerRadius)
-    {
-        var innerRect = rect.Deflate(1);
-        var highlightBrush = new SolidColorBrush(Color.FromArgb(50, 255, 255, 255));
-        var highlightPen = new Pen(highlightBrush, 1.0);
-        context.DrawRectangle(null, highlightPen, innerRect.Deflate(0.5), cornerRadius - 0.5, cornerRadius - 0.5);
-    }
-    
-    // ═══════════════════════════════════════════════════════════════
-    // ÉTAT VISUEL RÉSOLU
-    // ═══════════════════════════════════════════════════════════════
-    
-    protected (Color background, Color border, Color text) ResolveVisualState()
-    {
-        if (!IsEnabled)
-        {
-            return (
-                HDevTheme.Background.ControlDisabled,
-                HDevTheme.Border.Disabled,
-                HDevTheme.Text.Disabled
-            );
-        }
-        
-        if (IsPressed)
-        {
-            return (
-                HDevTheme.Background.ControlPressed,
-                HDevTheme.Border.Pressed,
-                HDevTheme.Text.Primary
-            );
-        }
-        
-        if (IsHovered)
-        {
-            return (
-                HDevTheme.Background.ControlHover,
-                HDevTheme.Border.Hover,
-                HDevTheme.Text.Primary
-            );
-        }
-        
-        return (
-            HDevTheme.Background.Control,
-            HDevTheme.Border.Default,
-            HDevTheme.Text.Primary
-        );
-    }
+        => HDevFocus.DrawRing(context, rect, cornerRadius);
 }

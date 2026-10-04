@@ -283,6 +283,9 @@ public class HDevMenuBar : Panel
         Height = 34;
         ClipToBounds = false;
         Background = new SolidColorBrush(HDevTheme.Background.Toolbar);
+        // Fond re-brossé à chaque bascule (posé une fois, il restait clair sous des
+        // libellés devenus clairs)
+        HDevTheme.Track(this, () => Background = new SolidColorBrush(HDevTheme.Background.Toolbar));
 
         Items.CollectionChanged += (s, e) =>
         {

@@ -22,6 +22,8 @@ public class HDevTokenEdit : Border
     private readonly ListBox _listBox;
     private readonly HDevPopupDismissGuard _dismissGuard;
     private bool _isOpen;
+    private bool _isHovered;
+    private bool _isFocusedState;
 
     public ObservableCollection<object> Tokens { get; } = new();
 
@@ -45,11 +47,16 @@ public class HDevTokenEdit : Border
     /// <summary>Déclenché quand la collection de jetons change</summary>
     public event EventHandler? TokensChanged;
 
+    static HDevTokenEdit()
+    {
+        IsEnabledProperty.Changed.AddClassHandler<HDevTokenEdit>((x, _) => x.UpdateVisualState());
+
+        // Le champ grandit avec ses lignes de jetons : centré dans une rangée plus haute
+        VerticalAlignmentProperty.OverrideDefaultValue<HDevTokenEdit>(Avalonia.Layout.VerticalAlignment.Center);
+    }
+
     public HDevTokenEdit()
     {
-        Background = new SolidColorBrush(HDevTheme.Background.Input);
-        BorderBrush = new SolidColorBrush(HDevTheme.Border.Default);
-        BorderThickness = new Thickness(1);
         CornerRadius = new CornerRadius(HDevTheme.Size.CornerRadiusSmall);
         Padding = new Thickness(4, 2);
         MinHeight = HDevTheme.Size.EditorHeight;
@@ -63,11 +70,16 @@ public class HDevTokenEdit : Border
             Padding = new Thickness(HDevTheme.Size.EditorTextInset - 4, 3),
             FontFamily = new FontFamily(HDevTheme.Typography.FontFamily),
             FontSize = HDevTheme.Typography.FontSizeBody,
-            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            SelectionBrush = new SolidColorBrush(HDevTheme.Background.TextSelection),
+            SelectionForegroundBrush = new SolidColorBrush(HDevTheme.Text.Primary)
         };
         HDevInputChrome.Neutralize(_input);
         _input.AddHandler(KeyDownEvent, OnInputKeyDown, RoutingStrategies.Tunnel);
         _input.TextChanged += (s, e) => UpdateSuggestions();
+        _input.GotFocus += (s, e) => { _isFocusedState = true; UpdateVisualState(); };
+        _input.LostFocus += (s, e) => { _isFocusedState = false; UpdateVisualState(); };
+        UpdateVisualState();
 
         _panel.Children.Add(_input);
         Child = _panel;
@@ -137,11 +149,30 @@ public class HDevTokenEdit : Border
         base.OnDetachedFromVisualTree(e);
     }
 
+    /// <summary>États communs des champs : fond de champ, filet, halo de focus</summary>
+    private void UpdateVisualState()
+        => HDevInputChrome.ApplyState(this, _input, IsEnabled, hasError: false, _isFocusedState, _isHovered);
+
+    protected override void OnPointerEntered(PointerEventArgs e)
+    {
+        base.OnPointerEntered(e);
+        _isHovered = true;
+        UpdateVisualState();
+    }
+
+    protected override void OnPointerExited(PointerEventArgs e)
+    {
+        base.OnPointerExited(e);
+        _isHovered = false;
+        UpdateVisualState();
+    }
+
     private void OnThemeVariantChanged(object? sender, EventArgs e)
     {
-        Background = new SolidColorBrush(HDevTheme.Background.Input);
-        BorderBrush = new SolidColorBrush(HDevTheme.Border.Default);
+        _input.SelectionBrush = new SolidColorBrush(HDevTheme.Background.TextSelection);
+        _input.SelectionForegroundBrush = new SolidColorBrush(HDevTheme.Text.Primary);
         HDevInputChrome.Neutralize(_input);
+        UpdateVisualState();
         RebuildChips(); // les chips portent des brushes construits
 
         // Dropdown de suggestions

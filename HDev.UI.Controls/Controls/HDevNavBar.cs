@@ -50,6 +50,7 @@ public class HDevNavBar : Control
     private int _selectedIndex;
     private int _hoveredIndex = -1;
     private bool _isCompact;
+    private bool _focusVisible;
 
     public ObservableCollection<HDevNavBarItem> Items { get; } = new();
 
@@ -153,15 +154,31 @@ public class HDevNavBar : Control
         switch (e.Key)
         {
             case Key.Up:
+                _focusVisible = true;
                 SelectedIndex = Math.Max(0, _selectedIndex - 1);
                 e.Handled = true;
                 break;
             case Key.Down:
+                _focusVisible = true;
                 SelectedIndex = Math.Min(Items.Count - 1, _selectedIndex + 1);
                 e.Handled = true;
                 break;
         }
         base.OnKeyDown(e);
+    }
+
+    protected override void OnGotFocus(FocusChangedEventArgs e)
+    {
+        _focusVisible = HDevFocus.IsVisible(e);
+        InvalidateVisual();
+        base.OnGotFocus(e);
+    }
+
+    protected override void OnLostFocus(FocusChangedEventArgs e)
+    {
+        _focusVisible = false;
+        InvalidateVisual();
+        base.OnLostFocus(e);
     }
 
     public override void Render(DrawingContext context)
@@ -178,11 +195,12 @@ public class HDevNavBar : Control
             var rect = new Rect(0, i * ItemHeight, bounds.Width, ItemHeight);
             var isSelected = i == _selectedIndex;
             var isHovered = i == _hoveredIndex;
+            var selectedBackground = HDevTheme.Composite(
+                HDevTheme.WithOpacity(HDevTheme.Accent.Primary, 26), HDevTheme.Background.Toolbar);
 
             if (isSelected)
             {
-                context.FillRectangle(new SolidColorBrush(
-                    HDevTheme.WithOpacity(HDevTheme.Accent.Primary, 26)), rect);
+                context.FillRectangle(new SolidColorBrush(selectedBackground), rect);
                 context.FillRectangle(new SolidColorBrush(HDevTheme.Accent.Primary),
                     new Rect(0, rect.Y + 10, 3, ItemHeight - 20));
             }
@@ -191,7 +209,13 @@ public class HDevNavBar : Control
                 context.FillRectangle(new SolidColorBrush(HDevTheme.Background.ControlHover), rect);
             }
 
-            var iconColor = isSelected ? HDevTheme.Accent.Primary : HDevTheme.Text.Secondary;
+            if (isSelected && _focusVisible && IsFocused)
+                HDevFocus.DrawRing(context, rect, 4, inside: true);
+
+            // Libellé accent du module choisi : ≥ 4,5:1 sur sa teinte de sélection
+            var iconColor = isSelected
+                ? HDevTheme.EnsureContrast(HDevTheme.Accent.Foreground, selectedBackground)
+                : HDevTheme.Text.Secondary;
             var icon = Text(item.Icon, iconColor, 20);
             var iconY = _isCompact
                 ? rect.Y + (ItemHeight - icon.Height) / 2
@@ -210,7 +234,7 @@ public class HDevNavBar : Control
             // Badge
             if (!string.IsNullOrEmpty(item.Badge))
             {
-                var badge = Text(item.Badge, Colors.White, 9, FontWeight.SemiBold);
+                var badge = Text(item.Badge, HDevTheme.Text.OnAccent, 9, FontWeight.SemiBold);
                 var badgeWidth = Math.Max(15, badge.Width + 8);
                 var badgeRect = new Rect(
                     bounds.Width / 2 + 6, rect.Y + 5, badgeWidth, 14);

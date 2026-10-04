@@ -48,6 +48,12 @@ public class HDevAvatar : Control
     private AvatarStatus _status = AvatarStatus.None;
     private Color? _background;
 
+    static HDevAvatar()
+    {
+        // Diamètre fixe : centré dans une rangée plus haute plutôt que collé en haut
+        VerticalAlignmentProperty.OverrideDefaultValue<HDevAvatar>(Avalonia.Layout.VerticalAlignment.Center);
+    }
+
     /// <summary>
     /// Nom complet : source des initiales et de la couleur stable.
     /// (Pas « Name » : ce serait masquer StyledElement.Name, le nom d'élément

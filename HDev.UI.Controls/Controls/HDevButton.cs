@@ -1,5 +1,9 @@
 using Avalonia;
+using Avalonia.Automation.Peers;
+using Avalonia.Automation.Provider;
+using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Layout;
 using Avalonia.Media;
 using HDev.UI.Controls.Theme;
 
@@ -7,8 +11,8 @@ namespace HDev.UI.Controls;
 
 public enum ButtonVariant
 {
-    Primary,        // Fond accent, texte blanc
-    Secondary,      // Fond blanc, bordure grise
+    Primary,        // Fond accent (Accent.Fill), texte blanc
+    Secondary,      // Fond gris (Background.Control), bordure grise
     Ghost,          // Transparent, bordure au hover
     Danger,         // Rouge pour actions destructives
     Outline,        // Fond panneau, bordure grise, texte primaire (« Annuler »)
@@ -23,8 +27,7 @@ public enum ButtonSize
 }
 
 /// <summary>
-/// Bouton professionnel style VS2022
-/// Supporte plusieurs variantes et tailles
+/// Bouton texte (style Yaru / libadwaita) : variantes et tailles 28 / 34 / 42 px
 /// </summary>
 public class HDevButton : HDevControlBase
 {
@@ -74,11 +77,20 @@ public class HDevButton : HDevControlBase
     // ═══════════════════════════════════════════════════════════════
     
     public event EventHandler? Click;
-    
+
     protected override void OnClick()
     {
         Click?.Invoke(this, EventArgs.Empty);
     }
+
+    /// <summary>Activation par une technologie d'assistance (cf. <see cref="HDevButtonAutomationPeer"/>)</summary>
+    internal void PerformClick()
+    {
+        if (IsEnabled)
+            OnClick();
+    }
+
+    protected override AutomationPeer OnCreateAutomationPeer() => new HDevButtonAutomationPeer(this);
     
     static HDevButton()
     {
@@ -89,62 +101,59 @@ public class HDevButton : HDevControlBase
     // ═══════════════════════════════════════════════════════════════
     // MESURE
     // ═══════════════════════════════════════════════════════════════
-    
+
+    /// <summary>Largeur visible minimale d'un bouton texte</summary>
+    private const double MinFaceWidth = 72;
+
+    /// <summary>Hauteur, corps et retrait horizontal du libellé pour la taille courante</summary>
+    private protected (double Height, double FontSize, double PaddingH) Metrics => Size switch
+    {
+        ButtonSize.Small => (HDevTheme.Size.ControlHeightSmall, HDevTheme.Typography.FontSizeCaption, 10.0),
+        ButtonSize.Large => (HDevTheme.Size.ControlHeightLarge, 15.0, 20.0),
+        _ => (HDevTheme.Size.ControlHeightMedium, HDevTheme.Typography.FontSizeBody, 16.0)
+    };
+
+    // Aucune marge réservée autour du bouton : son bord visible est son bord de layout,
+    // et il s'aligne sur un champ ou un autre bouton posé à côté
     protected override Size MeasureOverride(Size availableSize)
     {
-        var (height, fontSize, paddingH) = Size switch
-        {
-            ButtonSize.Small => (HDevTheme.Size.ControlHeightSmall, 12.0, 10.0),
-            ButtonSize.Large => (HDevTheme.Size.ControlHeightLarge, 15.0, 20.0),
-            _ => (HDevTheme.Size.ControlHeightMedium, 14.0, 16.0)
-        };
-        
+        var (height, fontSize, paddingH) = Metrics;
         var text = CreateText(Text, HDevTheme.Text.Primary, fontSize, TextWeight);
-        var width = text.Width + paddingH * 2 + 8; // Extra pour marge de manœuvre
-        
-        return new Size(Math.Max(80, width), height + 8); // +8 pour ombre
+        return new Size(Math.Max(MinFaceWidth, Math.Ceiling(text.Width + paddingH * 2)), height);
     }
 
     // ═══════════════════════════════════════════════════════════════
     // RENDU
     // ═══════════════════════════════════════════════════════════════
-    
+
+    /// <summary>
+    /// Face du bouton : la hauteur de sa taille, centrée dans les bornes si on l'étire
+    /// (une hauteur explicite, elle, est honorée)
+    /// </summary>
+    private protected Rect FaceRect(double width)
+    {
+        var height = double.IsNaN(Height) ? Math.Min(Metrics.Height, Bounds.Height) : Bounds.Height;
+        return new Rect(
+            Math.Round((Bounds.Width - width) / 2),
+            Math.Round((Bounds.Height - height) / 2),
+            width, height);
+    }
+
     public override void Render(DrawingContext context)
     {
         Crisp.BeginFrame(this);
-        var bounds = new Rect(Bounds.Size);
-        var buttonRect = bounds.Deflate(new Thickness(4, 4, 4, 5));
+        var buttonRect = FaceRect(Bounds.Width);
         var cornerRadius = HDevTheme.Size.CornerRadiusSmall;
-        
-        var (fontSize, _) = Size switch
-        {
-            ButtonSize.Small => (12.0, FontWeight.Regular),
-            ButtonSize.Large => (15.0, FontWeight.Medium),
-            _ => (14.0, FontWeight.Regular)
-        };
-        
-        // Récupérer les couleurs selon la variante et l'état
         var (bgColor, borderColor, textColor) = ResolveColors();
-        
-        // Fond
-        context.DrawRectangle(
-            new SolidColorBrush(bgColor), 
-            null, 
-            buttonRect, 
-            cornerRadius, cornerRadius);
-        
-        // Bordure
+
+        context.DrawRectangle(new SolidColorBrush(bgColor), null, buttonRect, cornerRadius, cornerRadius);
         var borderPen = new Pen(new SolidColorBrush(borderColor), 1.0);
         context.DrawRectangle(null, borderPen, buttonRect.Deflate(0.5), cornerRadius, cornerRadius);
-        
-        // Focus ring
-        if (IsFocused && IsEnabled)
-        {
+
+        if (IsFocusVisible && IsEnabled)
             DrawFocusRing(context, buttonRect, cornerRadius);
-        }
-        
-        // Texte
-        var formattedText = CreateText(Text, textColor, fontSize, TextWeight);
+
+        var formattedText = CreateText(Text, textColor, Metrics.FontSize, TextWeight);
         var textOffset = IsPressed ? 0.5 : 0.0;
         DrawTextCentered(context, formattedText, buttonRect.Translate(new Vector(0, textOffset)));
     }
@@ -165,13 +174,14 @@ public class HDevButton : HDevControlBase
     
     private (Color, Color, Color) ResolvePrimaryColors()
     {
+        // Accent.Fill et non Accent.Primary : le libellé blanc garde ≥ 4,5:1 à tous les états
         if (!IsEnabled)
             return (HDevTheme.Disabled.Background, HDevTheme.Disabled.Border, HDevTheme.Disabled.Text);
         if (IsPressed)
-            return (HDevTheme.Accent.PrimaryPressed, HDevTheme.Accent.PrimaryPressed, HDevTheme.Text.OnAccent);
+            return (HDevTheme.Accent.FillPressed, HDevTheme.Accent.FillPressed, HDevTheme.Text.OnAccent);
         if (IsHovered)
-            return (HDevTheme.Accent.PrimaryHover, HDevTheme.Accent.PrimaryHover, HDevTheme.Text.OnAccent);
-        return (HDevTheme.Accent.Primary, HDevTheme.Accent.Primary, HDevTheme.Text.OnAccent);
+            return (HDevTheme.Accent.FillHover, HDevTheme.Accent.FillHover, HDevTheme.Text.OnAccent);
+        return (HDevTheme.Accent.Fill, HDevTheme.Accent.Fill, HDevTheme.Text.OnAccent);
     }
     
     private (Color, Color, Color) ResolveSecondaryColors()
@@ -223,16 +233,43 @@ public class HDevButton : HDevControlBase
     private (Color, Color, Color) ResolveOutlineAccentColors()
     {
         var panel = HDevTheme.Background.Panel;
-        // Texte un cran plus soutenu que le filet en clair ; en sombre, la teinte
-        // « pressée » assombrit au lieu d'éclaircir : on garde l'accent plein
-        var text = HDevTheme.IsDark ? HDevTheme.Accent.Primary : HDevTheme.Accent.PrimaryPressed;
-
         if (!IsEnabled)
             return (panel, HDevTheme.Border.Disabled, HDevTheme.Text.Disabled);
-        if (IsPressed)
-            return (HDevTheme.Lerp(panel, HDevTheme.Accent.Primary, 0.16), HDevTheme.Accent.PrimaryPressed, text);
-        if (IsHovered)
-            return (HDevTheme.Lerp(panel, HDevTheme.Accent.Primary, 0.08), HDevTheme.Accent.PrimaryHover, text);
-        return (panel, HDevTheme.Accent.Primary, text);
+
+        var (background, border) = IsPressed
+            ? (HDevTheme.Lerp(panel, HDevTheme.Accent.Primary, 0.16), HDevTheme.Accent.PrimaryPressed)
+            : IsHovered
+                ? (HDevTheme.Lerp(panel, HDevTheme.Accent.Primary, 0.08), HDevTheme.Accent.PrimaryHover)
+                : (panel, HDevTheme.Accent.Primary);
+
+        // Le libellé accent reste ≥ 4,5:1 sur le fond de l'état, teinté compris
+        return (background, border, HDevTheme.EnsureContrast(HDevTheme.Accent.Foreground, background));
     }
+}
+
+/// <summary>
+/// Bouton exposé aux technologies d'assistance (AT-SPI sous Linux) : rôle Bouton,
+/// nom et activation. Nom : AutomationProperties.Name, sinon le libellé, sinon
+/// l'infobulle — c'est ce qui nomme un <see cref="HDevIconButton"/>.
+/// </summary>
+internal sealed class HDevButtonAutomationPeer : ControlAutomationPeer, IInvokeProvider
+{
+    public HDevButtonAutomationPeer(HDevButton owner) : base(owner) { }
+
+    private HDevButton Button => (HDevButton)Owner;
+
+    protected override AutomationControlType GetAutomationControlTypeCore() => AutomationControlType.Button;
+
+    protected override string? GetNameCore()
+    {
+        var name = base.GetNameCore();
+        if (!string.IsNullOrWhiteSpace(name)) return name;
+        if (!string.IsNullOrWhiteSpace(Button.Text)) return Button.Text;
+        return ToolTip.GetTip(Button) as string;
+    }
+
+    protected override bool IsContentElementCore() => true;
+    protected override bool IsControlElementCore() => true;
+
+    public void Invoke() => Button.PerformClick();
 }

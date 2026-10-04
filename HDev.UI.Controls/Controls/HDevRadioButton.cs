@@ -7,8 +7,8 @@ using HDev.UI.Controls.Theme;
 namespace HDev.UI.Controls;
 
 /// <summary>
-/// Bouton radio professionnel style VS2022
-/// Avec cercle parfait et animation de sélection
+/// Bouton radio (style Yaru) : exclusivité et flèches partagées avec
+/// <see cref="HDevRadioCard"/> par <see cref="HDevRadioGroup"/>
 /// </summary>
 public class HDevRadioButton : HDevControlBase
 {
@@ -69,7 +69,7 @@ public class HDevRadioButton : HDevControlBase
             // changements programmatiques et aux bindings
             if (IsChecked)
             {
-                foreach (var radio in GetGroupSiblings())
+                foreach (var radio in HDevRadioGroup.Siblings(this, r => r.GroupName))
                     radio.IsChecked = false;
             }
 
@@ -80,46 +80,15 @@ public class HDevRadioButton : HDevControlBase
     protected override void OnKeyDown(KeyEventArgs e)
     {
         // Navigation par flèches au sein du groupe (coche la cible, comme WPF/WinForms)
-        if (!e.Handled && IsEnabled &&
-            e.Key is Key.Down or Key.Right or Key.Up or Key.Left)
+        if (!e.Handled && IsEnabled && HDevRadioGroup.Navigate(this, e.Key, r => r.GroupName) is { } next)
         {
-            var group = GetGroupSiblings().Append(this).OrderBy(IndexInParent).ToList();
-
-            if (group.Count > 1)
-            {
-                var forward = e.Key is Key.Down or Key.Right;
-                var index = group.IndexOf(this);
-                var next = group[(index + (forward ? 1 : -1) + group.Count) % group.Count];
-                next.Focus();
-                next.IsChecked = true;
-                e.Handled = true;
-                return;
-            }
+            next.IsChecked = true;
+            e.Handled = true;
+            return;
         }
 
         base.OnKeyDown(e);
     }
-
-    /// <summary>
-    /// Les autres radios actifs du même groupe : mêmes GroupName et parent visuel.
-    /// Un GroupName vide forme le groupe par défaut du conteneur.
-    /// </summary>
-    private IEnumerable<HDevRadioButton> GetGroupSiblings()
-    {
-        if (Parent is not Visual visualParent) yield break;
-
-        foreach (var child in visualParent.GetVisualChildren())
-        {
-            if (child is HDevRadioButton radio && radio != this &&
-                radio.GroupName == GroupName && radio.IsEnabled)
-            {
-                yield return radio;
-            }
-        }
-    }
-
-    private static int IndexInParent(HDevRadioButton radio) =>
-        radio.Parent is Visual p ? p.GetVisualChildren().ToList().IndexOf(radio) : -1;
     
     static HDevRadioButton()
     {
@@ -253,13 +222,8 @@ public class HDevRadioButton : HDevControlBase
         }
         
         // Focus ring
-        if (IsFocused && IsEnabled)
-        {
-            var focusPen = new Pen(
-                new SolidColorBrush(HDevTheme.WithOpacity(HDevTheme.Border.FocusOuter, 100)),
-                1.5);
-            context.DrawEllipse(null, focusPen, center, radius + 3, radius + 3);
-        }
+        if (IsFocusVisible && IsEnabled)
+            HDevFocus.DrawEllipseRing(context, center, radius);
         
         // Label
         if (!string.IsNullOrEmpty(Label))

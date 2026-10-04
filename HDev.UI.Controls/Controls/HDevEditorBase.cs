@@ -166,7 +166,10 @@ public abstract class HDevEditorBase : Border
     {
         CornerRadius = new CornerRadius(HDevTheme.Size.CornerRadiusSmall);
         BorderThickness = new Thickness(1);
+        // Hauteur unique des champs : dans une rangée plus haute, l'éditeur se centre
+        // (Stretch borné par MaxHeight) au lieu de s'étirer
         MinHeight = HDevTheme.Size.EditorHeight;
+        MaxHeight = HDevTheme.Size.EditorHeight;
         MinWidth = 100;
         // Pas de clip sur l'hôte : il couperait le halo de focus (BoxShadow)
         // dessiné à l'extérieur du filet ; c'est la grille interne qui clippe
@@ -180,8 +183,8 @@ public abstract class HDevEditorBase : Border
             FontFamily = new FontFamily(HDevTheme.Typography.FontFamily),
             FontSize = HDevTheme.Typography.FontSizeBody,
             CaretBrush = new SolidColorBrush(HDevTheme.Text.Primary),
-            SelectionBrush = new SolidColorBrush(HDevTheme.WithOpacity(HDevTheme.Accent.Primary, 80)),
-            SelectionForegroundBrush = new SolidColorBrush(Colors.White)
+            SelectionBrush = new SolidColorBrush(HDevTheme.Background.TextSelection),
+            SelectionForegroundBrush = new SolidColorBrush(HDevTheme.Text.Primary)
         };
         HDevInputChrome.Neutralize(InnerTextBox);
 
@@ -245,7 +248,8 @@ public abstract class HDevEditorBase : Border
     protected virtual void RefreshThemeBrushes()
     {
         InnerTextBox.CaretBrush = new SolidColorBrush(HDevTheme.Text.Primary);
-        InnerTextBox.SelectionBrush = new SolidColorBrush(HDevTheme.WithOpacity(HDevTheme.Accent.Primary, 80));
+        InnerTextBox.SelectionBrush = new SolidColorBrush(HDevTheme.Background.TextSelection);
+        InnerTextBox.SelectionForegroundBrush = new SolidColorBrush(HDevTheme.Text.Primary);
         HDevInputChrome.Neutralize(InnerTextBox);
         UpdateVisualState();
     }

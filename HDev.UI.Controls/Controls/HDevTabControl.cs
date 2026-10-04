@@ -77,6 +77,7 @@ public class HDevTabControl : Control
     private HDevTabPage? _pressedTab;
     private HDevTabPage? _closeHoveredTab;
     private Control? _hostedContent;
+    private bool _focusVisible;
 
     public ObservableCollection<HDevTabPage> Items { get; } = new();
 
@@ -337,15 +338,31 @@ public class HDevTabControl : Control
         switch (e.Key)
         {
             case Key.Left:
+                _focusVisible = true;
                 SelectedIndex = Math.Max(0, _selectedIndex - 1);
                 e.Handled = true;
                 break;
             case Key.Right:
+                _focusVisible = true;
                 SelectedIndex = Math.Min(Items.Count - 1, _selectedIndex + 1);
                 e.Handled = true;
                 break;
         }
         base.OnKeyDown(e);
+    }
+
+    protected override void OnGotFocus(FocusChangedEventArgs e)
+    {
+        _focusVisible = HDevFocus.IsVisible(e);
+        InvalidateVisual();
+        base.OnGotFocus(e);
+    }
+
+    protected override void OnLostFocus(FocusChangedEventArgs e)
+    {
+        _focusVisible = false;
+        InvalidateVisual();
+        base.OnLostFocus(e);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -387,6 +404,10 @@ public class HDevTabControl : Control
                 context.DrawRectangle(new SolidColorBrush(HDevTheme.Background.ControlHover),
                     null, rect, radius, radius);
             }
+
+            // Focus clavier : anneau intérieur sur l'onglet sélectionné (←→ le déplacent)
+            if (isSelected && _focusVisible && IsFocused)
+                HDevFocus.DrawRing(context, rect, radius, inside: true);
 
             var textColor = isSelected ? HDevTheme.Text.Primary : HDevTheme.Text.Secondary;
             var text = CreateText(GetTabText(page), textColor);

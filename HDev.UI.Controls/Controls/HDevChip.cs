@@ -104,7 +104,7 @@ public class HDevChip : HDevControlBase
 
     private double BadgeWidth()
     {
-        var t = CreateText(_badge!, Colors.White, 10.5, FontWeight.SemiBold);
+        var t = CreateText(_badge!, HDevTheme.Text.OnAccent, 10.5, FontWeight.SemiBold);
         return Math.Max(16, t.Width + 9);
     }
 
@@ -186,7 +186,7 @@ public class HDevChip : HDevControlBase
         context.DrawRectangle(new SolidColorBrush(background),
             new Pen(new SolidColorBrush(border), 1), rect.Deflate(0.5), radius, radius);
 
-        if (IsFocused)
+        if (IsFocusVisible && IsEnabled)
             DrawFocusRing(context, rect, radius);
 
         var text = CreateText(DisplayText, textColor, 12.5);
@@ -198,9 +198,10 @@ public class HDevChip : HDevControlBase
             var bw = BadgeWidth();
             const double bh = 16;
             var badgeRect = new Rect(12 + text.Width + 6, (rect.Height - bh) / 2, bw, bh);
-            var badgeColor = IsEnabled ? (_badgeColor ?? HDevTheme.Accent.Primary) : HDevTheme.Text.Disabled;
+            var badgeColor = IsEnabled ? (_badgeColor ?? HDevTheme.Accent.Fill) : HDevTheme.Text.Disabled;
             context.DrawRectangle(new SolidColorBrush(badgeColor), null, badgeRect, bh / 2, bh / 2);
-            var badgeText = CreateText(_badge!, Colors.White, 10.5, FontWeight.SemiBold);
+            // Couleur de badge libre (BadgeColor) : le chiffre prend le texte le plus lisible
+            var badgeText = CreateText(_badge!, HDevTheme.OnColor(badgeColor), 10.5, FontWeight.SemiBold);
             context.DrawText(badgeText, Crisp.Snap(new Point(
                 badgeRect.Center.X - badgeText.Width / 2,
                 badgeRect.Center.Y - badgeText.Height / 2)));

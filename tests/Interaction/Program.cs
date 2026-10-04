@@ -475,6 +475,94 @@ Check($"coller restitue le contenu riche (html={dstEdit.Html})",
     dstEdit.Html.Contains("<strong>Gras</strong>") && dstEdit.Html.Contains("et normal"));
 editWindow.Close();
 
+// ═══ Design P0 : mise en page, focus clavier, bascule de thème, toast ═══
+Console.WriteLine("Design P0 :");
+
+// Rangée mixte : chaque contrôle garde sa hauteur et se centre (rien ne s'étire)
+var small = new HDevButton { Text = "Small", Size = ButtonSize.Small };
+var medium = new HDevButton { Text = "Medium" };
+var large = new HDevButton { Text = "Large", Size = ButtonSize.Large };
+var iconButton = new HDevIconButton { Icon = HDevEditorIcon.ChevronRight };
+var field = new HDevTextBox { Width = 120, Text = "TY201" };
+var rowPanel = new StackPanel
+{
+    Orientation = Avalonia.Layout.Orientation.Horizontal,
+    Children = { small, medium, large, iconButton, field }
+};
+var rowWindow = new Window { Width = 800, Height = 120, Content = rowPanel };
+rowWindow.Show();
+Pump(rowWindow);
+Check($"tailles dans une rangée commune : 28/34/42 (lu {small.Bounds.Height}/{medium.Bounds.Height}/{large.Bounds.Height})",
+    small.Bounds.Height == 28 && medium.Bounds.Height == 34 && large.Bounds.Height == 42);
+Check("les boutons d'une rangée partagent la même ligne médiane",
+    Math.Abs(small.Bounds.Center.Y - large.Bounds.Center.Y) < 0.5);
+Check($"bouton-icône carré dans une rangée plus haute (lu {iconButton.Bounds.Width}×{iconButton.Bounds.Height})",
+    iconButton.Bounds.Width == 34 && iconButton.Bounds.Height == 34);
+Check($"champ mono-ligne à EditorHeight dans une rangée plus haute (lu {field.Bounds.Height})",
+    field.Bounds.Height == 28);
+
+// Focus visible au clavier seulement
+var focusVisible = typeof(HDevControlBase).GetProperty("IsFocusVisible",
+    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+ClickAt(rowWindow, WindowCenter(rowWindow, small));
+Check("focus pris au clic : pas d'anneau", small.IsFocused && !(bool)focusVisible.GetValue(small)!);
+rowWindow.KeyPressQwerty(PhysicalKey.Tab, RawInputModifiers.None);
+rowWindow.KeyReleaseQwerty(PhysicalKey.Tab, RawInputModifiers.None);
+Pump(rowWindow);
+Check("focus pris par Tab : anneau visible", medium.IsFocused && (bool)focusVisible.GetValue(medium)!);
+rowWindow.Close();
+
+// Bascule à chaud dans une HDevWindow : barre de menu et zone de contenu suivent
+var themedMenu = new HDevMenuBar();
+themedMenu.Items.Add(new HDevMenuBarItem("Fichier"));
+var themedWindow = new HDevWindow { Width = 500, Height = 200, Content = themedMenu };
+themedWindow.Show();
+Pump(themedWindow);
+HDev.UI.Controls.Theme.HDevTheme.Variant = HDev.UI.Controls.Theme.HDevThemeVariant.Dark;
+Pump(themedWindow);
+var contentArea = (Border)typeof(HDevWindow).GetField("_contentArea",
+    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(themedWindow)!;
+Check("bascule sombre : la barre de menu prend le fond sombre",
+    themedMenu.Background is Avalonia.Media.ISolidColorBrush menuBrush
+    && menuBrush.Color == HDev.UI.Controls.Theme.HDevTheme.Background.Toolbar);
+Check("bascule sombre : la zone de contenu de HDevWindow suit",
+    contentArea.Background is Avalonia.Media.ISolidColorBrush areaBrush
+    && areaBrush.Color == HDev.UI.Controls.Theme.HDevTheme.Background.Window);
+HDev.UI.Controls.Theme.HDevTheme.Variant = HDev.UI.Controls.Theme.HDevThemeVariant.Light;
+
+// Toast : ancré en bas à droite de la fenêtre (l'OverlayLayer ignore l'alignement)
+HDevToast.Show(themedWindow, "Titre", "Message");
+Pump(themedWindow);
+var overlay = Avalonia.Controls.Primitives.OverlayLayer.GetOverlayLayer(themedWindow)!;
+var toast = overlay.Children[^1];
+Check($"toast en bas à droite (bord droit {toast.Bounds.Right:0} / {overlay.Bounds.Width:0}, bas {toast.Bounds.Bottom:0} / {overlay.Bounds.Height:0})",
+    Math.Abs(toast.Bounds.Right - (overlay.Bounds.Width - 16)) < 1
+    && Math.Abs(toast.Bounds.Bottom - (overlay.Bounds.Height - 16)) < 1);
+themedWindow.Close();
+
+// Combo éditable : une valeur posée par code n'ouvre pas les suggestions
+var editableCombo = new HDevComboBox { Width = 160 };
+editableCombo.Properties.Items.AddRange(new object[] { "Basse", "Normale", "Haute" });
+editableCombo.Properties.TextEditStyle = TextEditStyles.Standard;
+var comboWindow = new Window { Width = 300, Height = 200, Content = editableCombo };
+comboWindow.Show();
+Pump(comboWindow);
+editableCombo.SelectedIndex = 1;
+Pump(comboWindow);
+Check("combo éditable : SelectedIndex par code n'ouvre pas les suggestions", !editableCombo.IsPopupOpen);
+comboWindow.Close();
+
+// Liste : GroupSelector posé après ItemsSource est pris en compte
+var groupedList = new HDevListView
+{
+    ItemsSource = new[] { "a1", "a2", "b1" },
+    GroupSelector = item => ((string)item)[..1]
+};
+var rows = (System.Collections.IList)typeof(HDevListView).GetField("_rows",
+    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(groupedList)!;
+var headers = rows.Cast<object>().Count(r => (bool)r.GetType().GetProperty("IsHeader")!.GetValue(r)!);
+Check($"liste : GroupSelector après ItemsSource produit les en-têtes de groupe (lu {headers})", headers == 2);
+
 Console.WriteLine(failed == 0 ? "Interaction HDev.UI.Controls : ALL PASS" : $"Interaction HDev.UI.Controls : {failed} FAILED");
 return failed == 0 ? 0 : 1;
 

@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Layout;
 using Avalonia.Media;
 using HDev.UI.Controls.Theme;
 using System.Collections.ObjectModel;
@@ -74,6 +75,7 @@ public class HDevToggleButtonGroup : Control
     private HDevToggleButtonItem? _hoveredItem;
     private HDevToggleButtonItem? _pressedItem;
     private int _focusIndex = -1;
+    private bool _focusVisible;
 
     public ObservableCollection<HDevToggleButtonItem> Items { get; } = new();
 
@@ -104,6 +106,9 @@ public class HDevToggleButtonGroup : Control
     static HDevToggleButtonGroup()
     {
         FocusableProperty.OverrideDefaultValue<HDevToggleButtonGroup>(true);
+
+        // Hauteur fixe : centré dans une rangée plus haute plutôt que collé en haut
+        VerticalAlignmentProperty.OverrideDefaultValue<HDevToggleButtonGroup>(VerticalAlignment.Center);
     }
 
     public HDevToggleButtonGroup()
@@ -254,6 +259,8 @@ public class HDevToggleButtonGroup : Control
                 var next = NextEnabled(start, delta);
                 if (next >= 0)
                 {
+                    // Navigation au clavier : le segment courant se montre, même après un clic
+                    _focusVisible = true;
                     _focusIndex = next;
                     // Single : les flèches CHANGENT la sélection (idiome RadioGroup)
                     if (SelectionMode == ToggleGroupSelectionMode.Single)
@@ -290,12 +297,14 @@ public class HDevToggleButtonGroup : Control
     protected override void OnGotFocus(FocusChangedEventArgs e)
     {
         if (_focusIndex < 0) _focusIndex = Math.Max(0, SelectedIndex);
+        _focusVisible = HDevFocus.IsVisible(e);
         InvalidateVisual();
         base.OnGotFocus(e);
     }
 
     protected override void OnLostFocus(FocusChangedEventArgs e)
     {
+        _focusVisible = false;
         InvalidateVisual();
         base.OnLostFocus(e);
     }
@@ -328,7 +337,8 @@ public class HDevToggleButtonGroup : Control
 
                 if (isSelected)
                 {
-                    context.FillRectangle(new SolidColorBrush(HDevTheme.Accent.Primary), rect);
+                    // Accent.Fill : le libellé blanc du segment choisi garde ≥ 4,5:1
+                    context.FillRectangle(new SolidColorBrush(HDevTheme.Accent.Fill), rect);
                 }
                 else if (isPressed)
                 {
@@ -356,13 +366,9 @@ public class HDevToggleButtonGroup : Control
                     rect.X + (rect.Width - text.Width) / 2,
                     rect.Y + (rect.Height - text.Height) / 2)));
 
-                // Focus clavier sur le segment courant
-                if (IsFocused && index == _focusIndex)
-                {
-                    context.DrawRectangle(null,
-                        new Pen(new SolidColorBrush(HDevTheme.WithOpacity(HDevTheme.Border.FocusOuter, 130)), 1.5),
-                        rect.Deflate(2), radius - 2, radius - 2);
-                }
+                // Focus clavier sur le segment courant (anneau intérieur : la pilule rogne)
+                if (_focusVisible && IsFocused && index == _focusIndex)
+                    HDevFocus.DrawRing(context, rect, radius, inside: true);
 
                 index++;
             }
@@ -372,5 +378,5 @@ public class HDevToggleButtonGroup : Control
     private static FormattedText CreateText(string text, Color color, FontWeight weight = FontWeight.Regular)
         => new(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
             new Typeface(HDevTheme.Typography.FontFamily, FontStyle.Normal, weight),
-            HDevTheme.Typography.FontSizeBody - 1, new SolidColorBrush(color));
+            HDevTheme.Typography.FontSizeDense, new SolidColorBrush(color));
 }

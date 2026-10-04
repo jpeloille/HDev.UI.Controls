@@ -104,9 +104,12 @@ public class HDevTextBox : Border
         CornerRadius = new CornerRadius(HDevTheme.Size.CornerRadiusSmall);
         BorderThickness = new Thickness(1);
         MinHeight = HDevTheme.Size.EditorHeight;
+        // Mono-ligne : jamais plus haut que EditorHeight. Dans une rangée plus haute, le
+        // champ se centre (Stretch borné) au lieu de s'étirer ; le multiligne lève la borne
+        MaxHeight = HDevTheme.Size.EditorHeight;
         // Pas de clip sur l'hôte : il couperait le halo de focus (BoxShadow) ;
         // le TextBox interne clippe son propre contenu
-        
+
         _innerTextBox = new TextBox
         {
             Padding = new Thickness(HDevTheme.Size.EditorTextInset, 0),
@@ -117,8 +120,8 @@ public class HDevTextBox : Border
             FontFamily = new FontFamily(HDevTheme.Typography.FontFamily),
             FontSize = HDevTheme.Typography.FontSizeBody,
             CaretBrush = new SolidColorBrush(HDevTheme.Text.Primary),
-            SelectionBrush = new SolidColorBrush(HDevTheme.WithOpacity(HDevTheme.Accent.Primary, 80)),
-            SelectionForegroundBrush = new SolidColorBrush(Colors.White)
+            SelectionBrush = new SolidColorBrush(HDevTheme.Background.TextSelection),
+            SelectionForegroundBrush = new SolidColorBrush(HDevTheme.Text.Primary)
         };
         HDevInputChrome.Neutralize(_innerTextBox);
         
@@ -181,6 +184,7 @@ public class HDevTextBox : Border
             _innerTextBox.VerticalContentAlignment = VerticalAlignment.Top;
             _innerTextBox.Padding = new Thickness(HDevTheme.Size.EditorTextInset, 5);
             MinHeight = HDevTheme.Size.EditorHeight * 3; // ~3 lignes
+            MaxHeight = double.PositiveInfinity;
         }
         else
         {
@@ -190,6 +194,7 @@ public class HDevTextBox : Border
             _innerTextBox.VerticalContentAlignment = VerticalAlignment.Center;
             _innerTextBox.Padding = new Thickness(HDevTheme.Size.EditorTextInset, 0);
             MinHeight = HDevTheme.Size.EditorHeight;
+            MaxHeight = HDevTheme.Size.EditorHeight;
         }
     }
     
@@ -212,7 +217,8 @@ public class HDevTextBox : Border
     private void OnThemeVariantChanged(object? sender, EventArgs e)
     {
         _innerTextBox.CaretBrush = new SolidColorBrush(HDevTheme.Text.Primary);
-        _innerTextBox.SelectionBrush = new SolidColorBrush(HDevTheme.WithOpacity(HDevTheme.Accent.Primary, 80));
+        _innerTextBox.SelectionBrush = new SolidColorBrush(HDevTheme.Background.TextSelection);
+        _innerTextBox.SelectionForegroundBrush = new SolidColorBrush(HDevTheme.Text.Primary);
         HDevInputChrome.Neutralize(_innerTextBox);
         UpdateVisualState();
     }

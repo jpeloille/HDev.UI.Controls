@@ -1,7 +1,6 @@
 using Avalonia;
 using Avalonia.Input;
 using Avalonia.Media;
-using Avalonia.VisualTree;
 using HDev.UI.Controls.Theme;
 
 namespace HDev.UI.Controls;
@@ -9,8 +8,9 @@ namespace HDev.UI.Controls;
 /// <summary>
 /// Carte-radio : choix exclusif présenté en carte (titre + sous-titre), pour les
 /// sélecteurs dont chaque option mérite une ligne d'explication.
-/// Choisie : filet accent 2 px et fond teinté. Exclusivité et flèches comme
-/// <see cref="HDevRadioButton"/> : cartes sœurs d'un même panneau, même GroupName.
+/// Choisie : filet accent 2 px et fond teinté, encore lisibles une fois désactivée.
+/// Exclusivité et flèches partagées avec <see cref="HDevRadioButton"/>
+/// (<see cref="HDevRadioGroup"/>) : cartes sœurs d'un même panneau, même GroupName.
 /// </summary>
 public class HDevRadioCard : HDevControlBase
 {
@@ -64,12 +64,12 @@ public class HDevRadioCard : HDevControlBase
     /// </summary>
     public event EventHandler<bool>? CheckedChanged;
 
-    private const double PaddingH = 12;
+    private const double PaddingH = HDevTheme.Size.PaddingM;
     private const double PaddingV = 10;
     private const double LineGap = 2;
-    private const double Radius = 10;
-    private const double TitleSize = 14;
-    private const double SubtitleSize = 13;
+    private const double Radius = HDevTheme.Size.CornerRadiusLarge;
+    private const double TitleSize = HDevTheme.Typography.FontSizeBody;
+    private const double SubtitleSize = HDevTheme.Typography.FontSizeDense;
 
     static HDevRadioCard()
     {
@@ -97,7 +97,7 @@ public class HDevRadioCard : HDevControlBase
             // L'exclusivité vit ici pour s'appliquer aussi aux changements par code
             if (IsChecked)
             {
-                foreach (var card in GetGroupSiblings())
+                foreach (var card in HDevRadioGroup.Siblings(this, c => c.GroupName))
                     card.IsChecked = false;
             }
 
@@ -108,43 +108,15 @@ public class HDevRadioCard : HDevControlBase
     protected override void OnKeyDown(KeyEventArgs e)
     {
         // Navigation par flèches au sein du groupe (coche la cible, comme HDevRadioButton)
-        if (!e.Handled && IsEnabled &&
-            e.Key is Key.Down or Key.Right or Key.Up or Key.Left)
+        if (!e.Handled && IsEnabled && HDevRadioGroup.Navigate(this, e.Key, c => c.GroupName) is { } next)
         {
-            var group = GetGroupSiblings().Append(this).OrderBy(IndexInParent).ToList();
-
-            if (group.Count > 1)
-            {
-                var forward = e.Key is Key.Down or Key.Right;
-                var index = group.IndexOf(this);
-                var next = group[(index + (forward ? 1 : -1) + group.Count) % group.Count];
-                next.Focus();
-                next.IsChecked = true;
-                e.Handled = true;
-                return;
-            }
+            next.IsChecked = true;
+            e.Handled = true;
+            return;
         }
 
         base.OnKeyDown(e);
     }
-
-    /// <summary>Les autres cartes actives du même groupe : mêmes GroupName et parent visuel</summary>
-    private IEnumerable<HDevRadioCard> GetGroupSiblings()
-    {
-        if (Parent is not Visual visualParent) yield break;
-
-        foreach (var child in visualParent.GetVisualChildren())
-        {
-            if (child is HDevRadioCard card && card != this &&
-                card.GroupName == GroupName && card.IsEnabled)
-            {
-                yield return card;
-            }
-        }
-    }
-
-    private static int IndexInParent(HDevRadioCard card) =>
-        card.Parent is Visual p ? p.GetVisualChildren().ToList().IndexOf(card) : -1;
 
     // ═══════════════════════════════════════════════════════════════
     // MESURE
@@ -176,8 +148,12 @@ public class HDevRadioCard : HDevControlBase
 
         if (!IsEnabled)
         {
-            fill = panel;
-            stroke = HDevTheme.Border.Disabled;
+            // Désactivée, la carte choisie le reste visiblement : filet 2 px atténué
+            fill = IsChecked ? HDevTheme.Lerp(panel, HDevTheme.Accent.Primary, 0.03) : panel;
+            stroke = IsChecked
+                ? HDevTheme.Lerp(HDevTheme.Border.Disabled, HDevTheme.Accent.Primary, 0.4)
+                : HDevTheme.Border.Disabled;
+            thickness = IsChecked ? 2.0 : 1.0;
         }
         else if (IsChecked)
         {
@@ -208,7 +184,7 @@ public class HDevRadioCard : HDevControlBase
         context.DrawRectangle(null, new Pen(new SolidColorBrush(stroke), thickness),
             bounds.Deflate(inset), Radius - inset, Radius - inset);
 
-        if (IsFocused && IsEnabled)
+        if (IsFocusVisible && IsEnabled)
             DrawFocusRing(context, bounds, Radius);
 
         var maxWidth = Math.Max(0, bounds.Width - 2 * PaddingH);

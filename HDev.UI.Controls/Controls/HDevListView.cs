@@ -82,10 +82,24 @@ public class HDevListView : Control
     // ═══════════════════════════════════════════════════════════════
 
     /// <summary>Adaptateur : objet métier → contenu affiché (requis)</summary>
-    public Func<object, HDevListItemContent>? ItemAdapter { get; set; }
+    public Func<object, HDevListItemContent>? ItemAdapter
+    {
+        get => _itemAdapter;
+        set { _itemAdapter = value; InvalidateVisual(); }
+    }
 
-    /// <summary>Clé de groupe par item (groupes adjacents, ex : Aujourd'hui/Hier)</summary>
-    public Func<object, string>? GroupSelector { get; set; }
+    /// <summary>
+    /// Clé de groupe par item (groupes adjacents, ex : Aujourd'hui/Hier). Prise en
+    /// compte quel que soit l'ordre d'affectation avec <see cref="ItemsSource"/>.
+    /// </summary>
+    public Func<object, string>? GroupSelector
+    {
+        get => _groupSelector;
+        set { _groupSelector = value; RebuildRows(); }
+    }
+
+    private Func<object, HDevListItemContent>? _itemAdapter;
+    private Func<object, string>? _groupSelector;
 
     /// <summary>Actions affichées au survol (la zone de droite remplace le Trailing)</summary>
     public List<HDevListHoverAction> HoverActions { get; } = new();
@@ -684,10 +698,10 @@ public class HDevListView : Control
         // Badge (sous le trailing)
         if (!showActions && !string.IsNullOrEmpty(content.Badge))
         {
-            var badge = Text(content.Badge, Colors.White, 10, FontWeight.SemiBold);
+            var badge = Text(content.Badge, HDevTheme.Text.OnAccent, 10, FontWeight.SemiBold);
             var badgeWidth = Math.Max(16, badge.Width + 10);
             var badgeRect = new Rect(width - badgeWidth - 10, y + _rowHeight - 22, badgeWidth, 15);
-            context.DrawRectangle(new SolidColorBrush(HDevTheme.Accent.Primary), null, badgeRect, 7.5, 7.5);
+            context.DrawRectangle(new SolidColorBrush(HDevTheme.Accent.Fill), null, badgeRect, 7.5, 7.5);
             context.DrawText(badge, Crisp.Snap(new Point(
                 badgeRect.Center.X - badge.Width / 2, badgeRect.Center.Y - badge.Height / 2)));
         }

@@ -297,12 +297,7 @@ public class HDevSlider : HDevControlBase
         }
         
         // Focus ring
-        if (IsFocused && IsEnabled)
-        {
-            var focusPen = new Pen(
-                new SolidColorBrush(HDevTheme.WithOpacity(HDevTheme.Border.FocusOuter, 100)),
-                1.5);
-            context.DrawEllipse(null, focusPen, thumbCenter, thumbRadius + 4, thumbRadius + 4);
-        }
+        if (IsFocusVisible && IsEnabled)
+            HDevFocus.DrawEllipseRing(context, thumbCenter, thumbRadius);
     }
 }

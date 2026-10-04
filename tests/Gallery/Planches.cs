@@ -242,7 +242,7 @@ static class Planches
             new HDevTextBox { Width = 110, Text = "TY201" },
             new HDevDateEdit { Width = 130, Value = new DateTime(2026, 10, 5) },
             ComboIn(1, editable: false)!,
-            new HDevIconButton { Icon = HDevEditorIcon.Calendar },
+            new HDevIconButton { Icon = HDevEditorIcon.Calendar, Size = ButtonSize.Small },
             new HDevButton { Text = "Rechercher", Size = ButtonSize.Small },
             new HDevButton { Text = "Valider", Variant = ButtonVariant.Primary });
 

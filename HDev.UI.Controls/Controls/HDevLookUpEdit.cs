@@ -362,7 +362,7 @@ public class HDevLookUpEdit : Control
 
     protected override Size MeasureOverride(Size availableSize)
     {
-        var height = Height > 0 ? Height : 28;
+        var height = Height > 0 ? Height : HDevTheme.Size.EditorHeight;
         var width = Width > 0 ? Width : (MinWidth > 0 ? MinWidth : 160);
 
         if (double.IsInfinity(availableSize.Width))
@@ -403,6 +403,10 @@ public class HDevLookUpEdit : Control
             borderColor = HDevTheme.Border.Default;
             textColor = HDevTheme.Text.Primary;
         }
+
+        // Focus : halo des champs de saisie, en plus du filet accent
+        if (IsEnabled && (_isDropDownOpen || IsFocused))
+            HDevInputChrome.DrawHalo(context, bounds, radius, HDevInputChrome.FocusHalo);
 
         context.DrawRectangle(new SolidColorBrush(bgColor), null, bounds, radius, radius);
         context.DrawRectangle(null, new Pen(new SolidColorBrush(borderColor), 1),

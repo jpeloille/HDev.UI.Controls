@@ -209,14 +209,8 @@ public class HDevToggleSwitch : HDevControlBase
         }
         
         // Focus ring
-        if (IsFocused && IsEnabled)
-        {
-            var focusRect = trackRect.Inflate(3);
-            var focusPen = new Pen(
-                new SolidColorBrush(HDevTheme.WithOpacity(HDevTheme.Border.FocusOuter, 100)),
-                1.5);
-            context.DrawRectangle(null, focusPen, focusRect, trackRadius + 3, trackRadius + 3);
-        }
+        if (IsFocusVisible && IsEnabled)
+            DrawFocusRing(context, trackRect, trackRadius);
         
         // Label
         if (ShowLabels)

@@ -136,13 +136,7 @@ sealed class GalleryApp : Application
             Source = new Uri("avares://HDev.UI.Controls/Theme/DataGrid/Index.axaml")
         });
 
-        // Accent Ubuntu des contrôles Fluent internes (TextBox des éditeurs…)
-        Resources["SystemAccentColor"] = Color.Parse("#E95420");
-        Resources["SystemAccentColorDark1"] = Color.Parse("#DB4C1B");
-        Resources["SystemAccentColorDark2"] = Color.Parse("#C64614");
-        Resources["SystemAccentColorDark3"] = Color.Parse("#A83C11");
-        Resources["SystemAccentColorLight1"] = Color.Parse("#ED7748");
-        Resources["SystemAccentColorLight2"] = Color.Parse("#F19970");
-        Resources["SystemAccentColorLight3"] = Color.Parse("#F6BB98");
+        // Accent des contrôles Fluent internes et pinceaux HDev*Brush, suivis à chaque bascule
+        HDevTheme.ApplyTo(this);
     }
 }

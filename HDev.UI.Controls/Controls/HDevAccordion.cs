@@ -100,6 +100,7 @@ public class HDevAccordion : Control
 
     private HDevAccordionSection? _hoveredSection;
     private int _focusIndex = -1;
+    private bool _focusVisible;
     private readonly List<Control> _attachedContents = new();
 
     public ObservableCollection<HDevAccordionSection> Sections { get; } = new();
@@ -299,6 +300,10 @@ public class HDevAccordion : Control
             return;
         }
 
+        // Navigation au clavier : l'en-tête courant se montre, même après un clic
+        if (e.Key is Key.Up or Key.Down or Key.Home or Key.End)
+            _focusVisible = true;
+
         switch (e.Key)
         {
             case Key.Up:
@@ -337,12 +342,14 @@ public class HDevAccordion : Control
     protected override void OnGotFocus(FocusChangedEventArgs e)
     {
         if (_focusIndex < 0 && Sections.Count > 0) _focusIndex = 0;
+        _focusVisible = HDevFocus.IsVisible(e);
         InvalidateVisual();
         base.OnGotFocus(e);
     }
 
     protected override void OnLostFocus(FocusChangedEventArgs e)
     {
+        _focusVisible = false;
         InvalidateVisual();
         base.OnLostFocus(e);
     }
@@ -361,7 +368,7 @@ public class HDevAccordion : Control
         foreach (var (section, rect) in HeadersLayout())
         {
             var isHovered = ReferenceEquals(section, _hoveredSection);
-            var isFocused = IsFocused && index == _focusIndex;
+            var isFocused = _focusVisible && IsFocused && index == _focusIndex;
 
             // Fond d'en-tête : couleur de section si posée, sinon standard.
             // Le hover se fait en SURCOUCHE translucide pour rester visible
@@ -409,13 +416,9 @@ public class HDevAccordion : Control
                 weight: section.IsExpanded ? FontWeight.SemiBold : FontWeight.Regular);
             context.DrawText(title, Crisp.Snap(new Point(x, cy - title.Height / 2)));
 
-            // Anneau de focus clavier
+            // Anneau de focus clavier (intérieur : l'accordéon rogne ses bords)
             if (isFocused)
-            {
-                context.DrawRectangle(null,
-                    new Pen(new SolidColorBrush(HDevTheme.WithOpacity(HDevTheme.Border.FocusOuter, 120)), 1.5),
-                    rect.Deflate(1.5), 4, 4);
-            }
+                HDevFocus.DrawRing(context, rect, 4, inside: true);
 
             index++;
         }

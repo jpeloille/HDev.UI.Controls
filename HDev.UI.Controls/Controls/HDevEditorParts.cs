@@ -69,13 +69,13 @@ internal static class HDevInputChrome
         {
             bg = HDevTheme.Background.Error;
             border = HDevTheme.Accent.Error;
-            halo = HDevTheme.WithOpacity(HDevTheme.Accent.Error, 90);
+            halo = ErrorHalo;
         }
         else if (isFocused)
         {
             bg = HDevTheme.Background.Input;
             border = HDevTheme.Border.Focused;
-            halo = HDevTheme.WithOpacity(HDevTheme.Border.Focused, 110);
+            halo = FocusHalo;
         }
         else
         {
@@ -92,6 +92,18 @@ internal static class HDevInputChrome
 
         inner.Foreground = new SolidColorBrush(isEnabled ? HDevTheme.Text.Primary : HDevTheme.Text.Disabled);
     }
+
+    /// <summary>Halo de 2 px des champs au focus et en erreur (BoxShadow ou dessin)</summary>
+    public static Color FocusHalo => HDevTheme.WithOpacity(HDevTheme.Border.Focused, 110);
+    public static Color ErrorHalo => HDevTheme.WithOpacity(HDevTheme.Accent.Error, 90);
+
+    /// <summary>
+    /// Même halo que la BoxShadow (spread 2, sans flou) pour un champ dessiné à la main
+    /// (HDevComboBox, HDevLookUpEdit) : 2 px tout autour, à l'extérieur du filet
+    /// </summary>
+    public static void DrawHalo(DrawingContext context, Rect bounds, double cornerRadius, Color halo)
+        => context.DrawRectangle(null, new Pen(new SolidColorBrush(halo), 2),
+            bounds.Inflate(1), cornerRadius + 1, cornerRadius + 1);
 }
 
 /// <summary>Icône vectorielle d'un <see cref="HDevEditorGlyphButton"/></summary>
@@ -197,14 +209,18 @@ public class HDevEditorGlyphButton : Control
 
     /// <summary>
     /// Icônes au trait 1,2 px, même graisse que les chevrons de
-    /// <see cref="HDevSpinButtons"/> ; partagé avec le rendu de HDevComboBox
+    /// <see cref="HDevSpinButtons"/> ; partagé avec le rendu de HDevComboBox.
+    /// <paramref name="scale"/> agrandit glyphe et trait ensemble (HDevIconButton Medium/Large).
     /// </summary>
-    internal static void DrawIcon(DrawingContext context, HDevEditorIcon icon, Point center, Color color)
+    internal static void DrawIcon(DrawingContext context, HDevEditorIcon icon, Point center, Color color,
+        double scale = 1.0)
     {
         var pen = new Pen(new SolidColorBrush(color), 1.2);
         // Centre calé sur le demi-pixel : traits de 1 px nets
         var c = Crisp.Snap(center);
         double cx = c.X + 0.5, cy = c.Y + 0.5;
+        using var zoom = context.PushTransform(Matrix.CreateTranslation(-cx, -cy)
+            * Matrix.CreateScale(scale, scale) * Matrix.CreateTranslation(cx, cy));
 
         switch (icon)
         {

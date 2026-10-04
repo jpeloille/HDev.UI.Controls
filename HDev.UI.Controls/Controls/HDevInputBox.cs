@@ -67,7 +67,9 @@ public class HDevInputBox : HDevWindow
             else if (e.Key == Key.Escape) { Close(); e.Handled = true; }
         };
 
-        Opened += (s, e) => _input.Focus();
+        // Le focus va au TextBox interne : l'hôte HDevTextBox (un Border) ne le prend pas,
+        // et la boîte s'ouvrait sans caret
+        Opened += (s, e) => _input.FocusTextBox();
     }
 
     /// <summary>Affiche la boîte ; retourne la saisie, ou null si annulée</summary>

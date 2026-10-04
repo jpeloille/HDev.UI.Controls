@@ -152,13 +152,16 @@ public class HDevWindow : Window
     {
         ApplyThemeVariant();
 
-        // Re-brusher les surfaces de la fenêtre
+        // Re-brusher les surfaces de la fenêtre, zone de contenu comprise (elle avait
+        // reçu le pinceau de la fenêtre à la construction et le gardait)
         Background = new SolidColorBrush(HDevTheme.Background.Window);
         BorderBrush = new SolidColorBrush(HDevTheme.Border.Default);
         TitleBarBackground = new SolidColorBrush(HDevTheme.Background.Toolbar);
         TitleBarForeground = new SolidColorBrush(HDevTheme.Text.Primary);
         if (_titleBar != null)
             _titleBar.Background = TitleBarBackground;
+        if (_contentArea != null)
+            _contentArea.Background = Background;
 
         // Les contrôles custom-rendered relisent HDevTheme au prochain rendu :
         // une invalidation récursive suffit

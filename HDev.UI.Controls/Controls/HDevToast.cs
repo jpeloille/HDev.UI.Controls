@@ -63,11 +63,14 @@ public static class HDevToast
 
     private static void Restack(OverlayLayer layer, List<Control> list)
     {
-        // Empilement du bas vers le haut
+        // Empilement du bas vers le haut. L'OverlayLayer place ses enfants comme un
+        // Canvas : alignement et marges droite/bas y sont ignorés (le toast tombait en
+        // haut à gauche sous Avalonia 12) ; on ancre donc par Canvas.Right/Bottom
         for (int i = 0; i < list.Count; i++)
         {
             var fromBottom = list.Count - 1 - i;
-            list[i].Margin = new Thickness(0, 0, 16, 16 + fromBottom * (74 + Spacing));
+            Canvas.SetRight(list[i], 16);
+            Canvas.SetBottom(list[i], 16 + fromBottom * (74 + Spacing));
         }
         _ = layer;
     }

@@ -714,7 +714,8 @@ public class HDevComboBox : Control
         {
             _editTextBox.Foreground = new SolidColorBrush(HDevTheme.Text.Primary);
             _editTextBox.CaretBrush = new SolidColorBrush(HDevTheme.Text.Primary);
-            _editTextBox.SelectionBrush = new SolidColorBrush(HDevTheme.WithOpacity(HDevTheme.Accent.Primary, 80));
+            _editTextBox.SelectionBrush = new SolidColorBrush(HDevTheme.Background.TextSelection);
+            _editTextBox.SelectionForegroundBrush = new SolidColorBrush(HDevTheme.Text.Primary);
         }
         InvalidateVisual();
     }
@@ -904,8 +905,8 @@ public class HDevComboBox : Control
             FontSize = HDevTheme.Typography.FontSizeBody,
             Foreground = new SolidColorBrush(HDevTheme.Text.Primary),
             CaretBrush = new SolidColorBrush(HDevTheme.Text.Primary),
-            SelectionBrush = new SolidColorBrush(HDevTheme.WithOpacity(HDevTheme.Accent.Primary, 80)),
-            SelectionForegroundBrush = new SolidColorBrush(Colors.White),
+            SelectionBrush = new SolidColorBrush(HDevTheme.Background.TextSelection),
+            SelectionForegroundBrush = new SolidColorBrush(HDevTheme.Text.Primary),
             PlaceholderText = _properties.NullValuePrompt,
             IsReadOnly = _properties.ReadOnly,
             Text = _text
@@ -956,6 +957,11 @@ public class HDevComboBox : Control
 
         _text = typed;
         TextChanged?.Invoke(this, EventArgs.Empty);
+
+        // Suggestions et complétion : seulement pendant une frappe de l'utilisateur. Un
+        // texte posé par code (SelectedIndex, EditValue, texte initial) n'ouvre rien —
+        // pas même sur une combo désactivée
+        if (!_editTextBox.IsFocused) return;
 
         var mode = _properties.AutoComplete == AutoCompleteMode.Default
             ? AutoCompleteMode.SuggestAppend
@@ -1187,10 +1193,13 @@ public class HDevComboBox : Control
                 borderColor = HDevTheme.Border.Hover;
         }
 
-        // Focus (en mode éditable, c'est le TextBox interne qui porte le focus)
-        if ((IsFocused || _editTextBox?.IsFocused == true) && IsEnabled)
+        // Focus (en mode éditable, c'est le TextBox interne qui porte le focus) :
+        // filet accent ET halo, comme tout champ de saisie
+        var isFocused = (IsFocused || _editTextBox?.IsFocused == true) && IsEnabled;
+        if (isFocused)
         {
-            borderColor = HDevTheme.Accent.Primary;
+            borderColor = HDevTheme.Border.Focused;
+            HDevInputChrome.DrawHalo(context, bounds, cornerRadius, HDevInputChrome.FocusHalo);
         }
 
         // ReadOnly
