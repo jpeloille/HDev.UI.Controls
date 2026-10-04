@@ -15,7 +15,7 @@ Interdits.
 - Modifier `orchestration/`, `Plan-Suite.md`, `plans/` sauf si la fiche le demande.
 - Contourner une permission refusée.
 
-Communication, par SendMessage vers <nom-orchestratrice>, première ligne préfixée :
+Communication, par SendMessage vers <nom-orchestratrice> (si ce nom n'est pas joignable, réponds à l'adresse `from` du message reçu), première ligne préfixée :
 - `QUESTION M-<nn> :` dès qu'un choix n'est pas tranché par la fiche ou le plan. Donne le contexte, les options, ta recommandation. Attends la réponse avant de poursuivre ce point (avance sur le reste si c'est indépendant).
 - `RAPPORT M-<nn> :` à chaque commit ou étape notable.
 - `FIN M-<nn> :` à la fin : commits, tests lancés et résultats, écarts à la fiche.
