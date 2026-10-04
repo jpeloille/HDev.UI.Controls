@@ -46,3 +46,13 @@
   - Vérification de l'orchestratrice : branche propre, 11 commits, hdev intact (f666e3d). Les mentions DevExpress restantes sont antérieures, donc du ressort de M-02. Le motif `xtra[A-Z]` de M-02 ne doit pas être cherché avec -i (faux positifs : Extraction, HitTestTextRange).
 - M-01, contrôle de nommage : tous les noms sont conformes, sauf `Reason`, à renommer en `CloseReason` selon la recommandation de l'exécutante (nom d'Avalonia). Rien n'est renommé en attendant la réponse.
 - M-01, rapport de nommage complet : 39 noms conformes sur 49 ; 10 à trancher (N1 à N7 dans ETAT.md). Rien n'est renommé. La branche compte toujours 11 commits (le « 12 » du rapport est une erreur de décompte).
+- Julien : « tout comme ton avis ».
+  - N1 : `HDevEditorButton.Click` routé.
+  - N2 : `CloseReason`.
+  - N3 : `Accepted` / `Canceled` / `LightDismiss`.
+  - N4 : `IsValueAccepted`.
+  - N5 : `HDevDropDownEdit`.
+  - N6 et N7 : `HDevButtonEdit` et `Buttons` gardés.
+  - C1 : la valeur n'est prise qu'à la fermeture, par CommitUserValue. IsValueAccepted vaut true par défaut pour Accepted et LightDismiss, false pour Canceled (choix de l'orchestratrice pour LightDismiss).
+  - C2 : validé.
+  M-01 est relancée.

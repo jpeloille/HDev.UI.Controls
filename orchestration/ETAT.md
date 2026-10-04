@@ -19,7 +19,7 @@ Un sous-agent meurt avec l'orchestratrice. À la reprise, relancer la mission de
 
 | Mission | Lot | Worktree | Branche | Exécutante | État |
 |---|---|---|---|---|---|
-| [M-01](missions/M-01.md) | E2, socle composite | `atelier/missions/M-01/` (Controls + DataGrid en lecture) | `suite-M-01` | sous-agent d'arrière-plan de l'orchestratrice, id `a91312d0147b99d5a` | **FIN** : 11 commits (49bbeb6..203817b), banc 172/172 ×3, xUnit 380, E2 ✅ ; nommage contrôlé : un seul écart (Reason → CloseReason ?) ; écarts 1–8 à valider ; fusion attend QX-02 |
+| [M-01](missions/M-01.md) | E2, socle composite | `atelier/missions/M-01/` (Controls + DataGrid en lecture) | `suite-M-01` | sous-agent d'arrière-plan de l'orchestratrice, id `a91312d0147b99d5a` | relancée pour les renommages N1–N5 et la correction C1 ; 11 commits avant relance |
 | [M-02](missions/M-02.md) | retrait des mentions DevExpress dans le code | à créer au lancement | `suite-M-02` | sous-agent | validée, attend la fusion de M-01 |
 
 ## Questions en attente de Julien
@@ -32,30 +32,9 @@ Un sous-agent meurt avec l'orchestratrice. À la reprise, relancer la mission de
 | QX-06 | 2a | Proposés, non faits : note datée Q1 dans UGantt-charte.md, réalignement § 0 d'IMPROVEMENTS.md (dépôt grille), mise à jour de context.md. |
 | QX-07 | 2a | Anciens : charte HDev (proposée, non validée) ; PDF du benchmark (ONLYOFFICE ou impression Edge). |
 
-### M-01 : décisions attendues avant fusion
-
-Nommage, 10 noms à trancher sur 49 (le reste est conforme) :
-
-| N° | Actuel | Proposé (nom ou patron Avalonia) |
-|---|---|---|
-| N1 | `ButtonClick`, un événement CLR sur l'éditeur, avec `HDevEditorButtonClickEventArgs` | `HDevEditorButton.Click`, un événement routé qui remonte, avec `RoutedEventArgs` (`Source`, `Handled`) |
-| N2 | `Reason` | `CloseReason` (`WindowClosingEventArgs`) |
-| N3 | `Accept` / `Cancel` / `Outside` | `Accepted` / `Canceled` / `LightDismiss` |
-| N4 | `AcceptValue` | `IsValueAccepted` |
-| N5 | `HDevPopupContainerEdit` | `HDevDropDownEdit` |
-| N6 | `HDevButtonEdit` | à garder (règle 3) |
-| N7 | `Buttons` | à garder |
-
-Comportement :
-
-| N° | Question |
-|---|---|
-| C1 | PopupContainerEdit : la valeur suit le contenu sans `ValueChanging`, et `AcceptValue` n'annule rien. L'orchestratrice propose de lever `ValueChanging`, ou de ne valider qu'à la fermeture. |
-| C2 | Valider les autres écarts : Entrée ferme en acceptant ; `DropDownContent` est un `Control?` ; garde unique étendue ; boutons-glyphes cliquables sur toute leur surface ; lignes MIGRATION notées E3 ; glyphes Plus et Minus ; Alt+↑ ferme ; test E1 adapté. |
-
 ## Fusions à décider
 
-- `suite-M-01` → `suite` : bloquée par QX-02 et la validation des écarts de M-01 (M-01-E1 à E8, JOURNAL.md). À la fusion, l'orchestratrice met aussi à jour le décompte écrit à la main dans Plan-Suite.md (34/25/97/10 → 36/25/95/10).
+- `suite-M-01` → `suite` : bloquée par QX-02 et la fin des renommages et de C1. À la fusion, l'orchestratrice met aussi à jour le décompte écrit à la main dans Plan-Suite.md (34/25/97/10 → 36/25/95/10).
 
 ## Points d'attention
 
