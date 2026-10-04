@@ -73,7 +73,7 @@ public class HDevPopupContainerEdit : HDevEditorBase<object?>
     {
         base.OnPropertyChanged(change);
         if (change.Property == ValueProperty || change.Property == ValueTemplateProperty
-            || change.Property == PlaceholderProperty || change.Property == IsEnabledProperty)
+            || change.Property == PlaceholderProperty || change.Property == IsEffectivelyEnabledProperty)
             RefreshPresenter();
     }
 
