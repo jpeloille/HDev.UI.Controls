@@ -90,9 +90,9 @@ public class HDevDateEdit : HDevEditorBase<DateTime?>
             Placement = PlacementMode.BottomEdgeAlignedLeft,
             // Garde maison (cf. HDevComboBox) : le light dismiss ferme au moindre
             // rebond d'activation de fenêtre sous GNOME/XWayland
-            IsLightDismissEnabled = false,
-            VerticalOffset = 2
+            IsLightDismissEnabled = false
         };
+        HDevPopupPlacement.Apply(_popup, HDevPopupPlacement.Gap);
         _guard = new HDevPopupDismissGuard(() => _isPopupOpen, ClosePopup);
         _popup.Opened += (s, e) => _guard.Install(this);
         _popup.Closed += (s, e) => { _guard.Remove(); _isPopupOpen = false; };

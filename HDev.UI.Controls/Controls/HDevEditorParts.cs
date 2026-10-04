@@ -354,6 +354,40 @@ public class HDevSpinButtons : Control
 }
 
 /// <summary>
+/// Écart vertical d'un popup d'éditeur à son champ, reflété quand le positionneur
+/// d'Avalonia le retourne au-dessus faute de place (constat E0 n° 4).
+/// <list type="bullet">
+/// <item>Le positionneur retourne l'ancrage et la gravité, pas <c>VerticalOffset</c> : un
+/// jour de 2 px dessous devenait 2 px de chevauchement dessus.</item>
+/// <item>Une marge du contenu ne sert pas : Avalonia 12 la compense (place d'une ombre).</item>
+/// </list>
+/// L'écart est donc porté par le rectangle d'ancrage, élargi (jour) ou réduit (bordure
+/// fusionnée) en hauteur : le positionneur le retourne avec le popup, et l'écart est le
+/// même dessous et dessus. Le glissement horizontal et le retournement restent les siens.
+/// </summary>
+internal static class HDevPopupPlacement
+{
+    /// <summary>Jour de 2 px entre le champ et le popup</summary>
+    public const double Gap = 2;
+
+    /// <summary>Bordure du popup fusionnée avec celle du champ (chevauchement de 1 px)</summary>
+    public const double FusedBorder = -1;
+
+    /// <summary>Popup sous le champ, aligné à gauche, retourné au-dessus faute de place</summary>
+    public static void Apply(Avalonia.Controls.Primitives.Popup popup, double gap)
+    {
+        popup.VerticalOffset = 0;
+        popup.Placement = PlacementMode.Custom;
+        popup.CustomPopupPlacementCallback = placement =>
+        {
+            placement.AnchorRectangle = placement.AnchorRectangle.Inflate(new Thickness(0, gap));
+            placement.Anchor = Avalonia.Controls.Primitives.PopupPositioning.PopupAnchor.BottomLeft;
+            placement.Gravity = Avalonia.Controls.Primitives.PopupPositioning.PopupGravity.BottomRight;
+        };
+    }
+}
+
+/// <summary>
 /// La garde de fermeture des popups, unique pour toute la suite (menus, combo, popups des
 /// éditeurs) : clic extérieur + désactivation de fenêtre avec délai de grâce 250 ms.
 /// Remplace le light dismiss Avalonia, instable sous GNOME/XWayland.

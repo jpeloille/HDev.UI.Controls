@@ -1052,6 +1052,40 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         w.Close();
     }
 
+    // ═══ SOCLE COMPOSITE (E2) : retournement des popups, mesuré en géométrie (constat E0 n° 4) ═══
+    // L'écart au champ doit être le même dessous et dessus : 2 px de jour, ou 1 px de bordure
+    // fusionnée (LookUpEdit). Les contrôles Dessous/Dessus d'E0 tolèrent 2 px et ne le voient pas.
+    {
+        (double Dessous, double Dessus) Ecarts(Func<Control> creer, Func<Control, Editeur> adapter, Action<Window, Editeur> ouvrir)
+        {
+            double Mesure(double top, bool dessus)
+            {
+                var c = creer(); var ed = adapter(c); var w = Hote(c, top); ed.Focaliser(); Pump(w); ouvrir(w, ed);
+                var champ = Boite(w, c); var pop = BoitePopup(w, ed); w.Close();
+                if (pop is not { } r) return double.NaN;
+                return dessus ? champ.Top - r.Bottom : r.Top - champ.Bottom;
+            }
+            return (Mesure(20, false), Mesure(380, true));
+        }
+        string Lu((double Dessous, double Dessus) e) => $"lu {e.Dessous:0.##} dessous, {e.Dessus:0.##} dessus";
+        Func<string, IEnumerable<object>> suggestions = t => new object[] { "Gamma", "Gantt", "Carla" }
+            .Where(x => ((string)x).StartsWith(t, StringComparison.OrdinalIgnoreCase));
+
+        var date = Ecarts(() => new HDevDateEdit { Width = 160 }, c => AdDateEdit((HDevDateEdit)c),
+            (w, _) => Touche(w, PhysicalKey.F4));
+        Check($"DateEdit : 2 px de jour dessous comme dessus ({Lu(date)})", date.Dessous == 2 && date.Dessus == 2);
+        var search = Ecarts(() => new HDevSearchControl { Width = 200, SuggestionsProvider = suggestions },
+            c => AdSearch((HDevSearchControl)c), (w, _) => Tape(w, "Ga"));
+        Check($"SearchControl : 2 px de jour dessous comme dessus ({Lu(search)})", search.Dessous == 2 && search.Dessus == 2);
+        var jetons = Ecarts(() => new HDevTokenEdit { Width = 260, SuggestionsProvider = suggestions },
+            c => AdTokenEdit((HDevTokenEdit)c), (w, _) => Tape(w, "C"));
+        Check($"TokenEdit : 2 px de jour dessous comme dessus ({Lu(jetons)})", jetons.Dessous == 2 && jetons.Dessus == 2);
+        var refs = new List<RefE0> { new(1, "Alpha"), new(2, "Beta"), new(3, "Gamma") };
+        var lookup = Ecarts(() => new HDevLookUpEdit { Width = 180, DataSource = refs, DisplayMember = "Nom", ValueMember = "Id" },
+            c => AdLookUpEdit((HDevLookUpEdit)c), (w, _) => Touche(w, PhysicalKey.F4));
+        Check($"LookUpEdit : bordure fusionnée dessous comme dessus ({Lu(lookup)})", lookup.Dessous == -1 && lookup.Dessus == -1);
+    }
+
     System.Globalization.CultureInfo.CurrentCulture = cultureAvant;
     System.Globalization.CultureInfo.CurrentUICulture = cultureUiAvant;
 }
