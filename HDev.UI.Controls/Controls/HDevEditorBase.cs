@@ -124,6 +124,9 @@ public abstract class HDevEditorBase : Border
     public static readonly StyledProperty<string?> MaskProperty =
         AvaloniaProperty.Register<HDevEditorBase, string?>(nameof(Mask));
 
+    public static readonly StyledProperty<bool> IsMultilineProperty =
+        AvaloniaProperty.Register<HDevEditorBase, bool>(nameof(IsMultiline));
+
     public string? Placeholder
     {
         get => GetValue(PlaceholderProperty);
@@ -134,6 +137,17 @@ public abstract class HDevEditorBase : Border
     {
         get => GetValue(IsReadOnlyProperty);
         set => SetValue(IsReadOnlyProperty, value);
+    }
+
+    /// <summary>
+    /// Multiligne : Entrée insère un saut de ligne, le texte s'enroule et défile. La hauteur
+    /// n'est fixée qu'en monoligne (<c>Size.EditorHeight</c>) ; en multiligne, le champ part de
+    /// trois lignes et suit la place que lui donne la mise en page.
+    /// </summary>
+    public bool IsMultiline
+    {
+        get => GetValue(IsMultilineProperty);
+        set => SetValue(IsMultilineProperty, value);
     }
 
     /// <summary>
@@ -236,6 +250,7 @@ public abstract class HDevEditorBase : Border
         IsReadOnlyProperty.Changed.AddClassHandler<HDevEditorBase>((x, _) =>
             x.InnerTextBox.IsReadOnly = x.IsReadOnly);
         IsEnabledProperty.Changed.AddClassHandler<HDevEditorBase>((x, _) => x.UpdateVisualState());
+        IsMultilineProperty.Changed.AddClassHandler<HDevEditorBase>((x, _) => x.ApplyLineMode());
 
         // Encapsulation : les pièces internes d'un éditeur (calendrier, liste, grille d'un popup)
         // ne font pas sortir leurs événements de valeur ; seuls ceux de l'éditeur remontent
@@ -288,11 +303,33 @@ public abstract class HDevEditorBase : Border
         });
     }
 
+    /// <summary>Monoligne (hauteur fixe, texte centré) ou multiligne (hauteur libre, texte en haut)</summary>
+    private void ApplyLineMode()
+    {
+        var multiline = IsMultiline;
+        InnerTextBox.AcceptsReturn = multiline;
+        InnerTextBox.TextWrapping = multiline ? TextWrapping.Wrap : TextWrapping.NoWrap;
+        InnerTextBox.VerticalAlignment = multiline ? VerticalAlignment.Stretch : VerticalAlignment.Center;
+        InnerTextBox.VerticalContentAlignment = multiline ? VerticalAlignment.Top : VerticalAlignment.Center;
+        InnerTextBox.Padding = new Thickness(HDevTheme.Size.EditorTextInset, multiline ? 5 : 0);
+        MinHeight = multiline ? HDevTheme.Size.EditorHeight * 3 : HDevTheme.Size.EditorHeight;
+        MaxHeight = multiline ? double.PositiveInfinity : HDevTheme.Size.EditorHeight;
+
+        // Les éléments de droite restent sur la première ligne, à la hauteur d'un champ
+        foreach (var child in _layoutGrid.Children)
+        {
+            if (Grid.GetColumn(child) != 1) continue;
+            child.VerticalAlignment = multiline ? VerticalAlignment.Top : VerticalAlignment.Stretch;
+            child.Height = multiline ? HDevTheme.Size.EditorHeight - 2 : double.NaN;
+        }
+    }
+
     /// <summary>Installe la zone de boutons à droite du texte (calendrier, spin...)</summary>
     protected void SetRightElement(Control element)
     {
         Grid.SetColumn(element, 1);
         _layoutGrid.Children.Add(element);
+        if (IsMultiline) ApplyLineMode();
     }
 
     /// <summary>

@@ -1086,6 +1086,24 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         Check($"LookUpEdit : bordure fusionnée dessous comme dessus ({Lu(lookup)})", lookup.Dessous == -1 && lookup.Dessus == -1);
     }
 
+    // ═══ SOCLE COMPOSITE (E2) : multiligne ═══
+    {
+        var memo = new EditeurNuE2 { Width = 200 }; var w = Hote(memo);
+        var hauteurMono = memo.Bounds.Height;
+        memo.IsMultiline = true; Pump(w);
+        var hauteurVide = memo.Bounds.Height;
+        memo.FocusEditor(); Tape(w, "un"); Touche(w, PhysicalKey.Enter); Tape(w, "deux");
+        Check($"multiligne : Entrée insère un saut de ligne, le champ part de trois lignes (lu {hauteurMono} puis {hauteurVide})",
+            memo.Text == "un\ndeux" && hauteurMono == 28 && hauteurVide == 84);
+        memo.Text = "1\n2\n3\n4\n5\n6\n7"; Pump(w); var haut = memo.Bounds.Height;
+        Colle(w, "\nhuit\nneuf"); var colle = memo.Text;
+        Check($"multiligne : la hauteur suit le texte, le collage garde ses lignes (lu {haut}, {colle.Replace("\n", "⏎")})",
+            haut > 84 && colle.Contains("\nhuit\nneuf") && colle.Split('\n').Length == 9);
+        memo.IsMultiline = false; Pump(w);
+        Check($"retour au monoligne : hauteur du gabarit (lu {memo.Bounds.Height})", memo.Bounds.Height == 28);
+        w.Close();
+    }
+
     System.Globalization.CultureInfo.CurrentCulture = cultureAvant;
     System.Globalization.CultureInfo.CurrentUICulture = cultureUiAvant;
 }
@@ -1109,6 +1127,9 @@ class TestApp : Application
         Styles.Add(new FluentTheme());
     }
 }
+
+/// <summary>Éditeur nu sur le socle, sans pièce ni valeur typée : ce que le socle seul fait (E2)</summary>
+sealed class EditeurNuE2 : HDevEditorBase { }
 
 // ─── Types des adaptateurs E0 (section « Éditeurs ») ───
 sealed record RefE0(int Id, string Nom);
