@@ -24,3 +24,4 @@
   - Tests : banc 151/151 trois fois, xUnit 380/380.
   - Planches : « champs » identique ; « fondations » changée, ce qui est voulu (glyphes).
   - Écart voulu : le test E1 « reposer la valeur… » passe par une saisie incomplète. reference-J0 est copiée depuis le répertoire hdev, en lecture seule.
+- Julien tranche les questions de M-01 : 1, 2, 3, 5 et 6 comme recommandé. Pour 4, il demande des explications, puis valide l'option (i) : `HDevEditorBase<T>` ne déclare plus de `public abstract T Value` ; chaque éditeur déclare sa valeur sous le nom D3 ; le `Text` de ButtonEdit est une StyledProperty liable, sans `new`. M-01 est relancée avec ces réponses.

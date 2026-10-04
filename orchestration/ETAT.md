@@ -20,7 +20,7 @@ Un sous-agent meurt avec l'orchestratrice. À la reprise, relancer la mission de
 
 | Mission | Lot | Worktree | Branche | Exécutante | État |
 |---|---|---|---|---|---|
-| [M-01](missions/M-01.md) | E2, socle composite | `atelier/missions/M-01/` (Controls + DataGrid en lecture) | `suite-M-01` | sous-agent d'arrière-plan de l'orchestratrice, id `a91312d0147b99d5a` | arrêtée sur QUESTION M-01 (6 points), 6 commits e5cbd95…bc088e6, banc 151/151 ×3, xUnit 380 |
+| [M-01](missions/M-01.md) | E2, socle composite | `atelier/missions/M-01/` (Controls + DataGrid en lecture) | `suite-M-01` | sous-agent d'arrière-plan de l'orchestratrice, id `a91312d0147b99d5a` | relancée avec les réponses aux 6 questions, 6 commits e5cbd95…bc088e6, banc 151/151 ×3, xUnit 380 |
 
 ## Questions en attente de Julien
 
@@ -31,27 +31,6 @@ Un sous-agent meurt avec l'orchestratrice. À la reprise, relancer la mission de
 | QX-05 | 2a | Pour E3 : `Placeholder` dans `IHDevEditor` n'a pas de sens pour les contrôles de choix. |
 | QX-06 | 2a | Proposés, non faits : note datée Q1 dans UGantt-charte.md, réalignement § 0 d'IMPROVEMENTS.md (dépôt grille), mise à jour de context.md. |
 | QX-07 | 2a | Anciens : charte HDev (proposée, non validée) ; PDF du benchmark (ONLYOFFICE ou impression Edge). |
-
-### M-01 : questions d'API (posées le 05/10/2026)
-
-Détail : JOURNAL.md, à la même date. Pour chaque question, la recommandation de l'exécutante :
-
-1. **Bouton** : `HDevEditorButton` avec `Kind` / `HDevEditorButtonKind` (`DropDown, Clear, Ellipsis, Search, Plus, Minus, Custom`) et `Icon` pour `Custom`.
-   - L'infobulle, la commande et la visibilité viennent d'Avalonia (`ToolTip.Tip`, `Command`, `IsVisible`, `IsEnabled`).
-   - `ButtonClick` est un événement CLR.
-   - Actions par défaut : `DropDown` bascule le popup ; `Clear` vide la valeur, sauf si l'événement est traité.
-   - Les boutons propres à un éditeur entrent dans `Buttons` au portage, en E3.
-   - Pas de boutons à gauche en E2.
-2. **Popup public** :
-   - la propriété de contenu s'appelle `DropDownContent` ;
-   - `DropDownOpening` reçoit un `CancelEventArgs` ;
-   - `DropDownClosing` reçoit `HDevDropDownClosingEventArgs` (`Cancel`, `Reason` = `Accept`/`Cancel`/`Outside`, `AcceptValue`) ;
-   - `DropDownClosed` reçoit `Reason` et `AcceptValue` ;
-   - ce sont des événements CLR.
-3. **Glyphes** : `Clear, Ellipsis, Search, Clock, Calculator, Link, Folder, Swatch, Plus, Minus`.
-4. **Valeur de HDevButtonEdit** : (i) la couche typée ne déclare plus `Value` ; chaque éditeur déclare sa propriété de valeur, ce qui touche E1. Ou bien (ii) l'éditeur reste hors de la couche typée. `Text` est une StyledProperty liable dans les deux sens, avec un bouton `Ellipsis` par défaut. Recommandation : (i).
-5. **Valeur de HDevPopupContainerEdit** : `Value` (`object?`), affichée par `ValueTemplate` ou `ToString()`, non éditable. Le contenu se lie à `Value`, et `AcceptValue = false` ne touche à rien.
-6. **Zone de valeur** : le point d'accroche reste protégé en E2 (`SetValuePresenter`).
 
 ## Fusions à décider
 
