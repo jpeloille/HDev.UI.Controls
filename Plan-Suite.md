@@ -253,7 +253,11 @@ Les lignes « impression » et « export » reviennent dans plusieurs check-list
   - La délégation du 14/07/2026 a été décidée pour une application. Reste-t-elle le choix de la suite ?
   - Si oui, faut-il la livrer dans un paquet séparé (`HDev.UI.Charts`), pour garder la bibliothèque sans dépendance tierce ?
   - La famille la plus faible du benchmark (4.10, 4 %) en dépend.
-- **Q3 — Socle des éditeurs** : les quatre décisions de `Conception-Socle-Editeurs.md` (§ 10). Elles bloquent E2, puis M1, E11, C4 et T3.
+- **Q3 — Socle des éditeurs. Tranché le 05/10/2026** (`Conception-Socle-Editeurs.md`, § 10) :
+  - la forme B ;
+  - un éditeur par type de valeur ;
+  - le nom de la valeur d'Avalonia quand il existe, `Value` sinon ;
+  - une fonction n'est retirée que si elle a un équivalent.
 - **Q4 — Moteur PDF et impression.**
   - Pour le PDF vectoriel, trois voies : le moteur PDF de Skia (déjà livré avec Avalonia), un écrivain maison, ou une bibliothèque.
   - Pour l'impression : le portail XDG, ou CUPS.
@@ -308,7 +312,7 @@ Restent ouvertes ailleurs :
   - Le plan compte 108 lots, dont 3 déjà faits (E0, L0, L1) et 10 de taille XL : G6, G8, M1, C3, T1, R3, et L3, L4, L12 et L13 pour le Gantt. C'est plusieurs fois ce que la suite a déjà produit.
   - Le moteur de répartition échelonnée (L12) est le lot le plus difficile : il conditionne le nivellement, le suivi, la valeur acquise et les vues d'usage.
   - Chaque jalon est un point d'arrêt légitime.
-- **Socle bloqué.** Tant que Q3 n'est pas tranchée, S1 ne se termine pas, et le Layout Control (S3) attend.
+- **Vérification sur le bureau avant E2.** La survie des popups à une brève désactivation de la fenêtre ne se teste pas en headless : elle se vérifie à la main (`Plan-Editeurs.md`).
 - **Deux dépôts.**
   - Le chantier G avance dans un autre dépôt.
   - `IMPROVEMENTS.md` est à réaligner : son tableau § 0 date d'avant les lots de juillet 2026.

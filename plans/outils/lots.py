@@ -6,7 +6,7 @@ def lot(ch, id, objet, taille, dep, jalon, statut='🔲'):
 # E — Éditeurs (Plan-Editeurs.md fait foi ; J1 → S1, J2 → S2, J3 → S3, J4 → S4)
 for id, obj, t, dep, j, st in [
     ('E0', 'Tests de caractérisation des éditeurs', 'S', '—', 'S1', '✅'),
-    ('E1', 'Conception du socle, contrat de valeur et conventions', 'M', 'E0', 'S1', '🟡 forme à valider'),
+    ('E1', 'Conception du socle, contrat de valeur et conventions', 'M', 'E0', 'S1', '✅'),
     ('E2', 'Socle composite : zone de valeur, boutons, popup, multiligne', 'L', 'E1', 'S1', '🔲'),
     ('E3', 'Portage des éditeurs existants sur le socle', 'L', 'E2', 'S1', '🔲'),
     ('E4', 'Sélection : cases, items à gabarit, liste à cases', 'M', 'E3', 'S2', '🔲'),

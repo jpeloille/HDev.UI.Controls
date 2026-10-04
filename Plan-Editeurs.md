@@ -47,10 +47,11 @@ Les tests E0 ont fait changer d'état deux lignes de 5.7, sans changer le score.
   - Un socle commun, issu de `HDevEditorBase`, porte la zone de valeur (champ texte, ou présentateur personnalisé pour les jetons et les affichages non éditables), les boutons d'éditeur, le popup, le masque, la validation et l'état visuel.
   - Tous les éditeurs de champ y passent : TextBox (multiligne compris), ComboBox, LookUpEdit, DateEdit, TimeEdit, SpinEdit, SearchControl, TokenEdit.
   - Les contrôles de choix (cases, interrupteur, radios) et MonthCalendar restent des contrôles à part. Ils implémentent le même contrat de valeur (D2).
-  - **Forme technique ouverte, choisie au mérite** (précision de Julien à la validation). Le `BaseEdit` de DevExpress est une référence, pas un modèle. La note de conception d'E1 compare au moins deux formes :
-    - la chaîne d'héritage de DevExpress, où chaque capacité vient d'une classe (`TextEdit`, puis `ButtonEdit`, puis `PopupBaseEdit`, puis `DateEdit`) ;
-    - une base légère qui porte le contrat et l'habillage, avec des pièces composables (boutons, popup, masque, validation) que chaque éditeur active sans changer de classe.
-  - Critères de choix : simplicité d'usage en XAML et en C#, ajout d'une capacité sans nouvelle classe, réemploi tel quel dans la grille (E11).
+  - **Forme technique : la forme B, retenue le 05/10/2026** (`Conception-Socle-Editeurs.md`).
+    - Une base légère porte le contrat et l'habillage.
+    - Boutons, popup, masque et validation sont des pièces que chaque éditeur active sans changer de classe.
+    - La chaîne d'héritage de DevExpress, où chaque capacité vient d'une classe, est écartée.
+  - Critères retenus : simplicité d'usage en XAML et en C#, ajout d'une capacité sans nouvelle classe, réemploi tel quel dans la grille (E11).
 - **D2, des valeurs liables d'emblée.**
   - Interface `IHDevEditor` : `EditValue` non typée, pour le code générique et la grille, avec `ValueChanging` (annulable) et `ValueChanged`, plus `IsReadOnly`, `Placeholder`, `ErrorText`, `Validate()` et `FocusEditor()`.
   - Chaque éditeur expose une `Value` typée en `StyledProperty`, `TwoWay` par défaut, avec la validation de liaison active.
@@ -62,14 +63,14 @@ Les tests E0 ont fait changer d'état deux lignes de 5.7, sans changer le score.
 - **D4, les types de date et d'heure modernes**, comme DevExpress v26.1 : `DateTime`, `DateOnly`, `TimeOnly`, `DateTimeOffset` et `TimeSpan`.
   - Les valeurs à décalage s'affichent par défaut en heure locale.
   - Le fuseau d'affichage est réglable (local, UTC, ou un fuseau donné).
-  - Point ouvert, réglé en E1 : le typage de `Value` (D2) quand un éditeur admet plusieurs types.
+  - **Un éditeur par type de valeur** (décision du 05/10/2026) : HDevDateEdit (`DateTime?`), HDevDateOnlyEdit, HDevDateTimeOffsetEdit, HDevTimeEdit (`TimeSpan?`) et HDevTimeOnlyEdit, sur une implémentation commune.
 
 ## 2. Lots
 
 | Lot | Objet | Taille | Dépend de | Lignes 4.2 visées | Statut |
 |---|---|---|---|---|---|
 | **E0** | Tests de caractérisation des éditeurs | S | — | — | ✅ |
-| **E1** | Conception du socle (D1), contrat `IHDevEditor` et conventions (D2, D3) | M | E0 | — (5.7) | 🟡 forme à valider |
+| **E1** | Conception du socle (D1), contrat `IHDevEditor` et conventions (D2, D3) | M | E0 | — (5.7) | ✅ |
 | **E2** | Socle composite : zone de valeur, boutons, popup, multiligne | L | E1 | 6, 19 | 🔲 |
 | **E3** | Portage des éditeurs existants sur le socle | L | E2 | — (5.7) | 🔲 |
 | **E4** | Sélection : cases, items à gabarit, liste à cases | M | E3 | 12, 13, 22 | 🔲 |
@@ -174,11 +175,11 @@ Les planches de `tests/Gallery`, en clair et en sombre, sont archivées comme r�
 - Un test headless lie un éditeur témoin à un ViewModel, dans les deux sens, et voit remonter une erreur `INotifyDataErrorInfo`.
 - Les conventions sont décrites en tête de `MIGRATION-editeurs.md`.
 
-**Résultat (04/10/2026) : fait, sauf la forme, à valider.**
+**Résultat : fait le 04/10/2026 ; forme du socle validée le 05/10/2026.**
 - **Note de conception** : `Conception-Socle-Editeurs.md`.
   - Elle recommande la forme B, une base légère avec des pièces composables, plutôt que la chaîne d'héritage de DevExpress.
   - Pour D4, elle recommande un éditeur par type de valeur.
-  - **Ces deux choix sont à valider avant E2** (§ 6, question 4).
+  - **Ces deux choix sont validés depuis le 05/10/2026** (§ 6, question 4).
 - **Contrat en place.**
   - `HDevEditorContract.cs` : `IHDevEditor` et l'événement de valeur commun (`HDevEditor.ValueChangedEvent`, avec son origine).
   - Couche typée `HDevEditorBase<T>`.
@@ -279,7 +280,7 @@ Les planches de `tests/Gallery`, en clair et en sombre, sont archivées comme r�
 **Objet.** Couvrir tous les types temporels de .NET.
 
 **Contenu.**
-- **Types** (D4) : valeurs `DateOnly`, `TimeOnly` et `DateTimeOffset` (ligne 33), avec un fuseau d'affichage réglable.
+- **Types** (D4) : un éditeur par type de valeur (décision du 05/10/2026) : HDevDateOnlyEdit, HDevDateTimeOffsetEdit (ligne 33) et HDevTimeOnlyEdit. Le fuseau d'affichage est réglable.
 - **HDevTimeSpanEdit** (ligne 32) : formats h:mm (au-delà de 24 h compris) et heures décimales.
 - **HDevDateRangeEdit** (ligne 34), avec une sélection de plage et des numéros de semaine ISO dans `HDevMonthCalendar`, plus des préréglages : semaine, mois, mois précédent.
 - **HDevTimeEdit** : une liste de créneaux en popup, avec un pas réglable.
@@ -495,11 +496,12 @@ L'intégration et la qualité (J3) passent avant les compléments (J4). Ce sont 
 
    Le benchmark serait mis à jour en conséquence.
 3. **Échap dans la liste ouverte de la ComboBox** (constat E0 n° 2). **Tranché le 04/10/2026 : Échap rend la valeur d'ouverture.**
-4. **Conception du socle** (`Conception-Socle-Editeurs.md`, § 10) :
+4. **Conception du socle** (`Conception-Socle-Editeurs.md`, § 10). **Tranché le 05/10/2026** :
    - la forme B, une base légère avec des pièces composables ;
    - pour D4, un éditeur par type de valeur ;
    - le nom de la valeur : celui d'Avalonia quand il existe (`Text`, `IsChecked`, `SelectedDate`), `Value` sinon ;
-   - les suppressions de fonctions proposées dans `MIGRATION-editeurs.md`, qui ne sont pas des renommages.
+   - une fonction n'est retirée que si elle a un équivalent : `OldEditValue`, `RefreshEditValue()`, `ShowPopup()`, `ClosePopup()` et `HidePopup()` partent ; `ShowPlaceholder` (l'ancien `ShowNullValuePrompt`), `TextEditStyle` avec ses trois modes et `Sorted` restent ;
+   - `ValueChanged` : un seul événement pour toute la famille, aux valeurs non typées.
 
 ## 7. Risques
 

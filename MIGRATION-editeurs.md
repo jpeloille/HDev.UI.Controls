@@ -45,7 +45,7 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
     formulaire.AddHandler(HDevEditor.ValueChangedEvent, (s, e) => { if (e.IsUserChange) Modifie = true; });
     ```
 
-  - Ancienne et nouvelle valeur sont de type `object` ; la valeur typée se lit sur l'éditeur.
+  - Ancienne et nouvelle valeur sont de type `object` ; la valeur typée se lit sur l'éditeur. Ce choix est validé depuis le 05/10/2026.
 - **`ValueChanging`** est levé avant un changement venu de l'utilisateur, et lui seulement.
   - On peut l'annuler avec `e.Cancel = true` : la valeur reste, et le texte revient à la valeur courante.
   - Une valeur venue du code ou de la source ne s'annule pas : elle se valide.
@@ -68,7 +68,7 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
 
 « Conservé » signifie que le nom ne change pas. Le lot indique quand la rupture a lieu.
 - **Seules les lignes marquées « E1, fait » sont faites.** Toutes les autres sont des propositions, confirmées au lot indiqué.
-- **Les lignes « supprimé » retirent une fonction**, alors que D3 n'a validé que des renommages. Elles attendent la décision de Julien (`Conception-Socle-Editeurs.md`, § 10).
+- **Une fonction n'est retirée que si elle a un équivalent** (décision du 05/10/2026). Une ligne « supprimé » donne donc toujours l'équivalent.
 
 ### 2.1 Socle (HDevEditorBase : DateEdit, TimeEdit, SpinEdit, SearchControl)
 
@@ -120,11 +120,11 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
 | `Properties` (objet de réglages) | supprimé : réglages directs sur le contrôle | E3 |
 | `Properties.Items` | `Items`, et `ItemsSource` pour une source liée | E3 |
 | `Properties.NullText`, `Properties.NullValuePrompt` | `Placeholder` | E3 |
-| `Properties.ShowNullValuePrompt` | supprimé : l'invite s'affiche quand la valeur est vide | E3 |
+| `Properties.ShowNullValuePrompt` | `ShowPlaceholder`, propriété directe : conservé, et renommé comme l'invite (`Placeholder`) ; décidé le 05/10/2026 | E3 |
 | `Properties.ReadOnly`, `ReadOnly` | `IsReadOnly` | E3 |
-| `Properties.TextEditStyle` | `IsEditable` (`DisableTextEditor` = faux, `Standard` = vrai) ; `HideTextEditor` supprimé | E3 |
+| `Properties.TextEditStyle` | `TextEditStyle`, propriété directe : conservé avec ses trois modes, car `HideTextEditor` n'a pas d'équivalent dans Avalonia, qui n'a que `IsEditable` ; décidé le 05/10/2026 | E3 |
 | `Properties.AutoComplete`, `CaseSensitiveSearch`, `ImmediatePopup`, `AllowNullInput`, `DropDownRows` | conservés, en propriétés directes | E3 |
-| `Properties.Sorted` | supprimé : trier la source | E3 |
+| `Properties.Sorted` | `Sorted`, propriété directe : conservé | E3 |
 | `Properties.ShowDropDown` | remplacé par les boutons d'éditeur (`Buttons`) | E2 |
 | `EditValue` | `Value` (et `IHDevEditor.EditValue`) | E3 |
 | `OldEditValue` | supprimé : `OldValue` des arguments de `ValueChanged` | E3 |

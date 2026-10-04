@@ -1,7 +1,7 @@
 # Conception du socle des éditeurs (lot E1)
 
-Note de conception du 04/10/2026, pour `Plan-Editeurs.md`. Statut : **proposée**.
-- La forme du socle (§ 5) et le typage de D4 (§ 7) sont à valider par Julien avant E2.
+Note de conception du 04/10/2026, pour `Plan-Editeurs.md`. Statut : **validée le 05/10/2026**, avec une restriction sur les retraits de fonctions (§ 10).
+- La forme du socle (§ 5), le typage de D4 (§ 7) et le nom de la valeur (§ 6) sont validés.
 - Le contrat de valeur (§ 6) est déjà en place sur l'éditeur témoin, HDevDateEdit.
 
 ## 1. Objet et critères
@@ -150,8 +150,8 @@ Le contrat est dans `HDevEditorContract.cs` (`IHDevEditor`, événements) et dan
 - **Encapsulation.** Les événements de valeur des pièces internes s'arrêtent à l'éditeur.
 - **Le nom de la valeur suit D3** : celui d'Avalonia quand il existe (`Text`, `IsChecked`, `SelectedDate`), `Value` sinon. Il n'y a jamais deux noms pour une même valeur.
 
-**Deux écarts à signaler sur D2**
-- **Arguments non typés.** D2 annonçait des événements de valeur typés. Or ancienne et nouvelle valeur sont de type `object`, parce qu'un seul événement sert toute la famille. C'est ce qui permet l'écoute d'un formulaire en un seul `AddHandler`. La valeur typée se lit sur l'éditeur (`Value`).
+**Deux écarts à D2**
+- **Arguments non typés : écart validé le 05/10/2026.** D2 annonçait des événements de valeur typés. Or ancienne et nouvelle valeur sont de type `object`, parce qu'un seul événement sert toute la famille. C'est ce qui permet l'écoute d'un formulaire en un seul `AddHandler`. La valeur typée se lit sur l'éditeur (`Value`).
 - **`Placeholder` dans `IHDevEditor`.** Il n'a pas de sens pour une case ou un interrupteur, qui doivent pourtant suivre le contrat (D1). C'est à trancher en E3 : soit une invite vide, soit une interface séparée pour les champs.
 
 ## 7. D4 : typer une valeur qui admet plusieurs types
@@ -185,16 +185,17 @@ Ces constats viennent d'une lecture du code de HDev.UI.DataGrid, qui fait foi po
 - Le maintien d'une liaison bidirectionnelle sous `SetValue` est mesuré sur Avalonia 12.1.3. Le test « Contrat des éditeurs (E1) » le surveille.
 - Le risque de recyclage de la grille vient de la lecture du code, sans test.
 
-## 10. Décisions demandées
+## 10. Décisions (validées le 05/10/2026)
 
-1. **La forme B** pour le socle (§ 5).
-2. **Un éditeur par type** pour D4 (§ 7).
-3. **Le nom de la valeur** : celui d'Avalonia quand il existe (`Text`, `IsChecked`, `SelectedDate`), `Value` sinon. C'est mon application de D3 (§ 6).
-4. **Les suppressions proposées dans `MIGRATION-editeurs.md`.** Ce sont des retraits de fonctions, pas des renommages :
-   - ComboBox :
-     - `ShowNullValuePrompt` ;
-     - `HideTextEditor` ;
-     - `Sorted` (il faudrait trier la source) ;
-     - `OldEditValue` (remplacé par `OldValue` dans `ValueChanged`) ;
-     - `RefreshEditValue()` ;
-   - ComboBox et LookUpEdit : `ShowPopup()`, `ClosePopup()` et `HidePopup()`, remplacés par `IsDropDownOpen`.
+1. **La forme B** pour le socle (§ 5) : validée.
+2. **Un éditeur par type** pour D4 (§ 7) : validé.
+3. **Le nom de la valeur** : celui d'Avalonia quand il existe (`Text`, `IsChecked`, `SelectedDate`), `Value` sinon (§ 6). Validé.
+4. **Les retraits de fonctions : seulement quand elles ont un équivalent.**
+   - **Retirées**, avec leur équivalent :
+     - `OldEditValue` → `OldValue` dans les arguments de `ValueChanged` ;
+     - `RefreshEditValue()` → les liaisons s'en chargent ;
+     - `ShowPopup()`, `ClosePopup()` et `HidePopup()` (ComboBox et LookUpEdit) → la propriété `IsDropDownOpen`.
+   - **Conservées**, en propriétés directes du contrôle, puisque l'objet `Properties` disparaît (D3) :
+     - `ShowNullValuePrompt`, renommée `ShowPlaceholder` comme l'invite ;
+     - `TextEditStyle`, avec ses trois modes, dont `HideTextEditor` ;
+     - `Sorted`.
