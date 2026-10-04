@@ -27,3 +27,20 @@
 - Julien tranche les questions de M-01 : 1, 2, 3, 5 et 6 comme recommandé. Pour 4, il demande des explications, puis valide l'option (i) : `HDevEditorBase<T>` ne déclare plus de `public abstract T Value` ; chaque éditeur déclare sa valeur sous le nom D3 ; le `Text` de ButtonEdit est une StyledProperty liable, sans `new`. M-01 est relancée avec ces réponses.
 - Julien corrige la règle DevExpress : l'architecture DevExpress est la base par défaut, et on s'en écarte quand c'est mieux. Il ajoute : « attention à ce que je ne me retrouve devant un tribunal ». Ajout de garde-fous de salle blanche dans la mémoire (devexpress-base-par-defaut), le README et le brief, et d'une CONSIGNE envoyée à M-01.
 - Julien valide M-02 (retrait des mentions DevExpress du code, après la fusion de M-01). Il fixe la règle de nommage : les noms d'Avalonia d'abord, puis la typologie HDev ; un nom DevExpress seulement s'il est le nom logique. La règle est inscrite dans la mémoire, le README et le brief, et une CONSIGNE est envoyée à M-01.
+- FIN M-01 : 11 commits sur suite-M-01, de e5cbd95 à 203817b.
+  - Tests : banc 172/172 trois fois (36 vérifications nouvelles), xUnit 380.
+  - Planche « Champs » : le haut est identique ; une section E2 s'y ajoute.
+  - Benchmark : catalogue 29 %, 4.2 à 43 %, 5.7 à 62 %.
+  - Salle blanche : aucun fichier DevExpress lu ; seule Avalonia 12.1.3 (MIT) a été décompilée ; 4 commentaires retirés (ec92a9d).
+  - Écarts à valider :
+    - E1 : Entrée ferme le popup en acceptant ;
+    - E2 : la valeur de PopupContainerEdit suit le contenu en direct ; AcceptValue n'annule rien ;
+    - E3 : DropDownContent est un `Control?` ;
+    - E4 : garde unique pour ComboBox et menus ; correctif n° 4 sur les contrôles hors socle ; boutons-glyphes cliquables sur toute leur surface ;
+    - E5 : lignes ComboBox et LookUpEdit de MIGRATION notées E3 ;
+    - E6 : glyphes Plus et Minus ; Alt+↑ ferme ;
+    - E7 : test E1 adapté ;
+    - E8 : décompte de Plan-Suite écrit à la main, périmé.
+  - Les noms HDevButtonEdit et HDevPopupContainerEdit sont à confirmer.
+  - Contrôle de nommage absent du compte rendu : redemandé.
+  - Vérification de l'orchestratrice : branche propre, 11 commits, hdev intact (f666e3d). Les mentions DevExpress restantes sont antérieures, donc du ressort de M-02. Le motif `xtra[A-Z]` de M-02 ne doit pas être cherché avec -i (faux positifs : Extraction, HitTestTextRange).

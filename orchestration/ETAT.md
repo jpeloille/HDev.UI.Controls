@@ -19,7 +19,7 @@ Un sous-agent meurt avec l'orchestratrice. À la reprise, relancer la mission de
 
 | Mission | Lot | Worktree | Branche | Exécutante | État |
 |---|---|---|---|---|---|
-| [M-01](missions/M-01.md) | E2, socle composite | `atelier/missions/M-01/` (Controls + DataGrid en lecture) | `suite-M-01` | sous-agent d'arrière-plan de l'orchestratrice, id `a91312d0147b99d5a` | relancée avec les réponses aux 6 questions, puis consigne « salle blanche » et nommage, 6 commits e5cbd95…bc088e6, banc 151/151 ×3, xUnit 380 |
+| [M-01](missions/M-01.md) | E2, socle composite | `atelier/missions/M-01/` (Controls + DataGrid en lecture) | `suite-M-01` | sous-agent d'arrière-plan de l'orchestratrice, id `a91312d0147b99d5a` | **FIN** : 11 commits (49bbeb6..203817b), banc 172/172 ×3, xUnit 380, E2 ✅ ; contrôle de nommage demandé ; écarts 1–8 à valider ; fusion attend QX-02 |
 | [M-02](missions/M-02.md) | retrait des mentions DevExpress dans le code | à créer au lancement | `suite-M-02` | sous-agent | validée, attend la fusion de M-01 |
 
 ## Questions en attente de Julien
@@ -34,7 +34,7 @@ Un sous-agent meurt avec l'orchestratrice. À la reprise, relancer la mission de
 
 ## Fusions à décider
 
-Aucune.
+- `suite-M-01` → `suite` : bloquée par QX-02 et la validation des écarts de M-01 (M-01-E1 à E8, JOURNAL.md). À la fusion, l'orchestratrice met aussi à jour le décompte écrit à la main dans Plan-Suite.md (34/25/97/10 → 36/25/95/10).
 
 ## Points d'attention
 
