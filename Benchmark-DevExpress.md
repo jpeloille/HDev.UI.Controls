@@ -35,7 +35,7 @@ Table de correspondance contrôle par contrôle, état au **04/10/2026**.
 
 | | Version | Référence |
 |---|---|---|
-| HDev.UI.Controls | commit `4fc218e` (accessibilité et contraste commités le 04/10 : `HDevFocus`, `HDevRadioGroup`, jetons de contraste, `ThemeContrastTests`, `HDevButtonAutomationPeer`) | code et tests |
+| HDev.UI.Controls | commit `4fc218e` (accessibilité et contraste commités le 04/10 : `HDevFocus`, `HDevRadioGroup`, jetons de contraste, `ThemeContrastTests`, `HDevButtonAutomationPeer`), puis les lots E0 et E1 des éditeurs (04/10) | code et tests |
 | HDev.UI.DataGrid | commit `7dd3ae1` | code et tests |
 | DevExpress WinForms | v26.1, build 26.1.5 du 18/09/2026 | docs.devexpress.com |
 | DevExpress WPF | v26.1, build 26.1.5 | docs.devexpress.com |
@@ -597,7 +597,7 @@ Le score mesure l'étendue couverte, pas l'effort restant. Un seul item DevExpre
 
 | Capacité DevExpress | HDev | Remarque |
 |---|---|---|
-| Valeur liable en XAML (`EditValue`) | 🟡 | oui pour TextBox, CheckBox, RadioButton, ToggleSwitch, Slider ; non pour DateEdit, TimeEdit, SpinEdit, ComboBox, LookUpEdit, TokenEdit, SearchControl, MonthCalendar (propriétés CLR) |
+| Valeur liable en XAML (`EditValue`) | 🟡 | oui pour TextBox, DateEdit (contrat de valeur, lot E1), CheckBox, RadioButton, ToggleSwitch, Slider ; non pour TimeEdit, SpinEdit, ComboBox, LookUpEdit, TokenEdit, SearchControl, MonthCalendar (propriétés CLR) |
 | Masques simples | 🟡 | 0, 9, L, A et littéraux ; le collage contourne le masque, seule la validation le rattrape (test d'interaction) |
 | Masques numériques, date-heure, regex | 🟡 | DateEdit et SpinEdit formatent eux-mêmes ; pas de regex |
 | Validation annulable, texte et rendu d'erreur | ✅ | |

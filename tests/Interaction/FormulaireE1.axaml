@@ -1,0 +1,12 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:h="using:HDev.UI.Controls"
+             xmlns:i="using:Interaction"
+             x:Class="Interaction.FormulaireE1"
+             x:DataType="i:FormulaireE1Vm"
+             x:CompileBindings="True">
+  <!-- Contrat des éditeurs (E1) : liaison sans Mode explicite, TwoWay par défaut -->
+  <StackPanel x:Name="Formulaire" Margin="20" Spacing="8">
+    <h:HDevDateEdit x:Name="Depart" Width="160" Value="{Binding Depart}" />
+  </StackPanel>
+</UserControl>

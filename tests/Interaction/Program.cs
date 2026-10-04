@@ -8,6 +8,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using HDev.UI.Controls;
 using HDev.UI.Controls.Documents;
+using Interaction;
 
 // Pilote les contrôles HDev.UI.Controls via de vraies entrées simulées (pipeline
 // d'input headless) et vérifie les correctifs des 4 bugs bloquants :
@@ -633,14 +634,14 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         Controle = e, PoserValeur = v => e.Value = (DateTime?)v, LireValeur = () => e.Value, LireTexte = () => e.Text,
         SurValeurChangee = a => e.ValueChanged += (_, _) => a(), Focaliser = () => { e.FocusEditor(); e.SelectAll(); },
         PopupOuvert = () => Champ<bool>(e, "_isPopupOpen"), ContenuPopup = () => EnfantPopup(e),
-        Valider = () => e.DoValidate(), Erreur = () => e.ErrorText
+        Valider = () => e.Validate(), Erreur = () => e.ErrorText
     };
     void ChoisirJourDuCalendrier(HDevDateEdit e, DateTime jour) => Champ<HDevMonthCalendar>(e, "_calendar").SelectedDate = jour;
     Editeur AdTimeEdit(HDevTimeEdit e) => new()
     {
         Controle = e, PoserValeur = v => e.Value = (TimeSpan?)v, LireValeur = () => e.Value, LireTexte = () => e.Text,
         SurValeurChangee = a => e.ValueChanged += (_, _) => a(), Focaliser = () => { e.FocusEditor(); e.SelectAll(); },
-        Valider = () => e.DoValidate(), Erreur = () => e.ErrorText
+        Valider = () => e.Validate(), Erreur = () => e.ErrorText
     };
     Editeur AdSpinEdit(HDevSpinEdit e) => new()
     {
@@ -944,6 +945,79 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         Check("thème : les champs suivent le fond de saisie à chaud, aller et retour",
             suitSombre && sombre != clair && Fond(de) == clair && Fond(tb) == clair);
         HDev.UI.Controls.Theme.HDevTheme.Variant = varianteAvant; Pump(w);
+        w.Close();
+    }
+
+    // ═══ CONTRAT DES ÉDITEURS (E1) : valeur liable, événement commun, erreurs de liaison ═══
+    // Témoin : HDevDateEdit, lié en XAML compilé (FormulaireE1.axaml) à un ViewModel
+    // INotifyDataErrorInfo. Ces attentes décrivent le contrat (Conception-Socle-Editeurs.md) ;
+    // chaque éditeur s'y ajoutera à son portage (E3).
+    Console.WriteLine("Contrat des éditeurs (E1) :");
+    {
+        var vm = new FormulaireE1Vm();
+        var vue = new FormulaireE1 { DataContext = vm };
+        var w = new Window { Width = 500, Height = 420, Content = vue }; w.Show(); Pump(w);
+        var de = vue.FindControl<HDevDateEdit>("Depart")!;
+        var journal = new List<HDevValueChangedEventArgs>();
+        vue.FindControl<StackPanel>("Formulaire")!.AddHandler(HDevEditor.ValueChangedEvent,
+            (object? _, HDevValueChangedEventArgs e) => journal.Add(e));
+        void Saisit(string chiffres) { de.FocusEditor(); de.SelectAll(); TapeParCaractere(w, chiffres); }
+
+        Check("liaison XAML sans Mode : la valeur du ViewModel s'affiche", de.Text == "14/09/2026");
+        Saisit("20092026");
+        Check("la saisie remonte au ViewModel (TwoWay par défaut)", vm.Depart == new DateTime(2026, 9, 20));
+        Check("le formulaire reçoit un seul ValueChanged : origine Utilisateur, ancienne et nouvelle valeur",
+            journal.Count == 1 && journal[0].IsUserChange && ReferenceEquals(journal[0].Source, de)
+            && Equals(journal[0].OldValue, new DateTime(2026, 9, 14)) && Equals(journal[0].NewValue, new DateTime(2026, 9, 20)));
+        vm.Depart = new DateTime(2026, 10, 1); Pump(w);
+        Check("le ViewModel repousse une valeur : affichée, origine Code, la liaison a survécu à la saisie",
+            de.Text == "01/10/2026" && journal.Count == 2 && journal[1].Origin == HDevValueOrigin.Code);
+
+        vm.ErreurDepart("Jour non ouvré"); Pump(w);
+        Check("erreur INotifyDataErrorInfo affichée par l'éditeur", de.ErrorText == "Jour non ouvré" && de.HasError);
+        Saisit("02102026");
+        Check("l'erreur du ViewModel survit à une saisie valide : seule la source la retire",
+            vm.Depart == new DateTime(2026, 10, 2) && de.ErrorText == "Jour non ouvré");
+        Saisit("3"); var saisieRefusee = !de.Validate(); var erreurDeSaisie = de.ErrorText;
+        TapeParCaractere(w, "1102026"); de.Validate();
+        Check("une saisie invalide passe devant l'erreur du ViewModel, qui revient ensuite",
+            saisieRefusee && erreurDeSaisie != "Jour non ouvré" && erreurDeSaisie != null && de.ErrorText == "Jour non ouvré");
+        vm.ErreurDepart(null); Pump(w);
+        Check("erreur retirée par le ViewModel : l'éditeur redevient valide", de.ErrorText == null && !de.HasError);
+
+        var refus = 0;
+        void RefuseLeWeekEnd(object? _, HDevValueChangingEventArgs e)
+        {
+            if (e.NewValue is DateTime d && d.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday) { e.Cancel = true; refus++; }
+        }
+        de.ValueChanging += RefuseLeWeekEnd;
+        var avantRefus = vm.Depart; var nJournal = journal.Count;
+        Saisit("03102026"); // un samedi
+        Check("ValueChanging annulé : la valeur reste, le texte revient, aucun ValueChanged",
+            refus == 1 && vm.Depart == avantRefus && de.Text == "31/10/2026" && journal.Count == nJournal);
+        de.ValueChanging -= RefuseLeWeekEnd;
+
+        nJournal = journal.Count;
+        de.FocusEditor(); Touche(w, PhysicalKey.F4); ChoisirJourDuCalendrier(de, new DateTime(2026, 10, 7)); Pump(w);
+        Check("encapsulation : choisir un jour fait remonter un seul ValueChanged, celui de l'éditeur",
+            vm.Depart == new DateTime(2026, 10, 7) && journal.Count == nJournal + 1
+            && ReferenceEquals(journal[^1].Source, de) && journal[^1].IsUserChange);
+
+        de.FocusEditor(); de.SelectAll(); Colle(w, "abc"); var texteColle = de.Text;
+        de.Value = de.Value; Pump(w);
+        Check("reposer la valeur courante par code réaffiche son texte (constat E0 n° 5)",
+            texteColle == "abc" && de.Text == "07/10/2026" && de.ErrorText == null);
+
+        vm.Depart = new DateTime(2026, 10, 7, 10, 30, 0); Pump(w);
+        var heureGardee = vm.Depart == new DateTime(2026, 10, 7, 10, 30, 0) && de.Text == "07/10/2026";
+        Saisit("08102026");
+        Check("l'heure de la valeur n'est ni affichée ni perdue : un autre jour la garde",
+            heureGardee && vm.Depart == new DateTime(2026, 10, 8, 10, 30, 0));
+
+        IHDevEditor contrat = de;
+        contrat.EditValue = new DateTime(2026, 11, 11); Pump(w);
+        Check("IHDevEditor : EditValue pose la valeur typée, jusqu'au ViewModel",
+            vm.Depart == new DateTime(2026, 11, 11) && Equals(contrat.EditValue, new DateTime(2026, 11, 11)));
         w.Close();
     }
 

@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -13,13 +14,17 @@ namespace HDev.UI.Controls;
 
 /// <summary>
 /// Éditeur de date avec masque et calendrier déroulant (équivalent DateEdit) :
-/// saisie masquée selon Format, bouton calendrier, MinDate/MaxDate, validation au blur
+/// saisie masquée selon Format, bouton calendrier, MinDate/MaxDate, validation au blur.
+/// Value est liable dans les deux sens ; l'heure de la valeur n'est ni affichée ni perdue :
+/// une date choisie par l'utilisateur garde l'heure de la valeur courante.
 /// </summary>
-public class HDevDateEdit : HDevEditorBase
+public class HDevDateEdit : HDevEditorBase<DateTime?>
 {
+    public static readonly StyledProperty<DateTime?> ValueProperty =
+        AvaloniaProperty.Register<HDevDateEdit, DateTime?>(nameof(Value),
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
+
     private string _format = "dd/MM/yyyy";
-    private DateTime? _value;
-    private bool _updatingText;
 
     private readonly Popup _popup;
     private readonly Border _popupBorder;
@@ -30,9 +35,6 @@ public class HDevDateEdit : HDevEditorBase
     public DateTime MinDate { get; set; } = DateTime.MinValue;
     public DateTime MaxDate { get; set; } = DateTime.MaxValue;
 
-    /// <summary>Déclenché quand Value change (saisie complète valide ou calendrier)</summary>
-    public event EventHandler? ValueChanged;
-
     /// <summary>Format d'affichage/saisie (lettres = chiffres du masque), défaut dd/MM/yyyy</summary>
     public string Format
     {
@@ -41,24 +43,19 @@ public class HDevDateEdit : HDevEditorBase
         {
             _format = value;
             Mask = DeriveMask(value);
-            if (_value.HasValue)
-                SetTextFromValue();
+            if (Value.HasValue)
+                ResyncText();
         }
     }
 
     /// <summary>Valeur typée (null = vide)</summary>
-    public DateTime? Value
+    public override DateTime? Value
     {
-        get => _value;
-        set
-        {
-            if (_value == value) return;
-            _value = value?.Date;
-            SetTextFromValue();
-            SetError(null);
-            ValueChanged?.Invoke(this, EventArgs.Empty);
-        }
+        get => GetValue(ValueProperty);
+        set => SetValueFromCode(value);
     }
+
+    protected override StyledProperty<DateTime?> ValuePropertyCore => ValueProperty;
 
     public HDevDateEdit()
     {
@@ -114,16 +111,15 @@ public class HDevDateEdit : HDevEditorBase
         RefreshPopupBorder(_popupBorder); // le calendrier lui-même est recréé à l'ouverture
     }
 
-    private void SetTextFromValue()
-    {
-        _updatingText = true;
-        Text = _value?.ToString(_format, CultureInfo.CurrentCulture) ?? "";
-        _updatingText = false;
-    }
+    protected override string FormatValue(DateTime? value)
+        => value?.ToString(_format, CultureInfo.CurrentCulture) ?? "";
+
+    /// <summary>La date choisie, à l'heure de la valeur courante (00:00 si vide)</summary>
+    private DateTime AtCurrentTime(DateTime date) => date.Date + (Value?.TimeOfDay ?? TimeSpan.Zero);
 
     protected override void OnInnerTextChanged()
     {
-        if (_updatingText) return;
+        if (IsUpdatingText) return;
 
         // Saisie complète et valide -> mise à jour de Value au fil de l'eau
         if (IsMaskComplete &&
@@ -131,21 +127,16 @@ public class HDevDateEdit : HDevEditorBase
                 DateTimeStyles.None, out var parsed) &&
             parsed >= MinDate && parsed <= MaxDate)
         {
-            if (_value != parsed.Date)
-            {
-                _value = parsed.Date;
-                SetError(null);
-                ValueChanged?.Invoke(this, EventArgs.Empty);
-            }
+            if (Value?.Date != parsed.Date)
+                CommitUserValue(AtCurrentTime(parsed), fromText: true);
         }
-        else if (string.IsNullOrEmpty(Text) && _value != null)
+        else if (string.IsNullOrEmpty(Text) && Value != null)
         {
-            _value = null;
-            ValueChanged?.Invoke(this, EventArgs.Empty);
+            CommitUserValue(null, fromText: true);
         }
     }
 
-    protected override object? ConvertTextToValue() => _value;
+    protected override object? ConvertTextToValue() => Value;
 
     protected override string? GetIntrinsicError()
     {
@@ -186,7 +177,7 @@ public class HDevDateEdit : HDevEditorBase
         // y compris la date déjà choisie, doit commiter.
         _calendar = new HDevMonthCalendar
         {
-            DisplayMonth = _value ?? DateTime.Today,
+            DisplayMonth = Value ?? DateTime.Today,
             MinDate = MinDate,
             MaxDate = MaxDate
         };
@@ -207,7 +198,7 @@ public class HDevDateEdit : HDevEditorBase
     {
         if (_calendar?.SelectedDate is { } date)
         {
-            Value = date;
+            CommitUserValue(AtCurrentTime(date));
             ClosePopup();
             FocusEditor();
         }

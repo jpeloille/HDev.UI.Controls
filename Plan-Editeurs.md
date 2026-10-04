@@ -6,6 +6,7 @@ Plan de lots pour combler la famille « Éditeurs » du benchmark DevExpress, é
 
 **Principe (décision du 04/10/2026).** La suite se conçoit pour elle-même.
 - Critères : cohérence de l'architecture, parité DevExpress, idiomes Avalonia.
+- **DevExpress fixe le niveau, pas la solution technique.** Ses capacités sont le plancher à atteindre. Quand une conception plus simple, plus pratique ou plus idiomatique existe, c'est elle qu'on retient : l'objectif est d'être aussi bon que DevExpress, et meilleur quand on le peut.
 - **Les applications hôtes s'adaptent à la suite, pas l'inverse.** Leur usage actuel ne fixe aucune priorité, et la compatibilité ascendante de l'API n'est pas une contrainte.
 - Chaque rupture est consignée dans une note de migration (§ 2).
 
@@ -40,12 +41,16 @@ Les tests E0 ont fait changer d'état deux lignes de 5.7, sans changer le score.
 5. **Les éditeurs n'étaient pas testés en interaction** avant E0. Il n'y avait qu'un test, sur la combo, et la couverture se limitait au moteur de masque (18 tests xUnit) et à la planche visuelle « Champs ». E0 a levé ce constat (§ 3).
 6. **Le pont avec la grille est cassé.** Dans `HDevDataGridCell.GetEditorValue()`, seuls les contrôles Fluent sont reconnus. Un éditeur HDev posé par `EditTemplate` ne renvoie jamais sa valeur à la validation.
 
-## 1. Décisions d'architecture recommandées
+## 1. Décisions d'architecture (validées le 04/10/2026)
 
-- **D1, un socle unique par héritage**, sur le modèle `BaseEdit` de DevExpress.
-  - `HDevEditorBase` devient un socle composite : une zone de valeur (champ texte, ou présentateur personnalisé pour les jetons et les affichages non éditables), des boutons d'éditeur, un popup, un masque, la validation et l'état visuel.
+- **D1, un socle unique.**
+  - Un socle commun, issu de `HDevEditorBase`, porte la zone de valeur (champ texte, ou présentateur personnalisé pour les jetons et les affichages non éditables), les boutons d'éditeur, le popup, le masque, la validation et l'état visuel.
   - Tous les éditeurs de champ y passent : TextBox (multiligne compris), ComboBox, LookUpEdit, DateEdit, TimeEdit, SpinEdit, SearchControl, TokenEdit.
   - Les contrôles de choix (cases, interrupteur, radios) et MonthCalendar restent des contrôles à part. Ils implémentent le même contrat de valeur (D2).
+  - **Forme technique ouverte, choisie au mérite** (précision de Julien à la validation). Le `BaseEdit` de DevExpress est une référence, pas un modèle. La note de conception d'E1 compare au moins deux formes :
+    - la chaîne d'héritage de DevExpress, où chaque capacité vient d'une classe (`TextEdit`, puis `ButtonEdit`, puis `PopupBaseEdit`, puis `DateEdit`) ;
+    - une base légère qui porte le contrat et l'habillage, avec des pièces composables (boutons, popup, masque, validation) que chaque éditeur active sans changer de classe.
+  - Critères de choix : simplicité d'usage en XAML et en C#, ajout d'une capacité sans nouvelle classe, réemploi tel quel dans la grille (E11).
 - **D2, des valeurs liables d'emblée.**
   - Interface `IHDevEditor` : `EditValue` non typée, pour le code générique et la grille, avec `ValueChanging` (annulable) et `ValueChanged`, plus `IsReadOnly`, `Placeholder`, `ErrorText`, `Validate()` et `FocusEditor()`.
   - Chaque éditeur expose une `Value` typée en `StyledProperty`, `TwoWay` par défaut, avec la validation de liaison active.
@@ -57,13 +62,14 @@ Les tests E0 ont fait changer d'état deux lignes de 5.7, sans changer le score.
 - **D4, les types de date et d'heure modernes**, comme DevExpress v26.1 : `DateTime`, `DateOnly`, `TimeOnly`, `DateTimeOffset` et `TimeSpan`.
   - Les valeurs à décalage s'affichent par défaut en heure locale.
   - Le fuseau d'affichage est réglable (local, UTC, ou un fuseau donné).
+  - Point ouvert, réglé en E1 : le typage de `Value` (D2) quand un éditeur admet plusieurs types.
 
 ## 2. Lots
 
 | Lot | Objet | Taille | Dépend de | Lignes 4.2 visées | Statut |
 |---|---|---|---|---|---|
 | **E0** | Tests de caractérisation des éditeurs | S | — | — | ✅ |
-| **E1** | Contrat `IHDevEditor` et conventions (D2, D3) | M | E0 | — (5.7) | 🔲 |
+| **E1** | Conception du socle (D1), contrat `IHDevEditor` et conventions (D2, D3) | M | E0 | — (5.7) | 🟡 forme à valider |
 | **E2** | Socle composite : zone de valeur, boutons, popup, multiligne | L | E1 | 6, 19 | 🔲 |
 | **E3** | Portage des éditeurs existants sur le socle | L | E2 | — (5.7) | 🔲 |
 | **E4** | Sélection : cases, items à gabarit, liste à cases | M | E3 | 12, 13, 22 | 🔲 |
@@ -141,29 +147,55 @@ Les planches de `tests/Gallery`, en clair et en sombre, sont archivées comme r�
 
 | N° | Éditeur | Constat | Suite |
 |---:|---|---|---|
-| 1 | ComboBox | `SelectedIndex` posé par code relève `EditValueChanged`, mais pas `SelectedIndexChanged`. | E1 : un seul événement de valeur, au code comme à l'utilisateur |
+| 1 | ComboBox | `SelectedIndex` posé par code relève `EditValueChanged`, mais pas `SelectedIndexChanged`. | Contrat posé en E1 : un seul `ValueChanged`, au code comme à l'utilisateur. La ComboBox le reçoit en E3 |
 | 2 | ComboBox | Liste ouverte, Échap après une flèche garde l'élément parcouru au lieu de rendre la valeur d'ouverture. | Tranché le 04/10/2026 : Échap rend la valeur d'ouverture (§ 6). E3 |
 | 3 | SearchControl | Après le choix d'une suggestion (↓ puis Entrée), la liste reste ouverte. | E3 |
 | 4 | DateEdit, LookUpEdit, SearchControl, TokenEdit | Au retournement, Avalonia ne reflète pas le décalage vertical. DateEdit, SearchControl et TokenEdit : 2 px de jour dessous, 2 px de chevauchement dessus. LookUpEdit : bordure fusionnée dessous, 1 px de jour dessus. La ComboBox, qui bascule elle-même, reste cohérente. | E2 |
-| 5 | DateEdit | Tant que le texte est invalide, la valeur garde la dernière valeur valide, ce qui se défend. Mais reposer cette même valeur par code ne réaffiche pas le texte : après un collage « abc », `Value = 14/09/2026` laisse « abc » à l'écran. | E1 |
+| 5 | DateEdit | Tant que le texte est invalide, la valeur garde la dernière valeur valide, ce qui se défend. Mais reposer cette même valeur par code ne réaffiche pas le texte : après un collage « abc », `Value = 14/09/2026` laisse « abc » à l'écran. | **Corrigé en E1** dans la couche typée du socle (vérifié sur DateEdit) |
 | 6 | DateEdit, TimeEdit, SpinEdit | Le collage contourne le masque et le filtre. DateEdit garde tels quels « 20092026 », « 2026-09-21 » ou « abc » ; TimeEdit, « 1745 » ; SpinEdit, « 12a,5 ». La valeur ne bouge pas, et seule la validation rattrape. Un collage déjà au format (« 20/09/2026 ») passe. | E2 |
 | 7 | DateEdit (mineur) | Après un collage, une frappe en bloc (IME, dictée, douchette) qui remplace tout le texte laisse la sélection active : le Retour arrière suivant efface tout. Cause non isolée : le cas ne se reproduit pas sans collage, et il voisine avec le piège d'Avalonia ci-dessus. | E2 |
 | 8 | TokenEdit (mineur) | Hauteur de 29 px, contre 28 pour les autres champs (`Size.EditorHeight`). | E3 |
 
 ### E1 : contrat et conventions (M)
 
-**Objet.** Poser D2 et D3 avant d'écrire le socle.
+**Objet.** Choisir la forme du socle (D1) et poser D2 et D3 avant de l'écrire.
 
 **Contenu.**
+- **Note de conception du socle** : les formes candidates de D1 essayées sur un éditeur témoin, et le choix motivé par les critères de D1.
 - Interface `IHDevEditor`, événements de valeur typés (ancienne et nouvelle valeur, annulation).
 - Patron unique pour les valeurs : `StyledProperty`, `TwoWay` par défaut, validation de liaison active, coercition des bornes.
 - Liste des noms retenus et des noms abandonnés : elle ouvre la note de migration.
 - Un seul événement de valeur, qu'elle vienne du code ou de l'utilisateur (constat E0 n° 1).
 - Le texte se resynchronise quand on repose la valeur (n° 5).
+- Typage de `Value` quand un éditeur admet plusieurs types (D4) : un éditeur par type, un type déduit de la liaison, ou une base générique typée.
 
 **Acceptation.**
+- La note de conception est écrite, et la forme du socle est actée avant E2.
 - Un test headless lie un éditeur témoin à un ViewModel, dans les deux sens, et voit remonter une erreur `INotifyDataErrorInfo`.
 - Les conventions sont décrites en tête de `MIGRATION-editeurs.md`.
+
+**Résultat (04/10/2026) : fait, sauf la forme, à valider.**
+- **Note de conception** : `Conception-Socle-Editeurs.md`.
+  - Elle recommande la forme B, une base légère avec des pièces composables, plutôt que la chaîne d'héritage de DevExpress.
+  - Pour D4, elle recommande un éditeur par type de valeur.
+  - **Ces deux choix sont à valider avant E2** (§ 6, question 4).
+- **Contrat en place.**
+  - `HDevEditorContract.cs` : `IHDevEditor` et l'événement de valeur commun (`HDevEditor.ValueChangedEvent`, avec son origine).
+  - Couche typée `HDevEditorBase<T>`.
+  - Deux sources d'erreur, la saisie et la liaison.
+  - `Validate()`.
+- **Témoin porté : HDevDateEdit.**
+  - Sa valeur est liable dans les deux sens par défaut.
+  - Il lève `ValueChanged` et `ValueChanging`.
+  - L'heure de la valeur est conservée.
+  - Le constat n° 5 est corrigé.
+- **Vérifications.**
+  - 13 vérifications « Contrat des éditeurs (E1) », sur un formulaire en XAML compilé lié à un ViewModel `INotifyDataErrorInfo`.
+  - Le banc complet passe trois fois à 136 sur 136. Les attentes E0 n'ont pas changé : seule la ligne `Validate` des adaptateurs a bougé.
+  - 380 tests xUnit verts.
+  - Les 18 planches sont identiques au pixel près à `reference-J0`.
+- **Note de migration ouverte** : `MIGRATION-editeurs.md`. Elle contient les conventions, la table complète des noms et les ruptures d'E1.
+- **Prototype des mécanismes**, hors de la solution : `tests/Prototypes/SocleE1`. Il fonde les décisions de forme et de typage.
 
 ### E2 : socle composite (L)
 
@@ -456,17 +488,18 @@ L'intégration et la qualité (J3) passent avant les compléments (J4). Ce sont 
 
 ## 6. Questions à trancher
 
-1. **Valider les décisions D1 à D4** (§ 1) :
-   - un socle unique par héritage ;
-   - des valeurs liables d'emblée ;
-   - le nommage Avalonia, et la fin de l'objet `Properties` ;
-   - les types de date modernes, avec affichage local par défaut.
+1. **Décisions D1 à D4** (§ 1). **Validées le 04/10/2026.** Pour D1, le socle unique est acquis ; sa forme technique se choisit au mérite, dans la note de conception d'E1.
 2. **Acter les absences par décision** :
    - en 4.2 : police, galerie en popup, roues tactiles, pinceau, code-barres, webcam ;
    - en 5.7 : libellé flottant et IA.
 
    Le benchmark serait mis à jour en conséquence.
 3. **Échap dans la liste ouverte de la ComboBox** (constat E0 n° 2). **Tranché le 04/10/2026 : Échap rend la valeur d'ouverture.**
+4. **Conception du socle** (`Conception-Socle-Editeurs.md`, § 10) :
+   - la forme B, une base légère avec des pièces composables ;
+   - pour D4, un éditeur par type de valeur ;
+   - le nom de la valeur : celui d'Avalonia quand il existe (`Text`, `IsChecked`, `SelectedDate`), `Value` sinon ;
+   - les suppressions de fonctions proposées dans `MIGRATION-editeurs.md`, qui ne sont pas des renommages.
 
 ## 7. Risques
 

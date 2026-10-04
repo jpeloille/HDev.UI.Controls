@@ -1,0 +1,25 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="clr-namespace:Spike"
+             x:Class="Spike.SpikeView"
+             x:DataType="s:SpikeVm"
+             x:CompileBindings="True">
+  <StackPanel x:Name="Form">
+    <s:SpikeDateEdit x:Name="De" Value="{Binding Date}" />
+    <s:SpikeSpinEdit x:Name="Sp" Value="{Binding Amount}" />
+    <s:SpikeObjEdit x:Name="Ob" Value="{Binding Birth}" />
+    <s:SpikeFieldEdit x:Name="Fe" Value="{Binding Name}">
+      <s:SpikeFieldEdit.Buttons>
+        <s:EditorButton Kind="Clear" IsShown="{Binding CanClear}" />
+        <s:EditorButton Kind="Ellipsis" />
+      </s:SpikeFieldEdit.Buttons>
+      <s:SpikeFieldEdit.PopupContent>
+        <StackPanel>
+          <TextBlock x:Name="PopupLabel" Text="{Binding Name}" />
+          <s:SpikeSpinEdit x:Name="Inner" Value="{Binding Amount}" />
+        </StackPanel>
+      </s:SpikeFieldEdit.PopupContent>
+    </s:SpikeFieldEdit>
+    <s:SpikeBoundedEdit x:Name="Bo" Value="{Binding Percent}" />
+  </StackPanel>
+</UserControl>

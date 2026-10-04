@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
+using Avalonia.Data;
 using Avalonia.Media;
 using HDev.UI.Controls.Theme;
 using System.ComponentModel;
@@ -145,8 +146,17 @@ public abstract class HDevEditorBase : Border
         set => SetValue(MaskProperty, value);
     }
 
-    /// <summary>Erreur de validation courante (null = valide) ; bordure rouge + tooltip</summary>
-    public string? ErrorText { get; private set; }
+    // Deux sources d'erreur, gardées à part : la saisie (erreur intrinsèque, Validating,
+    // SetError) et la liaison (INotifyDataErrorInfo, exception de la source). Une saisie
+    // valide efface la première sans toucher à la seconde, que seule la source retire.
+    private string? _inputError;
+    private string? _bindingError;
+
+    /// <summary>
+    /// Erreur affichée (null = valide) : celle de la saisie d'abord, la plus proche de ce que
+    /// l'utilisateur voit ; sinon celle de la liaison. Bordure rouge, halo et infobulle.
+    /// </summary>
+    public string? ErrorText => _inputError ?? _bindingError;
 
     public bool HasError => ErrorText != null;
 
@@ -202,7 +212,7 @@ public abstract class HDevEditorBase : Border
         InnerTextBox.LostFocus += (s, e) =>
         {
             _isFocusedState = false;
-            DoValidate();
+            Validate();
             UpdateVisualState();
         };
 
@@ -225,6 +235,17 @@ public abstract class HDevEditorBase : Border
         IsReadOnlyProperty.Changed.AddClassHandler<HDevEditorBase>((x, _) =>
             x.InnerTextBox.IsReadOnly = x.IsReadOnly);
         IsEnabledProperty.Changed.AddClassHandler<HDevEditorBase>((x, _) => x.UpdateVisualState());
+
+        // Encapsulation : les pièces internes d'un éditeur (calendrier, liste, grille d'un popup)
+        // ne font pas sortir leurs événements de valeur ; seuls ceux de l'éditeur remontent
+        HDevEditor.ValueChangedEvent.AddClassHandler<HDevEditorBase>((x, e) =>
+        {
+            if (!ReferenceEquals(e.Source, x)) e.Handled = true;
+        });
+        HDevEditor.ValueChangingEvent.AddClassHandler<HDevEditorBase>((x, e) =>
+        {
+            if (!ReferenceEquals(e.Source, x)) e.Handled = true;
+        });
     }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
@@ -369,7 +390,7 @@ public abstract class HDevEditorBase : Border
     // ═══════════════════════════════════════════════════════════════
 
     /// <summary>Force la validation ; retourne false si annulée (erreur affichée)</summary>
-    public bool DoValidate()
+    public bool Validate()
     {
         // Erreur intrinsèque de l'éditeur typé (date incomplète, hors bornes...)
         var intrinsic = GetIntrinsicError();
@@ -389,11 +410,23 @@ public abstract class HDevEditorBase : Border
     /// <summary>Erreur propre à l'éditeur typé, vérifiée avant Validating (null = OK)</summary>
     protected virtual string? GetIntrinsicError() => null;
 
-    /// <summary>Pose ou efface l'erreur affichée (bordure rouge + tooltip)</summary>
+    /// <summary>Pose ou efface l'erreur de saisie (bordure rouge + infobulle) ; l'erreur de liaison reste</summary>
     public void SetError(string? errorText)
     {
-        ErrorText = errorText;
-        ToolTip.SetTip(this, errorText);
+        _inputError = errorText;
+        RefreshError();
+    }
+
+    /// <summary>Erreur venue de la liaison de la valeur (validation de données Avalonia)</summary>
+    protected void SetBindingError(string? errorText)
+    {
+        _bindingError = errorText;
+        RefreshError();
+    }
+
+    private void RefreshError()
+    {
+        ToolTip.SetTip(this, ErrorText);
         UpdateVisualState();
     }
 
@@ -436,4 +469,131 @@ public abstract class HDevEditorBase : Border
 
     public void FocusEditor() => InnerTextBox.Focus();
     public void SelectAll() => InnerTextBox.SelectAll();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COUCHE TYPÉE DU SOCLE (D2)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// <summary>
+/// Couche typée du socle : la valeur <typeparamref name="T"/>, liable dans les deux sens,
+/// l'événement commun avec l'origine du changement, l'erreur de liaison et le texte
+/// resynchronisé. La StyledProperty est déclarée par l'éditeur concret, avec son
+/// accesseur : Avalonia déconseille un propriétaire générique (analyseur AVP1002), et le
+/// compilateur XAML lit la propriété sur la classe qui déclare <c>Value</c>.
+/// <code>
+/// public static readonly StyledProperty&lt;DateTime?&gt; ValueProperty =
+///     AvaloniaProperty.Register&lt;HDevDateEdit, DateTime?&gt;(nameof(Value),
+///         defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
+/// protected override StyledProperty&lt;DateTime?&gt; ValuePropertyCore => ValueProperty;
+/// public override DateTime? Value { get => GetValue(ValueProperty); set => SetValueFromCode(value); }
+/// </code>
+/// </summary>
+public abstract class HDevEditorBase<T> : HDevEditorBase, IHDevEditor
+{
+    private bool _userCommit;
+    private bool _userCommitFromText;
+
+    /// <summary>La StyledProperty <c>Value</c> de l'éditeur concret</summary>
+    protected abstract StyledProperty<T> ValuePropertyCore { get; }
+
+    /// <summary>Valeur typée ; l'éditeur concret la déclare avec <see cref="SetValueFromCode"/></summary>
+    public abstract T Value { get; set; }
+
+    /// <summary>Texte affiché pour une valeur (culture courante)</summary>
+    protected abstract string FormatValue(T value);
+
+    /// <summary>Vrai pendant que le socle réécrit le texte depuis la valeur</summary>
+    protected bool IsUpdatingText { get; private set; }
+
+    public object? EditValue
+    {
+        get => GetValue(ValuePropertyCore);
+        set => Value = value is null ? default! : (T)value;
+    }
+
+    public event EventHandler<HDevValueChangedEventArgs>? ValueChanged
+    {
+        add => AddHandler(HDevEditor.ValueChangedEvent, value);
+        remove => RemoveHandler(HDevEditor.ValueChangedEvent, value);
+    }
+
+    public event EventHandler<HDevValueChangingEventArgs>? ValueChanging
+    {
+        add => AddHandler(HDevEditor.ValueChangingEvent, value);
+        remove => RemoveHandler(HDevEditor.ValueChangingEvent, value);
+    }
+
+    /// <summary>
+    /// Setter des <c>Value</c> concrètes : reposer la valeur courante réaffiche son texte et
+    /// efface l'erreur de saisie (constat E0 n° 5), sans lever d'événement
+    /// </summary>
+    protected void SetValueFromCode(T value)
+    {
+        if (EqualityComparer<T>.Default.Equals(value, GetValue(ValuePropertyCore)))
+            ResyncText();
+        else
+            SetValue(ValuePropertyCore, value);
+    }
+
+    /// <summary>
+    /// Pose une valeur venue de l'utilisateur : ValueChanging (annulable), puis SetCurrentValue,
+    /// qui garde les liaisons en place et met la source à jour. Faux si un abonné a annulé :
+    /// le texte revient alors à la valeur courante.
+    /// </summary>
+    /// <param name="fromText">Vrai si la valeur vient du texte tapé, qui reste alors tel quel</param>
+    protected bool CommitUserValue(T value, bool fromText = false)
+    {
+        var current = GetValue(ValuePropertyCore);
+        if (EqualityComparer<T>.Default.Equals(value, current))
+            return true;
+
+        var changing = new HDevValueChangingEventArgs(current, value);
+        RaiseEvent(changing);
+        if (changing.Cancel)
+        {
+            ResyncText();
+            return false;
+        }
+
+        _userCommit = true;
+        _userCommitFromText = fromText;
+        try { SetCurrentValue(ValuePropertyCore, value); }
+        finally { _userCommit = false; _userCommitFromText = false; }
+        return true;
+    }
+
+    /// <summary>Réaffiche la valeur courante et efface l'erreur de saisie</summary>
+    protected void ResyncText()
+    {
+        IsUpdatingText = true;
+        try { Text = FormatValue(GetValue(ValuePropertyCore)); }
+        finally { IsUpdatingText = false; }
+        SetError(null);
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property != ValuePropertyCore)
+            return;
+
+        // Le texte suit la valeur, sauf quand l'utilisateur vient de la taper
+        if (_userCommit && _userCommitFromText)
+            SetError(null);
+        else
+            ResyncText();
+
+        RaiseEvent(new HDevValueChangedEventArgs(change.OldValue, change.NewValue,
+            _userCommit ? HDevValueOrigin.User : HDevValueOrigin.Code));
+    }
+
+    protected override void UpdateDataValidation(AvaloniaProperty property, BindingValueType state, Exception? error)
+    {
+        base.UpdateDataValidation(property, state, error);
+        if (property == ValuePropertyCore)
+            SetBindingError(error is AggregateException many
+                ? string.Join(Environment.NewLine, many.InnerExceptions.Select(x => x.Message))
+                : error?.Message);
+    }
 }
