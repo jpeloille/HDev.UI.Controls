@@ -71,7 +71,7 @@ Les tests E0 ont fait changer d'état deux lignes de 5.7, sans changer le score.
 |---|---|---|---|---|---|
 | **E0** | Tests de caractérisation des éditeurs | S | — | — | ✅ |
 | **E1** | Conception du socle (D1), contrat `IHDevEditor` et conventions (D2, D3) | M | E0 | — (5.7) | ✅ |
-| **E2** | Socle composite : zone de valeur, boutons, popup, multiligne | L | E1 | 6, 19 | 🔲 |
+| **E2** | Socle composite : zone de valeur, boutons, popup, multiligne | L | E1 | 6, 19 | ✅ |
 | **E3** | Portage des éditeurs existants sur le socle | L | E2 | — (5.7) | 🔲 |
 | **E4** | Sélection : cases, items à gabarit, liste à cases | M | E3 | 12, 13, 22 | 🔲 |
 | **E5** | Saisie typée : masques typés, formats numériques, calculatrice | M | E3 | 2, 24, 25 | 🔲 |
@@ -221,6 +221,25 @@ Les planches de `tests/Gallery`, en clair et en sombre, sont archivées comme r�
 **Acceptation.**
 - Tests d'Interaction sur les boutons, le popup (y compris le retournement mesuré en géométrie), le collage sous masque et le multiligne.
 - Planche « Champs » en clair et en sombre.
+
+**Résultat : fait le 05/10/2026** (mission M-01, branche `suite-M-01`). La fusion dans `suite` attend la vérification manuelle QX-02 (survie d'un popup à une brève désactivation de la fenêtre, sur le bureau réel).
+- **Décisions du 05/10/2026** (questions de la mission M-01) : `HDevEditorButton` (`Kind`, `Icon`), `ButtonClick`, `DropDownContent`, les arguments des événements du popup, les noms des glyphes, la valeur de HDevButtonEdit (`Text`, la couche typée ne déclarant plus `Value`) et de HDevPopupContainerEdit (`Value`, `object?`), la zone de valeur protégée.
+- **Pièces du socle.**
+  - Zone de valeur : le champ texte, ou un présentateur (`SetValuePresenter`, protégé).
+  - `IsMultiline` : 28 px en monoligne, trois lignes au départ en multiligne ; les boutons restent sur la première ligne.
+  - `Buttons` et `ButtonClick`, sur tout éditeur du socle ; 10 glyphes ajoutés à `HDevEditorIcon`.
+  - Popup public : `IsDropDownOpen`, `DropDownContent`, ouverture et fermeture annulables, acceptation de la valeur ; clavier F4, Alt+↓, Alt+↑, Échap, Entrée. HDevDateEdit, le témoin, y passe.
+- **Constats E0.**
+  - n° 4 : l'écart au champ est porté par le rectangle d'ancrage, que le positionneur d'Avalonia retourne avec le popup. Une marge du contenu ne sert pas : Avalonia 12 la compense. DateEdit, SearchControl, TokenEdit et LookUpEdit sont corrigés ; la ComboBox perd sa bascule manuelle à son portage (E3).
+  - n° 6 : le collage passe par le masque et les filtres, en entier ou pas du tout.
+  - n° 7 : cause trouvée. Poser `CaretIndex` à sa valeur courante ne réduit pas la sélection ; le socle la réduit lui-même.
+- **Une seule garde de fermeture** : la ComboBox et les menus passent sur `HDevPopupDismissGuard`.
+- **Nouveaux contrôles** : HDevButtonEdit (ligne 6) et HDevPopupContainerEdit (ligne 19).
+- **Vérifications.**
+  - 36 vérifications « Socle des éditeurs (E2) », dont un formulaire en XAML compilé (`FormulaireE2.axaml`) : boutons (clic réel, commande, visibilité liée), popup public, retournement mesuré au pixel, collage, sélection, multiligne.
+  - Le banc complet passe trois fois à 172 sur 172. Un test E1 a changé de moyen, pas d'intention (`MIGRATION-editeurs.md`, E2).
+  - 380 tests xUnit verts.
+  - Planches : « champs » identique au pixel jusqu'à sa nouvelle section du bas, en clair et en sombre ; « fondations » montre les nouveaux glyphes ; les autres planches sont inchangées, hors lignes « maintenant » des planches datées.
 
 ### E3 : portage des éditeurs existants (L)
 
