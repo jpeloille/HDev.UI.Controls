@@ -56,3 +56,4 @@
   - C1 : la valeur n'est prise qu'à la fermeture, par CommitUserValue. IsValueAccepted vaut true par défaut pour Accepted et LightDismiss, false pour Canceled (choix de l'orchestratrice pour LightDismiss).
   - C2 : validé.
   M-01 est relancée.
+- M-01 : N1 à N7 appliqués (d138c9f), compilation et banc à 172/172. C1 exige une propriété publique pour la valeur en cours ; QUESTION : `DropDownValue` est proposé.
