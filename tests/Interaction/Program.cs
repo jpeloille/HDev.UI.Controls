@@ -563,6 +563,394 @@ var rows = (System.Collections.IList)typeof(HDevListView).GetField("_rows",
 var headers = rows.Cast<object>().Count(r => (bool)r.GetType().GetProperty("IsHeader")!.GetValue(r)!);
 Check($"liste : GroupSelector après ItemsSource produit les en-têtes de groupe (lu {headers})", headers == 2);
 
+// ═════════════════════════════════════════════════════════════════
+// ÉDITEURS : caractérisation E0 (Plan-Editeurs.md), avant la refonte du socle
+// ═════════════════════════════════════════════════════════════════
+// Comportements observés ET plausiblement voulus. Les écarts surprenants sont listés
+// dans Plan-Editeurs.md (constats E0) au lieu d'être gravés ici.
+// Les adaptateurs (« Adaptateurs E0 » ci-dessous) sont le seul endroit qui lit ou écrit
+// la valeur, le texte, les événements, le focus et les popups des éditeurs, et le seul
+// qui touche à leurs champs internes. La configuration (bornes, sources, options) reste
+// écrite en clair : si l'API la renomme, la correction est mécanique. Quand l'API change
+// (lots E1 à E3), on corrige l'adaptateur et on consigne la rupture dans
+// MIGRATION-editeurs.md ; une attente qui change est un changement de COMPORTEMENT,
+// à justifier.
+// Non testable en headless : la fermeture débouncée sur désactivation de fenêtre
+// (aucune API pour désactiver une fenêtre headless).
+Console.WriteLine("Éditeurs (caractérisation E0) :");
+{
+    var cultureAvant = System.Globalization.CultureInfo.CurrentCulture;
+    var cultureUiAvant = System.Globalization.CultureInfo.CurrentUICulture;
+    System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("fr-FR");
+    System.Globalization.CultureInfo.CurrentUICulture = new System.Globalization.CultureInfo("fr-FR");
+
+    // ─── Outils d'entrée et de géométrie (indépendants de l'API des éditeurs) ───
+    Window Hote(Control c, double top = 20)
+    {
+        Canvas.SetLeft(c, 20); Canvas.SetTop(c, top);
+        var win = new Window { Width = 500, Height = 420, Content = new Canvas { Children = { c } } };
+        win.Show(); Pump(win); return win;
+    }
+    void Touche(Window w, PhysicalKey k, RawInputModifiers m = RawInputModifiers.None)
+    { w.KeyPressQwerty(k, m); w.KeyReleaseQwerty(k, m); Pump(w); }
+    void Tape(Window w, string texte) { w.KeyTextInput(texte); Pump(w); }
+    void TapeParCaractere(Window w, string texte) { foreach (var c in texte) Tape(w, c.ToString()); }
+    void Colle(Window w, string texte)
+    {
+        Avalonia.Input.Platform.ClipboardExtensions.SetTextAsync(TopLevel.GetTopLevel(w)!.Clipboard!, texte).GetAwaiter().GetResult();
+        Touche(w, PhysicalKey.V, RawInputModifiers.Control);
+    }
+    Rect Boite(Window w, Control c) => new(c.TranslatePoint(new Point(0, 0), w)!.Value, c.Bounds.Size);
+    Rect? BoitePopup(Window w, Editeur e) => e.ContenuPopup() is { } c && c.TranslatePoint(new Point(0, 0), w) is { } p
+        ? new Rect(p, c.Bounds.Size) : null;
+    var horsChamp = new Point(480, 400);
+    // Accolé = à 2 px du bord du champ. La fusion des bordures (-1 px, HDevComboBox) et le jour
+    // de 2 px (HDevDateEdit) sont tous deux voulus ; aligné à gauche quand il s'ouvre dessous.
+    bool Dessous(Rect? pop, Rect champ) => pop is { } r && Math.Abs(r.Top - champ.Bottom) <= 2 && Math.Abs(r.Left - champ.Left) <= 1;
+    bool Dessus(Rect? pop, Rect champ) => pop is { } r && r.Top < champ.Top && Math.Abs(r.Bottom - champ.Top) <= 2;
+
+    // ─── Adaptateurs E0 (périmètre : voir l'en-tête de la section) ───
+    T Champ<T>(object o, string nom)
+    {
+        for (var t = o.GetType(); t != null; t = t.BaseType)
+            if (t.GetField(nom, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance) is { } f)
+                return (T)f.GetValue(o)!;
+        throw new InvalidOperationException($"champ {nom} introuvable sur {o.GetType().Name}");
+    }
+    Control? EnfantPopup(object editeur)
+    {
+        var popup = Champ<Avalonia.Controls.Primitives.Popup>(editeur, "_popup");
+        return popup.IsOpen ? popup.Child as Control : null;
+    }
+    Editeur AdTextBox(HDevTextBox e) => new()
+    {
+        Controle = e, PoserValeur = v => e.Text = (string?)v, LireValeur = () => e.Text, LireTexte = () => e.Text ?? "",
+        SurValeurChangee = a => e.TextChanged += (_, _) => a(), Focaliser = () => e.FocusTextBox()
+    };
+    TextBox InterieurTextBox(HDevTextBox e) => Champ<TextBox>(e, "_innerTextBox");
+    Editeur AdDateEdit(HDevDateEdit e) => new()
+    {
+        Controle = e, PoserValeur = v => e.Value = (DateTime?)v, LireValeur = () => e.Value, LireTexte = () => e.Text,
+        SurValeurChangee = a => e.ValueChanged += (_, _) => a(), Focaliser = () => { e.FocusEditor(); e.SelectAll(); },
+        PopupOuvert = () => Champ<bool>(e, "_isPopupOpen"), ContenuPopup = () => EnfantPopup(e),
+        Valider = () => e.DoValidate(), Erreur = () => e.ErrorText
+    };
+    void ChoisirJourDuCalendrier(HDevDateEdit e, DateTime jour) => Champ<HDevMonthCalendar>(e, "_calendar").SelectedDate = jour;
+    Editeur AdTimeEdit(HDevTimeEdit e) => new()
+    {
+        Controle = e, PoserValeur = v => e.Value = (TimeSpan?)v, LireValeur = () => e.Value, LireTexte = () => e.Text,
+        SurValeurChangee = a => e.ValueChanged += (_, _) => a(), Focaliser = () => { e.FocusEditor(); e.SelectAll(); },
+        Valider = () => e.DoValidate(), Erreur = () => e.ErrorText
+    };
+    Editeur AdSpinEdit(HDevSpinEdit e) => new()
+    {
+        Controle = e, PoserValeur = v => e.Value = (decimal)v!, LireValeur = () => e.Value, LireTexte = () => e.Text,
+        SurValeurChangee = a => e.ValueChanged += (_, _) => a(), Focaliser = () => { e.FocusEditor(); e.SelectAll(); }
+    };
+    Editeur AdComboBox(HDevComboBox e) => new()
+    {
+        Controle = e, PoserValeur = v => e.SelectedIndex = (int)v!, LireValeur = () => e.EditValue, LireTexte = () => e.Text,
+        SurValeurChangee = a => e.EditValueChanged += (_, _) => a(), Focaliser = () => e.Focus(),
+        PopupOuvert = () => e.IsPopupOpen, ContenuPopup = () => EnfantPopup(e)
+    };
+    void ComboItems(HDevComboBox e, params object[] items) => e.Properties.Items.AddRange(items);
+    void ComboEditable(HDevComboBox e) => e.Properties.TextEditStyle = TextEditStyles.Standard;
+    int ComboIndex(HDevComboBox e) => e.SelectedIndex;
+    void SurChoixUtilisateur(HDevComboBox e, Action a) => e.SelectedIndexChanged += (_, _) => a();
+    Control? ComboItem(HDevComboBox e, int i) => Champ<ListBox>(e, "_listBox").ContainerFromIndex(i) as Control;
+    void FocaliserSaisieCombo(HDevComboBox e) => Champ<TextBox>(e, "_editTextBox").Focus();
+    void ToutSelectionnerCombo(HDevComboBox e) => Champ<TextBox>(e, "_editTextBox").SelectAll();
+    Editeur AdLookUpEdit(HDevLookUpEdit e) => new()
+    {
+        Controle = e, PoserValeur = v => e.EditValue = v, LireValeur = () => e.EditValue,
+        LireTexte = () => (string)typeof(HDevLookUpEdit).GetMethod("GetDisplayText",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.Invoke(e, null)!,
+        SurValeurChangee = a => e.EditValueChanged += (_, _) => a(), Focaliser = () => e.Focus(),
+        PopupOuvert = () => Champ<bool>(e, "_isDropDownOpen"), ContenuPopup = () => EnfantPopup(e)
+    };
+    void ChoisirLigne(HDevLookUpEdit e, object ligne) => Champ<HDev.UI.DataGrid.HDevDataGrid>(e, "_grid").SelectedItem = ligne;
+    Editeur AdSearch(HDevSearchControl e) => new()
+    {
+        Controle = e, LireTexte = () => e.Text, Focaliser = () => { e.FocusEditor(); e.SelectAll(); },
+        PopupOuvert = () => Champ<bool>(e, "_isOpen"), ContenuPopup = () => EnfantPopup(e)
+    };
+    int NbSuggestions(HDevSearchControl e) => Champ<ListBox>(e, "_listBox").ItemCount;
+    void ViderSaisieJeton(HDevTokenEdit e) => Champ<TextBox>(e, "_input").Text = "";
+    Editeur AdTokenEdit(HDevTokenEdit e) => new()
+    {
+        Controle = e, LireValeur = () => e.Tokens.ToList(), LireTexte = () => Champ<TextBox>(e, "_input").Text ?? "",
+        SurValeurChangee = a => e.TokensChanged += (_, _) => a(), Focaliser = () => Champ<TextBox>(e, "_input").Focus(),
+        PopupOuvert = () => Champ<bool>(e, "_isOpen"), ContenuPopup = () => EnfantPopup(e)
+    };
+    Editeur AdCalendrier(HDevMonthCalendar e) => new()
+    {
+        Controle = e, PoserValeur = v => e.SelectedDate = (DateTime?)v, LireValeur = () => e.SelectedDate,
+        SurValeurChangee = a => e.SelectedDateChanged += (_, _) => a(), Focaliser = () => e.Focus()
+    };
+
+    // ─── HDevTextBox ───
+    {
+        var tb = new HDevTextBox { Width = 200 }; var ed = AdTextBox(tb); int n = 0; ed.SurValeurChangee(() => n++);
+        var w = Hote(tb);
+        ed.PoserValeur("abc"); Pump(w);
+        Check("TextBox : texte posé par code affiché, TextChanged une fois", InterieurTextBox(tb).Text == "abc" && n == 1);
+        var n0 = n; ed.Focaliser(); InterieurTextBox(tb).CaretIndex = 3; Tape(w, "xy");
+        Check("TextBox : la frappe s'ajoute au texte et relève TextChanged", ed.LireTexte() == "abcxy" && n == n0 + 1);
+        tb.IsPassword = true; Pump(w);
+        Check("TextBox : mot de passe masqué", InterieurTextBox(tb).PasswordChar != '\0');
+        tb.IsPassword = false; ed.PoserValeur(""); tb.Placeholder = "Nom"; Pump(w);
+        Check("TextBox : invite affichée quand le champ est vide", InterieurTextBox(tb).PlaceholderText == "Nom");
+        tb.IsMultiline = true; ed.PoserValeur("1\n2\n3\n4"); Pump(w);
+        Check($"TextBox : en multiligne, le champ grandit au-delà de 28 px (lu {tb.Bounds.Height})", tb.Bounds.Height > 28);
+        w.Close();
+    }
+
+    // ─── HDevDateEdit ───
+    {
+        var de = new HDevDateEdit { Width = 160 }; var ed = AdDateEdit(de); int n = 0; ed.SurValeurChangee(() => n++);
+        var w = Hote(de);
+        ed.PoserValeur(new DateTime(2026, 9, 14)); Pump(w);
+        Check("DateEdit : valeur posée par code affichée jj/mm/aaaa, ValueChanged une fois", ed.LireTexte() == "14/09/2026" && n == 1);
+        var n0 = n; ed.PoserValeur(new DateTime(2026, 9, 14)); Pump(w);
+        Check("DateEdit : reposer la même valeur ne relève rien", n == n0);
+        n0 = n; ed.Focaliser(); Tape(w, "15092026");
+        Check("DateEdit : la frappe sous masque donne la date (littéraux insérés)",
+            Equals(ed.LireValeur(), new DateTime(2026, 9, 15)) && ed.LireTexte() == "15/09/2026" && n == n0 + 1);
+        ed.Focaliser(); Tape(w, "1509");
+        Check("DateEdit : une saisie incomplète est refusée à la validation", !ed.Valider() && ed.Erreur() != null);
+        n0 = n; ed.Focaliser(); Colle(w, "20/09/2026");
+        Check("DateEdit : coller une date au format du masque la pose",
+            Equals(ed.LireValeur(), new DateTime(2026, 9, 20)) && ed.LireTexte() == "20/09/2026" && n == n0 + 1);
+        // Curseur placé par une frappe caractère par caractère. Pas par Fin : après un collage,
+        // Avalonia 12.1.3 envoie Fin en 0 (reproduit sur un TextBox nu). Pas par une frappe en bloc :
+        // après un collage, elle laisse la sélection active (constat E0 n° 7, Plan-Editeurs.md).
+        ed.Focaliser(); TapeParCaractere(w, "14092026");
+        for (var i = 0; i < 5; i++) Touche(w, PhysicalKey.Backspace);
+        Check("DateEdit : Retour arrière tronque au dernier emplacement de saisie, séparateur compris", ed.LireTexte() == "14/0");
+        ed.PoserValeur(new DateTime(2026, 9, 1)); ed.PoserValeur(new DateTime(2026, 9, 14)); Pump(w);
+        Touche(w, PhysicalKey.F4);
+        var ouvert = ed.PopupOuvert(); var dessous = Dessous(BoitePopup(w, ed), Boite(w, de));
+        Touche(w, PhysicalKey.Escape);
+        Check("DateEdit : F4 ouvre le calendrier sous le champ, Échap le ferme", ouvert && dessous && !ed.PopupOuvert());
+        Touche(w, PhysicalKey.ArrowDown, RawInputModifiers.Alt); var ouvertAlt = ed.PopupOuvert();
+        var nAvant = n; ChoisirJourDuCalendrier(de, new DateTime(2026, 9, 20)); Pump(w);
+        Check("DateEdit : Alt+↓ ouvre ; choisir un jour pose la valeur et ferme",
+            ouvertAlt && Equals(ed.LireValeur(), new DateTime(2026, 9, 20)) && !ed.PopupOuvert() && n == nAvant + 1);
+        Touche(w, PhysicalKey.F4); ClickAt(w, horsChamp);
+        Check("DateEdit : un clic extérieur ferme le calendrier", !ed.PopupOuvert());
+        de.MinDate = new DateTime(2026, 1, 1); ed.Focaliser(); Tape(w, "01012020");
+        Check("DateEdit : une date avant MinDate est refusée, la valeur reste",
+            !ed.Valider() && ed.Erreur()!.Contains("antérieure") && Equals(ed.LireValeur(), new DateTime(2026, 9, 20)));
+        var nVidage = n; ed.Focaliser(); Touche(w, PhysicalKey.Delete);
+        Check("DateEdit : tout sélectionner puis Suppr vide le champ ; valeur nulle, valide",
+            ed.LireTexte() == "" && ed.LireValeur() == null && n == nVidage + 1 && ed.Valider());
+        w.Close();
+        var bas = new HDevDateEdit { Width = 160 }; var edBas = AdDateEdit(bas); var wBas = Hote(bas, top: 380);
+        edBas.Focaliser(); Touche(wBas, PhysicalKey.F4);
+        Check("DateEdit : près du bas de la fenêtre, le calendrier s'ouvre au-dessus",
+            Dessus(BoitePopup(wBas, edBas), Boite(wBas, bas)));
+        wBas.Close();
+    }
+
+    // ─── HDevTimeEdit ───
+    {
+        var te = new HDevTimeEdit { Width = 120 }; var ed = AdTimeEdit(te); int n = 0; ed.SurValeurChangee(() => n++);
+        var w = Hote(te);
+        ed.PoserValeur(new TimeSpan(8, 30, 0)); Pump(w);
+        Check("TimeEdit : valeur posée affichée hh:mm, ValueChanged une fois", ed.LireTexte() == "08:30" && n == 1);
+        var n0 = n; ed.Focaliser(); Tape(w, "0915");
+        Check("TimeEdit : la frappe sous masque donne l'heure", Equals(ed.LireValeur(), new TimeSpan(9, 15, 0)) && n == n0 + 1);
+        Touche(w, PhysicalKey.ArrowUp); var plusMinute = ed.LireValeur();
+        Touche(w, PhysicalKey.PageUp); var plusHeure = ed.LireValeur();
+        Touche(w, PhysicalKey.ArrowDown); Touche(w, PhysicalKey.PageDown);
+        Check("TimeEdit : ↑ +1 min, Pg préc. +1 h, ↓ et Pg suiv. reviennent",
+            Equals(plusMinute, new TimeSpan(9, 16, 0)) && Equals(plusHeure, new TimeSpan(10, 16, 0))
+            && Equals(ed.LireValeur(), new TimeSpan(9, 15, 0)));
+        ed.Focaliser(); Tape(w, "2599");
+        Check("TimeEdit : 25:99 est refusé, la valeur précédente reste",
+            !ed.Valider() && ed.Erreur() != null && Equals(ed.LireValeur(), new TimeSpan(9, 15, 0)));
+        ed.Focaliser(); Touche(w, PhysicalKey.Delete);
+        Check("TimeEdit : tout sélectionner puis Suppr vide le champ ; valeur nulle", ed.LireTexte() == "" && ed.LireValeur() == null);
+        w.Close();
+    }
+
+    // ─── HDevSpinEdit ───
+    {
+        var sp = new HDevSpinEdit { Width = 120, Decimals = 2, Increment = 0.5m, MinValue = 0, MaxValue = 100 };
+        var ed = AdSpinEdit(sp); int n = 0; ed.SurValeurChangee(() => n++);
+        var autre = new HDevTextBox { Width = 80 }; Canvas.SetTop(autre, 200);
+        var w = Hote(sp); ((Canvas)w.Content!).Children.Add(autre); Pump(w);
+        ed.PoserValeur(12.5m); Pump(w);
+        Check("SpinEdit : valeur affichée avec ses décimales (fr-FR), ValueChanged une fois", ed.LireTexte() == "12,50" && n == 1);
+        ed.Focaliser(); Touche(w, PhysicalKey.ArrowUp); var monte = ed.LireValeur();
+        Touche(w, PhysicalKey.ArrowDown); Touche(w, PhysicalKey.ArrowDown);
+        Check("SpinEdit : ↑ et ↓ avancent d'un pas", Equals(monte, 13.0m) && Equals(ed.LireValeur(), 12.0m));
+        ed.PoserValeur(150m); Pump(w);
+        Check("SpinEdit : une valeur hors bornes est ramenée à la borne", Equals(ed.LireValeur(), 100m) && ed.LireTexte() == "100,00");
+        ed.PoserValeur(10m); Pump(w); ed.Focaliser(); TapeParCaractere(w, "4a2,7");
+        var pendant = ed.LireTexte(); AdTextBox(autre).Focaliser(); Pump(w);
+        Check("SpinEdit : la frappe filtre les lettres, la perte de focus formate",
+            pendant == "42,7" && ed.LireTexte() == "42,70" && Equals(ed.LireValeur(), 42.7m));
+        ed.Focaliser(); w.MouseWheel(WindowCenter(w, sp), new Vector(0, 1), RawInputModifiers.None); Pump(w);
+        Check("SpinEdit : la molette sur le champ focalisé avance d'un pas", Equals(ed.LireValeur(), 43.2m));
+        w.Close();
+    }
+
+    // ─── HDevComboBox ───
+    {
+        var cb = new HDevComboBox { Width = 160 }; var ed = AdComboBox(cb); int nVal = 0, nChoix = 0;
+        ed.SurValeurChangee(() => nVal++); SurChoixUtilisateur(cb, () => nChoix++);
+        ComboItems(cb, "Basse", "Normale", "Haute");
+        var w = Hote(cb);
+        ed.PoserValeur(1); Pump(w);
+        Check("ComboBox : index posé par code affiché, liste fermée, EditValueChanged une fois",
+            ed.LireTexte() == "Normale" && Equals(ed.LireValeur(), "Normale") && nVal == 1 && !ed.PopupOuvert());
+        ClickAt(w, WindowCenter(w, cb));
+        Check("ComboBox : un clic ouvre la liste sous le champ",
+            ed.PopupOuvert() && Dessous(BoitePopup(w, ed), Boite(w, cb)));
+        var c0 = nChoix; var v0 = nVal; ClickAt(w, WindowCenter(w, ComboItem(cb, 2)!));
+        Check("ComboBox : cliquer un item le choisit et ferme ; SelectedIndexChanged et EditValueChanged",
+            ComboIndex(cb) == 2 && ed.LireTexte() == "Haute" && !ed.PopupOuvert() && nChoix == c0 + 1 && nVal == v0 + 1);
+        Touche(w, PhysicalKey.F4); Touche(w, PhysicalKey.ArrowUp); Touche(w, PhysicalKey.Enter);
+        Check("ComboBox : F4 puis ↑ et Entrée choisissent l'item précédent", ComboIndex(cb) == 1 && !ed.PopupOuvert());
+        Touche(w, PhysicalKey.ArrowDown, RawInputModifiers.Alt); var ouvert = ed.PopupOuvert();
+        Touche(w, PhysicalKey.Escape);
+        Check("ComboBox : Alt+↓ ouvre, Échap ferme sans changer la valeur", ouvert && !ed.PopupOuvert() && ComboIndex(cb) == 1);
+        Touche(w, PhysicalKey.F4); ClickAt(w, horsChamp);
+        Check("ComboBox : un clic extérieur ferme la liste", !ed.PopupOuvert());
+        Touche(w, PhysicalKey.ArrowDown);
+        Check("ComboBox : fermée, ↓ passe à l'item suivant sans ouvrir", ComboIndex(cb) == 2 && !ed.PopupOuvert());
+        w.Close();
+        var bas = new HDevComboBox { Width = 160 }; var edBas = AdComboBox(bas); ComboItems(bas, "a", "b", "c", "d");
+        var wBas = Hote(bas, top: 380); edBas.Focaliser(); Touche(wBas, PhysicalKey.F4);
+        Check("ComboBox : près du bas de la fenêtre, la liste s'ouvre au-dessus",
+            Dessus(BoitePopup(wBas, edBas), Boite(wBas, bas)));
+        wBas.Close();
+        var cbEd = new HDevComboBox { Width = 160 }; var edEd = AdComboBox(cbEd); ComboItems(cbEd, "Basse", "Normale", "Haute"); ComboEditable(cbEd);
+        var wEd = Hote(cbEd); FocaliserSaisieCombo(cbEd); Pump(wEd);
+        Tape(wEd, "Ha"); var complete = edEd.LireTexte(); var propose = edEd.PopupOuvert();
+        Touche(wEd, PhysicalKey.Enter);
+        Check("ComboBox éditable : la frappe complète et propose, Entrée choisit",
+            complete == "Haute" && propose && ComboIndex(cbEd) == 2 && Equals(edEd.LireValeur(), "Haute") && !edEd.PopupOuvert());
+        ToutSelectionnerCombo(cbEd); Tape(wEd, "Libre"); Touche(wEd, PhysicalKey.Enter);
+        Check("ComboBox éditable : un texte libre est accepté comme valeur", ComboIndex(cbEd) == -1 && Equals(edEd.LireValeur(), "Libre"));
+        wEd.Close();
+    }
+
+    // ─── HDevLookUpEdit ───
+    {
+        var refs = new List<RefE0> { new(1, "Alpha"), new(2, "Beta"), new(3, "Gamma") };
+        var lu = new HDevLookUpEdit { Width = 180, DataSource = refs, DisplayMember = "Nom", ValueMember = "Id" };
+        var ed = AdLookUpEdit(lu); int n = 0; ed.SurValeurChangee(() => n++);
+        var w = Hote(lu);
+        ed.PoserValeur(2); Pump(w);
+        Check("LookUpEdit : valeur posée par code affichée par son libellé, EditValueChanged une fois", ed.LireTexte() == "Beta" && n == 1);
+        ed.Focaliser(); Touche(w, PhysicalKey.F4);
+        Check("LookUpEdit : F4 ouvre la grille sous le champ",
+            ed.PopupOuvert() && Dessous(BoitePopup(w, ed), Boite(w, lu)));
+        var n0 = n; ChoisirLigne(lu, refs[2]); Pump(w);
+        Check("LookUpEdit : choisir une ligne pose la valeur et ferme", Equals(ed.LireValeur(), 3) && !ed.PopupOuvert() && n == n0 + 1);
+        Touche(w, PhysicalKey.Enter); var ouvert = ed.PopupOuvert(); Touche(w, PhysicalKey.Escape);
+        Check("LookUpEdit : Entrée ouvre, Échap ferme", ouvert && !ed.PopupOuvert());
+        n0 = n; Touche(w, PhysicalKey.Delete);
+        Check("LookUpEdit : Suppr efface la valeur", ed.LireValeur() == null && n == n0 + 1);
+        Touche(w, PhysicalKey.F4); ClickAt(w, horsChamp);
+        Check("LookUpEdit : un clic extérieur ferme la grille", !ed.PopupOuvert());
+        w.Close();
+        var bas = new HDevLookUpEdit { Width = 180, DataSource = refs, DisplayMember = "Nom", ValueMember = "Id" };
+        var edBas = AdLookUpEdit(bas); var wBas = Hote(bas, top: 380); edBas.Focaliser(); Touche(wBas, PhysicalKey.F4);
+        Check("LookUpEdit : près du bas de la fenêtre, la grille s'ouvre au-dessus",
+            Dessus(BoitePopup(wBas, edBas), Boite(wBas, bas)));
+        wBas.Close();
+    }
+
+    // ─── HDevSearchControl ───
+    {
+        var sc = new HDevSearchControl { Width = 200 }; var ed = AdSearch(sc);
+        var choisis = new List<object>(); var requetes = new List<string>();
+        sc.SuggestionsProvider = t => new object[] { "Gamma", "Gantt", "Grille" }
+            .Where(x => ((string)x).StartsWith(t, StringComparison.OrdinalIgnoreCase));
+        sc.SuggestionChosen += (_, o) => choisis.Add(o); sc.SearchRequested += (_, t) => requetes.Add(t);
+        var w = Hote(sc); ed.Focaliser(); Tape(w, "Ga");
+        Check("SearchControl : la frappe propose les suggestions correspondantes", ed.PopupOuvert() && NbSuggestions(sc) == 2);
+        Touche(w, PhysicalKey.ArrowDown); Touche(w, PhysicalKey.Enter);
+        Check("SearchControl : ↓ et Entrée choisissent la suggestion et lancent la recherche",
+            choisis.SequenceEqual(new object[] { "Gamma" }) && requetes.LastOrDefault() == "Gamma" && ed.LireTexte() == "Gamma");
+        ed.Focaliser(); Tape(w, "Gr"); Touche(w, PhysicalKey.Escape); var fermeParEchap = !ed.PopupOuvert();
+        Touche(w, PhysicalKey.Enter);
+        Check("SearchControl : Échap ferme ; Entrée sans suggestion lance la recherche du texte",
+            fermeParEchap && requetes.LastOrDefault() == "Gr");
+        w.Close();
+        var bas = new HDevSearchControl { Width = 200, SuggestionsProvider = sc.SuggestionsProvider }; var edBas = AdSearch(bas);
+        var wBas = Hote(bas, top: 380); edBas.Focaliser(); Tape(wBas, "Ga");
+        Check("SearchControl : près du bas de la fenêtre, les suggestions s'ouvrent au-dessus",
+            edBas.PopupOuvert() && Dessus(BoitePopup(wBas, edBas), Boite(wBas, bas)));
+        wBas.Close();
+    }
+
+    // ─── HDevTokenEdit ───
+    {
+        var tk = new HDevTokenEdit { Width = 260 }; var ed = AdTokenEdit(tk); int n = 0; ed.SurValeurChangee(() => n++);
+        int Nb() => ((List<object>)ed.LireValeur()!).Count;
+        var w = Hote(tk); ed.Focaliser(); Pump(w);
+        Tape(w, "Alice"); Touche(w, PhysicalKey.Enter);
+        Check("TokenEdit : Entrée valide le jeton et vide la saisie ; TokensChanged", Nb() == 1 && n == 1 && ed.LireTexte() == "");
+        Tape(w, "Bob"); Touche(w, PhysicalKey.Semicolon);
+        Check("TokenEdit : « ; » valide aussi", Nb() == 2 && ed.LireTexte() == "");
+        Touche(w, PhysicalKey.Backspace);
+        Check("TokenEdit : Retour arrière sur saisie vide retire le dernier jeton", Nb() == 1);
+        tk.TokenValidator = t => t.Contains('@') ? t : null; Tape(w, "x"); Touche(w, PhysicalKey.Enter);
+        Check("TokenEdit : un texte refusé par le validateur reste dans la saisie", Nb() == 1 && ed.LireTexte() == "x");
+        ViderSaisieJeton(tk); tk.TokenValidator = null;
+        tk.SuggestionsProvider = t => new object[] { "Carla", "Cedric" }.Where(x => ((string)x).StartsWith(t, StringComparison.OrdinalIgnoreCase));
+        Tape(w, "Ca"); var propose = ed.PopupOuvert(); Touche(w, PhysicalKey.ArrowDown); Touche(w, PhysicalKey.Enter);
+        Check("TokenEdit : la frappe propose ; ↓ et Entrée ajoutent la suggestion",
+            propose && ((List<object>)ed.LireValeur()!).Contains("Carla"));
+        w.Close();
+        var bas = new HDevTokenEdit { Width = 260, SuggestionsProvider = tk.SuggestionsProvider }; var edBas = AdTokenEdit(bas);
+        var wBas = Hote(bas, top: 380); edBas.Focaliser(); Pump(wBas); Tape(wBas, "C");
+        Check("TokenEdit : près du bas de la fenêtre, les suggestions s'ouvrent au-dessus",
+            edBas.PopupOuvert() && Dessus(BoitePopup(wBas, edBas), Boite(wBas, bas)));
+        wBas.Close();
+    }
+
+    // ─── HDevMonthCalendar ───
+    {
+        var mc = new HDevMonthCalendar { Width = 260, Height = 240 }; var ed = AdCalendrier(mc); int n = 0; ed.SurValeurChangee(() => n++);
+        var w = Hote(mc);
+        ed.PoserValeur(new DateTime(2026, 9, 14)); Pump(w);
+        Check("MonthCalendar : date posée par code, SelectedDateChanged une fois", n == 1);
+        ed.Focaliser(); Touche(w, PhysicalKey.ArrowRight); var droite = ed.LireValeur();
+        Touche(w, PhysicalKey.ArrowDown); var bas = ed.LireValeur(); Touche(w, PhysicalKey.PageDown);
+        Check("MonthCalendar : → +1 jour, ↓ +7 jours, Pg suiv. +1 mois",
+            Equals(droite, new DateTime(2026, 9, 15)) && Equals(bas, new DateTime(2026, 9, 22))
+            && Equals(ed.LireValeur(), new DateTime(2026, 10, 22)));
+        var nAvant = n; mc.MaxDate = new DateTime(2026, 10, 25); Touche(w, PhysicalKey.ArrowDown);
+        Check("MonthCalendar : MaxDate borne la navigation, sans événement", Equals(ed.LireValeur(), new DateTime(2026, 10, 22)) && n == nAvant);
+        w.Close();
+    }
+
+    // ─── Thème à chaud ───
+    {
+        var de = new HDevDateEdit { Width = 160 }; var tb = new HDevTextBox { Width = 160 };
+        var w = new Window { Width = 300, Height = 200, Content = new StackPanel { Children = { de, tb } } }; w.Show(); Pump(w);
+        Avalonia.Media.Color? Fond(Control c) => ((c as Border)?.Background as Avalonia.Media.ISolidColorBrush)?.Color;
+        var varianteAvant = HDev.UI.Controls.Theme.HDevTheme.Variant;
+        HDev.UI.Controls.Theme.HDevTheme.Variant = HDev.UI.Controls.Theme.HDevThemeVariant.Dark; Pump(w);
+        var sombre = HDev.UI.Controls.Theme.HDevTheme.Background.Input;
+        var suitSombre = Fond(de) == sombre && Fond(tb) == sombre;
+        HDev.UI.Controls.Theme.HDevTheme.Variant = HDev.UI.Controls.Theme.HDevThemeVariant.Light; Pump(w);
+        var clair = HDev.UI.Controls.Theme.HDevTheme.Background.Input;
+        Check("thème : les champs suivent le fond de saisie à chaud, aller et retour",
+            suitSombre && sombre != clair && Fond(de) == clair && Fond(tb) == clair);
+        HDev.UI.Controls.Theme.HDevTheme.Variant = varianteAvant; Pump(w);
+        w.Close();
+    }
+
+    System.Globalization.CultureInfo.CurrentCulture = cultureAvant;
+    System.Globalization.CultureInfo.CurrentUICulture = cultureUiAvant;
+}
+
 Console.WriteLine(failed == 0 ? "Interaction HDev.UI.Controls : ALL PASS" : $"Interaction HDev.UI.Controls : {failed} FAILED");
 return failed == 0 ? 0 : 1;
 
@@ -581,4 +969,21 @@ class TestApp : Application
     {
         Styles.Add(new FluentTheme());
     }
+}
+
+// ─── Types des adaptateurs E0 (section « Éditeurs ») ───
+sealed record RefE0(int Id, string Nom);
+
+sealed class Editeur
+{
+    public required Control Controle { get; init; }
+    public Action<object?> PoserValeur { get; init; } = _ => throw new NotSupportedException();
+    public Func<object?> LireValeur { get; init; } = () => throw new NotSupportedException();
+    public Func<string> LireTexte { get; init; } = () => "";
+    public Action<Action> SurValeurChangee { get; init; } = _ => { };
+    public Action Focaliser { get; init; } = () => { };
+    public Func<bool> PopupOuvert { get; init; } = () => false;
+    public Func<Control?> ContenuPopup { get; init; } = () => null;
+    public Func<bool> Valider { get; init; } = () => true;
+    public Func<string?> Erreur { get; init; } = () => null;
 }
