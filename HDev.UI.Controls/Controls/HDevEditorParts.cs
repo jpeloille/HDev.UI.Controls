@@ -438,6 +438,166 @@ public class HDevSpinButtons : Control
     }
 }
 
+/// <summary>Cause d'une fermeture du popup d'un éditeur</summary>
+internal enum HDevDropDownCloseReason
+{
+    /// <summary>Un choix fait dans le popup : la valeur est acceptée</summary>
+    Accept,
+
+    /// <summary>Échap, Alt+↑, F4, le bouton ou le code : rien n'est accepté</summary>
+    Cancel,
+
+    /// <summary>Clic extérieur ou fenêtre désactivée (garde de fermeture)</summary>
+    Outside
+}
+
+/// <summary>
+/// Popup du socle des éditeurs (D1, forme B) : une pièce que tout éditeur active sans changer
+/// de classe. Elle porte l'habillage (fond, filet, ombre, thème), le placement retourné avec son
+/// écart (<see cref="HDevPopupPlacement"/>), la garde de fermeture commune et le clavier :
+/// F4 et Alt+↓ basculent, Alt+↑ et Échap ferment, depuis le champ comme depuis le contenu.
+/// </summary>
+internal sealed class HDevEditorDropDown
+{
+    private readonly HDevEditorBase _owner;
+    private readonly Border _chrome;
+    private readonly HDevPopupDismissGuard _guard;
+
+    public HDevEditorDropDown(HDevEditorBase owner)
+    {
+        _owner = owner;
+        _chrome = new Border
+        {
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(HDevTheme.Size.CornerRadiusMedium),
+            Padding = new Thickness(4)
+        };
+        RefreshTheme();
+
+        Popup = new Avalonia.Controls.Primitives.Popup
+        {
+            Child = _chrome,
+            PlacementTarget = owner,
+            // Garde maison : le light dismiss ferme au moindre rebond d'activation (GNOME/XWayland)
+            IsLightDismissEnabled = false
+        };
+        HDevPopupPlacement.Apply(Popup, HDevPopupPlacement.Gap);
+
+        _guard = new HDevPopupDismissGuard(() => IsOpen, () => Close(HDevDropDownCloseReason.Outside));
+        Popup.Opened += (_, _) => _guard.Install(owner);
+        Popup.Closed += (_, _) =>
+        {
+            _guard.Remove();
+            // Fermé par Avalonia (éditeur détaché…) sans passer par Close
+            if (IsOpen) { IsOpen = false; Closed?.Invoke(HDevDropDownCloseReason.Cancel); }
+        };
+
+        // Le contenu vit en overlay, hors de l'arbre visuel de l'éditeur : ses touches n'atteignent
+        // pas le champ, d'où ce second point d'écoute, après le contenu (qui peut garder Échap)
+        _chrome.AddHandler(InputElement.KeyDownEvent, (_, e) =>
+        {
+            if (!e.Handled && HandleKey(e)) e.Handled = true;
+        });
+    }
+
+    public Avalonia.Controls.Primitives.Popup Popup { get; }
+
+    /// <summary>Habillage du popup (fond, filet, coins, ombre), qui porte le contenu</summary>
+    public Border Chrome => _chrome;
+
+    public Control? Content
+    {
+        get => _chrome.Child;
+        set => _chrome.Child = value;
+    }
+
+    public bool IsOpen { get; private set; }
+
+    /// <summary>Largeur minimale du popup = largeur de l'éditeur</summary>
+    public bool MatchOwnerWidth { get; set; }
+
+    /// <summary>Avant l'ouverture ; faux = l'ouverture est annulée</summary>
+    public Func<bool>? Opening { get; set; }
+
+    public Action? Opened { get; set; }
+
+    /// <summary>Avant la fermeture ; faux = le popup reste ouvert (sauf fermeture forcée)</summary>
+    public Func<HDevDropDownCloseReason, bool>? Closing { get; set; }
+
+    public Action<HDevDropDownCloseReason>? Closed { get; set; }
+
+    /// <summary>Vrai si la garde vient de fermer le popup sur ce même clic (anti-réouverture)</summary>
+    public bool JustClosedByGuard => _guard.JustClosed;
+
+    public bool Open()
+    {
+        if (IsOpen) return true;
+        if (!_owner.IsEffectivelyEnabled || _owner.IsReadOnly) return false;
+        if (Opening?.Invoke() == false) return false;
+
+        _chrome.MinWidth = MatchOwnerWidth ? _owner.Bounds.Width : 0;
+        IsOpen = true;
+        Popup.IsOpen = true;
+        Opened?.Invoke();
+        return true;
+    }
+
+    /// <param name="force">Vrai : la fermeture ne s'annule pas (éditeur détaché)</param>
+    public bool Close(HDevDropDownCloseReason reason, bool force = false)
+    {
+        if (!IsOpen) return true;
+        if (Closing?.Invoke(reason) == false && !force) return false;
+
+        // Le focus était dans le popup : il revient au champ
+        var focusInside = TopLevel.GetTopLevel(_owner)?.FocusManager?.GetFocusedElement() is Visual f
+            && (ReferenceEquals(f, _chrome) || _chrome.IsVisualAncestorOf(f));
+
+        IsOpen = false;
+        Popup.IsOpen = false;
+        if (focusInside && reason != HDevDropDownCloseReason.Outside)
+            _owner.FocusEditor();
+        Closed?.Invoke(reason);
+        return true;
+    }
+
+    /// <summary>Bouton ou F4 : ouvre ou ferme ; ne rouvre pas sur le clic qui vient de fermer</summary>
+    public void Toggle()
+    {
+        if (IsOpen) Close(HDevDropDownCloseReason.Cancel);
+        else if (!_guard.JustClosed) Open();
+    }
+
+    /// <summary>Clavier du popup ; vrai si la touche est traitée</summary>
+    public bool HandleKey(KeyEventArgs e)
+    {
+        var alt = e.KeyModifiers.HasFlag(KeyModifiers.Alt);
+        switch (e.Key)
+        {
+            case Key.F4 when e.KeyModifiers == KeyModifiers.None:
+            case Key.Down when alt:
+                if (IsOpen) Close(HDevDropDownCloseReason.Cancel); else Open();
+                return true;
+            case Key.Up when alt && IsOpen:
+            case Key.Escape when IsOpen:
+                Close(HDevDropDownCloseReason.Cancel);
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public void RefreshTheme()
+    {
+        _chrome.Background = new SolidColorBrush(HDevTheme.Background.Panel);
+        _chrome.BorderBrush = new SolidColorBrush(HDevTheme.Border.Default);
+        _chrome.BoxShadow = new BoxShadows(new BoxShadow
+        {
+            OffsetX = 0, OffsetY = 2, Blur = 8,
+            Color = HDevTheme.Shadow.Color
+        });
+    }
+}
+
 /// <summary>
 /// Écart vertical d'un popup d'éditeur à son champ, reflété quand le positionneur
 /// d'Avalonia le retourne au-dessus faute de place (constat E0 n° 4).

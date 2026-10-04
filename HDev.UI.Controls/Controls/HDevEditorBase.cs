@@ -111,6 +111,11 @@ public abstract class HDevEditorBase : Border
 {
     protected readonly TextBox InnerTextBox;
     private readonly Grid _layoutGrid;
+
+    /// <summary>Zone de droite : éléments propres à l'éditeur (calendrier, spin…), puis boutons</summary>
+    private readonly StackPanel _rightZone;
+
+    private HDevEditorDropDown? _dropDown;
     private bool _isHovered;
     private bool _isFocusedState;
     private bool _suppressMask;
@@ -238,6 +243,12 @@ public abstract class HDevEditorBase : Border
         };
         Grid.SetColumn(InnerTextBox, 0);
         _layoutGrid.Children.Add(InnerTextBox);
+        _rightZone = new StackPanel { Orientation = Orientation.Horizontal };
+        Grid.SetColumn(_rightZone, 1);
+        _layoutGrid.Children.Add(_rightZone);
+
+        // Popup du socle : F4 et Alt+↓ ouvrent (bascule), Alt+↑ et Échap ferment
+        InnerTextBox.AddHandler(KeyDownEvent, OnInnerKeyDownForDropDown, RoutingStrategies.Tunnel);
 
         Child = _layoutGrid;
         UpdateVisualState();
@@ -273,6 +284,7 @@ public abstract class HDevEditorBase : Border
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         HDevTheme.VariantChanged -= OnThemeVariantChanged;
+        _dropDown?.Close(HDevDropDownCloseReason.Cancel, force: true);
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -288,6 +300,7 @@ public abstract class HDevEditorBase : Border
         InnerTextBox.SelectionBrush = new SolidColorBrush(HDevTheme.Background.TextSelection);
         InnerTextBox.SelectionForegroundBrush = new SolidColorBrush(HDevTheme.Text.Primary);
         HDevInputChrome.Neutralize(InnerTextBox);
+        _dropDown?.RefreshTheme();
         UpdateVisualState();
     }
 
@@ -316,20 +329,38 @@ public abstract class HDevEditorBase : Border
         MaxHeight = multiline ? double.PositiveInfinity : HDevTheme.Size.EditorHeight;
 
         // Les éléments de droite restent sur la première ligne, à la hauteur d'un champ
-        foreach (var child in _layoutGrid.Children)
+        _rightZone.VerticalAlignment = multiline ? VerticalAlignment.Top : VerticalAlignment.Stretch;
+        _rightZone.Height = multiline ? HDevTheme.Size.EditorHeight - 2 : double.NaN;
+    }
+
+    /// <summary>Ajoute un élément à la zone de droite du texte (calendrier, spin...), de gauche à droite</summary>
+    protected void SetRightElement(Control element) => _rightZone.Children.Add(element);
+
+    // ═══════════════════════════════════════════════════════════════
+    // POPUP DU SOCLE
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>Le popup du socle, créé à la première demande et rattaché à l'éditeur</summary>
+    internal HDevEditorDropDown DropDown
+    {
+        get
         {
-            if (Grid.GetColumn(child) != 1) continue;
-            child.VerticalAlignment = multiline ? VerticalAlignment.Top : VerticalAlignment.Stretch;
-            child.Height = multiline ? HDevTheme.Size.EditorHeight - 2 : double.NaN;
+            if (_dropDown == null)
+            {
+                _dropDown = new HDevEditorDropDown(this);
+                AttachPopup(_dropDown.Popup);
+            }
+            return _dropDown;
         }
     }
 
-    /// <summary>Installe la zone de boutons à droite du texte (calendrier, spin...)</summary>
-    protected void SetRightElement(Control element)
+    /// <summary>Vrai si l'éditeur a un popup (sans le créer)</summary>
+    internal bool HasDropDown => _dropDown != null;
+
+    private void OnInnerKeyDownForDropDown(object? sender, KeyEventArgs e)
     {
-        Grid.SetColumn(element, 1);
-        _layoutGrid.Children.Add(element);
-        if (IsMultiline) ApplyLineMode();
+        if (_dropDown != null && !e.Handled && _dropDown.HandleKey(e))
+            e.Handled = true;
     }
 
     /// <summary>

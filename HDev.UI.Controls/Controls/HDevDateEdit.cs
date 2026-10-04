@@ -26,11 +26,7 @@ public class HDevDateEdit : HDevEditorBase<DateTime?>
 
     private string _format = "dd/MM/yyyy";
 
-    private readonly Popup _popup;
-    private readonly Border _popupBorder;
     private HDevMonthCalendar? _calendar;
-    private readonly HDevPopupDismissGuard _guard;
-    private bool _isPopupOpen;
 
     public DateTime MinDate { get; set; } = DateTime.MinValue;
     public DateTime MaxDate { get; set; } = DateTime.MaxValue;
@@ -63,53 +59,15 @@ public class HDevDateEdit : HDevEditorBase<DateTime?>
         Placeholder = _format.ToLowerInvariant();
         MinWidth = 130;
 
-        // Bouton calendrier
+        // Bouton calendrier, popup du socle : le calendrier est recréé à chaque ouverture
         var button = new HDevEditorGlyphButton { Icon = HDevEditorIcon.Calendar };
-        button.Click += (s, e) => TogglePopup();
+        button.Click += (s, e) => DropDown.Toggle();
         SetRightElement(button);
-
-        // Conteneur du calendrier (le Calendar lui-même est recréé à chaque ouverture)
-        _popupBorder = new Border
-        {
-            Background = new SolidColorBrush(HDevTheme.Background.Panel),
-            BorderBrush = new SolidColorBrush(HDevTheme.Border.Default),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(HDevTheme.Size.CornerRadiusMedium),
-            Padding = new Thickness(4),
-            BoxShadow = new BoxShadows(new BoxShadow
-            {
-                OffsetX = 0, OffsetY = 2, Blur = 8,
-                Color = HDevTheme.Shadow.Color
-            })
-        };
-
-        _popup = new Popup
-        {
-            Child = _popupBorder,
-            PlacementTarget = this,
-            Placement = PlacementMode.BottomEdgeAlignedLeft,
-            // Garde maison (cf. HDevComboBox) : le light dismiss ferme au moindre
-            // rebond d'activation de fenêtre sous GNOME/XWayland
-            IsLightDismissEnabled = false
-        };
-        HDevPopupPlacement.Apply(_popup, HDevPopupPlacement.Gap);
-        _guard = new HDevPopupDismissGuard(() => _isPopupOpen, ClosePopup);
-        _popup.Opened += (s, e) => _guard.Install(this);
-        _popup.Closed += (s, e) => { _guard.Remove(); _isPopupOpen = false; };
-        AttachPopup(_popup);
-
-        // Navigation clavier : Alt+Bas ouvre le calendrier, Échap ferme
-        InnerTextBox.AddHandler(KeyDownEvent, OnEditorKeyDown, RoutingStrategies.Tunnel);
+        DropDown.Opening = OnCalendarOpening;
     }
 
     private static string DeriveMask(string format)
         => new(format.Select(c => char.IsLetter(c) ? '0' : c).ToArray());
-
-    protected override void RefreshThemeBrushes()
-    {
-        base.RefreshThemeBrushes();
-        RefreshPopupBorder(_popupBorder); // le calendrier lui-même est recréé à l'ouverture
-    }
 
     protected override string FormatValue(DateTime? value)
         => value?.ToString(_format, CultureInfo.CurrentCulture) ?? "";
@@ -159,18 +117,8 @@ public class HDevDateEdit : HDevEditorBase<DateTime?>
     // POPUP CALENDRIER
     // ═══════════════════════════════════════════════════════════════
 
-    private void TogglePopup()
+    private bool OnCalendarOpening()
     {
-        if (_isPopupOpen)
-            ClosePopup();
-        else if (!_guard.JustClosed) // le garde vient de fermer sur ce même clic
-            OpenPopup();
-    }
-
-    private void OpenPopup()
-    {
-        if (!IsEnabled || IsReadOnly) return;
-
         // HDevMonthCalendar natif (le Calendar Fluent gardait un état
         // d'interaction périmé à la réouverture — le nôtre est recréé aussi,
         // ceinture et bretelles). Pas de présélection : n'importe quel clic,
@@ -182,16 +130,8 @@ public class HDevDateEdit : HDevEditorBase<DateTime?>
             MaxDate = MaxDate
         };
         _calendar.SelectedDateChanged += OnCalendarDateSelected;
-        _popupBorder.Child = _calendar;
-
-        _isPopupOpen = true;
-        _popup.IsOpen = true;
-    }
-
-    private void ClosePopup()
-    {
-        _isPopupOpen = false;
-        _popup.IsOpen = false;
+        DropDown.Content = _calendar;
+        return true;
     }
 
     private void OnCalendarDateSelected(object? sender, EventArgs e)
@@ -199,25 +139,8 @@ public class HDevDateEdit : HDevEditorBase<DateTime?>
         if (_calendar?.SelectedDate is { } date)
         {
             CommitUserValue(AtCurrentTime(date));
-            ClosePopup();
+            DropDown.Close(HDevDropDownCloseReason.Accept);
             FocusEditor();
-        }
-    }
-
-    private void OnEditorKeyDown(object? sender, KeyEventArgs e)
-    {
-        switch (e.Key)
-        {
-            case Key.Down when e.KeyModifiers.HasFlag(KeyModifiers.Alt):
-            case Key.F4:
-                TogglePopup();
-                e.Handled = true;
-                break;
-
-            case Key.Escape when _isPopupOpen:
-                ClosePopup();
-                e.Handled = true;
-                break;
         }
     }
 }

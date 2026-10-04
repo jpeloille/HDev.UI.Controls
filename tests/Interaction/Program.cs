@@ -633,7 +633,7 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
     {
         Controle = e, PoserValeur = v => e.Value = (DateTime?)v, LireValeur = () => e.Value, LireTexte = () => e.Text,
         SurValeurChangee = a => e.ValueChanged += (_, _) => a(), Focaliser = () => { e.FocusEditor(); e.SelectAll(); },
-        PopupOuvert = () => Champ<bool>(e, "_isPopupOpen"), ContenuPopup = () => EnfantPopup(e),
+        PopupOuvert = () => e.DropDown.IsOpen, ContenuPopup = () => e.DropDown.IsOpen ? e.DropDown.Chrome : null,
         Valider = () => e.Validate(), Erreur = () => e.ErrorText
     };
     void ChoisirJourDuCalendrier(HDevDateEdit e, DateTime jour) => Champ<HDevMonthCalendar>(e, "_calendar").SelectedDate = jour;
@@ -1084,6 +1084,25 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         var lookup = Ecarts(() => new HDevLookUpEdit { Width = 180, DataSource = refs, DisplayMember = "Nom", ValueMember = "Id" },
             c => AdLookUpEdit((HDevLookUpEdit)c), (w, _) => Touche(w, PhysicalKey.F4));
         Check($"LookUpEdit : bordure fusionnée dessous comme dessus ({Lu(lookup)})", lookup.Dessous == -1 && lookup.Dessus == -1);
+    }
+
+    // ═══ SOCLE COMPOSITE (E2) : popup du socle, clavier et focus ═══
+    {
+        var nu = new EditeurNuE2 { Width = 200 }; var w = Hote(nu);
+        var dedans = new TextBox { Width = 160 };
+        nu.DropDown.Content = dedans;
+        nu.FocusEditor(); Touche(w, PhysicalKey.F4); var f4 = nu.DropDown.IsOpen;
+        Touche(w, PhysicalKey.ArrowUp, RawInputModifiers.Alt); var altHaut = !nu.DropDown.IsOpen;
+        Touche(w, PhysicalKey.ArrowDown, RawInputModifiers.Alt); var altBas = nu.DropDown.IsOpen;
+        Touche(w, PhysicalKey.Escape);
+        Check("popup du socle : F4 et Alt+↓ ouvrent, Alt+↑ et Échap ferment", f4 && altHaut && altBas && !nu.DropDown.IsOpen);
+        Touche(w, PhysicalKey.F4); dedans.Focus(); Pump(w); var focusDedans = dedans.IsFocused;
+        Touche(w, PhysicalKey.Escape);
+        Check("popup du socle : Échap depuis le contenu ferme et rend le focus au champ",
+            focusDedans && !nu.DropDown.IsOpen && nu.IsKeyboardFocusWithin);
+        nu.IsReadOnly = true; Touche(w, PhysicalKey.F4); var lectureSeule = nu.DropDown.IsOpen; nu.IsReadOnly = false;
+        Check("popup du socle : pas d'ouverture en lecture seule", !lectureSeule);
+        w.Close();
     }
 
     // ═══ SOCLE COMPOSITE (E2) : multiligne ═══
