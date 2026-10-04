@@ -2,7 +2,7 @@
 
 Mis à jour : 05/10/2026.
 
-**Orchestratrice** : `hdev-ui-controls-e6` (dossier `RiderProjects/HDev.UI.Controls`).
+**Orchestratrice** : `orchestrate-hdev-conversations` [2c30b3] (dossier `RiderProjects/HDev.UI.Controls`). Ancien nom : `hdev-ui-controls-e6`. Le nom suit le titre de la session : le vérifier avec `ListAgents` à chaque reprise.
 
 ## Exécutantes
 
