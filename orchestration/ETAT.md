@@ -19,7 +19,7 @@ Un sous-agent meurt avec l'orchestratrice. À la reprise, relancer la mission de
 
 | Mission | Lot | Worktree | Branche | Exécutante | État |
 |---|---|---|---|---|---|
-| [M-01](missions/M-01.md) | E2, socle composite | `atelier/missions/M-01/` (Controls + DataGrid en lecture) | `suite-M-01` | sous-agent d'arrière-plan de l'orchestratrice, id `a91312d0147b99d5a` | **FIN** : 11 commits (49bbeb6..203817b), banc 172/172 ×3, xUnit 380, E2 ✅ ; contrôle de nommage demandé ; écarts 1–8 à valider ; fusion attend QX-02 |
+| [M-01](missions/M-01.md) | E2, socle composite | `atelier/missions/M-01/` (Controls + DataGrid en lecture) | `suite-M-01` | sous-agent d'arrière-plan de l'orchestratrice, id `a91312d0147b99d5a` | **FIN** : 11 commits (49bbeb6..203817b), banc 172/172 ×3, xUnit 380, E2 ✅ ; nommage contrôlé : un seul écart (Reason → CloseReason ?) ; écarts 1–8 à valider ; fusion attend QX-02 |
 | [M-02](missions/M-02.md) | retrait des mentions DevExpress dans le code | à créer au lancement | `suite-M-02` | sous-agent | validée, attend la fusion de M-01 |
 
 ## Questions en attente de Julien
@@ -31,6 +31,15 @@ Un sous-agent meurt avec l'orchestratrice. À la reprise, relancer la mission de
 | QX-05 | 2a | Pour E3 : `Placeholder` dans `IHDevEditor` n'a pas de sens pour les contrôles de choix. |
 | QX-06 | 2a | Proposés, non faits : note datée Q1 dans UGantt-charte.md, réalignement § 0 d'IMPROVEMENTS.md (dépôt grille), mise à jour de context.md. |
 | QX-07 | 2a | Anciens : charte HDev (proposée, non validée) ; PDF du benchmark (ONLYOFFICE ou impression Edge). |
+
+### M-01 : décisions attendues avant fusion
+
+| N° | Question |
+|---|---|
+| M-01-N1 | Renommer `Reason` en `CloseReason` (nom d'Avalonia, `WindowClosingEventArgs.CloseReason`) dans les arguments de DropDownClosing et DropDownClosed ? Recommandation de l'exécutante : oui. |
+| M-01-E2 | PopupContainerEdit : la valeur suit le contenu en direct, sans `ValueChanging`, et `AcceptValue` n'annule rien. L'orchestratrice propose : lever `ValueChanging`, ou ne valider qu'à la fermeture. |
+| M-01-NOM | Garder HDevPopupContainerEdit, ou HDevDropDownEdit / HDevPopupEdit ? |
+| M-01-E | Valider les écarts E1, E3 à E7. |
 
 ## Fusions à décider
 

@@ -44,3 +44,4 @@
   - Les noms HDevButtonEdit et HDevPopupContainerEdit sont à confirmer.
   - Contrôle de nommage absent du compte rendu : redemandé.
   - Vérification de l'orchestratrice : branche propre, 11 commits, hdev intact (f666e3d). Les mentions DevExpress restantes sont antérieures, donc du ressort de M-02. Le motif `xtra[A-Z]` de M-02 ne doit pas être cherché avec -i (faux positifs : Extraction, HitTestTextRange).
+- M-01, contrôle de nommage : tous les noms sont conformes, sauf `Reason`, à renommer en `CloseReason` selon la recommandation de l'exécutante (nom d'Avalonia). Rien n'est renommé en attendant la réponse.
