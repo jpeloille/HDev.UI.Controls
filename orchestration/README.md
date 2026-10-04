@@ -58,6 +58,7 @@ L'exécutante commite sur sa branche. La fusion dans `suite` se décide dans l'o
 - Pas de chantier dont la décision Q bloquante est ouverte.
 - **DevExpress est la base par défaut**, sans être obligatoire : on s'en écarte quand c'est mieux, et seul l'écart se justifie. Un écart d'API remonte à Julien.
 - **Salle blanche.** On ne reprend de DevExpress que des idées et des comportements observables. Sont exclus : son code, ses assemblies décompilées (cache NuGet, `TestDevExpress`), les textes de sa documentation, ses exemples, ses icônes, ses images, ses thèmes, ses marques et ses noms distinctifs. On ne recopie pas son API en bloc.
+- **Nommage**, dans l'ordre : (1) conventions et noms d'Avalonia ; (2) typologie HDev (préfixe, `MIGRATION-editeurs.md` § 1, D3) ; (3) un nom identique à DevExpress seulement s'il est le nom logique, jamais contre un nom Avalonia.
 
 ## Reprise après fermeture
 

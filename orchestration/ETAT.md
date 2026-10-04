@@ -17,10 +17,10 @@ Tranchées : QX-01 (oui, commit 49bbeb6), QX-03 (oui, mission M-01).
 
 Un sous-agent meurt avec l'orchestratrice. À la reprise, relancer la mission depuis sa fiche et l'état de sa branche (`git log suite..suite-M-nn`, fichiers non commités).
 
-
 | Mission | Lot | Worktree | Branche | Exécutante | État |
 |---|---|---|---|---|---|
-| [M-01](missions/M-01.md) | E2, socle composite | `atelier/missions/M-01/` (Controls + DataGrid en lecture) | `suite-M-01` | sous-agent d'arrière-plan de l'orchestratrice, id `a91312d0147b99d5a` | relancée avec les réponses aux 6 questions, 6 commits e5cbd95…bc088e6, banc 151/151 ×3, xUnit 380 |
+| [M-01](missions/M-01.md) | E2, socle composite | `atelier/missions/M-01/` (Controls + DataGrid en lecture) | `suite-M-01` | sous-agent d'arrière-plan de l'orchestratrice, id `a91312d0147b99d5a` | relancée avec les réponses aux 6 questions, puis consigne « salle blanche » et nommage, 6 commits e5cbd95…bc088e6, banc 151/151 ×3, xUnit 380 |
+| [M-02](missions/M-02.md) | retrait des mentions DevExpress dans le code | à créer au lancement | `suite-M-02` | sous-agent | validée, attend la fusion de M-01 |
 
 ## Questions en attente de Julien
 
