@@ -56,6 +56,8 @@ L'exécutante commite sur sa branche. La fusion dans `suite` se décide dans l'o
 - Jamais de modification de `RiderProjects/HDev.UI.Controls` ni `RiderProjects/HDev.UI.DataGrid` (branche `hdev`), ni de Synaxis ou myFlightOpsBoard.
 - Un tableau balisé `<!-- généré:… -->` ne se modifie qu'avec `python3 plans/outils/generer.py`.
 - Pas de chantier dont la décision Q bloquante est ouverte.
+- **DevExpress est la base par défaut**, sans être obligatoire : on s'en écarte quand c'est mieux, et seul l'écart se justifie. Un écart d'API remonte à Julien.
+- **Salle blanche.** On ne reprend de DevExpress que des idées et des comportements observables. Sont exclus : son code, ses assemblies décompilées (cache NuGet, `TestDevExpress`), les textes de sa documentation, ses exemples, ses icônes, ses images, ses thèmes, ses marques et ses noms distinctifs. On ne recopie pas son API en bloc.
 
 ## Reprise après fermeture
 
