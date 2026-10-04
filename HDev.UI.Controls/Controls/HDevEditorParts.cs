@@ -116,7 +116,24 @@ public enum HDevEditorIcon
     ChevronDown,
     ChevronUp,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+
+    // Glyphes des boutons d'éditeur (lot E2)
+
+    /// <summary>Croix d'effacement</summary>
+    Clear,
+    /// <summary>Points de suspension (« … » : ouvrir un dialogue)</summary>
+    Ellipsis,
+    /// <summary>Loupe</summary>
+    Search,
+    Clock,
+    Calculator,
+    Link,
+    Folder,
+    /// <summary>Pastille pleine (couleur, état)</summary>
+    Swatch,
+    Plus,
+    Minus
 }
 
 /// <summary>
@@ -243,6 +260,74 @@ public class HDevEditorGlyphButton : Control
             case HDevEditorIcon.ChevronRight:
                 context.DrawLine(pen, new Point(cx - 2, cy - 4), new Point(cx + 2, cy));
                 context.DrawLine(pen, new Point(cx + 2, cy), new Point(cx - 2, cy + 4));
+                break;
+
+            case HDevEditorIcon.Clear:
+                context.DrawLine(pen, new Point(cx - 3.5, cy - 3.5), new Point(cx + 3.5, cy + 3.5));
+                context.DrawLine(pen, new Point(cx - 3.5, cy + 3.5), new Point(cx + 3.5, cy - 3.5));
+                break;
+
+            case HDevEditorIcon.Ellipsis:
+                var dot = new SolidColorBrush(color);
+                for (var i = -1; i <= 1; i++)
+                    context.DrawEllipse(dot, null, new Point(cx + 4 * i, cy + 1), 1.2, 1.2);
+                break;
+
+            case HDevEditorIcon.Search:
+                context.DrawEllipse(null, pen, new Point(cx - 1, cy - 1), 4, 4);
+                context.DrawLine(pen, new Point(cx + 2, cy + 2), new Point(cx + 5.5, cy + 5.5));
+                break;
+
+            case HDevEditorIcon.Clock:
+                context.DrawEllipse(null, pen, new Point(cx, cy), 5.5, 5.5);
+                context.DrawLine(pen, new Point(cx, cy - 3.5), new Point(cx, cy));
+                context.DrawLine(pen, new Point(cx, cy), new Point(cx + 2.5, cy + 1.5));
+                break;
+
+            case HDevEditorIcon.Calculator:
+                context.DrawRectangle(null, pen, new Rect(cx - 5, cy - 6, 10, 12), 1.5, 1.5);
+                context.DrawLine(pen, new Point(cx - 2.5, cy - 3), new Point(cx + 2.5, cy - 3));
+                var key = new SolidColorBrush(color);
+                foreach (var (kx, ky) in new[] { (-2.5, 0.5), (0.0, 0.5), (2.5, 0.5), (-2.5, 3.0), (0.0, 3.0), (2.5, 3.0) })
+                    context.DrawEllipse(key, null, new Point(cx + kx, cy + ky), 0.8, 0.8);
+                break;
+
+            case HDevEditorIcon.Link:
+                // Deux maillons en biais, qui se chevauchent
+                using (context.PushTransform(Matrix.CreateTranslation(-cx, -cy)
+                    * Matrix.CreateRotation(-Math.PI / 4) * Matrix.CreateTranslation(cx, cy)))
+                {
+                    context.DrawRectangle(null, pen, new Rect(cx - 6.5, cy - 2.25, 8, 4.5), 2.25, 2.25);
+                    context.DrawRectangle(null, pen, new Rect(cx - 1.5, cy - 2.25, 8, 4.5), 2.25, 2.25);
+                }
+                break;
+
+            case HDevEditorIcon.Folder:
+                var folder = new StreamGeometry();
+                using (var g = folder.Open())
+                {
+                    g.BeginFigure(new Point(cx - 6, cy + 4.5), true);
+                    g.LineTo(new Point(cx - 6, cy - 4.5));
+                    g.LineTo(new Point(cx - 2, cy - 4.5));
+                    g.LineTo(new Point(cx - 0.5, cy - 3));
+                    g.LineTo(new Point(cx + 6, cy - 3));
+                    g.LineTo(new Point(cx + 6, cy + 4.5));
+                    g.EndFigure(true);
+                }
+                context.DrawGeometry(null, pen, folder);
+                break;
+
+            case HDevEditorIcon.Swatch:
+                context.DrawEllipse(new SolidColorBrush(color), null, new Point(cx, cy), 4.5, 4.5);
+                break;
+
+            case HDevEditorIcon.Plus:
+                context.DrawLine(pen, new Point(cx - 4, cy), new Point(cx + 4, cy));
+                context.DrawLine(pen, new Point(cx, cy - 4), new Point(cx, cy + 4));
+                break;
+
+            case HDevEditorIcon.Minus:
+                context.DrawLine(pen, new Point(cx - 4, cy), new Point(cx + 4, cy));
                 break;
 
             case HDevEditorIcon.Calendar:
