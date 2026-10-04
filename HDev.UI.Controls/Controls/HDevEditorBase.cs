@@ -90,7 +90,7 @@ public static class HDevMaskEngine
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// <summary>
-/// Arguments de l'événement Validating (annulable, style DevExpress)
+/// Arguments de l'événement Validating (annulable)
 /// </summary>
 public class HDevValidatingEventArgs : CancelEventArgs
 {
@@ -184,7 +184,7 @@ public abstract class HDevEditorBase : Border
 
     public bool HasError => ErrorText != null;
 
-    /// <summary>Validation annulable, déclenchée à la perte de focus (style DevExpress)</summary>
+    /// <summary>Validation annulable, déclenchée à la perte de focus</summary>
     public event EventHandler<HDevValidatingEventArgs>? Validating;
 
     /// <summary>Déclenché quand le texte change</summary>

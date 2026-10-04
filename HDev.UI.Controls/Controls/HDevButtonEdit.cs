@@ -4,7 +4,7 @@ using Avalonia.Data;
 namespace HDev.UI.Controls;
 
 /// <summary>
-/// Champ texte à boutons (équivalent ButtonEdit, ligne 6 de 4.2) : la configuration nommée du
+/// Champ texte à boutons : la configuration nommée du
 /// socle « texte + boutons ». Un bouton <see cref="HDevEditorButtonKind.Ellipsis"/> par défaut,
 /// que l'application garde, remplace ou complète par <see cref="HDevEditorBase.Buttons"/>.
 /// La valeur est le texte (D3) : <see cref="Text"/>, liable dans les deux sens.

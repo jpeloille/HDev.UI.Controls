@@ -9,7 +9,7 @@ using HDev.UI.Controls.Theme;
 namespace HDev.UI.Controls;
 
 /// <summary>
-/// Champ à popup libre (équivalent PopupContainerEdit, ligne 19 de 4.2) : la configuration
+/// Champ à popup libre : la configuration
 /// nommée du socle « valeur non éditable + bouton déroulant + popup à contenu libre ».
 /// <list type="bullet">
 /// <item><see cref="Value"/> (<c>object?</c>) est liable dans les deux sens ; elle s'affiche par
