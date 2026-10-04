@@ -1003,10 +1003,12 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
             vm.Depart == new DateTime(2026, 10, 7) && journal.Count == nJournal + 1
             && ReferenceEquals(journal[^1].Source, de) && journal[^1].IsUserChange);
 
-        de.FocusEditor(); de.SelectAll(); Colle(w, "abc"); var texteColle = de.Text;
+        // Texte invalide obtenu par une saisie incomplète : depuis E2, un collage « abc » est refusé
+        // par le masque (constat E0 n° 6) et ne peut plus servir à fabriquer un texte invalide
+        Saisit("15"); var texteInvalide = de.Text;
         de.Value = de.Value; Pump(w);
         Check("reposer la valeur courante par code réaffiche son texte (constat E0 n° 5)",
-            texteColle == "abc" && de.Text == "07/10/2026" && de.ErrorText == null);
+            texteInvalide == "15" && de.Text == "07/10/2026" && de.ErrorText == null);
 
         vm.Depart = new DateTime(2026, 10, 7, 10, 30, 0); Pump(w);
         var heureGardee = vm.Depart == new DateTime(2026, 10, 7, 10, 30, 0) && de.Text == "07/10/2026";
@@ -1018,6 +1020,35 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         contrat.EditValue = new DateTime(2026, 11, 11); Pump(w);
         Check("IHDevEditor : EditValue pose la valeur typée, jusqu'au ViewModel",
             vm.Depart == new DateTime(2026, 11, 11) && Equals(contrat.EditValue, new DateTime(2026, 11, 11)));
+        w.Close();
+    }
+
+    // ═══ SOCLE COMPOSITE (E2) : masque et collage ═══
+    Console.WriteLine("Socle des éditeurs (E2) :");
+    {
+        var de = new HDevDateEdit { Width = 160 }; var te = new HDevTimeEdit { Width = 120 };
+        var sp = new HDevSpinEdit { Width = 120, Decimals = 2, MinValue = 0, MaxValue = 100 };
+        Canvas.SetTop(te, 80); Canvas.SetTop(sp, 140);
+        var w = Hote(de); ((Canvas)w.Content!).Children.Add(te); ((Canvas)w.Content!).Children.Add(sp); Pump(w);
+        void ToutSelectionner(HDevEditorBase e) { e.FocusEditor(); e.SelectAll(); Pump(w); }
+
+        ToutSelectionner(de); Colle(w, "20092026");
+        Check("collage sous masque : « 20092026 » passe par le masque et donne la date (constat E0 n° 6)",
+            de.Text == "20/09/2026" && de.Value == new DateTime(2026, 9, 20));
+        ToutSelectionner(de); Colle(w, "2026-09-21"); var iso = de.Text;
+        ToutSelectionner(de); Colle(w, "abc");
+        Check("collage sous masque : un texte qui ne tient pas dans le masque est refusé en entier",
+            iso == "20/09/2026" && de.Text == "20/09/2026" && de.Value == new DateTime(2026, 9, 20));
+        ToutSelectionner(te); Colle(w, "1745");
+        Check("collage sous masque : « 1745 » donne 17:45 dans TimeEdit", te.Text == "17:45" && te.Value == new TimeSpan(17, 45, 0));
+        ToutSelectionner(sp); Colle(w, "12a,5"); var texteRefuse = sp.Text;
+        ToutSelectionner(sp); Colle(w, "12,5");
+        Check("collage filtré : SpinEdit refuse « 12a,5 » et prend « 12,5 »",
+            texteRefuse == "0,00" && sp.Text == "12,5" && sp.Value == 12.5m);
+        ToutSelectionner(de); Colle(w, "20/09/2026"); ToutSelectionner(de); Tape(w, "14092026");
+        Touche(w, PhysicalKey.Backspace);
+        Check("après un collage, une frappe en bloc réduit la sélection : Retour arrière n'efface qu'un chiffre (constat E0 n° 7)",
+            de.Text == "14/09/202");
         w.Close();
     }
 

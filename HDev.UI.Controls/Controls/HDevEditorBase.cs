@@ -201,6 +201,7 @@ public abstract class HDevEditorBase : Border
         // Masque : filtrer la saisie AVANT le TextBox (tunnel)
         InnerTextBox.AddHandler(TextInputEvent, OnInnerTextInput, RoutingStrategies.Tunnel);
         InnerTextBox.AddHandler(KeyDownEvent, OnInnerKeyDownForMask, RoutingStrategies.Tunnel);
+        InnerTextBox.AddHandler(TextBox.PastingFromClipboardEvent, OnInnerPasting);
 
         InnerTextBox.TextChanged += (s, e) =>
         {
@@ -338,9 +339,47 @@ public abstract class HDevEditorBase : Border
         {
             _suppressMask = true;
             InnerTextBox.Text = newText;
-            InnerTextBox.CaretIndex = newCaret;
+            PlaceCaret(newCaret);
             _suppressMask = false;
         }
+    }
+
+    /// <summary>
+    /// Place le curseur et réduit la sélection à lui (constat E0 n° 7). Poser CaretIndex ne
+    /// suffit pas : quand le curseur est déjà à cette position, le TextBox ne lève pas de
+    /// changement et garde la sélection, qu'un Retour arrière effacerait en entier.
+    /// </summary>
+    private void PlaceCaret(int index)
+    {
+        InnerTextBox.CaretIndex = index;
+        InnerTextBox.SelectionStart = index;
+        InnerTextBox.SelectionEnd = index;
+    }
+
+    /// <summary>
+    /// Collage (constat E0 n° 6) : le texte du presse-papiers passe par le même chemin que
+    /// la frappe, masque et filtres de l'éditeur compris. Il entre en entier ou pas du tout,
+    /// comme une frappe en bloc ; en monoligne, seule sa première ligne compte.
+    /// </summary>
+    private async void OnInnerPasting(object? sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (IsReadOnly || TopLevel.GetTopLevel(this)?.Clipboard is not { } clipboard)
+            return;
+
+        string? text;
+        try { text = await Avalonia.Input.Platform.ClipboardExtensions.TryGetTextAsync(clipboard); }
+        catch (Exception) { return; }
+
+        if (!InnerTextBox.AcceptsReturn && text != null)
+        {
+            var end = text.IndexOfAny(new[] { '\r', '\n' });
+            if (end >= 0) text = text[..end];
+        }
+        if (string.IsNullOrEmpty(text))
+            return;
+
+        InnerTextBox.RaiseEvent(new TextInputEventArgs { RoutedEvent = TextInputEvent, Text = text });
     }
 
     /// <summary>
@@ -377,7 +416,7 @@ public abstract class HDevEditorBase : Border
         e.Handled = true;
         _suppressMask = true;
         InnerTextBox.Text = text[..Math.Min(cut, text.Length)];
-        InnerTextBox.CaretIndex = InnerTextBox.Text?.Length ?? 0;
+        PlaceCaret(InnerTextBox.Text?.Length ?? 0);
         _suppressMask = false;
     }
 
