@@ -12,3 +12,4 @@
 - Julien : QX-01 oui, QX-03 oui. 2a refuse de commiter sur une réponse relayée (règle de son environnement), donc l'orchestratrice commite elle-même le report Q3 (49bbeb6) ; generer.py ne modifie aucun tableau.
 - Règle ajoutée au README : l'engagement est collé par Julien lui-même dans l'exécutante ; le brief délègue l'autorité à l'orchestratrice.
 - M-01 (E2) ouverte : worktrees `atelier/missions/M-01/{HDev.UI.Controls,HDev.UI.DataGrid}`, branche `suite-M-01`, compile sans erreur. Exécutante : nouvelle session en mode auto (choix de Julien). QX-02 devient un préalable de fusion.
+- Julien : « tu peux ouvrir M-01 ». M-01 lancée comme sous-agent d'arrière-plan de l'orchestratrice (id a91312d0147b99d5a), avec le brief adapté : une question met fin à son tour, et elle est relancée avec la réponse.

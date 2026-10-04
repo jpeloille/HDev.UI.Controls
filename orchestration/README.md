@@ -38,6 +38,10 @@ Première ligne de chaque message d'une exécutante :
 
 Cycle d'une question : numérotée `QX-nn`, inscrite dans `ETAT.md` et `JOURNAL.md`, présentée à Julien avec la mission et le contexte ; sa réponse est renvoyée mot pour mot à l'exécutante et consignée dans la fiche de mission (ou en Q du plan si elle est structurante).
 
+## Exécutantes en sous-agent
+
+L'orchestratrice peut lancer une exécutante elle-même, comme sous-agent d'arrière-plan (outil Agent). Il n'y a pas de fenêtre à ouvrir, et l'autorité est directe. Le sous-agent termine son tour sur `QUESTION`, `FIN` ou `BLOCAGE`. L'orchestratrice le relance ensuite avec `SendMessage` vers son id, inscrit dans `ETAT.md`. Il meurt avec l'orchestratrice : à la reprise, le relancer depuis la fiche et sa branche.
+
 ## Worktrees
 
 Une mission = un worktree, créé par l'orchestratrice :

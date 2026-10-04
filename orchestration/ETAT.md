@@ -15,9 +15,12 @@ Tranchées : QX-01 (oui, commit 49bbeb6), QX-03 (oui, mission M-01).
 
 ## Missions
 
+Un sous-agent meurt avec l'orchestratrice. À la reprise, relancer la mission depuis sa fiche et l'état de sa branche (`git log suite..suite-M-nn`, fichiers non commités).
+
+
 | Mission | Lot | Worktree | Branche | Exécutante | État |
 |---|---|---|---|---|---|
-| [M-01](missions/M-01.md) | E2, socle composite | `atelier/missions/M-01/` (Controls + DataGrid en lecture) | `suite-M-01` | nouvelle session, à ouvrir par Julien | en attente d'engagement |
+| [M-01](missions/M-01.md) | E2, socle composite | `atelier/missions/M-01/` (Controls + DataGrid en lecture) | `suite-M-01` | sous-agent d'arrière-plan de l'orchestratrice, id `a91312d0147b99d5a` | en cours depuis le 05/10/2026 |
 
 ## Questions en attente de Julien
 
