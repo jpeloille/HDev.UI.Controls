@@ -81,3 +81,9 @@
   - Contre-proposition de l'orchestratrice : avec OverlayPopups, ne plus fermer sur désactivation (le popup est dessiné dans la fenêtre), et fermer sur désactivation seulement quand les popups sont natifs.
 - Julien choisit l'option (b) : en overlay, la désactivation ne ferme plus les popups ; avec des popups natifs, le débounce de 250 ms est gardé. Le correctif est confié à M-01 (sous-agent). 2a arrête son prototype, rend un FIN partiel et fera la vérification sur le bureau après le correctif.
 - FIN M-01 (correctif b) : f4aa045. Détection overlay ou natif popup par popup (OverlayPopupHost), garde unique, aucune API publique changée ; 8 vérifications ajoutées, celles de survie échouant sans correctif ; banc 183/183 trois fois, xUnit 380. Contre-vérifié par l'orchestratrice (ALL PASS, worktree propre). Reste la vérification sur le bureau par 2a.
+- FIN M-03 (partiel), de 2a.
+  - Tableau sur 12 scénarios : avant et après E2, les mêmes échecs ; le prototype (b) les corrige tous, sauf Échap sur le menu, qui n'est pas géré (défaut préexistant).
+  - Relevés xev sous GNOME Shell sans écran (mutter 50.1) : ils condamnent la piste « pointeur sorti ».
+  - Banc dans /tmp/hdev-m03 ; session GNOME sans écran disponible ; worktree M-03 propre.
+- Consigne à M-01 : Échap ferme HDevMenuPopup et HDevContextMenu (suite logique de b, aucune API changée).
+- Consigne à 2a : banc sur une copie de f4aa045, et branche native vérifiée en GNOME sans écran (OverlayPopups=false). Le bureau réel est différé : le test sans écran pourrait le remplacer.
