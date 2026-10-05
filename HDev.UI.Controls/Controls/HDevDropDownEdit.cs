@@ -14,11 +14,15 @@ namespace HDev.UI.Controls;
 /// <list type="bullet">
 /// <item><see cref="Value"/> (<c>object?</c>) est liable dans les deux sens ; elle s'affiche par
 /// <see cref="ValueTemplate"/>, à défaut par <c>ToString()</c>, sinon l'invite.</item>
-/// <item>Le contenu (<see cref="HDevEditorBase.DropDownContent"/>) se lie à <c>Value</c> de
-/// l'éditeur : ce qu'il y écrit est un changement de l'utilisateur. La fermeture ne touche
-/// jamais à la valeur, quelle que soit <c>IsValueAccepted</c>.</item>
-/// <item>Un clic sur le champ, le bouton, F4 ou Alt+↓ ouvrent ; Entrée (non prise par le
-/// contenu) ferme en acceptant ; Échap, Alt+↑ et le clic extérieur ferment.</item>
+/// <item>Le contenu (<see cref="HDevEditorBase.DropDownContent"/>) se lie à <see cref="DropDownValue"/>,
+/// la valeur en cours : elle repart de <c>Value</c> à l'ouverture, et <c>Value</c> ne bouge pas
+/// tant que le popup est ouvert (le champ l'affiche toujours).</item>
+/// <item>À la fermeture, si <c>IsValueAccepted</c> (vrai par défaut pour Entrée et le clic
+/// extérieur, faux pour Échap), la valeur en cours est validée comme un changement de
+/// l'utilisateur (<c>ValueChanging</c> annulable, puis <c>ValueChanged</c>) ; sinon, ou si le
+/// changement est annulé, elle revient à <c>Value</c>. Le popup se ferme dans tous les cas.</item>
+/// <item>Un clic sur le champ, le bouton, F4 ou Alt+↓ ouvrent ; Entrée ferme en acceptant ;
+/// Échap, Alt+↑ et le clic extérieur ferment.</item>
 /// </list>
 /// </summary>
 public class HDevDropDownEdit : HDevEditorBase<object?>
@@ -26,6 +30,10 @@ public class HDevDropDownEdit : HDevEditorBase<object?>
     public static readonly StyledProperty<object?> ValueProperty =
         AvaloniaProperty.Register<HDevDropDownEdit, object?>(nameof(Value),
             defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
+
+    public static readonly StyledProperty<object?> DropDownValueProperty =
+        AvaloniaProperty.Register<HDevDropDownEdit, object?>(nameof(DropDownValue),
+            defaultBindingMode: BindingMode.TwoWay);
 
     public static readonly StyledProperty<IDataTemplate?> ValueTemplateProperty =
         AvaloniaProperty.Register<HDevDropDownEdit, IDataTemplate?>(nameof(ValueTemplate));
@@ -38,6 +46,16 @@ public class HDevDropDownEdit : HDevEditorBase<object?>
     {
         get => GetValue(ValueProperty);
         set => SetValueFromCode(value);
+    }
+
+    /// <summary>
+    /// Valeur en cours dans le popup, à laquelle se lie son contenu. Popup fermé, elle suit
+    /// <see cref="Value"/> ; elle n'est prise qu'à la fermeture, si le choix est accepté.
+    /// </summary>
+    public object? DropDownValue
+    {
+        get => GetValue(DropDownValueProperty);
+        set => SetValue(DropDownValueProperty, value);
     }
 
     /// <summary>Gabarit d'affichage de la valeur dans le champ (défaut : <c>ToString()</c>)</summary>
@@ -62,16 +80,24 @@ public class HDevDropDownEdit : HDevEditorBase<object?>
         SetValuePresenter(_presenter);
         Buttons.Add(new HDevEditorButton { Kind = HDevEditorButtonKind.DropDown });
         DropDown.MatchOwnerWidth = true;
+        DropDownOpening += (_, _) => SetCurrentValue(DropDownValueProperty, Value);
+        DropDownClosed += (_, e) =>
+        {
+            if (e.IsValueAccepted)
+                CommitUserValue(DropDownValue);
+            // Abandonnée, refusée par ValueChanging ou prise : la valeur en cours rejoint Value
+            SetCurrentValue(DropDownValueProperty, Value);
+        };
         RefreshPresenter();
     }
 
     protected override string FormatValue(object? value) => value?.ToString() ?? "";
 
-    private protected override bool IsUserEditInProgress => DropDown.IsOpen;
-
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
+        if (change.Property == ValueProperty && !DropDown.IsOpen)
+            SetCurrentValue(DropDownValueProperty, Value);
         if (change.Property == ValueProperty || change.Property == ValueTemplateProperty
             || change.Property == PlaceholderProperty || change.Property == IsEffectivelyEnabledProperty)
             RefreshPresenter();

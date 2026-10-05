@@ -17,7 +17,7 @@
                               Value="{Binding Equipage}" Placeholder="Choisir un équipier">
       <h:HDevDropDownEdit.DropDownContent>
         <ListBox x:Name="Membres" ItemsSource="{Binding Membres}"
-                 SelectedItem="{Binding $parent[h:HDevDropDownEdit].Value}" />
+                 SelectedItem="{Binding $parent[h:HDevDropDownEdit].DropDownValue}" />
       </h:HDevDropDownEdit.DropDownContent>
     </h:HDevDropDownEdit>
   </Canvas>

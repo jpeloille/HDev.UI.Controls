@@ -1168,17 +1168,34 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         Check($"un clic sur le champ ouvre le popup sous lui, à sa largeur (lu {boitePop})",
             pc.IsDropDownOpen && ouvertures == 1 && boitePop.Top - boitePc.Bottom == 2 && boitePop.Width >= boitePc.Width);
         var journalPc = new List<HDevValueChangedEventArgs>(); pc.ValueChanged += (_, e) => journalPc.Add(e);
-        ClickAt(w, WindowCenter(w, (Control)liste.ContainerFromIndex(1)!));
-        Check("le contenu, lié à Value, la pose : jusqu'au ViewModel, origine Utilisateur, affichée par ToString()",
-            Equals(pc.Value, "Teiki Brothers") && Equals(vm.Equipage, "Teiki Brothers") && journalPc.Count == 1
-            && journalPc[0].IsUserChange && Equals(presentateur.Content, "Teiki Brothers") && pc.IsDropDownOpen);
+        Control Membre(int i) => (Control)liste.ContainerFromIndex(i)!;
+        ClickAt(w, WindowCenter(w, Membre(1)));
+        Check("popup ouvert : le contenu écrit la valeur en cours (DropDownValue) ; Value, le ViewModel et le champ ne bougent pas",
+            Equals(pc.DropDownValue, "Teiki Brothers") && pc.Value == null && vm.Equipage == null && journalPc.Count == 0
+            && Equals(presentateur.Content, "Choisir un équipier") && pc.IsDropDownOpen);
         Touche(w, PhysicalKey.Escape);
-        Check("Échap depuis le contenu ferme : CloseReason Canceled, IsValueAccepted faux, la valeur n'est pas touchée",
+        Check("Échap ferme sans accepter (CloseReason Canceled, IsValueAccepted faux) : la valeur d'avant reste, la valeur en cours y revient",
             !pc.IsDropDownOpen && fermetures.Count == 1 && fermetures[0].CloseReason == HDevDropDownCloseReason.Canceled
-            && !fermetures[0].IsValueAccepted && Equals(pc.Value, "Teiki Brothers") && pc.IsKeyboardFocusWithin);
-        Touche(w, PhysicalKey.F4); var element = (Control)liste.ContainerFromIndex(2)!; element.Focus(); Pump(w); Touche(w, PhysicalKey.Enter);
-        Check("Entrée dans la liste du popup choisit l'élément et ferme en acceptant (CloseReason Accepted, IsValueAccepted vrai)",
-            Equals(vm.Equipage, "Lucie Martin") && !pc.IsDropDownOpen && fermetures[^1].CloseReason == HDevDropDownCloseReason.Accepted && fermetures[^1].IsValueAccepted);
+            && !fermetures[0].IsValueAccepted && pc.Value == null && pc.DropDownValue == null && journalPc.Count == 0
+            && pc.IsKeyboardFocusWithin);
+        Touche(w, PhysicalKey.F4); Membre(2).Focus(); Pump(w); Touche(w, PhysicalKey.Enter);
+        Check("Entrée dans la liste choisit et ferme en acceptant : la valeur est prise, origine Utilisateur, jusqu'au ViewModel",
+            Equals(pc.Value, "Lucie Martin") && Equals(vm.Equipage, "Lucie Martin") && !pc.IsDropDownOpen
+            && fermetures[^1].CloseReason == HDevDropDownCloseReason.Accepted && fermetures[^1].IsValueAccepted
+            && journalPc.Count == 1 && journalPc[0].IsUserChange && Equals(presentateur.Content, "Lucie Martin"));
+        EventHandler<HDevValueChangingEventArgs> refuseChangement = (_, e) => e.Cancel = true;
+        pc.ValueChanging += refuseChangement;
+        Touche(w, PhysicalKey.F4); var depart = pc.DropDownValue; ClickAt(w, WindowCenter(w, Membre(0))); Touche(w, PhysicalKey.Enter);
+        pc.ValueChanging -= refuseChangement;
+        Check("ValueChanging annulé à la fermeture : le popup se ferme, la valeur reste, la valeur en cours y revient",
+            Equals(depart, "Lucie Martin") && !pc.IsDropDownOpen && Equals(pc.Value, "Lucie Martin")
+            && Equals(vm.Equipage, "Lucie Martin") && Equals(pc.DropDownValue, "Lucie Martin") && journalPc.Count == 1);
+        Touche(w, PhysicalKey.F4); ClickAt(w, WindowCenter(w, Membre(0))); ClickAt(w, horsChamp);
+        Check("clic extérieur (CloseReason LightDismiss) : le choix est gardé",
+            !pc.IsDropDownOpen && fermetures[^1].CloseReason == HDevDropDownCloseReason.LightDismiss && fermetures[^1].IsValueAccepted
+            && Equals(pc.Value, "Awa Wamytan") && Equals(vm.Equipage, "Awa Wamytan") && journalPc.Count == 2);
+        vm.Equipage = "Teiki Brothers"; Pump(w);
+        Check("popup fermé, la valeur en cours suit Value", Equals(pc.DropDownValue, "Teiki Brothers"));
 
         EventHandler<System.ComponentModel.CancelEventArgs> refuseOuverture = (_, e) => e.Cancel = true;
         pc.DropDownOpening += refuseOuverture; pc.IsDropDownOpen = true; Pump(w); var refusee = !pc.IsDropDownOpen && !pc.DropDown.IsOpen;
@@ -1193,7 +1210,7 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         Check("IsDropDownOpen posé par le code ouvre et ferme", parCode && !pc.DropDown.IsOpen && fermetures[^1].CloseReason == HDevDropDownCloseReason.Canceled);
         pc.ValueTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<object>((o, _) => new TextBlock { Text = "★ " + o }); Pump(w);
         Check("ValueTemplate affiche la valeur", presentateur.ContentTemplate != null
-            && presentateur.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "★ Lucie Martin"));
+            && presentateur.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "★ Teiki Brothers"));
         w.Close();
     }
 

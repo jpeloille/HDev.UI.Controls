@@ -917,14 +917,8 @@ public abstract class HDevEditorBase<T> : HDevEditorBase, IHDevEditor
             ResyncText();
 
         RaiseEvent(new HDevValueChangedEventArgs(change.OldValue, change.NewValue,
-            _userCommit || IsUserEditInProgress ? HDevValueOrigin.User : HDevValueOrigin.Code));
+            _userCommit ? HDevValueOrigin.User : HDevValueOrigin.Code));
     }
-
-    /// <summary>
-    /// Vrai quand un changement de valeur vient de l'utilisateur sans passer par
-    /// <see cref="CommitUserValue"/> : par exemple un contenu de popup lié à la valeur
-    /// </summary>
-    private protected virtual bool IsUserEditInProgress => false;
 
     private protected override void ClearByUser()
     {
