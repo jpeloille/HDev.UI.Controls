@@ -20,13 +20,14 @@ Un sous-agent meurt avec l'orchestratrice. À la reprise, relancer la mission de
 | Mission | Lot | Worktree | Branche | Exécutante | État |
 |---|---|---|---|---|---|
 | [M-01](missions/M-01.md) | E2, socle composite | `atelier/missions/M-01/` (Controls + DataGrid en lecture) | `suite-M-01` | sous-agent d'arrière-plan de l'orchestratrice, id `a91312d0147b99d5a` | **FIN** : 14 commits (49bbeb6..7ce4131), banc 175/175 ×3, xUnit 380 ; vérifié par l'orchestratrice (banc ALL PASS, xUnit 380, aucune mention DevExpress ni Co-Authored-By) |
+| [M-03](missions/M-03.md) | diagnostic QX-02 (popups non maintenus sur désactivation) | `atelier/missions/M-03/` (base f666e3d, détachée) + M-01 en lecture | — | conversation de l'IDE, à ouvrir par Julien (captures d'écran) | en attente d'engagement |
 | [M-02](missions/M-02.md) | retrait des mentions DevExpress dans le code | à créer au lancement | `suite-M-02` | sous-agent | validée, attend la fusion de M-01 |
 
 ## Questions en attente de Julien
 
 | N° | De | Question |
 |---|---|---|
-| QX-02 | 2a | Préalable à la **fusion** d'E2 (M-01) : vérification sur le bureau : une liste déroulante ouverte survit-elle à une brève désactivation de la fenêtre ? (non testable en headless ; à faire par Julien) |
+| QX-02 | 2a | **Échec constaté par Julien (05/10)** : les popups ne survivent pas à une brève désactivation. Diagnostic en M-03. |
 | QX-04 | 2a | Décisions ouvertes du plan maître : Q2 LiveCharts2, Q4 moteur PDF/impression, Q5 formats bureautiques, Q6 IA, Q7 22 absences proposées, Q8 absences actées à reconfirmer, Q9 licences, Q10 icônes, Q11 moteur Gantt en assembly pur, Q12 formules L25, Q13 modèle de ressources agenda/Gantt. |
 | QX-05 | 2a | Pour E3 : `Placeholder` dans `IHDevEditor` n'a pas de sens pour les contrôles de choix. |
 | QX-06 | 2a | Proposés, non faits : note datée Q1 dans UGantt-charte.md, réalignement § 0 d'IMPROVEMENTS.md (dépôt grille), mise à jour de context.md. |
@@ -34,7 +35,7 @@ Un sous-agent meurt avec l'orchestratrice. À la reprise, relancer la mission de
 
 ## Fusions à décider
 
-- `suite-M-01` → `suite` : prête ; bloquée seulement par QX-02 (étendu à la ComboBox et aux menus, passés sur la garde commune). À la fusion, l'orchestratrice met aussi à jour le décompte écrit à la main dans Plan-Suite.md (34/25/97/10 → 36/25/95/10).
+- `suite-M-01` → `suite` : **bloquée : QX-02 échoue** (Julien, 05/10 : les popups ne restent pas ouverts) ; diagnostic M-03, correctif à appliquer dans M-01. À la fusion, l'orchestratrice met aussi à jour le décompte écrit à la main dans Plan-Suite.md (34/25/97/10 → 36/25/95/10).
 
 ## Points d'attention
 

@@ -67,3 +67,7 @@
     - aucun Co-Authored-By dans les messages de commit ;
     - hdev intact.
   - La fusion n'attend plus que QX-02.
+- QX-02, testé par Julien sur la démo de suite-M-01 : les popups ne restent pas ouverts. La fusion de M-01 est bloquée.
+  - Julien suggère de confier les tests sur le bureau, avec captures d'écran, à une conversation de l'IDE.
+  - Depuis l'orchestratrice, xdotool répond (XWayland :0, 1920×1200), mais la capture échoue (ImageMagick import, Gdk).
+  - M-03 (diagnostic) est ouverte, avec une base de comparaison avant E2 (worktree détaché à f666e3d) ; elle attend son engagement dans l'IDE.
