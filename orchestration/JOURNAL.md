@@ -71,3 +71,4 @@
   - Julien suggère de confier les tests sur le bureau, avec captures d'écran, à une conversation de l'IDE.
   - Depuis l'orchestratrice, xdotool répond (XWayland :0, 1920×1200), mais la capture échoue (ImageMagick import, Gdk).
   - M-03 (diagnostic) est ouverte, avec une base de comparaison avant E2 (worktree détaché à f666e3d) ; elle attend son engagement dans l'IDE.
+- Julien : utiliser les conversations ouvertes dans l'IDE, qui font le travail et répondent, plutôt que lui en faire ouvrir. M-03 est confiée à hdev-ui-controls-2a.
