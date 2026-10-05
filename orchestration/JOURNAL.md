@@ -120,3 +120,4 @@
     - `HDevEditorButton.EffectiveIcon`, public, n'a été ni décidé ni consigné ;
     - `Kind` vaut `Ellipsis` par défaut, sans décision explicite ;
     - le décompte de Plan-Suite:47 est périmé (déjà prévu à la fusion).
+- La session `hdev-ui-controls-2a` est fermée (Julien). Rien n'est perdu : les worktrees M-01 et M-03 sont propres, les captures sans écran sont en place (30 fichiers), le banc est dans /tmp/hdev-m03 (LISEZMOI.md). Il reste la vérification sur le bureau réel, à confier à une nouvelle conversation de l'IDE.
