@@ -72,3 +72,4 @@
   - Depuis l'orchestratrice, xdotool répond (XWayland :0, 1920×1200), mais la capture échoue (ImageMagick import, Gdk).
   - M-03 (diagnostic) est ouverte, avec une base de comparaison avant E2 (worktree détaché à f666e3d) ; elle attend son engagement dans l'IDE.
 - Julien : utiliser les conversations ouvertes dans l'IDE, qui font le travail et répondent, plutôt que lui en faire ouvrir. M-03 est confiée à hdev-ui-controls-2a.
+- RAPPORT M-03 (2a) : la garde d'E2 est identique ligne pour ligne aux gardes d'avant E2. Au Deactivated, elle attend 250 ms, puis ferme si la fenêtre est inactive. Hypothèse : le défaut est antérieur à E2, car un Alt+Tab réel dure plus de 250 ms. Pilotage du bureau en cours (xdotool, fenêtre témoin xev) ; Julien doit éviter clavier et souris.
