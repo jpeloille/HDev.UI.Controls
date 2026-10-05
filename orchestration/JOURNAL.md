@@ -80,3 +80,4 @@
   - Piste de 2a : fermer sur désactivation seulement si le pointeur a quitté la fenêtre.
   - Contre-proposition de l'orchestratrice : avec OverlayPopups, ne plus fermer sur désactivation (le popup est dessiné dans la fenêtre), et fermer sur désactivation seulement quand les popups sont natifs.
 - Julien choisit l'option (b) : en overlay, la désactivation ne ferme plus les popups ; avec des popups natifs, le débounce de 250 ms est gardé. Le correctif est confié à M-01 (sous-agent). 2a arrête son prototype, rend un FIN partiel et fera la vérification sur le bureau après le correctif.
+- FIN M-01 (correctif b) : f4aa045. Détection overlay ou natif popup par popup (OverlayPopupHost), garde unique, aucune API publique changée ; 8 vérifications ajoutées, celles de survie échouant sans correctif ; banc 183/183 trois fois, xUnit 380. Contre-vérifié par l'orchestratrice (ALL PASS, worktree propre). Reste la vérification sur le bureau par 2a.
