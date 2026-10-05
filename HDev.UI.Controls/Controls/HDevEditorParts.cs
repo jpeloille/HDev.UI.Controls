@@ -443,8 +443,11 @@ public class HDevEditorButton : Control
         Cursor = new Cursor(StandardCursorType.Hand);
     }
 
-    /// <summary>Glyphe dessiné : celui du type, ou <see cref="Icon"/> pour un bouton personnalisé</summary>
-    public HDevEditorIcon EffectiveIcon => Kind switch
+    /// <summary>
+    /// Glyphe dessiné : celui du type, ou <see cref="Icon"/> pour un bouton personnalisé.
+    /// Interne : il sert au rendu ; à rendre public si une application en a besoin.
+    /// </summary>
+    internal HDevEditorIcon EffectiveIcon => Kind switch
     {
         HDevEditorButtonKind.DropDown => HDevEditorIcon.ChevronDown,
         HDevEditorButtonKind.Clear => HDevEditorIcon.Clear,
