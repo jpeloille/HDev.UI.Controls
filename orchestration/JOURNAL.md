@@ -87,3 +87,4 @@
   - Banc dans /tmp/hdev-m03 ; session GNOME sans écran disponible ; worktree M-03 propre.
 - Consigne à M-01 : Échap ferme HDevMenuPopup et HDevContextMenu (suite logique de b, aucune API changée).
 - Consigne à 2a : banc sur une copie de f4aa045, et branche native vérifiée en GNOME sans écran (OverlayPopups=false). Le bureau réel est différé : le test sans écran pourrait le remplacer.
+- FIN M-01 (Échap des menus) : 71c7cfc. Échap ferme toute la chaîne de menus, comme dans la barre ; 4 vérifications nouvelles, qui échouent sans le correctif ; banc 187/187 trois fois, xUnit 380.
