@@ -1314,6 +1314,35 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         Check("overlay, menu : il survit à 400 ms et 1,5 s de désactivation ; le clic extérieur le ferme",
             m400 && m1500 && !menuOuvert());
         wMenu.Close();
+
+        // Échap ferme aussi les menus hors barre : menu contextuel et HDevMenuPopup ouvert par le code
+        var cible = new Border { Width = 200, Height = 100, Background = Avalonia.Media.Brushes.Transparent };
+        var wCtx = Hote(cible); wCtx.Activate();
+        var contexte = new HDevContextMenu(); contexte.Add("Copier"); contexte.Add("Coller");
+        var fermeturesCtx = 0; contexte.Closed += (_, _) => fermeturesCtx++;
+        bool CtxOuvert() => contexte.Items[0].OwnerPopup is { IsOpen: true };
+        contexte.Show(cible, new Point(10, 10)); Pump(wCtx); var ctxOuvert = CtxOuvert();
+        Touche(wCtx, PhysicalKey.Escape);
+        Check("menu contextuel : Échap le ferme", ctxOuvert && !CtxOuvert() && fermeturesCtx == 1);
+        contexte.Show(cible, new Point(10, 10)); Pump(wCtx);
+        var ctxSurvit = SurvitA(wCtx, CtxOuvert, 400); Touche(wCtx, PhysicalKey.Escape);
+        Check("menu contextuel : il survit à une désactivation de 400 ms, puis Échap le ferme", ctxSurvit && !CtxOuvert());
+
+        var feuille = new HDevMenuItem("Fichier A");
+        var parent = new HDevMenuItem("Récents") { Items = new System.Collections.ObjectModel.ObservableCollection<HDevMenuItem> { feuille } };
+        var libre = new HDevMenuPopup(); libre.SetItems(new[] { new HDevMenuItem("Ouvrir"), parent });
+        libre.ShowAt(cible); Pump(wCtx); var libreOuvert = libre.IsOpen;
+        Touche(wCtx, PhysicalKey.Escape);
+        Check("menu hors barre (HDevMenuPopup.ShowAt) : Échap le ferme", libreOuvert && !libre.IsOpen);
+        libre = new HDevMenuPopup(); libre.SetItems(new[] { new HDevMenuItem("Ouvrir"), parent });
+        libre.ShowAt(cible); Pump(wCtx);
+        wCtx.MouseMove(WindowCenter(wCtx, parent), RawInputModifiers.None); Pump(wCtx);
+        var sousOuvert = feuille.OwnerPopup is { IsOpen: true };
+        var libreSurvit = SurvitA(wCtx, () => libre.IsOpen && feuille.OwnerPopup is { IsOpen: true }, 400);
+        Touche(wCtx, PhysicalKey.Escape);
+        Check("menu hors barre avec sous-menu : il survit à 400 ms de désactivation ; Échap ferme toute la chaîne, comme dans la barre",
+            sousOuvert && libreSurvit && !libre.IsOpen && feuille.OwnerPopup is not { IsOpen: true });
+        wCtx.Close();
     }
 
     // ═══ SOCLE COMPOSITE (E2) : multiligne ═══

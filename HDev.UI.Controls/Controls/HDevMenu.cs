@@ -102,13 +102,39 @@ public class HDevMenuPopup : Popup
         }
     }
 
+    private TopLevel? _keyRoot;
+
     private void InstallDismissGuard()
     {
-        if (PlacementTarget != null)
-            _guard.Install(PlacementTarget, this);
+        if (PlacementTarget == null) return;
+        _guard.Install(PlacementTarget, this);
+
+        // Échap ferme le menu, même hors de la barre (menu contextuel, ShowAt) : la garde ne le
+        // ferme plus à la désactivation d'une fenêtre à popups overlay. Le gestionnaire de la
+        // barre, posé plus tôt sur la même racine, passe d'abord et traite ses propres menus.
+        _keyRoot = TopLevel.GetTopLevel(PlacementTarget);
+        _keyRoot?.AddHandler(KeyDownEvent, OnRootKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
     }
 
-    private void RemoveDismissGuard() => _guard.Remove();
+    private void RemoveDismissGuard()
+    {
+        _guard.Remove();
+        _keyRoot?.RemoveHandler(KeyDownEvent, OnRootKeyDown);
+        _keyRoot = null;
+    }
+
+    /// <summary>
+    /// Échap ferme toute la chaîne (le menu racine et ses sous-menus), comme Échap dans
+    /// <see cref="HDevMenuBar"/>
+    /// </summary>
+    private void OnRootKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Handled || e.Key != Key.Escape || !IsOpen) return;
+        var root = this;
+        while (root.ParentPopup is { IsOpen: true } parent) root = parent;
+        root.Close();
+        e.Handled = true;
+    }
 
     /// <summary>
     /// Ferme ce popup et tous ses parents (clic sur un item de sous-menu)
