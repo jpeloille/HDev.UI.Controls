@@ -107,3 +107,4 @@
   - rôles `hdev-executante` et `hdev-verificatrice` dans `~/.claude/agents/` ;
   - README et ETAT mis à jour.
   La session est à relancer pour que le drapeau prenne effet.
+- Reprise après la relance : session `hdev-orchestration-agent-teams`, drapeau d'équipe actif. Resynchronisation demandée à 2a (le dossier des captures du bureau réel est vide à cette heure). Worktree de vérification `missions/V-01` créé, détaché sur suite-M-01 (71c7cfc), pour que la vérificatrice ne compile pas dans le worktree que 2a utilise.

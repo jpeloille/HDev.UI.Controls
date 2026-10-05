@@ -1,10 +1,10 @@
 # État de l'orchestration
 
-Mis à jour : 06/10/2026. **Équipe d'agents activée : relancer la session orchestratrice pour qu'elle prenne effet.**
+Mis à jour : 06/10/2026. Équipe d'agents active depuis la relance du 06/10.
 
 Tranchées : QX-01 (oui, commit 49bbeb6), QX-03 (oui, mission M-01).
 
-**Orchestratrice** : `orchestrate-hdev-conversations` [2c30b3] (dossier `RiderProjects/HDev.UI.Controls`). Ancien nom : `hdev-ui-controls-e6`. Le nom suit le titre de la session : le vérifier avec `ListAgents` à chaque reprise.
+**Orchestratrice** : `hdev-orchestration-agent-teams` [2c30b3], cheffe d'équipe (dossier `RiderProjects/HDev.UI.Controls`). Anciens noms : `orchestrate-hdev-conversations`, `hdev-ui-controls-e6`. Le nom suit le titre de la session : le vérifier avec `ListAgents` à chaque reprise.
 
 ## Exécutantes
 
