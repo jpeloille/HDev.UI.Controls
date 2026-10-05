@@ -105,7 +105,7 @@ public class HDevMenuPopup : Popup
     private void InstallDismissGuard()
     {
         if (PlacementTarget != null)
-            _guard.Install(PlacementTarget);
+            _guard.Install(PlacementTarget, this);
     }
 
     private void RemoveDismissGuard() => _guard.Remove();

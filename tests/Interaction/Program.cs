@@ -1232,6 +1232,90 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         w.Close();
     }
 
+    // ═══ GARDE DE FERMETURE (QX-02, option b) : désactivation de la fenêtre ═══
+    // La désactivation passe par les rappels Activated/Deactivated de l'implémentation de
+    // fenêtre headless, puis le répartiteur tourne le temps voulu (minuteries comprises).
+    // Le headless a des popups overlay (AvaloniaHeadlessPlatformOptions.OverlayPopups) ; le
+    // chemin natif se couvre en substituant la détection de la garde.
+    Console.WriteLine("Garde de fermeture (QX-02) :");
+    {
+        void Attente(Window w, int ms)
+        {
+            using var cts = new CancellationTokenSource(ms);
+            Dispatcher.UIThread.MainLoop(cts.Token);
+            Pump(w);
+        }
+        void Activation(Window w, bool actif)
+        {
+            var impl = typeof(TopLevel).GetProperty("PlatformImpl", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic
+                | System.Reflection.BindingFlags.Instance)!.GetValue(w)!;
+            var rappel = impl.GetType().GetProperty(actif ? "Activated" : "Deactivated", System.Reflection.BindingFlags.Public
+                | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+            ((Action?)rappel.GetValue(impl))?.Invoke();
+        }
+        bool SurvitA(Window w, Func<bool> ouvert, int ms)
+        {
+            Activation(w, false); Attente(w, ms); var pendant = ouvert() && !w.IsActive;
+            Activation(w, true); Attente(w, 300);
+            return pendant && ouvert();
+        }
+
+        // DateEdit (popup du socle)
+        var de = new HDevDateEdit { Width = 160 }; var w = Hote(de); w.Activate(); de.FocusEditor(); Touche(w, PhysicalKey.F4);
+        Check("headless : les popups sont dessinés dans la fenêtre (overlay)",
+            de.DropDown.IsOpen && HDevPopupDismissGuard.IsOverlayHosted(de.DropDown.Popup));
+        var date400 = SurvitA(w, () => de.DropDown.IsOpen, 400); var date1500 = SurvitA(w, () => de.DropDown.IsOpen, 1500);
+        Check("overlay, DateEdit : le calendrier survit à une désactivation de 400 ms puis de 1,5 s", date400 && date1500);
+        ClickAt(w, horsChamp);
+        Check("overlay, DateEdit : le clic dans la fenêtre hors du popup ferme toujours", !de.DropDown.IsOpen);
+        de.FocusEditor(); Touche(w, PhysicalKey.F4); Activation(w, false); Attente(w, 400); Activation(w, true); Attente(w, 50);
+        Touche(w, PhysicalKey.Escape);
+        Check("overlay, DateEdit : Échap ferme toujours, après une désactivation", !de.DropDown.IsOpen);
+
+        // Chemin natif (fenêtre séparée) : la fermeture après le débounce de 250 ms est conservée
+        var detection = HDevPopupDismissGuard.IsDrawnInWindow;
+        HDevPopupDismissGuard.IsDrawnInWindow = _ => false;
+        try
+        {
+            Touche(w, PhysicalKey.F4); var rebond = SurvitA(w, () => de.DropDown.IsOpen, 100);
+            Activation(w, false); Attente(w, 400); var fermeNatif = !de.DropDown.IsOpen; Activation(w, true); Attente(w, 50);
+            Check("popup natif : un rebond de 100 ms est absorbé, une désactivation de 400 ms ferme (débounce de 250 ms)",
+                rebond && fermeNatif);
+        }
+        finally { HDevPopupDismissGuard.IsDrawnInWindow = detection; }
+        w.Close();
+
+        // ComboBox et LookUpEdit (hors socle, même garde)
+        var cb = new HDevComboBox { Width = 160 }; cb.Properties.Items.AddRange(new object[] { "a", "b", "c" });
+        var wCb = Hote(cb); wCb.Activate(); cb.Focus(); Touche(wCb, PhysicalKey.F4);
+        var cb400 = SurvitA(wCb, () => cb.IsPopupOpen, 400); var cb1500 = SurvitA(wCb, () => cb.IsPopupOpen, 1500);
+        ClickAt(wCb, horsChamp);
+        Check("overlay, ComboBox : la liste survit à 400 ms et 1,5 s de désactivation ; le clic extérieur la ferme",
+            cb400 && cb1500 && !cb.IsPopupOpen);
+        wCb.Close();
+        var refs = new List<RefE0> { new(1, "Alpha"), new(2, "Beta") };
+        var lu = new HDevLookUpEdit { Width = 180, DataSource = refs, DisplayMember = "Nom", ValueMember = "Id" };
+        var wLu = Hote(lu); wLu.Activate(); lu.Focus(); Touche(wLu, PhysicalKey.F4);
+        var luOuvert = () => Champ<bool>(lu, "_isDropDownOpen");
+        var lu400 = SurvitA(wLu, luOuvert, 400); var lu1500 = SurvitA(wLu, luOuvert, 1500);
+        Touche(wLu, PhysicalKey.Escape);
+        Check("overlay, LookUpEdit : la grille survit à 400 ms et 1,5 s de désactivation ; Échap la ferme",
+            lu400 && lu1500 && !luOuvert());
+        wLu.Close();
+
+        // Menus (HDevMenuPopup)
+        var item = new HDevMenuItem("Nouveau"); var menu = new HDevMenuBarItem("Fichier"); menu.Items.Add(item);
+        var barre = new HDevMenuBar(); barre.Items.Add(menu);
+        var wMenu = new Window { Width = 500, Height = 300, Content = barre }; wMenu.Show(); Pump(wMenu); wMenu.Activate();
+        ClickAt(wMenu, menu.TranslatePoint(new Point(menu.Bounds.Width / 2, 14), wMenu)!.Value);
+        var menuOuvert = () => item.OwnerPopup is { IsOpen: true };
+        var m400 = SurvitA(wMenu, menuOuvert, 400); var m1500 = SurvitA(wMenu, menuOuvert, 1500);
+        ClickAt(wMenu, new Point(400, 250));
+        Check("overlay, menu : il survit à 400 ms et 1,5 s de désactivation ; le clic extérieur le ferme",
+            m400 && m1500 && !menuOuvert());
+        wMenu.Close();
+    }
+
     // ═══ SOCLE COMPOSITE (E2) : multiligne ═══
     {
         var memo = new EditeurNuE2 { Width = 200 }; var w = Hote(memo);

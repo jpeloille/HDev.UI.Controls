@@ -130,7 +130,7 @@ public class HDevTokenEdit : Border
         };
         HDevPopupPlacement.Apply(_popup, HDevPopupPlacement.Gap);
         _dismissGuard = new HDevPopupDismissGuard(() => _isOpen, CloseSuggestions);
-        _popup.Opened += (s, e) => _dismissGuard.Install(this);
+        _popup.Opened += (s, e) => _dismissGuard.Install(this, _popup);
         _popup.Closed += (s, e) => { _dismissGuard.Remove(); _isOpen = false; };
         _panel.Children.Add(_popup);
     }

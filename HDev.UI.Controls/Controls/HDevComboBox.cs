@@ -606,7 +606,7 @@ public class HDevComboBox : Control
         };
 
         _guard = new HDevPopupDismissGuard(() => _isDropDownOpen, CloseDropDown);
-        _popup.Opened += (s, e) => _guard.Install(this);
+        _popup.Opened += (s, e) => _guard.Install(this, _popup);
         _popup.Closed += OnPopupClosed;
     }
 

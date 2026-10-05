@@ -214,7 +214,13 @@ Le Gantt, qui édite ses dates avec HDevDateEdit, n'est pas touché par le point
    - **Écart voulu d'un test E1.** « reposer la valeur courante par code réaffiche son texte » fabriquait un texte invalide en collant « abc », désormais refusé. Il passe par une saisie incomplète (« 15 ») ; l'intention (constat E0 n° 5) est inchangée.
 4. **Une saisie sous masque réduit la sélection au curseur** (constat E0 n° 7) : après un collage, une frappe en bloc puis Retour arrière n'efface plus qu'un caractère.
 5. **Les popups de DateEdit, SearchControl, TokenEdit et LookUpEdit gardent leur écart au champ quand ils se retournent** (constat E0 n° 4) : 2 px de jour dessous comme dessus, ou la bordure fusionnée (−1 px) du LookUpEdit. Retourné, un popup est donc 4 px (LookUpEdit : 2 px) plus haut qu'avant.
-6. **Une seule garde de fermeture** (`HDevPopupDismissGuard`) pour toute la suite : HDevComboBox et les menus (HDevMenuPopup) quittent leur copie. Comportement inchangé (clic extérieur, désactivation débouncée de 250 ms) ; la survie à une brève désactivation sur le bureau réel reste à vérifier (QX-02).
+6. **Une seule garde de fermeture** (`HDevPopupDismissGuard`) pour toute la suite : HDevComboBox et les menus (HDevMenuPopup) quittent leur copie.
+   - **La désactivation de la fenêtre ne ferme plus un popup dessiné dans la fenêtre** (popups overlay : `X11PlatformOptions.OverlayPopups`, le cas de la démo et des applications sous Linux), quelle que soit sa durée : Alt+Tab, focus pris par une autre fenêtre (décision du 05/10/2026, option (b) de QX-02).
+     - Avant : le popup se fermait si la fenêtre restait inactive plus de 250 ms. Sur le bureau réel, aucun popup ne survivait à une désactivation ; le headless le reproduisait à 400 ms et à 1,5 s.
+     - Il se ferme comme avant par un clic dans la fenêtre hors de lui, Échap, un choix ou le code.
+   - **Un popup natif** (fenêtre séparée, sur d'autres plateformes ou sans overlay) garde la fermeture après 250 ms de fenêtre inactive : il ne flotte jamais au-dessus des autres applications.
+   - La garde le détecte à l'exécution, popup par popup, d'après l'hôte de son contenu : hôte overlay dans la fenêtre, ou racine de popup native. Aucune option publique.
+   - Vérifié en headless, qui a des popups overlay ; le chemin natif y est couvert en substituant la détection. La vérification sur le bureau réel est refaite à part (QX-02).
 7. **HDevDateEdit passe sur le popup du socle.** Il reçoit `IsDropDownOpen`, `DropDownOpening`, `DropDownOpened`, `DropDownClosing` et `DropDownClosed` ; Alt+↑ ferme désormais aussi le calendrier. Son bouton calendrier reste interne jusqu'au portage des boutons d'éditeur (E3).
 8. **Les boutons-glyphes des éditeurs (`HDevEditorGlyphButton`) sont cliquables sur toute leur surface**, et plus seulement sur les traits de leur glyphe : le test de clic d'Avalonia suit ce qui est dessiné.
 

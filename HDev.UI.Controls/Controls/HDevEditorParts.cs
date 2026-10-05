@@ -717,7 +717,7 @@ internal sealed class HDevEditorDropDown
         HDevPopupPlacement.Apply(Popup, HDevPopupPlacement.Gap);
 
         _guard = new HDevPopupDismissGuard(() => IsOpen, () => Close(HDevDropDownCloseReason.LightDismiss));
-        Popup.Opened += (_, _) => _guard.Install(owner);
+        Popup.Opened += (_, _) => _guard.Install(owner, Popup);
         Popup.Closed += (_, _) =>
         {
             _guard.Remove();
@@ -875,7 +875,8 @@ internal static class HDevPopupPlacement
 
 /// <summary>
 /// La garde de fermeture des popups, unique pour toute la suite (menus, combo, popups des
-/// éditeurs) : clic extérieur + désactivation de fenêtre avec délai de grâce 250 ms.
+/// éditeurs) : clic dans la fenêtre hors du popup ; désactivation de la fenêtre seulement pour
+/// un popup natif, avec délai de grâce de 250 ms (un popup overlay y survit).
 /// Remplace le light dismiss Avalonia, instable sous GNOME/XWayland.
 /// </summary>
 internal sealed class HDevPopupDismissGuard
@@ -883,6 +884,22 @@ internal sealed class HDevPopupDismissGuard
     private readonly Func<bool> _isOpen;
     private readonly Action _close;
     private TopLevel? _root;
+    private Avalonia.Controls.Primitives.Popup? _popup;
+
+    /// <summary>
+    /// Le popup est-il dessiné dans la fenêtre (overlay) ? Point de substitution pour le banc
+    /// headless, qui n'a que des popups overlay et doit aussi couvrir le chemin natif.
+    /// </summary>
+    internal static Func<Avalonia.Controls.Primitives.Popup, bool> IsDrawnInWindow { get; set; } = IsOverlayHosted;
+
+    /// <summary>
+    /// Vrai si le contenu du popup vit dans la fenêtre (hôte overlay : OverlayPopups, popup
+    /// overlay) ; faux pour un popup natif, fenêtre séparée (sa racine est un PopupRoot)
+    /// </summary>
+    internal static bool IsOverlayHosted(Avalonia.Controls.Primitives.Popup popup)
+        => popup.Child is Visual child
+           && TopLevel.GetTopLevel(child) is not Avalonia.Controls.Primitives.PopupRoot
+           && child.GetVisualAncestors().OfType<Avalonia.Controls.Primitives.OverlayPopupHost>().Any();
 
     /// <summary>Instant de la dernière fermeture par clic extérieur (anti-réouverture)</summary>
     public DateTime LastOutsideClose { get; private set; }
@@ -893,8 +910,12 @@ internal sealed class HDevPopupDismissGuard
         _close = close;
     }
 
-    public void Install(Visual anchor)
+    /// <param name="anchor">Le contrôle qui porte le popup (sa fenêtre est surveillée)</param>
+    /// <param name="popup">Le popup gardé : selon qu'il est dessiné dans la fenêtre ou natif, la
+    /// désactivation de la fenêtre le ferme ou non</param>
+    public void Install(Visual anchor, Avalonia.Controls.Primitives.Popup popup)
     {
+        _popup = popup;
         _root = TopLevel.GetTopLevel(anchor);
         if (_root == null) return;
 
@@ -911,6 +932,7 @@ internal sealed class HDevPopupDismissGuard
         if (_root is Window w)
             w.Deactivated -= OnRootDeactivated;
         _root = null;
+        _popup = null;
     }
 
     /// <summary>Vrai si une fermeture par le garde date de moins de 250 ms (même clic)</summary>
@@ -938,8 +960,16 @@ internal sealed class HDevPopupDismissGuard
 
     private void OnRootDeactivated(object? sender, EventArgs e)
     {
-        // Certains bureaux (GNOME/XWayland) font rebondir l'activation de la
-        // fenêtre : ne fermer que si elle reste inactive 250 ms
+        // Popup dessiné dans la fenêtre (overlay) : il ne flotte jamais au-dessus des autres
+        // applications, et la désactivation ne le ferme pas, quelle que soit sa durée (Alt+Tab,
+        // focus pris par une autre fenêtre…). Il se ferme par un clic dans la fenêtre hors de
+        // lui, Échap, un choix ou le code (décision du 05/10/2026, QX-02).
+        if (_popup != null && IsDrawnInWindow(_popup))
+            return;
+
+        // Popup natif (fenêtre séparée) : fermé si la fenêtre reste inactive 250 ms, pour qu'il
+        // ne flotte pas au-dessus des autres applications. Certains bureaux (GNOME/XWayland)
+        // font rebondir l'activation : le délai absorbe ce rebond.
         Avalonia.Threading.DispatcherTimer.RunOnce(() =>
         {
             if (_isOpen() && _root is Window { IsActive: false })
