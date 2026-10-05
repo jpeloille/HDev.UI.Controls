@@ -79,3 +79,4 @@
   - Cause : HDevPopupDismissGuard.OnRootDeactivated ferme après 250 ms si la fenêtre est inactive. La même logique était dupliquée avant E2.
   - Piste de 2a : fermer sur désactivation seulement si le pointeur a quitté la fenêtre.
   - Contre-proposition de l'orchestratrice : avec OverlayPopups, ne plus fermer sur désactivation (le popup est dessiné dans la fenêtre), et fermer sur désactivation seulement quand les popups sont natifs.
+- Julien choisit l'option (b) : en overlay, la désactivation ne ferme plus les popups ; avec des popups natifs, le débounce de 250 ms est gardé. Le correctif est confié à M-01 (sous-agent). 2a arrête son prototype, rend un FIN partiel et fera la vérification sur le bureau après le correctif.
