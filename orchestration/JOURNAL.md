@@ -88,3 +88,11 @@
 - Consigne à M-01 : Échap ferme HDevMenuPopup et HDevContextMenu (suite logique de b, aucune API changée).
 - Consigne à 2a : banc sur une copie de f4aa045, et branche native vérifiée en GNOME sans écran (OverlayPopups=false). Le bureau réel est différé : le test sans écran pourrait le remplacer.
 - FIN M-01 (Échap des menus) : 71c7cfc. Échap ferme toute la chaîne de menus, comme dans la barre ; 4 vérifications nouvelles, qui échouent sans le correctif ; banc 187/187 trois fois, xUnit 380.
+- RAPPORT M-03 (2a) sur 71c7cfc.
+  - Banc headless : 60/60.
+  - GNOME Shell 50.1 sans écran, sur la vraie pile :
+    - natifs : classés PopupRoot, rebond absorbé, fermeture après un Alt+Tab réel de 700 ms ;
+    - overlay : désactivation ignorée, le popup reste ouvert.
+  - Captures : missions/M-03/captures/gnome-sans-ecran-71c7cfc/.
+  - Non couverts : les chemins du pointeur (le pointeur virtuel n'atteint pas Avalonia en XInput2), l'environnement réel de Julien, Échap des menus dans GNOME.
+  - 2a recommande un créneau réduit sur le bureau réel.

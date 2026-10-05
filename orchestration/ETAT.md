@@ -20,7 +20,7 @@ Un sous-agent meurt avec l'orchestratrice. À la reprise, relancer la mission de
 | Mission | Lot | Worktree | Branche | Exécutante | État |
 |---|---|---|---|---|---|
 | [M-01](missions/M-01.md) | E2, socle composite | `atelier/missions/M-01/` (Controls + DataGrid en lecture) | `suite-M-01` | sous-agent d'arrière-plan de l'orchestratrice, id `a91312d0147b99d5a` | correctif (b) f4aa045 + Échap des menus 71c7cfc, banc 187/187 ×3 ; avant cela : **FIN** : 14 commits (49bbeb6..7ce4131), banc 175/175 ×3, xUnit 380 ; vérifié par l'orchestratrice (banc ALL PASS, xUnit 380, aucune mention DevExpress ni Co-Authored-By) |
-| [M-03](missions/M-03.md) | diagnostic QX-02 (popups non maintenus sur désactivation) | `atelier/missions/M-03/` (base f666e3d, détachée) + M-01 en lecture | — | `hdev-ui-controls-2a` | cause trouvée ; décision (b) ; correctif prêt (f4aa045) : vérification sur le bureau à faire dès que Julien libère un créneau |
+| [M-03](missions/M-03.md) | diagnostic QX-02 (popups non maintenus sur désactivation) | `atelier/missions/M-03/` (base f666e3d, détachée) + M-01 en lecture | — | `hdev-ui-controls-2a` | 71c7cfc validé : banc 60/60, GNOME sans écran OK ; reste un contrôle réduit sur le bureau réel (chemins du pointeur) |
 | [M-02](missions/M-02.md) | retrait des mentions DevExpress dans le code | à créer au lancement | `suite-M-02` | sous-agent | validée, attend la fusion de M-01 |
 
 ## Questions en attente de Julien
