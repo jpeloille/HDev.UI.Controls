@@ -33,6 +33,12 @@ Un sous-agent meurt avec l'orchestratrice. À la reprise, relancer la mission de
 | QX-06 | 2a | Proposés, non faits : note datée Q1 dans UGantt-charte.md, réalignement § 0 d'IMPROVEMENTS.md (dépôt grille), mise à jour de context.md. |
 | QX-07 | 2a | Anciens : charte HDev (proposée, non validée) ; PDF du benchmark (ONLYOFFICE ou impression Edge). |
 
+### M-03 : décision attendue
+
+| N° | Question |
+|---|---|
+| M-03-D1 | Que fait un popup quand la fenêtre perd le focus ? (a) piste de 2a : se fermer si le pointeur a quitté la fenêtre ; (b) proposition de l'orchestratrice : rester ouvert, quand les popups sont dessinés dans la fenêtre (OverlayPopups), et se fermer sur désactivation seulement avec des popups natifs ; (c) statu quo, débounce de 250 ms. |
+
 ## Fusions à décider
 
 - `suite-M-01` → `suite` : **bloquée : QX-02 échoue** (Julien, 05/10 : les popups ne restent pas ouverts) ; diagnostic M-03, correctif à appliquer dans M-01. À la fusion, l'orchestratrice met aussi à jour le décompte écrit à la main dans Plan-Suite.md (34/25/97/10 → 36/25/95/10).

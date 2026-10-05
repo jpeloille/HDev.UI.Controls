@@ -74,3 +74,8 @@
 - Julien : utiliser les conversations ouvertes dans l'IDE, qui font le travail et répondent, plutôt que lui en faire ouvrir. M-03 est confiée à hdev-ui-controls-2a.
 - RAPPORT M-03 (2a) : la garde d'E2 est identique ligne pour ligne aux gardes d'avant E2. Au Deactivated, elle attend 250 ms, puis ferme si la fenêtre est inactive. Hypothèse : le défaut est antérieur à E2, car un Alt+Tab réel dure plus de 250 ms. Pilotage du bureau en cours (xdotool, fenêtre témoin xev) ; Julien doit éviter clavier et souris.
 - QUESTION M-03 (2a) : Julien utilise son bureau, et deux fenêtres de myFlightOpsBoard sont ouvertes. 2a demande un créneau de 5 minutes sans clavier ni souris, avec myFlightOpsBoard réduit ou fermé. En attendant, elle reproduit le défaut en headless, en simulant la désactivation par réflexion (banc dans /tmp). `xdotool windowactivate` échoue sous mutter ; elle passera par EWMH.
+- RAPPORT M-03 : défaut reproduit en headless (banc /tmp/hdev-m03), identique avant et après E2 sur les 5 popups.
+  - Rebond de 100 ms : le popup survit. Désactivations de 400 ms et 1,5 s : il se ferme. Clics extérieurs : il se ferme.
+  - Cause : HDevPopupDismissGuard.OnRootDeactivated ferme après 250 ms si la fenêtre est inactive. La même logique était dupliquée avant E2.
+  - Piste de 2a : fermer sur désactivation seulement si le pointeur a quitté la fenêtre.
+  - Contre-proposition de l'orchestratrice : avec OverlayPopups, ne plus fermer sur désactivation (le popup est dessiné dans la fenêtre), et fermer sur désactivation seulement quand les popups sont natifs.
