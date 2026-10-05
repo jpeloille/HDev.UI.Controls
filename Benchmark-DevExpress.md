@@ -173,7 +173,7 @@ Détail de la liaison MVVM côté HDev (relevé exhaustif des propriétés de va
 | Lookup avec recherche | `SearchLookUpEdit` | `LookUpEdit` (mode search) | — | — | ❌ | |
 | Lookup multi-valeurs | — | `LookUpEdit` (modes multi-select, token) | — | — | ❌ | |
 | Lookup arborescent | `TreeListLookUpEdit` | — | — | — | ❌ | |
-| Popup à contenu libre | `PopupContainerEdit` | `PopupBaseEdit` (nv) | `TcxPopupEdit` | `HDevPopupContainerEdit` | ✅ | `DropDownContent` sur tout éditeur du socle ; `IsDropDownOpen` liable, ouverture et fermeture annulables, acceptation de la valeur |
+| Popup à contenu libre | `PopupContainerEdit` | `PopupBaseEdit` (nv) | `TcxPopupEdit` | `HDevDropDownEdit` | ✅ | `DropDownContent` sur tout éditeur du socle ; `IsDropDownOpen` liable, ouverture et fermeture annulables ; valeur prise à la fermeture (Échap rend la valeur d'avant) |
 | Galerie en popup | `PopupGalleryEdit` | — | — | — | ❌ | |
 | Liste | `ListBoxControl`, `ImageListBoxControl` | `ListBoxEdit` | `TcxListBox`, `TdxListViewControl` | `HDevListView` | ✅ | items riches, groupes repliables, multi-sélection, virtualisée |
 | Liste à cases | `CheckedListBoxControl` | `ListBoxEdit` (mode checked) | `TcxCheckListBox`, `TcxCheckGroup` | — | ❌ | |
@@ -597,18 +597,18 @@ Le score mesure l'étendue couverte, pas l'effort restant. Un seul item DevExpre
 
 | Capacité DevExpress | HDev | Remarque |
 |---|---|---|
-| Valeur liable en XAML (`EditValue`) | 🟡 | oui pour TextBox, DateEdit (contrat de valeur, lot E1), ButtonEdit, PopupContainerEdit (lot E2), CheckBox, RadioButton, ToggleSwitch, Slider ; non pour TimeEdit, SpinEdit, ComboBox, LookUpEdit, TokenEdit, SearchControl, MonthCalendar (propriétés CLR) |
+| Valeur liable en XAML (`EditValue`) | 🟡 | oui pour TextBox, DateEdit (contrat de valeur, lot E1), ButtonEdit, DropDownEdit (lot E2), CheckBox, RadioButton, ToggleSwitch, Slider ; non pour TimeEdit, SpinEdit, ComboBox, LookUpEdit, TokenEdit, SearchControl, MonthCalendar (propriétés CLR) |
 | Masques simples | ✅ | 0, 9, L, A et littéraux ; le collage passe par le masque, et par le filtre numérique de SpinEdit (lot E2, test d'interaction) |
 | Masques numériques, date-heure, regex | 🟡 | DateEdit et SpinEdit formatent eux-mêmes ; pas de regex |
 | Validation annulable, texte et rendu d'erreur | ✅ | |
 | Validation centralisée, `IDataErrorInfo` | ❌ | |
 | Texte d'invite | ✅ | |
 | Lecture seule | ✅ | |
-| Boutons d'éditeur configurables | ✅ | `Buttons` et `ButtonClick` sur tout éditeur du socle (lot E2) ; les boutons propres aux éditeurs existants y passent en E3 |
+| Boutons d'éditeur configurables | ✅ | `Buttons` et leur `Click` routé sur tout éditeur du socle (lot E2) ; les boutons propres aux éditeurs existants y passent en E3 |
 | Popups qui se retournent vers le haut | ✅ | tous (test d'interaction) ; écart au champ identique dessous et dessus, mesuré au pixel (lot E2) ; la ComboBox bascule encore elle-même jusqu'à son portage (E3) |
 | Autocomplétion | ✅ | ComboBox : Suggest, Append |
 | Même éditeur en autonome et in-place (grille, arbre, barres) | ❌ | |
-| Socle commun à tous les éditeurs | 🟡 | `HDevEditorBase` porte zone de valeur, multiligne, boutons, popup, masque et validation (lot E2) ; il porte DateEdit, TimeEdit, SpinEdit, SearchControl, ButtonEdit et PopupContainerEdit ; TextBox, ComboBox, LookUpEdit et TokenEdit sont à part jusqu'à E3 |
+| Socle commun à tous les éditeurs | 🟡 | `HDevEditorBase` porte zone de valeur, multiligne, boutons, popup, masque et validation (lot E2) ; il porte DateEdit, TimeEdit, SpinEdit, SearchControl, ButtonEdit et DropDownEdit ; TextBox, ComboBox, LookUpEdit et TokenEdit sont à part jusqu'à E3 |
 | Thème clair et sombre à chaud | ✅ | |
 | États visuels cohérents, halo de focus | ✅ | |
 | Libellé flottant | ❌ | WinForms |

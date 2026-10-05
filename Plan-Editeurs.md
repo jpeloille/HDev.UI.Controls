@@ -216,28 +216,29 @@ Les planches de `tests/Gallery`, en clair et en sombre, sont archivées comme r�
 - **Masque et validation** hébergés par le socle, avec l'affichage d'erreur existant (filet, halo, infobulle).
   - Le collage passe par le masque (constat E0 n° 6).
   - Une saisie sous masque réduit la sélection au curseur (n° 7).
-- **Nouveaux contrôles** : **HDevButtonEdit** (ligne 6) et **HDevPopupContainerEdit** (ligne 19).
+- **Nouveaux contrôles** : **HDevButtonEdit** (ligne 6) et **HDevDropDownEdit** (ligne 19 ; nommé PopupContainerEdit jusqu'à la décision du 05/10/2026).
 
 **Acceptation.**
 - Tests d'Interaction sur les boutons, le popup (y compris le retournement mesuré en géométrie), le collage sous masque et le multiligne.
 - Planche « Champs » en clair et en sombre.
 
 **Résultat : fait le 05/10/2026** (mission M-01, branche `suite-M-01`). La fusion dans `suite` attend la vérification manuelle QX-02 (survie d'un popup à une brève désactivation de la fenêtre, sur le bureau réel).
-- **Décisions du 05/10/2026** (questions de la mission M-01) : `HDevEditorButton` (`Kind`, `Icon`), `ButtonClick`, `DropDownContent`, les arguments des événements du popup, les noms des glyphes, la valeur de HDevButtonEdit (`Text`, la couche typée ne déclarant plus `Value`) et de HDevPopupContainerEdit (`Value`, `object?`), la zone de valeur protégée.
+- **Décisions du 05/10/2026** (questions de la mission M-01) : `HDevEditorButton` (`Kind`, `Icon`, `Click` routé), `DropDownContent`, les arguments des événements du popup (`CloseReason` : `Accepted`, `Canceled`, `LightDismiss` ; `IsValueAccepted`), les noms des glyphes, la valeur de HDevButtonEdit (`Text`, la couche typée ne déclarant plus `Value`) et de HDevDropDownEdit (`Value`, `object?`, prise à la fermeture depuis `DropDownValue`), la zone de valeur protégée.
+- **Règle de nommage** (Julien, 05/10/2026) : les conventions et les noms d'Avalonia d'abord, puis la typologie HDev ; un nom identique à une suite tierce seulement s'il est le nom logique et générique.
 - **Pièces du socle.**
   - Zone de valeur : le champ texte, ou un présentateur (`SetValuePresenter`, protégé).
   - `IsMultiline` : 28 px en monoligne, trois lignes au départ en multiligne ; les boutons restent sur la première ligne.
-  - `Buttons` et `ButtonClick`, sur tout éditeur du socle ; 10 glyphes ajoutés à `HDevEditorIcon`.
+  - `Buttons` et `HDevEditorButton.Click` (routé), sur tout éditeur du socle ; 10 glyphes ajoutés à `HDevEditorIcon`.
   - Popup public : `IsDropDownOpen`, `DropDownContent`, ouverture et fermeture annulables, acceptation de la valeur ; clavier F4, Alt+↓, Alt+↑, Échap, Entrée. HDevDateEdit, le témoin, y passe.
 - **Constats E0.**
   - n° 4 : l'écart au champ est porté par le rectangle d'ancrage, que le positionneur d'Avalonia retourne avec le popup. Une marge du contenu ne sert pas : Avalonia 12 la compense. DateEdit, SearchControl, TokenEdit et LookUpEdit sont corrigés ; la ComboBox perd sa bascule manuelle à son portage (E3).
   - n° 6 : le collage passe par le masque et les filtres, en entier ou pas du tout.
   - n° 7 : cause trouvée. Poser `CaretIndex` à sa valeur courante ne réduit pas la sélection ; le socle la réduit lui-même.
 - **Une seule garde de fermeture** : la ComboBox et les menus passent sur `HDevPopupDismissGuard`.
-- **Nouveaux contrôles** : HDevButtonEdit (ligne 6) et HDevPopupContainerEdit (ligne 19).
+- **Nouveaux contrôles** : HDevButtonEdit (ligne 6) et HDevDropDownEdit (ligne 19), dont la valeur n'est prise qu'à la fermeture : Échap rend la valeur d'avant, le clic extérieur garde le choix.
 - **Vérifications.**
-  - 36 vérifications « Socle des éditeurs (E2) », dont un formulaire en XAML compilé (`FormulaireE2.axaml`) : boutons (clic réel, commande, visibilité liée), popup public, retournement mesuré au pixel, collage, sélection, multiligne.
-  - Le banc complet passe trois fois à 172 sur 172. Un test E1 a changé de moyen, pas d'intention (`MIGRATION-editeurs.md`, E2).
+  - 39 vérifications « Socle des éditeurs (E2) », dont un formulaire en XAML compilé (`FormulaireE2.axaml`) : boutons (clic réel, `Click` routé jusqu'au formulaire, commande, visibilité liée), popup public (valeur en cours, Échap, clic extérieur, `ValueChanging` annulé à la fermeture), retournement mesuré au pixel, collage, sélection, multiligne.
+  - Le banc complet passe trois fois à 175 sur 175. Un test E1 a changé de moyen, pas d'intention (`MIGRATION-editeurs.md`, E2).
   - 380 tests xUnit verts.
   - Planches : « champs » identique au pixel jusqu'à sa nouvelle section du bas, en clair et en sombre ; « fondations » montre les nouveaux glyphes ; les autres planches sont inchangées, hors lignes « maintenant » des planches datées.
 

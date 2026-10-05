@@ -70,7 +70,7 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
 - **Seules les lignes marquées « E1, fait » ou « E2, fait » sont faites.** Toutes les autres sont des propositions, confirmées au lot indiqué.
 - **Une fonction n'est retirée que si elle a un équivalent** (décision du 05/10/2026). Une ligne « supprimé » donne donc toujours l'équivalent.
 
-### 2.1 Socle (HDevEditorBase : DateEdit, TimeEdit, SpinEdit, SearchControl, ButtonEdit, PopupContainerEdit)
+### 2.1 Socle (HDevEditorBase : DateEdit, TimeEdit, SpinEdit, SearchControl, ButtonEdit, DropDownEdit)
 
 | Avant | Après | Lot |
 |---|---|---|
@@ -83,8 +83,8 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
 | `HDevEditorBase<T>.Value` (abstrait, public) | retiré ; chaque éditeur déclare sa valeur sous le nom D3 (`Value`, ou `Text` pour un éditeur de texte) ; le code générique passe par `IHDevEditor.EditValue` | **E2, fait** |
 | `Text` (CLR) | conservé, surchargeable : un éditeur de texte le porte par sa StyledProperty liable (HDevButtonEdit) | **E2, fait** |
 | — | `IsMultiline` : la hauteur n'est fixée qu'en monoligne | **E2, fait** |
-| — | `Buttons` (`HDevEditorButton` : `Kind`, `Icon`, `Command`, `CommandParameter`, et `ToolTip.Tip`, `IsVisible`, `IsEnabled` d'Avalonia) et `ButtonClick` (`HDevEditorButtonClickEventArgs`, `Handled`) | **E2, fait** |
-| — | `IsDropDownOpen` (liable dans les deux sens), `DropDownContent`, `DropDownOpening` (`CancelEventArgs`), `DropDownOpened`, `DropDownClosing` (`HDevDropDownClosingEventArgs` : `Cancel`, `Reason`, `AcceptValue`), `DropDownClosed` (`HDevDropDownClosedEventArgs` : `Reason`, `AcceptValue`) | **E2, fait** |
+| — | `Buttons` (`HDevEditorButton` : `Kind`, `Icon`, `Command`, `CommandParameter`, et `ToolTip.Tip`, `IsVisible`, `IsEnabled` d'Avalonia) et `HDevEditorButton.Click` (événement routé qui remonte, `RoutedEventArgs` : le bouton sur `Source`, `Handled` empêche l'action par défaut) | **E2, fait** |
+| — | `IsDropDownOpen` (liable dans les deux sens), `DropDownContent`, `DropDownOpening` (`CancelEventArgs`), `DropDownOpened`, `DropDownClosing` (`HDevDropDownClosingEventArgs` : `Cancel`, `CloseReason`, `IsValueAccepted`), `DropDownClosed` (`HDevDropDownClosedEventArgs` : `CloseReason`, `IsValueAccepted`) ; `HDevDropDownCloseReason` : `Accepted`, `Canceled`, `LightDismiss` | **E2, fait** |
 | `SetRightElement` (protégé, un seul élément utile) | conservé ; les éléments s'alignent de gauche à droite, avant les `Buttons` | **E2, fait** |
 | — | `SetValuePresenter(Control?)` (protégé) : un présentateur à la place du champ texte | **E2, fait** |
 | `HDevEditorIcon` | conservé ; s'y ajoutent `Clear`, `Ellipsis`, `Search`, `Clock`, `Calculator`, `Link`, `Folder`, `Swatch`, `Plus`, `Minus` | **E2, fait** |
@@ -142,7 +142,7 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
 | `ShowPopup()`, `ClosePopup()`, `HidePopup()` | `IsDropDownOpen = true / false` | E3 (pièce du socle : E2, fait) |
 | `Popup` (annulable), `PopupOpened` | `DropDownOpening` (annulable), `DropDownOpened` | E3 (pièce du socle : E2, fait) |
 | `QueryCloseUp`, `CloseUp`, `PopupClosed` | `DropDownClosing` (annulable, avec acceptation de la valeur), `DropDownClosed` | E3 (pièce du socle : E2, fait) |
-| `ButtonClick` | `ButtonClick` des boutons d'éditeur du socle | E3 (pièce du socle : E2, fait) |
+| `ButtonClick` | `HDevEditorButton.Click`, routé, des boutons d'éditeur du socle | E3 (pièce du socle : E2, fait) |
 | `DoValidate()` | `Validate()` | E3 |
 | `RefreshEditValue()` | supprimé : les liaisons s'en chargent | E3 |
 | `SelectedIndex`, `SelectedItem`, `Text`, `TextChanged`, `IsModified`, `CustomDisplayText`, `Reset()`, `SelectAll()`, `DeselectAll()`, `FindItem()`, `FindItemByPrefix()`, `GetItemText()` | conservés | — |
@@ -219,9 +219,14 @@ Le Gantt, qui édite ses dates avec HDevDateEdit, n'est pas touché par le point
 8. **Les boutons-glyphes des éditeurs (`HDevEditorGlyphButton`) sont cliquables sur toute leur surface**, et plus seulement sur les traits de leur glyphe : le test de clic d'Avalonia suit ce qui est dessiné.
 
 **Ajouts**
-- Sur tout éditeur du socle : `IsMultiline`, `Buttons` et `ButtonClick`, le popup public (`IsDropDownOpen`, `DropDownContent` et ses quatre événements).
-  - Clavier du popup : F4 et Alt+↓ ouvrent ou ferment, Alt+↑ et Échap ferment, depuis le champ comme depuis le contenu ; Entrée dans le contenu ferme en acceptant (`Reason = Accept`), sauf dans un texte multiligne.
-  - Un bouton `DropDown` bascule le popup ; `Clear` vide la valeur, sauf si `ButtonClick` est marqué traité (et jamais en lecture seule) ; les autres types ne font que lever `ButtonClick`. La commande du bouton s'exécute après `ButtonClick`.
-  - `AcceptValue` dit si le choix fait dans le popup vaut ; le socle ne réécrit jamais la valeur à la fermeture.
+- Sur tout éditeur du socle : `IsMultiline`, `Buttons` et `HDevEditorButton.Click`, le popup public (`IsDropDownOpen`, `DropDownContent` et ses quatre événements).
+  - Clavier du popup : F4 et Alt+↓ ouvrent ou ferment, Alt+↑ et Échap ferment, depuis le champ comme depuis le contenu ; Entrée dans le contenu ferme en acceptant (`CloseReason = Accepted`), sauf dans un texte multiligne.
+  - `HDevEditorButton.Click` est routé et remonte, comme `Button.Click` d'Avalonia : un formulaire écoute tous les boutons d'éditeur d'un seul `AddHandler(HDevEditorButton.ClickEvent, …)`, le bouton se lit sur `Source`.
+  - Un bouton `DropDown` bascule le popup ; `Clear` vide la valeur, sauf si `Click` est marqué traité (`Handled`, et jamais en lecture seule) ; les autres types ne font que lever `Click`. La commande du bouton s'exécute après `Click`, dans tous les cas.
+  - `IsValueAccepted` dit si le choix fait dans le popup vaut : vrai par défaut pour `Accepted` et `LightDismiss` (un clic extérieur garde le choix), faux pour `Canceled` (Échap) ; `DropDownClosing` peut le changer.
 - **HDevButtonEdit** : champ texte à boutons ; `Text` liable dans les deux sens ; un bouton `Ellipsis` par défaut.
-- **HDevPopupContainerEdit** : `Value` (`object?`) liable, non éditable, affichée par `ValueTemplate`, à défaut par `ToString()`, sinon l'invite ; un bouton `DropDown` par défaut ; un clic sur le champ ouvre. Le contenu se lie à `Value` de l'éditeur, et ce qu'il y écrit, popup ouvert, est un changement de l'utilisateur (`Origin = User`, sans `ValueChanging`).
+- **HDevDropDownEdit** : `Value` (`object?`) liable, non éditable, affichée par `ValueTemplate`, à défaut par `ToString()`, sinon l'invite ; un bouton `DropDown` par défaut ; un clic sur le champ ouvre.
+  - Le contenu se lie à `DropDownValue`, la valeur en cours : popup fermé, elle suit `Value` ; elle en repart à l'ouverture ; `Value` ne bouge pas tant que le popup est ouvert, et le champ l'affiche.
+  - À la fermeture, si `IsValueAccepted`, la valeur en cours est prise comme un changement de l'utilisateur (`ValueChanging` annulable, puis `ValueChanged`, `Origin = User`) ; sinon, ou si le changement est annulé, elle revient à `Value`. Le popup se ferme dans tous les cas.
+
+**Décisions de nommage du 05/10/2026** (ordre : conventions d'Avalonia, puis typologie HDev) : `ButtonClick` devient `HDevEditorButton.Click` routé ; `Reason` devient `CloseReason` ; `Accept`, `Cancel`, `Outside` deviennent `Accepted`, `Canceled`, `LightDismiss` ; `AcceptValue` devient `IsValueAccepted` ; HDevPopupContainerEdit devient **HDevDropDownEdit**. Ces noms n'ont jamais été livrés : ce ne sont pas des ruptures pour les applications.
