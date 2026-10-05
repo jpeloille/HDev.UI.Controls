@@ -98,3 +98,12 @@
   - 2a recommande un créneau réduit sur le bureau réel.
 - Julien : la vérification sur le bureau réel revient à une conversation de l'IDE (captures), pas à lui. Feu vert envoyé à 2a pour le bureau réel sur 71c7cfc.
 - RAPPORT M-03 (bloqué) : sa session refuse l'injection d'entrées (RemoteDesktop de mutter) ; xdotool passerait par le portail EI. Aucune entrée envoyée, bureau rendu tel quel, captures vides. Choix pour Julien : (a) autoriser l'injection dans la fenêtre de 2a, (b) faire la vérification lui-même. L'orchestratrice ne prend pas le relais (pas de contournement d'un refus).
+
+## 06/10/2026
+
+- Julien autorise `2a` à injecter des entrées sur son bureau ; elle reprend la vérification sur le bureau réel de 71c7cfc. Il donne aussi une autorisation permanente d'utiliser les conversations de l'IDE.
+- Julien demande de passer en équipe d'agents :
+  - drapeau posé dans `HDev.UI.Controls/.claude/settings.local.json`, avec `subagentPromptCacheTtl` à 1h ;
+  - rôles `hdev-executante` et `hdev-verificatrice` dans `~/.claude/agents/` ;
+  - README et ETAT mis à jour.
+  La session est à relancer pour que le drapeau prenne effet.

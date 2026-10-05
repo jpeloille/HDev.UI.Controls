@@ -38,6 +38,23 @@ Première ligne de chaque message d'une exécutante :
 
 Cycle d'une question : numérotée `QX-nn`, inscrite dans `ETAT.md` et `JOURNAL.md`, présentée à Julien avec la mission et le contexte ; sa réponse est renvoyée mot pour mot à l'exécutante et consignée dans la fiche de mission (ou en Q du plan si elle est structurante).
 
+## Équipe d'agents (depuis le 06/10/2026)
+
+L'orchestratrice est la **cheffe d'une équipe d'agents** de Claude Code. Le drapeau `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` est posé dans `RiderProjects/HDev.UI.Controls/.claude/settings.local.json`, fichier local qui n'est pas suivi par git. Il ne vaut donc que pour les sessions ouvertes dans ce dossier.
+
+| Rôle | Qui | Définition |
+|---|---|---|
+| Exécutante de code | coéquipière `m-NN`, une par mission | `~/.claude/agents/hdev-executante.md` |
+| Vérificatrice avant fusion | coéquipière `verif-NN`, en lecture seule, rend un VERDICT | `~/.claude/agents/hdev-verificatrice.md` |
+| Bureau réel, captures | conversation de l'IDE (`hdev-ui-controls-2a`), par messages entre sessions | ce README |
+
+- **Une mission, un worktree, une coéquipière.** L'équipe n'isole pas ses membres : chacune n'écrit que dans `atelier/missions/M-NN/`.
+- **Trois coéquipières actives au plus**, car le coût en jetons croît avec leur nombre.
+- **Les autorisations** demandées par les coéquipières remontent à la cheffe. Julien les valide à un seul endroit, éventuellement par Remote Control.
+- **Les conversations de l'IDE** peuvent être employées à tout moment, sans redemander l'accord de Julien (autorisation permanente du 06/10/2026). Elles seules ont accès au bureau graphique.
+- **Une fusion dans `suite`** suppose trois choses : le FIN de l'exécutante, un VERDICT FUSIONNABLE de la vérificatrice, et la vérification sur le bureau réel quand la mission touche à l'interaction.
+- **Reprise** : les coéquipières ne survivent ni à une fermeture ni à `/resume`. On les recrée depuis la fiche et l'état de leur branche (`git log suite..suite-M-NN`, `git status`).
+
 ## Exécutantes : les conversations ouvertes d'abord
 
 Julien, le 05/10/2026 : les conversations ouvertes dans l'IDE sont là expressément pour exécuter. On les utilise : elles font le travail et répondent. On n'en fait pas ouvrir une nouvelle à Julien. Une mission leur est envoyée directement par `SendMessage`, avec la fiche. Les tests sur le bureau réel (captures d'écran) leur reviennent.
