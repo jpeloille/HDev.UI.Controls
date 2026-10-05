@@ -113,3 +113,10 @@
   - Il faut une vraie relance (fermer puis relancer `claude`) pour charger l'équipe et les rôles.
 - 2a : vérification sur le bureau réel non faite. Elle attend l'autorisation de Julien écrite dans SA fenêtre ; un relais n'y suffit pas.
 - verif-01 lancée (sous-agent, rôle lu depuis le fichier) sur missions/V-01 (71c7cfc).
+- VERDICT verif-01 : NON FUSIONNABLE, pour la seule raison que QX-02 (bureau réel) n'est pas levé.
+  - Les 7 contrôles passent : 16 commits, compilation sans erreur, banc 187/187 deux fois, xUnit 380, périmètre, salle blanche, noms décidés, hdev intact.
+  - Écarts mineurs :
+    - Plan-Editeurs:240-241 annonce encore 175 au lieu de 187 et 39 vérifications E2 ;
+    - `HDevEditorButton.EffectiveIcon`, public, n'a été ni décidé ni consigné ;
+    - `Kind` vaut `Ellipsis` par défaut, sans décision explicite ;
+    - le décompte de Plan-Suite:47 est périmé (déjà prévu à la fusion).

@@ -33,6 +33,13 @@ Une coéquipière meurt avec l'orchestratrice. À la reprise, relancer la missio
 | QX-06 | 2a | Proposés, non faits : note datée Q1 dans UGantt-charte.md, réalignement § 0 d'IMPROVEMENTS.md (dépôt grille), mise à jour de context.md. |
 | QX-07 | 2a | Anciens : charte HDev (proposée, non validée) ; PDF du benchmark (ONLYOFFICE ou impression Edge). |
 
+### M-01 : petits points avant fusion
+
+| N° | Question |
+|---|---|
+| M-01-P1 | `HDevEditorButton.EffectiveIcon` (public, lecture seule), ni décidé ni consigné : le garder public (et le consigner) ou le rendre interne ? |
+| M-01-P2 | `Kind` vaut `Ellipsis` par défaut : le garder, ou prendre `DropDown`, premier membre de l'énumération ? |
+
 ## Fusions à décider
 
 - `suite-M-01` → `suite` : passer d'abord la vérificatrice (`verif-01`) ; **bloquée : QX-02 échoue** (Julien, 05/10 : les popups ne restent pas ouverts) ; diagnostic M-03, correctif à appliquer dans M-01. À la fusion, l'orchestratrice met aussi à jour le décompte écrit à la main dans Plan-Suite.md (34/25/97/10 → 36/25/95/10).
