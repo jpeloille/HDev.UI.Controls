@@ -108,3 +108,8 @@
   - README et ETAT mis à jour.
   La session est à relancer pour que le drapeau prenne effet.
 - Reprise après la relance : session `hdev-orchestration-agent-teams`, drapeau d'équipe actif. Resynchronisation demandée à 2a (le dossier des captures du bureau réel est vide à cette heure). Worktree de vérification `missions/V-01` créé, détaché sur suite-M-01 (71c7cfc), pour que la vérificatrice ne compile pas dans le worktree que 2a utilise.
+- Constat : la session n'a pas vraiment été relancée (même ref 2c30b3 ; seul son nom a changé).
+  - Le drapeau est lu (TEAMS=1), mais les rôles de `~/.claude/agents/` ne sont pas chargés (« Agent type not found »), et `verif-01` est parti en sous-agent d'arrière-plan, pas en coéquipière.
+  - Il faut une vraie relance (fermer puis relancer `claude`) pour charger l'équipe et les rôles.
+- 2a : vérification sur le bureau réel non faite. Elle attend l'autorisation de Julien écrite dans SA fenêtre ; un relais n'y suffit pas.
+- verif-01 lancée (sous-agent, rôle lu depuis le fichier) sur missions/V-01 (71c7cfc).
