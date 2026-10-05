@@ -19,7 +19,7 @@ Un sous-agent meurt avec l'orchestratrice. À la reprise, relancer la mission de
 
 | Mission | Lot | Worktree | Branche | Exécutante | État |
 |---|---|---|---|---|---|
-| [M-01](missions/M-01.md) | E2, socle composite | `atelier/missions/M-01/` (Controls + DataGrid en lecture) | `suite-M-01` | sous-agent d'arrière-plan de l'orchestratrice, id `a91312d0147b99d5a` | relancée pour C1 (DropDownValue validé) et la fin de lot ; 13 commits, N1–N7 faits (d138c9f) |
+| [M-01](missions/M-01.md) | E2, socle composite | `atelier/missions/M-01/` (Controls + DataGrid en lecture) | `suite-M-01` | sous-agent d'arrière-plan de l'orchestratrice, id `a91312d0147b99d5a` | **FIN** : 14 commits (49bbeb6..7ce4131), banc 175/175 ×3, xUnit 380 ; vérifié par l'orchestratrice (banc ALL PASS, xUnit 380, aucune mention DevExpress ni Co-Authored-By) |
 | [M-02](missions/M-02.md) | retrait des mentions DevExpress dans le code | à créer au lancement | `suite-M-02` | sous-agent | validée, attend la fusion de M-01 |
 
 ## Questions en attente de Julien
@@ -34,7 +34,7 @@ Un sous-agent meurt avec l'orchestratrice. À la reprise, relancer la mission de
 
 ## Fusions à décider
 
-- `suite-M-01` → `suite` : bloquée par QX-02 et la fin des renommages et de C1. À la fusion, l'orchestratrice met aussi à jour le décompte écrit à la main dans Plan-Suite.md (34/25/97/10 → 36/25/95/10).
+- `suite-M-01` → `suite` : prête ; bloquée seulement par QX-02 (étendu à la ComboBox et aux menus, passés sur la garde commune). À la fusion, l'orchestratrice met aussi à jour le décompte écrit à la main dans Plan-Suite.md (34/25/97/10 → 36/25/95/10).
 
 ## Points d'attention
 

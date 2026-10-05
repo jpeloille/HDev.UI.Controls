@@ -58,3 +58,12 @@
   M-01 est relancée.
 - M-01 : N1 à N7 appliqués (d138c9f), compilation et banc à 172/172. C1 exige une propriété publique pour la valeur en cours ; QUESTION : `DropDownValue` est proposé.
 - Julien valide `DropDownValue` et son comportement. M-01 est relancée pour C1, les tests et la fin de lot.
+- FIN M-01, sur la branche suite-M-01 : 14 commits (le rapport en annonce 15).
+  - Commits : nommage d138c9f, DropDownValue f27b8ef, documents 7ce4131.
+  - Tests : banc 175/175 trois fois, xUnit 380.
+  - Contre-vérification par l'orchestratrice :
+    - banc d'Interaction ALL PASS et xUnit 380/380 ;
+    - le diff de code ne cite pas DevExpress ;
+    - aucun Co-Authored-By dans les messages de commit ;
+    - hdev intact.
+  - La fusion n'attend plus que QX-02.
