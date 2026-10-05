@@ -57,3 +57,4 @@
   - C2 : validé.
   M-01 est relancée.
 - M-01 : N1 à N7 appliqués (d138c9f), compilation et banc à 172/172. C1 exige une propriété publique pour la valeur en cours ; QUESTION : `DropDownValue` est proposé.
+- Julien valide `DropDownValue` et son comportement. M-01 est relancée pour C1, les tests et la fin de lot.

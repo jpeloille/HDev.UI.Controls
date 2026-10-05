@@ -19,7 +19,7 @@ Un sous-agent meurt avec l'orchestratrice. À la reprise, relancer la mission de
 
 | Mission | Lot | Worktree | Branche | Exécutante | État |
 |---|---|---|---|---|---|
-| [M-01](missions/M-01.md) | E2, socle composite | `atelier/missions/M-01/` (Controls + DataGrid en lecture) | `suite-M-01` | sous-agent d'arrière-plan de l'orchestratrice, id `a91312d0147b99d5a` | arrêtée sur QUESTION (nom de la valeur en cours, C1) ; 13 commits, N1–N7 faits (d138c9f), banc 172/172 ×1 |
+| [M-01](missions/M-01.md) | E2, socle composite | `atelier/missions/M-01/` (Controls + DataGrid en lecture) | `suite-M-01` | sous-agent d'arrière-plan de l'orchestratrice, id `a91312d0147b99d5a` | relancée pour C1 (DropDownValue validé) et la fin de lot ; 13 commits, N1–N7 faits (d138c9f) |
 | [M-02](missions/M-02.md) | retrait des mentions DevExpress dans le code | à créer au lancement | `suite-M-02` | sous-agent | validée, attend la fusion de M-01 |
 
 ## Questions en attente de Julien
@@ -31,12 +31,6 @@ Un sous-agent meurt avec l'orchestratrice. À la reprise, relancer la mission de
 | QX-05 | 2a | Pour E3 : `Placeholder` dans `IHDevEditor` n'a pas de sens pour les contrôles de choix. |
 | QX-06 | 2a | Proposés, non faits : note datée Q1 dans UGantt-charte.md, réalignement § 0 d'IMPROVEMENTS.md (dépôt grille), mise à jour de context.md. |
 | QX-07 | 2a | Anciens : charte HDev (proposée, non validée) ; PDF du benchmark (ONLYOFFICE ou impression Edge). |
-
-### M-01 : question en attente
-
-| N° | Question |
-|---|---|
-| C1-N | Nom public de la valeur en cours du popup de HDevDropDownEdit : `DropDownValue` (recommandé), `PendingValue` ou `EditingValue`. Elle suit `Value` quand le popup est fermé, repart de `Value` à l'ouverture, et est validée par CommitUserValue à la fermeture si IsValueAccepted. |
 
 ## Fusions à décider
 
