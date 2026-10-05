@@ -97,3 +97,4 @@
   - Non couverts : les chemins du pointeur (le pointeur virtuel n'atteint pas Avalonia en XInput2), l'environnement réel de Julien, Échap des menus dans GNOME.
   - 2a recommande un créneau réduit sur le bureau réel.
 - Julien : la vérification sur le bureau réel revient à une conversation de l'IDE (captures), pas à lui. Feu vert envoyé à 2a pour le bureau réel sur 71c7cfc.
+- RAPPORT M-03 (bloqué) : sa session refuse l'injection d'entrées (RemoteDesktop de mutter) ; xdotool passerait par le portail EI. Aucune entrée envoyée, bureau rendu tel quel, captures vides. Choix pour Julien : (a) autoriser l'injection dans la fenêtre de 2a, (b) faire la vérification lui-même. L'orchestratrice ne prend pas le relais (pas de contournement d'un refus).
