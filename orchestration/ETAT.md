@@ -36,9 +36,12 @@ Une coéquipière meurt avec l'orchestratrice. À la reprise, relancer la missio
 ## Fusions à décider
 
 - `suite-M-01` → `suite` : passer d'abord la vérificatrice (`verif-01`) ; **bloquée : QX-02 échoue** (Julien, 05/10 : les popups ne restent pas ouverts) ; diagnostic M-03, correctif à appliquer dans M-01. À la fusion, l'orchestratrice met aussi à jour le décompte écrit à la main dans Plan-Suite.md (34/25/97/10 → 36/25/95/10).
+  - **À la fusion, rejouer aussi APP-09** (`Plan-Apports.md`) : la liste d'une ComboBox à suggestion se rouvre-t-elle après un choix ?
+    - C'est un constat non vérifié, pas un blocage de plus : la fusion attend déjà QX-02.
+    - La fusion à blanc avec `suite` (ec9e34b) passe sans conflit. Relancer `generer.py` après la fusion.
 
 ## Points d'attention
 
 - Les exécutantes n'ont pas pu joindre le nom `hdev-ui-controls-e6` : `sandbox-6e` a répondu à l'adresse d'envoi. Le brief doit donc demander de répondre à l'expéditeur (`from`) du message reçu.
 
-- État de référence (2a) : `hdev` à f666e3d dans HDev.UI.Controls, 7dd3ae1 dans HDev.UI.DataGrid ; `suite` : E0 f666e3d, E1 eeead1a, plan 6c01bfe ; banc 136/136, xUnit 380 ; rien de poussé.
+- État de référence (2a) : `hdev` à f666e3d dans HDev.UI.Controls, 7dd3ae1 dans HDev.UI.DataGrid ; `suite` : E0 f666e3d, E1 eeead1a, plan 6c01bfe, apports des applications 44a69bd et ec9e34b (`Plan-Apports.md`, 118 lots) ; banc 136/136, xUnit 380 ; rien de poussé.

@@ -123,3 +123,12 @@
 - La session `hdev-ui-controls-2a` est fermée (Julien). Rien n'est perdu : les worktrees M-01 et M-03 sont propres, les captures sans écran sont en place (30 fichiers), le banc est dans /tmp/hdev-m03 (LISEZMOI.md). Il reste la vérification sur le bureau réel, à confier à une nouvelle conversation de l'IDE.
 - Julien : P1 oui (EffectiveIcon interne), P2 oui (Kind = Ellipsis par défaut). M-01 relancée pour ces deux points et les chiffres de Plan-Editeurs. Julien a ouvert une nouvelle session, en mode bypass, pour la vérification sur le bureau réel.
 - FIN M-01 (P1/P2) : d2dd2d3. EffectiveIcon interne, défauts du bouton consignés, chiffres d'E2 à 187. Banc 187/187, xUnit 380. Fusion en attente de la seule vérification sur le bureau réel.
+- Julien : « dans le plan tout ce qui est mieux et qui a été apporté par synaxis et myFlightOpsBoard », puis « enregistre la totalité dans un plan ».
+  - Trois inventaires en lecture seule : le code des deux applications, leurs mémoires et leurs documents, l'historique des deux dépôts.
+  - Commits 44a69bd et ec9e34b sur `suite`.
+    - `Plan-Apports.md` : APP-01 à APP-115, une destination par apport.
+    - 10 lots : F12 à F15, V5, W6, M4, N6, T6, T7. Le plan passe à 118 lots, projection inchangée.
+    - Renvois génériques dans le plan maître, Plan-Editeurs et les chantiers.
+  - Fusion de M-01 vérifiée à blanc : sans conflit.
+  - APP-09 (réouverture de la liste d'une ComboBox à suggestion) est à rejouer à la fusion de M-01.
+  - Signalés à Julien : eBurner.App, troisième consommateur de `hdev`, absent de la vérification de compatibilité ; liens de démarrage des applications, piste pour M-03.
