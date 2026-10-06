@@ -39,11 +39,12 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre le tableau 4.8 du b
 | Lot | Objet | Taille | Dépend de | Jalon | Lignes visées | Statut |
 |---|---|---|---|---|---|---|
 | **W0** | Caractérisation de HDevWindow | S | — | S3 | — | 🔲 |
-| **W1** | Dialogue qui héberge une vue | M | — | S3 | 4.8 : 1 | 🔲 |
+| **W1** | Dialogue qui héberge une vue | M | W6 | S3 | 4.8 : 1 | 🔲 |
 | **W2** | Fenêtre thémée qualifiée | M | W0 | S4 | 4.8 : 1 | 🔲 |
 | **W3** | Démarrage et attente | M | — | S4 | 4.8 : 1 | 🔲 |
 | **W4** | Couche d'adornement : badges et guides | M | — | S4 | 4.8 : 1 | 🔲 |
 | **W5** | Bureau : notifications système, zone de notification | M | — | S4 | 4.8 : 2 | 🔲 |
+| **W6** | Bandeau dans la page, état d'une source, réserves repliables | S | F13 | S3 | — | 🔲 |
 <!-- fin -->
 
 ## 3. Détail des lots
@@ -61,6 +62,14 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre le tableau 4.8 du b
 
 **Acceptation.** Des tests headless (ouverture, validation refusée, résultat) et des planches.
 
+**Apports des applications** (`../Plan-Apports.md`) :
+- **Le dialogue à action asynchrone (APP-71) :**
+  - l'action s'exécute dans le dialogue, et le bouton est désactivé pendant l'appel ;
+  - un refus s'affiche dans le bandeau (W6), et la saisie est conservée ;
+  - Échap ferme le dialogue, et la taille suit le contenu.
+- **La fenêtre de détail (APP-72) :** elle se complète sur place à mesure que les calculs aboutissent.
+- **Le toast (APP-73) :** il s'émet depuis n'importe quel contrôle, qui résout seul sa fenêtre.
+
 ### W2 : fenêtre thémée qualifiée (M)
 
 **Contenu.**
@@ -70,6 +79,8 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre le tableau 4.8 du b
 
 **Acceptation.** La vérification sur GNOME, en X11 et sous XWayland, et des planches.
 
+**Apports des applications** (`../Plan-Apports.md`). Une fenêtre maximisée avant l'affichage fait disparaître le panneau de bord du docking : ce cas entre dans l'acceptation (APP-74).
+
 ### W3 : démarrage et attente (M)
 
 **Contenu.**
@@ -78,6 +89,15 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre le tableau 4.8 du b
 - Un voile de chargement générique sur n'importe quel contrôle.
 
 **Acceptation.** Des tests headless et des planches.
+
+**Apports des applications** (`../Plan-Apports.md`) :
+- **La fenêtre d'échec au démarrage (APP-75) :** elle affiche l'erreur et une aide, et la fermer quitte l'application.
+- **La console de tâche longue (APP-76) :**
+  - des intentions distinctes ;
+  - la durée annoncée avant de lancer ;
+  - la progression ;
+  - un bilan qui nomme les premiers échecs ;
+  - l'annulation.
 
 ### W4 : couche d'adornement (M)
 
@@ -94,6 +114,15 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre le tableau 4.8 du b
 - La zone de notification, par `TrayIcon` habillé.
 
 **Acceptation.** Vérification sur le bureau réel. La barre des tâches (progression, listes de raccourcis) n'a pas d'équivalent standard sous Linux, d'où la cible 🟡.
+
+### W6 : bandeau dans la page (S), né des apports des applications
+
+Son détail fait foi dans `../Plan-Apports.md`, § 2. Il comprend :
+- le bandeau persistant (information, avertissement, erreur), avec ses couples de contraste garantis (APP-77) ;
+- l'état d'une source : à jour, à rafraîchir ou injoignable ; dernière lecture datée, période couverte (APP-78) ;
+- les réserves repliables, avec un en-tête compact, un compte et une hauteur maximale (APP-79).
+
+W1 s'en sert pour afficher l'erreur d'un dialogue.
 
 ## 4. Projection
 

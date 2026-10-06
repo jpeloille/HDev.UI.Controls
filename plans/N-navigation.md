@@ -38,6 +38,7 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre le tableau 4.5 du b
 | **N3** | Parcours : fil d'Ariane, étapes, assistant | L | — | S4 | 4.5 : 3 | 🔲 |
 | **N4** | Pages à transitions ; onglets à débordement et glisser | M | F7 | S4 | 4.5 : 1 | 🔲 |
 | **N5** | Tuiles et carrousel | L | — | S5 | 4.5 : 3 | 🔲 |
+| **N6** | Listes riches : groupes à en-tête libre, détail lié, fil chronologique | M | F1 | S4 | — | 🔲 |
 <!-- fin -->
 
 ## 3. Détail des lots
@@ -77,6 +78,12 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre le tableau 4.5 du b
 
 **Acceptation.** Des tests d'interaction et des planches.
 
+**Apports des applications** (`../Plan-Apports.md`). Une frise verticale d'étapes dépliables (APP-85) :
+- des marqueurs pour une étape faite, à venir ou en retard ;
+- un trait de liaison continu ;
+- un corps masqué sans être reconstruit, si bien que le défilement ne saute pas ;
+- des étapes ouvertes conservées d'un rechargement à l'autre.
+
 ### N4 : pages à transitions et onglets avancés (M)
 
 **Contenu.**
@@ -84,6 +91,8 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre le tableau 4.5 du b
 - Le débordement des onglets vers un menu, et leur réordonnancement par glisser.
 
 **Acceptation.** Des tests d'interaction.
+
+**Apports des applications** (`../Plan-Apports.md`). Une sous-vue s'ouvre dans l'onglet, avec un retour par Échap ou « ← » qui ramène sur l'élément d'origine (APP-86).
 
 ### N5 : tuiles et carrousel (L)
 
@@ -93,6 +102,18 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre le tableau 4.5 du b
 - Un diaporama.
 
 **Acceptation.** Des tests d'interaction et des planches.
+
+### N6 : listes riches (M), né des apports des applications
+
+Son détail fait foi dans `../Plan-Apports.md`, § 2. Il comprend :
+- **la liste groupée (APP-87) :**
+  - des puces de groupes, avec compte et accès au clavier ;
+  - des en-têtes de groupe à contenu libre ;
+  - des groupes fermés résumés ensemble ;
+  - des plis ;
+  - une recherche qui ouvre les groupes ;
+  - un détail lié ;
+- **le fil chronologique**, avec son champ de saisie (APP-88).
 
 ## 4. Projection
 

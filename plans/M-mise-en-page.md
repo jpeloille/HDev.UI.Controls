@@ -36,6 +36,7 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre le tableau 4.6 du b
 | **M1** | Layout Control : mise en page de formulaire | XL | E3, Q3 | S3 | 4.6 : 1 | 🔲 |
 | **M2** | Panneau latéral et panneau volant | M | E2 | S3 | 4.6 : 2 | 🔲 |
 | **M3** | Formulaire généré depuis les données | L | M1, E6 | S4 | 4.6 : 1 | 🔲 |
+| **M4** | Fiche en lecture : en-tête, ligne d'informations, cartes, sections, ouverture progressive | M | F13 | S3 | — | 🔲 |
 <!-- fin -->
 
 ## 3. Détail des lots
@@ -54,6 +55,13 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre le tableau 4.6 du b
 - La personnalisation testée en headless.
 - Des planches en clair et en sombre.
 
+**Apports des applications** (`../Plan-Apports.md`). Le jeu minimal d'un formulaire de dialogue se compose sans code (APP-64) :
+- un libellé au-dessus du champ, marqué s'il est requis ;
+- deux champs côte à côte ;
+- un pied avec Annuler et l'action principale ;
+- un bandeau d'erreur (W6) ;
+- une page qui défile.
+
 ### M2 : panneau latéral et panneau volant (M)
 
 **Contenu.**
@@ -62,6 +70,11 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre le tableau 4.6 du b
 
 **Acceptation.** Des tests d'interaction, dont le clic extérieur et Échap, et la vérification sur le bureau réel.
 
+**Apports des applications** (`../Plan-Apports.md`). Le panneau en surcouche laisse le focus à la vue maîtresse (APP-65) :
+- les flèches continuent d'y naviguer ;
+- Échap ferme le panneau ;
+- Entrée le rouvre sur l'élément suivant.
+
 ### M3 : formulaire généré depuis les données (L)
 
 **Contenu.**
@@ -69,6 +82,15 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre le tableau 4.6 du b
 - Le formulaire se régénère quand le type change.
 
 **Acceptation.** Un ViewModel témoin donne un formulaire complet, lié dans les deux sens et validé.
+
+### M4 : fiche en lecture (M), né des apports des applications
+
+Son détail fait foi dans `../Plan-Apports.md`, § 2. Il comprend :
+- l'en-tête de fiche et la ligne d'informations à points médians (APP-66) ;
+- les cartes : clic, survol, liseré d'état, emplacement d'action, état accentué, section titrée à geste (APP-67) ;
+- les briques de lecture (APP-68) ;
+- la fiche à colonne latérale, avec des défilements séparés et restaurés (APP-69) ;
+- l'ouverture progressive, section par section (APP-70).
 
 ## 4. Projection
 

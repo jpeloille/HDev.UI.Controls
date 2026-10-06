@@ -33,6 +33,11 @@ lot('F', 'F8', 'Thèmes : contraste élevé, densité, concepteur de palettes', 
 lot('F', 'F9', 'Droite-à-gauche', 'L', 'F1', 'S5')
 lot('F', 'F10', 'Qualification Windows et macOS', 'M', '—', 'S5')
 lot('F', 'F11', 'Conception visuelle : données d\'exemple et prévisualisation', 'S', 'F1', 'S5')
+# Lots nés des apports des applications (Plan-Apports.md fait foi pour leur détail)
+lot('F', 'F12', "Correctifs du socle : contraste des couples d'état, Crisp public", 'S', '—', 'S1')
+lot('F', 'F13', "Amorçage et thème vivant : un seul appel, palette jusqu'à la grille, jetons liés depuis le code, tons d'état, chasse fixe", 'M', 'F12', 'S2')
+lot('F', 'F14', 'Socle des contrôles dessinés : carte de détail, clavier en deux dimensions, légende, motifs', 'M', 'F12', 'S4')
+lot('F', 'F15', 'Outillage de vérification : démo pilotable, états posables par code, planches réutilisables', 'S', '—', 'S1')
 
 # G — Grille et données (HDev.UI.DataGrid fait foi : IMPROVEMENTS.md)
 lot('G', 'G0', "Caractérisation de l\'édition dans la grille", 'S', '—', 'S1')
@@ -58,6 +63,7 @@ lot('V', 'V1', 'Graphiques, jauges, sparklines, heatmap', 'L', 'V0, I1', 'S2')
 lot('V', 'V2', 'Diagrammes et carte mentale v2', 'L', '—', 'S5')
 lot('V', 'V3', 'TreeMap, Sunburst, Sankey', 'L', 'V1', 'S5')
 lot('V', 'V4', "Sélection de plage sur un aperçu", 'M', 'V1', 'S5')
+lot('V', 'V5', "Indicateurs : tuile, jauge linéaire, progression segmentée, sparkline d'intervalles, puce d'état", 'M', 'F13', 'S2')
 
 # C — Commandes (boutons, ruban, barres, menus)
 lot('C', 'C0', 'Caractérisation du ruban, des barres et des menus', 'S', '—', 'S4')
@@ -71,6 +77,7 @@ lot('C', 'C5', 'Personnalisation par l\'utilisateur et mini-barre', 'M', 'C3', '
 lot('M', 'M1', 'Layout Control : mise en page de formulaire', 'XL', 'E3, Q3', 'S3')
 lot('M', 'M2', 'Panneau latéral et panneau volant', 'M', 'E2', 'S3')
 lot('M', 'M3', 'Formulaire généré depuis les données', 'L', 'M1, E6', 'S4')
+lot('M', 'M4', "Fiche en lecture : en-tête, ligne d'informations, cartes, sections, ouverture progressive", 'M', 'F13', 'S3')
 
 # N — Navigation
 lot('N', 'N0', 'Caractérisation de la navigation', 'S', '—', 'S4')
@@ -79,6 +86,7 @@ lot('N', 'N2', 'Accordéon à niveaux et menu hamburger', 'M', 'N0', 'S4')
 lot('N', 'N3', "Parcours : fil d\'Ariane, étapes, assistant", 'L', '—', 'S4')
 lot('N', 'N4', 'Pages à transitions ; onglets à débordement et glisser', 'M', 'F7', 'S4')
 lot('N', 'N5', 'Tuiles et carrousel', 'L', '—', 'S5')
+lot('N', 'N6', 'Listes riches : groupes à en-tête libre, détail lié, fil chronologique', 'M', 'F1', 'S4')
 
 # A — Ancrage (docking)
 lot('A', 'A0', 'Caractérisation du docking', 'S', '—', 'S4')
@@ -89,11 +97,12 @@ lot('A', 'A4', 'Tableau de bord à widgets', 'M', 'A2', 'S5')
 
 # W — Fenêtres, dialogues, notifications
 lot('W', 'W0', 'Caractérisation de HDevWindow', 'S', '—', 'S3')
-lot('W', 'W1', 'Dialogue qui héberge une vue', 'M', '—', 'S3')
+lot('W', 'W1', 'Dialogue qui héberge une vue', 'M', 'W6', 'S3')
 lot('W', 'W2', 'Fenêtre thémée qualifiée', 'M', 'W0', 'S4')
 lot('W', 'W3', 'Démarrage et attente', 'M', '—', 'S4')
 lot('W', 'W4', "Couche d\'adornement : badges et guides", 'M', '—', 'S4')
 lot('W', 'W5', 'Bureau : notifications système, zone de notification', 'M', '—', 'S4')
+lot('W', 'W6', "Bandeau dans la page, état d'une source, réserves repliables", 'S', 'F13', 'S3')
 
 # T — Temps : agenda, roster, Gantt (UGantt-charte.md fait foi pour les lots L)
 lot('T', 'T0', "Caractérisation de l\'agenda et du roster", 'S', '—', 'S5')
@@ -102,6 +111,8 @@ lot('T', 'T2', 'Récurrences complètes', 'L', 'T0', 'S5')
 lot('T', 'T3', 'Vues et métadonnées : année, agenda, libellés, formulaire', 'L', 'T1, M1', 'S5')
 lot('T', 'T4', 'Fuseaux horaires, rappels, iCalendar', 'L', 'T2, E6', 'S5')
 lot('T', 'T5', 'Liaison par mappings : agenda et Gantt', 'M', 'F2', 'S5')
+lot('T', 'T6', 'Frise de ressources v2 : journée décalée, groupes, couloirs, disponibilité, carte, clavier', 'L', 'T0, F14', 'S5')
+lot('T', 'T7', 'Matrice ressources × jours à zones figées', 'L', 'F14, V5, I2', 'S5')
 # O — Gantt et gestion de projet, aligné sur MS Project (Q1 du 04/10/2026).
 # Les lots L gardent les identifiants et le contenu de UGantt-charte.md ; O0 et O1 sont propres au plan.
 lot('O', 'L0', 'Versionnage du schéma JSON', 'S', '—', 'S1', '✅')

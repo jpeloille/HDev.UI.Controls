@@ -60,6 +60,12 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre les tableaux 4.3, 4
 
 **Objet.** Figer le ruban, les barres, les menus, les raccourcis et la navigation clavier avant C1. On reprend les vérifications existantes et on les complète.
 
+**Apports des applications** (`../Plan-Apports.md`). C0 grave deux constats :
+- dans le ruban, la visibilité d'un élément est déclarée mais jamais lue, et un onglet n'a pas de visibilité (APP-80) ;
+- un appui sur un contrôle HDev n'est pas marqué comme traité : un parent qui démarre un glisser vole alors le clic (APP-81).
+
+C0 fige aussi les variantes de bouton et les contrôles déjà entrés : Outline, graisse du libellé, bouton à icône, carte radio (APP-07).
+
 ### C1 : modèle de commandes et construction déclarative (L)
 
 **Contenu.**
@@ -71,6 +77,13 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre les tableaux 4.3, 4
 - La même commande s'affiche dans un menu, une barre et le ruban, et son état se propage partout.
 - Un formulaire XAML construit un ruban sans code.
 
+**Apports des applications** (`../Plan-Apports.md`) :
+- **Item de menu (APP-82) :** un texte secondaire, des en-têtes de section, un ton.
+- **Raccourcis propres à une vue (APP-83) :**
+  - une portée par vue active ;
+  - un arbitrage avec les champs de saisie : Échap vide le champ, puis en sort ; ↓ rend la main à la liste ;
+  - un rappel des raccourcis dans les infobulles.
+
 ### C2 : boutons à menu, partagés et popup de contrôles (M)
 
 **Contenu.**
@@ -78,6 +91,10 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre les tableaux 4.3, 4
 - Un bouton qui ouvre un contenu libre, sur la pièce popup d'E2.
 
 **Acceptation.** Des tests d'interaction (souris, clavier, Échap) et des planches.
+
+**Apports des applications** (`../Plan-Apports.md`) :
+- une variante « lien » du bouton, et un état actif (bascule) (APP-84) ;
+- la correction de l'appui non marqué comme traité, gravé en C0 (APP-81).
 
 ### C3 : ruban complet (XL)
 
@@ -91,6 +108,8 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre les tableaux 4.3, 4
 
 **Acceptation.** Des tests headless pour chaque fonction, des planches en clair et en sombre, et une navigation entièrement au clavier.
 
+**Apports des applications** (`../Plan-Apports.md`). La visibilité des éléments et des onglets du ruban est respectée (APP-80).
+
 ### C4 : barres (L)
 
 **Contenu.**
@@ -102,6 +121,8 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre les tableaux 4.3, 4
 - Des barres déplaçables et ancrables dans l'overlay, sans fenêtre flottante du système.
 
 **Acceptation.** Des tests d'interaction et des planches.
+
+**Apports des applications** (`../Plan-Apports.md`). Le modèle de l'infobulle riche est celui de la carte de détail des contrôles dessinés (F14). Le premier des deux lots le définit.
 
 ### C5 : personnalisation et mini-barre (M)
 

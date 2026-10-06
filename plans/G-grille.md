@@ -82,6 +82,17 @@ Chaque constat est soit gravé (s'il est voulu), soit consigné comme défaut, s
 
 **Acceptation.** Les vérifications passent trois fois de suite, et les défauts sont listés.
 
+**Apports des applications** (`../Plan-Apports.md`). G0 s'élargit aux constats relevés hors édition.
+- **Sélection et menu :** un clic droit ne sélectionne pas la ligne, et rien ne désigne la ligne visée par le menu contextuel (APP-50).
+- **Colonnes (APP-51) :**
+  - `FrozenColumnCount` est déclaré, mais jamais lu (vérifié) ;
+  - `IsVisible` n'a pas d'effet à chaud ;
+  - le formatage ne tient pas compte de la culture ;
+  - une colonne désignée par un nom inconnu reste vide, sans erreur.
+- **Abonnements :** la grille et sa source s'abonnent toutes deux au changement de la collection, d'où deux recalculs par changement (vérifié ; corrigé en G2, APP-44).
+
+G0 garde aussi le test des deux acquis : le rendu des gabarits de cellule, et le recyclage sans plantage d'une cellule à gabarit (APP-02, APP-03). Ces constats alimenteront le réalignement d'`IMPROVEMENTS.md` (QX-06).
+
 ### G1 : cycle d'édition fiable (M)
 
 **Contenu.**
@@ -105,6 +116,23 @@ Chaque constat est soit gravé (s'il est voulu), soit consigné comme défaut, s
 
 **Acceptation.** Des tests headless pour chaque fonction, et des planches mises à jour.
 
+**Apports des applications** (`../Plan-Apports.md`) :
+- **Mise à jour sur place (APP-44) :**
+  - un seul abonnement au changement de la collection ;
+  - la mise à jour par lot et une clé de ligne ;
+  - la sélection et le défilement conservés quand la liste change ou est réassignée.
+- **Colonne de durée (APP-45) :**
+  - elle va au-delà de 24 h ;
+  - elle est triée sur la valeur, et affichée formatée ;
+  - le gabarit de cellule reçoit la valeur.
+- **Texte d'absence (APP-46) :**
+  - une valeur inconnue n'est pas un zéro, et chaque colonne a son texte d'absence ;
+  - le pied explique la cause d'un vide.
+- **Jeux de colonnes nommés (APP-47) :** colonnes d'identité figées, et totaux calculés sur la vue filtrée.
+- **Facettes (APP-48) :** recalculées depuis les données, elles gardent la sélection par valeur.
+- **Recherche (APP-49) :** insensible aux accents.
+- **Corrections :** les constats de G0 sur le clic droit et sur les colonnes (APP-50, APP-51).
+
 ### G3 : profondeur (L)
 
 **Contenu.**
@@ -120,6 +148,10 @@ Chaque constat est soit gravé (s'il est voulu), soit consigné comme défaut, s
 - Des tests headless pour l'interaction.
 - Un test sur l'arbre d'automation.
 - La check-list 5.1 dépasse 75 % : la ligne « Grille de données, vue tableau » de 4.1 passe à ✅ (règle des contrôles phares, `../Plan-Suite.md`, § 6).
+
+**Apports des applications** (`../Plan-Apports.md`) :
+- les totaux de durées, que les résumés ne savent pas faire aujourd'hui (APP-52) ;
+- le nombre de colonnes figées, qui doit être pris en compte (APP-51).
 
 ### G4 : arbre et propriétés (L)
 
@@ -150,11 +182,18 @@ Chaque constat est soit gravé (s'il est voulu), soit consigné comme défaut, s
 
 **Acceptation.** Des bancs de mesure sur un million de lignes virtuelles. Le master-detail est testé en headless.
 
+**Apports des applications** (`../Plan-Apports.md`). Un état « source incomplète » : quand une lecture a été tronquée, la grille refuse d'afficher un résultat partiel (APP-53).
+
 ### G7 : vues alternatives (L)
 
 **Contenu.** Les en-têtes à bandes, la vue fiches et cartes, et la vue tuiles et Kanban, avec gabarits.
 
 **Acceptation.** Des planches et des tests headless.
+
+**Apports des applications** (`../Plan-Apports.md`). Le Kanban (APP-54) :
+- un glisser qui ne démarre qu'au-delà d'un seuil, sans voler le clic des boutons de la carte ;
+- une limite d'en-cours : un dépôt refusé l'est avec un message ;
+- une variante en lecture seule, à colonnes étirées et à largeur minimale, avec un compteur par colonne.
 
 ### G8 : tableau croisé dynamique (XL)
 

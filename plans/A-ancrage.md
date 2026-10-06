@@ -45,6 +45,8 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre les tableaux 4.7 et
 
 **Objet.** Figer la phase 1 avant A1 : ancrage, onglets, fermeture, layout.
 
+**Apports des applications** (`../Plan-Apports.md`). A0 grave un constat : les proportions dépendent de l'ordre d'ajout. Une zone de documents ajoutée après un volet latéral ne reçoit qu'une petite part de la largeur (APP-89).
+
 ### A1 : phase 2 (L)
 
 **Contenu.**
@@ -56,6 +58,8 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre les tableaux 4.7 et
 - Des tests du moteur, notamment `InsertRelative` depuis le glisser.
 - Des tests d'interaction.
 - Une vérification sur le bureau réel.
+
+**Apports des applications** (`../Plan-Apports.md`). Les proportions ne dépendent plus de l'ordre d'ajout (APP-89).
 
 ### A2 : phase 3 (L)
 
@@ -74,6 +78,8 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre les tableaux 4.7 et
 - Un sélecteur de documents et de panneaux au clavier (Ctrl+Tab).
 
 **Acceptation.** Des tests d'interaction.
+
+**Apports des applications** (`../Plan-Apports.md`). Une API qui dit si un volet est ouvert et qui l'active, sans le fermer ni le rouvrir (APP-90).
 
 ### A4 : tableau de bord à widgets (M)
 

@@ -33,7 +33,7 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre le tableau 5.5 du b
   - l'édition graphique et dans la table, avec annuler et rétablir ;
   - le zoom, et plus de 2 000 tâches virtualisées ;
   - la persistance JSON versionnée ;
-  - la couleur par tâche.
+  - la couleur par tâche, la largeur réglable du tableau (`TableWidth`) et le défilement vers aujourd'hui à une position donnée (`ScrollToToday`) ; ces trois-là viennent des apports des applications (`../Plan-Apports.md`, APP-06).
 - **Le moteur est presque pur.** Seule la couleur par tâche (`Avalonia.Media.Color`, dans le modèle et la sérialisation) le lie à Avalonia.
 - **Manquent**, d'après la check-list 5.5 :
   - la liaison par mappings ;
@@ -52,7 +52,7 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre le tableau 5.5 du b
   - Un assembly de la suite, sans dépendance Avalonia, consommé par HDevGantt et par l'agenda pour les ressources.
   - **Pour** : il se teste seul, et il s'emploie sans interface (outil en ligne de commande, serveur).
   - **Contre** : un assembly de plus à maintenir.
-  - **Coût** : remplacer `Color` par une valeur neutre.
+  - **Coût** : remplacer `Color` par une valeur neutre, qui reste un équivalent de la couleur par tâche (APP-06 ; on ne retire que ce qui a un équivalent).
   - Si la réponse est oui, O1 se fait avant L3.
 - **Q13 : un seul modèle de ressources pour l'agenda et le Gantt.**
   - L10 le définit, et l'agenda (T1) s'en sert. L10 passe donc en S5, avant T1, alors que le reste du pilier ressources reste en S6.
@@ -115,7 +115,8 @@ Placement dans les jalons de la suite :
 - l'édition graphique et dans la table, et l'édition structurelle ;
 - l'ordonnancement, le chemin critique et la baseline ;
 - annuler et rétablir ;
-- la sérialisation, sur des fichiers v1 de référence.
+- la sérialisation, sur des fichiers v1 de référence ;
+- la couleur par tâche, la largeur du tableau et le défilement vers aujourd'hui (APP-06).
 
 La méthode est celle d'E0.
 
@@ -140,7 +141,7 @@ Le contenu fait foi dans `UGantt-charte.md`, § 7. Ne figurent ici que les préc
 - **L10** : le modèle de ressources partagé (Q13) et la feuille de ressources (lignes 4.9 et 5.5).
 - **L11** : les affectations (ligne « Ressources et affectations »).
 - **L14 et L17** : les coûts et le système de champs (ligne « Coûts, champs personnalisés », S6).
-- **L21** : la mise en forme des barres (ligne « Gabarits ou dessin personnalisé des barres »).
+- **L21** : la mise en forme des barres (ligne « Gabarits ou dessin personnalisé des barres »). S'y ajoute une légende qui explique le sens des couleurs des barres (`../Plan-Apports.md`, APP-101). Elle peut s'appuyer sur la légende peinte de F14.
 - **L22** : un rendu de graphe, que les diagrammes (V2) peuvent reprendre.
 - **L23** : les vues calendrier, chronologie et planificateur d'équipe, dans le périmètre complet de la charte (lignes « Chronologie »).
 - **L24** : MS Project XML seulement.

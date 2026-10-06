@@ -1,12 +1,13 @@
 # Plan de la suite HDev.UI
 
-Plan complet de la suite, tiré du benchmark HDEV-001/26 (`Benchmark-DevExpress.html`), état au **04/10/2026**. Statut : **proposition**, à valider.
+Plan complet de la suite, tiré du benchmark HDEV-001/26 (`Benchmark-DevExpress.html`), état au **04/10/2026**, complété le **06/10/2026** par les apports des applications (`Plan-Apports.md`). Statut : **proposition**, à valider.
 
 - **Numérotation.** Les familles (4.1 à 4.13) et les check-lists de profondeur (5.1 à 5.7) suivent la numérotation du HTML, qui est celle du `.md` plus un.
 - **Fichiers.**
   - Ce plan maître fixe les principes, les jalons, la projection et les décisions.
   - Chaque chantier a son fichier dans `plans/`.
   - Les éditeurs gardent `Plan-Editeurs.md`, à la racine, parce que le code et les notes le citent.
+  - Les apports des applications ont leur plan, `Plan-Apports.md`, à la racine : le registre APP-01 à APP-115 et le détail des lots qui en naissent.
 - **Projection.** Chacune des 342 lignes du benchmark (166 fonctions, 176 capacités) a une seule destination : un lot, une absence par décision proposée, ou une décision à prendre. Les tableaux de projection sont calculés à partir de ces destinations ; leurs totaux d'aujourd'hui reproduisent ceux du benchmark.
 
 ## 0. Principes
@@ -24,6 +25,10 @@ Plan complet de la suite, tiré du benchmark HDEV-001/26 (`Benchmark-DevExpress.
    - `hdev` n'avance que par une livraison que Julien décide.
    - Les applications s'adaptent alors, à leur rythme, avec la note de migration.
 9. **Le Gantt s'aligne sur MS Project** (décision Q1 du 04/10/2026). La suite porte le programme de la charte UGantt, avec sa cible : MS Project sans le `.mpp`, VBA ni Project Server. La règle de la charte qui ne faisait entrer une brique dans la suite que sur preuve de réemploi ne s'applique plus.
+10. **Les applications sont une source, pas une prescription** (06/10/2026).
+    - Ce que Synaxis et myFlightOpsBoard ont construit de meilleur que la suite, ou qui lui manque, entre dans le plan par `Plan-Apports.md`, sur son mérite.
+    - Les jalons de ces apports suivent les dépendances d'architecture, comme le reste ; l'usage d'une application ne fixe pas leur priorité (principe 1).
+    - Seul `Plan-Apports.md` nomme les applications et leurs fichiers. Les chantiers y renvoient par un numéro APP et une description générique.
 
 ## 1. Registre des identifiants
 
@@ -35,7 +40,8 @@ Plan complet de la suite, tiré du benchmark HDEV-001/26 (`Benchmark-DevExpress.
 | §1–§16, Phase 1 à 4 | feuille de route de la grille | `HDev.UI.DataGrid/IMPROVEMENTS.md` |
 | **S1–S6** | jalons de la suite | ce plan |
 | **Q1–Q13** | décisions | ce plan |
-| **F, G, I, V, M, W, C, N, A, T, O, R**, suivis d'un numéro | lots des chantiers | `plans/<lettre>-*.md` |
+| **F, G, I, V, M, W, C, N, A, T, O, R**, suivis d'un numéro | lots des chantiers | `plans/<lettre>-*.md` ; le détail de F12 à F15, V5, W6, M4, N6, T6 et T7 est dans `Plan-Apports.md` |
+| **APP-01–APP-115** | apports des applications, chacun avec une seule destination | `Plan-Apports.md` |
 
 Un lot d'un autre programme garde son identifiant :
 - L9, l'impression paginée de la charte UGantt, devient le lot I1 de ce plan ;
@@ -50,7 +56,8 @@ Un lot d'un autre programme garde son identifiant :
 - **Plans déjà écrits**, que ce plan englobe sans les renuméroter :
   - éditeurs : `Plan-Editeurs.md` ; E0 est fait, et E1 aussi, sauf la forme du socle, à valider ;
   - Gantt : `UGantt-charte.md` ; L0 et L1 sont faits, et depuis Q1 la suite porte tout le programme (chantier O) ;
-  - grille : `IMPROVEMENTS.md` ; ses phases 1 et 2 sont en partie faites.
+  - grille : `IMPROVEMENTS.md` ; ses phases 1 et 2 sont en partie faites ;
+  - apports des applications : `Plan-Apports.md` (06/10/2026) ; 115 apports, dont 8 déjà entrés dans la suite, et 10 lots nouveaux.
 
 Le détail par famille et par contrôle est au § 6.
 
@@ -59,16 +66,16 @@ Le détail par famille et par contrôle est au § 6.
 | Code | Chantier | Fichier | Tableaux du benchmark | Lots |
 |---|---|---|---|---|
 | E | Éditeurs | `Plan-Editeurs.md` | 4.2 et 5.7 ; validation et dépôt d'éditeurs de 4.13 | E0–E12 |
-| F | Fondations transverses | `plans/F-fondations.md` | 4.13 ; dimensions transverses (§ 3 du HTML) | F0–F11 |
+| F | Fondations transverses | `plans/F-fondations.md` | 4.13 ; dimensions transverses (§ 3 du HTML) | F0–F15 |
 | G | Grille et données | `plans/G-grille.md` | 4.1, 5.1 | G0–G9 |
 | I | Impression et export | `plans/I-impression-export.md` | 4.12 ; lignes d'impression et d'export de 5.1, 5.4, 5.5 et 5.6 | I1–I4 |
-| V | Visualisation | `plans/V-visualisation.md` | 4.10 | V0–V4 |
-| M | Mise en page | `plans/M-mise-en-page.md` | 4.6 | M1–M3 |
-| W | Fenêtres, dialogues, notifications | `plans/W-fenetres.md` | 4.8 | W0–W5 |
+| V | Visualisation | `plans/V-visualisation.md` | 4.10 | V0–V5 |
+| M | Mise en page | `plans/M-mise-en-page.md` | 4.6 | M1–M4 |
+| W | Fenêtres, dialogues, notifications | `plans/W-fenetres.md` | 4.8 | W0–W6 |
 | C | Commandes : boutons, ruban, barres, menus | `plans/C-commandes.md` | 4.3, 4.4, 5.2 | C0–C5 |
-| N | Navigation | `plans/N-navigation.md` | 4.5 | N0–N5 |
+| N | Navigation | `plans/N-navigation.md` | 4.5 | N0–N6 |
 | A | Ancrage (docking) | `plans/A-ancrage.md` | 4.7, 5.3 | A0–A4 |
-| T | Temps : agenda et roster | `plans/T-temps.md` | 4.9 (agenda), 5.4 | T0–T5 |
+| T | Temps : agenda et roster | `plans/T-temps.md` | 4.9 (agenda), 5.4 | T0–T7 |
 | O | Gantt et gestion de projet, alignés sur MS Project | `plans/O-gantt.md` | 4.9 (Gantt), 5.5 | O0, O1 ; L0–L8, L10–L24 |
 | R | Rédaction : texte riche | `plans/R-redaction.md` | 4.11, 5.6 | R0–R5 |
 
@@ -78,6 +85,8 @@ Le détail par famille et par contrôle est au § 6.
 - **Le moteur d'impression** (I1) conditionne toute adoption (I3, I4, R3) et les graphiques imprimables (V1).
 - **La grille professionnelle** (G2) conditionne la persistance globale (F6) et toute la profondeur de la grille (G3 à G9).
 - **Le modèle de ressources** (L10) sert à la fois le Gantt et l'agenda (T1), si la décision Q13 est acceptée.
+- **Le thème vivant** (F13) conditionne les indicateurs (V5), le bandeau dans la page (W6) et la fiche en lecture (M4). Le bandeau conditionne à son tour le dialogue qui héberge une vue (W1).
+- **Le socle des contrôles dessinés** (F14) conditionne la frise de ressources v2 (T6) et la matrice ressources × jours (T7).
 
 ## 4. Contraintes communes
 
@@ -97,6 +106,7 @@ Elles valent pour tout lot, dans tout chantier. Les fichiers de chantier ne les 
   - Vérifications d'interaction headless.
   - Moteurs purs en xUnit.
   - Planches de `tests/Gallery`, en clair et en sombre.
+  - Sur le bureau réel, aucune entrée simulée n'atteint la fenêtre sous XWayland. On atteint l'état à vérifier par la démo pilotable (F15), on vise la fenêtre par son PID et jamais par son titre, on note la fenêtre active avant tout envoi, et on ne tue jamais l'instance de l'utilisateur (APP-108).
 - **Fin de lot.**
   - Note de migration à jour.
   - États de `Benchmark-DevExpress.md` à jour, puis HTML et Word régénérés.
@@ -110,11 +120,11 @@ Elles valent pour tout lot, dans tout chantier. Les fichiers de chantier ne les 
 
 | Jalon | Thème | Ce qu'il apporte | Catalogue | Profondeur |
 |---|---|---|---:|---:|
-| S1 | Socle | contrat de valeur et socle des éditeurs ; collections et modèles liables ; moteur d'impression et PDF ; édition fiable dans la grille | <!-- généré:SC:cat,S1 -->29 %<!-- fin --> | <!-- généré:SC:prof,S1 -->45 %<!-- fin --> |
-| S2 | Données | grille professionnelle ; éditeurs typés ; exports XLSX et PDF ; graphiques ; localisation ; icônes ; Gantt : durée, travail et calendriers | <!-- généré:SC:cat,S2 -->39 %<!-- fin --> | <!-- généré:SC:prof,S2 -->51 %<!-- fin --> |
-| S3 | Formulaires | Layout Control ; dialogues ; validation centralisée ; éditeurs dans la grille ; accessibilité ; TreeList et inspecteur de propriétés ; Gantt : contraintes, tâches fractionnées et récurrentes, baselines | <!-- généré:SC:cat,S3 -->46 %<!-- fin --> | <!-- généré:SC:prof,S3 -->60 %<!-- fin --> |
-| S4 | Application | commandes et ruban complet ; docking phases 2 et 3 ; navigation ; fenêtres et notifications ; compléments d'éditeurs | <!-- généré:SC:cat,S4 -->67 %<!-- fin --> | <!-- généré:SC:prof,S4 -->76 %<!-- fin --> |
-| S5 | Profondeur | agenda à ressources ; modèle de ressources partagé, mise en forme du Gantt et PERT ; texte riche complet ; visualisations avancées ; vues et volumes de grille ; thèmes et droite-à-gauche | <!-- généré:SC:cat,S5 -->82 %<!-- fin --> | <!-- généré:SC:prof,S5 -->92 %<!-- fin --> |
+| S1 | Socle | contrat de valeur et socle des éditeurs ; collections et modèles liables ; moteur d'impression et PDF ; édition fiable dans la grille ; correctifs du socle (contraste, `Crisp`) ; outillage de vérification | <!-- généré:SC:cat,S1 -->29 %<!-- fin --> | <!-- généré:SC:prof,S1 -->45 %<!-- fin --> |
+| S2 | Données | grille professionnelle ; éditeurs typés ; exports XLSX et PDF ; graphiques ; localisation ; icônes ; Gantt : durée, travail et calendriers ; amorçage et thème vivant ; indicateurs | <!-- généré:SC:cat,S2 -->39 %<!-- fin --> | <!-- généré:SC:prof,S2 -->51 %<!-- fin --> |
+| S3 | Formulaires | Layout Control ; dialogues ; validation centralisée ; éditeurs dans la grille ; accessibilité ; TreeList et inspecteur de propriétés ; Gantt : contraintes, tâches fractionnées et récurrentes, baselines ; bandeau dans la page ; fiche en lecture | <!-- généré:SC:cat,S3 -->46 %<!-- fin --> | <!-- généré:SC:prof,S3 -->60 %<!-- fin --> |
+| S4 | Application | commandes et ruban complet ; docking phases 2 et 3 ; navigation ; fenêtres et notifications ; compléments d'éditeurs ; socle des contrôles dessinés ; listes riches | <!-- généré:SC:cat,S4 -->67 %<!-- fin --> | <!-- généré:SC:prof,S4 -->76 %<!-- fin --> |
+| S5 | Profondeur | agenda à ressources ; modèle de ressources partagé, mise en forme du Gantt et PERT ; texte riche complet ; visualisations avancées ; vues et volumes de grille ; thèmes et droite-à-gauche ; frise de ressources v2 ; matrice ressources × jours | <!-- généré:SC:cat,S5 -->82 %<!-- fin --> | <!-- généré:SC:prof,S5 -->92 %<!-- fin --> |
 | S6 | Gestion de projet | affectations, répartition échelonnée, nivellement, coûts, suivi, valeur acquise ; champs, vues d'usage, filtres et vues composables ; vues calendrier et chronologie ; interop MS Project XML | <!-- généré:SC:cat,S6 -->83 %<!-- fin --> | <!-- généré:SC:prof,S6 -->94 %<!-- fin --> |
 
 Composition des jalons. À l'intérieur d'un jalon, l'ordre suit les dépendances des tableaux de lots. S4 et S5 sont les plus chargés. En S4, les chantiers C, N, A et W ne dépendent pas les uns des autres et peuvent avancer en parallèle ; seul R1 attend le ruban (C3). S6 regroupe les jalons 3 et 4 de la charte UGantt, le pilier ressources et les méta-systèmes du Gantt.
@@ -122,36 +132,36 @@ Composition des jalons. À l'intérieur d'un jalon, l'ordre suit les dépendance
 <!-- généré:JALONS -->
 **S1**
 - E : E0 (Tests de caractérisation des éditeurs) ; E1 (Conception du socle, contrat de valeur et conventions) ; E2 (Socle composite : zone de valeur, boutons, popup, multiligne) ; E3 (Portage des éditeurs existants sur le socle)
-- F : F0 (Caractérisation des contrôles à collections) ; F1 (Contrat des collections : ItemsSource, ItemTemplate, sélection liable) ; F2 (Modèles et documents liables)
+- F : F0 (Caractérisation des contrôles à collections) ; F1 (Contrat des collections : ItemsSource, ItemTemplate, sélection liable) ; F2 (Modèles et documents liables) ; F12 (Correctifs du socle : contraste des couples d'état, Crisp public) ; F15 (Outillage de vérification : démo pilotable, états posables par code, planches réutilisables)
 - G : G0 (Caractérisation de l'édition dans la grille) ; G1 (Cycle d'édition fiable)
 - I : I1 (Moteur d'impression paginée, aperçu et PDF ; L9 de la charte UGantt)
 - O : L0 (Versionnage du schéma JSON) ; L1 (Édition structurelle de la table)
 
 **S2**
 - E : E4 (Sélection : cases, items à gabarit, liste à cases) ; E5 (Saisie typée : masques typés, formats numériques, calculatrice) ; E6 (Date et heure : types modernes, durées, plages, créneaux) ; E7 (Lookups : saisie et filtre, recherche, multi-valeurs)
-- F : F3 (Localisation : mécanisme de ressources, français et anglais) ; F4 (Banque d'icônes et API d'icône commune)
+- F : F3 (Localisation : mécanisme de ressources, français et anglais) ; F4 (Banque d'icônes et API d'icône commune) ; F13 (Amorçage et thème vivant : un seul appel, palette jusqu'à la grille, jetons liés depuis le code, tons d'état, chasse fixe)
 - G : G2 (Grille professionnelle : recherche, filtres, validation, ajout, layout)
 - I : I2 (Formats d'export : XLSX, PDF, CSV paramétrable) ; I3 (Adoption : grille et Gantt)
-- V : V0 (Prototype : graphiques sous HDevTheme) ; V1 (Graphiques, jauges, sparklines, heatmap)
+- V : V0 (Prototype : graphiques sous HDevTheme) ; V1 (Graphiques, jauges, sparklines, heatmap) ; V5 (Indicateurs : tuile, jauge linéaire, progression segmentée, sparkline d'intervalles, puce d'état)
 - O : O0 (Caractérisation du Gantt avant la refonte du modèle) ; O1 (Extraction du moteur dans un assembly pur (si Q11)) ; L2 (Modèle de colonnes configurable) ; L3 (Durée, travail et types de tâches ; schéma v2) ; L4 (Calendriers multiples et granularité horaire)
 
 **S3**
 - E : E8 (Validation centralisée) ; E11 (Pont grille : éditeurs HDev dans HDevDataGrid, sur deux dépôts) ; E12 (Accessibilité des éditeurs)
 - F : F5 (Accessibilité de toute la suite) ; F6 (Persistance de l'espace de travail)
 - G : G3 (Profondeur : filtres avancés, plages, presse-papiers, mise en forme) ; G4 (Arbre et propriétés : TreeList, grille verticale, inspecteur)
-- M : M1 (Layout Control : mise en page de formulaire) ; M2 (Panneau latéral et panneau volant)
-- W : W0 (Caractérisation de HDevWindow) ; W1 (Dialogue qui héberge une vue)
+- M : M1 (Layout Control : mise en page de formulaire) ; M2 (Panneau latéral et panneau volant) ; M4 (Fiche en lecture : en-tête, ligne d'informations, cartes, sections, ouverture progressive)
+- W : W0 (Caractérisation de HDevWindow) ; W1 (Dialogue qui héberge une vue) ; W6 (Bandeau dans la page, état d'une source, réserves repliables)
 - O : L5 (Contraintes, échéances et inspecteur de dates) ; L6 (Passe avant et arrière complète, marges, chemins critiques multiples) ; L7 (Tâches fractionnées, récurrentes et inactives) ; L8 (Baselines multiples et plans intermédiaires)
 
 **S4**
 - E : E9 (Compléments : mémo, lien, couleur, chemin, curseur de plage) ; E10 (Compléments secondaires : MRU, curseur de zoom, notation, image)
-- F : F7 (Comportements attachables et transitions)
+- F : F7 (Comportements attachables et transitions) ; F14 (Socle des contrôles dessinés : carte de détail, clavier en deux dimensions, légende, motifs)
 - G : G5 (Finition : formulaire d'édition, glisser, fusion, colonnes calculées)
 - I : I4 (Adoption : agenda, texte riche, carte mentale, autres contrôles)
 - M : M3 (Formulaire généré depuis les données)
 - W : W2 (Fenêtre thémée qualifiée) ; W3 (Démarrage et attente) ; W4 (Couche d'adornement : badges et guides) ; W5 (Bureau : notifications système, zone de notification)
 - C : C0 (Caractérisation du ruban, des barres et des menus) ; C1 (Modèle de commandes partagé et construction déclarative) ; C2 (Boutons à menu et partagés, popup de contrôles) ; C3 (Ruban complet) ; C4 (Barres : débordement, éditeurs, infobulles riches, recherche de commandes)
-- N : N0 (Caractérisation de la navigation) ; N1 (Arbre complet : liaison, virtualisation, cases, édition) ; N2 (Accordéon à niveaux et menu hamburger) ; N3 (Parcours : fil d'Ariane, étapes, assistant) ; N4 (Pages à transitions ; onglets à débordement et glisser)
+- N : N0 (Caractérisation de la navigation) ; N1 (Arbre complet : liaison, virtualisation, cases, édition) ; N2 (Accordéon à niveaux et menu hamburger) ; N3 (Parcours : fil d'Ariane, étapes, assistant) ; N4 (Pages à transitions ; onglets à débordement et glisser) ; N6 (Listes riches : groupes à en-tête libre, détail lié, fil chronologique)
 - A : A0 (Caractérisation du docking) ; A1 (Phase 2 : glisser, indicateurs d'ancrage, onglets réordonnables) ; A2 (Phase 3 : panneaux flottants, auto-masquage, épinglage) ; A3 (Confort : boutons d'en-tête, panneaux fermés, Ctrl+Tab)
 - R : R0 (Caractérisation du texte riche) ; R1 (Édition courante : rechercher, styles nommés, listes à niveaux, ruban intégré)
 
@@ -162,7 +172,7 @@ Composition des jalons. À l'intérieur d'un jalon, l'ordre suit les dépendance
 - C : C5 (Personnalisation par l'utilisateur et mini-barre)
 - N : N5 (Tuiles et carrousel)
 - A : A4 (Tableau de bord à widgets)
-- T : T0 (Caractérisation de l'agenda et du roster) ; T1 (Agenda à ressources et vue chronologique) ; T2 (Récurrences complètes) ; T3 (Vues et métadonnées : année, agenda, libellés, formulaire) ; T4 (Fuseaux horaires, rappels, iCalendar) ; T5 (Liaison par mappings : agenda et Gantt)
+- T : T0 (Caractérisation de l'agenda et du roster) ; T1 (Agenda à ressources et vue chronologique) ; T2 (Récurrences complètes) ; T3 (Vues et métadonnées : année, agenda, libellés, formulaire) ; T4 (Fuseaux horaires, rappels, iCalendar) ; T5 (Liaison par mappings : agenda et Gantt) ; T6 (Frise de ressources v2 : journée décalée, groupes, couloirs, disponibilité, carte, clavier) ; T7 (Matrice ressources × jours à zones figées)
 - O : L10 (Modèle de ressources partagé et feuille de ressources) ; L21 (Mise en forme des barres et couche d'adornement) ; L22 (Vue réseau PERT)
 - R : R2 (Tableaux et images dans le fil du texte) ; R3 (Mise en page, vue page, règle et tabulations) ; R4 (Formats DOCX, ODT et RTF) ; R5 (Révision : commentaires, suivi, protection, orthographe)
 
@@ -261,9 +271,12 @@ Les lignes « impression » et « export » reviennent dans plusieurs check-list
 - **Q4 — Moteur PDF et impression.**
   - Pour le PDF vectoriel, trois voies : le moteur PDF de Skia (déjà livré avec Avalonia), un écrivain maison, ou une bibliothèque.
   - Pour l'impression : le portail XDG, ou CUPS.
+  - Pièces versées (`Plan-Apports.md`) : une impression par CUPS éprouvée en usage réel (APP-56) ; un PDF produit par une bibliothèque sous licence Community, ni MIT ni Apache (APP-104).
 - **Q5 — Formats bureautiques.** XLSX, DOCX et ODT : une bibliothèque libre (par exemple DocumentFormat.OpenXml), ou des écrivains maison.
+  - Pièce versée : un export XLSX éprouvé par ClosedXML (MIT), avec sa version figée, sa marge de largeur compensée et ses dépendances (APP-105).
 - **Q6 — IA.**
   - Des composants IA dans la suite (chat, assistant, collage intelligent), indépendants du fournisseur ? Ou une absence par décision ?
+  - Pièce versée : un assistant appliqué section par section, où rien n'est enregistré sans le geste de l'utilisateur (APP-106).
   - Lignes concernées :
 <!-- généré:DECISION4:Q6 -->
     - 4.13 : Chat IA ; Extensions IA (assistant, Smart Paste…)
@@ -297,6 +310,7 @@ Les lignes « impression » et « export » reviennent dans plusieurs check-list
   - Licences acceptées : MIT, BSD, Apache ?
   - Paquets séparés pour les dépendances lourdes ?
   - Critères de remplacement d'une dépendance ?
+  - Pièces versées : les licences de la bibliothèque PDF et des dépendances de ClosedXML (APP-104, APP-105) ; la police à chasse fixe à retenir (APP-28) ; la distribution de la suite par paquets versionnés plutôt que par chemins relatifs (APP-107).
 - **Q10 — Banque d'icônes.** Un jeu maison, ou un jeu libre (licence à vérifier) ? Et sous quel format ?
 - **Q11 — Moteur de planification dans un assembly pur.** Un assembly de la suite, sans Avalonia, consommé par le Gantt et l'agenda : plus facile à tester, et utilisable sans interface, au prix d'un assembly de plus. Seule la couleur par tâche le lie aujourd'hui à Avalonia. Si oui : lot O1, avant L3.
 - **Q12 — Formules (L25).** La charte ne lançait L25 que sur demande prouvée, au nom d'un usage applicatif. L'alignement sur MS Project plaide pour des champs calculés. Faut-il le planifier après L17, ou le garder sur demande ?
@@ -309,7 +323,7 @@ Restent ouvertes ailleurs :
 ## 9. Risques
 
 - **Volume.**
-  - Le plan compte 108 lots, dont 3 déjà faits (E0, L0, L1) et 10 de taille XL : G6, G8, M1, C3, T1, R3, et L3, L4, L12 et L13 pour le Gantt. C'est plusieurs fois ce que la suite a déjà produit.
+  - Le plan compte 118 lots, dont 4 déjà faits (E0, E1, L0, L1) et 10 de taille XL : G6, G8, M1, C3, T1, R3, et L3, L4, L12 et L13 pour le Gantt. C'est plusieurs fois ce que la suite a déjà produit. Dix de ces lots viennent des apports des applications (`Plan-Apports.md`).
   - Le moteur de répartition échelonnée (L12) est le lot le plus difficile : il conditionne le nivellement, le suivi, la valeur acquise et les vues d'usage.
   - Chaque jalon est un point d'arrêt légitime.
 - **Vérification sur le bureau avant E2.** La survie des popups à une brève désactivation de la fenêtre ne se teste pas en headless : elle se vérifie à la main (`Plan-Editeurs.md`).
@@ -319,6 +333,9 @@ Restent ouvertes ailleurs :
 - **Popups sous GNOME/XWayland.** Chaque nouveau popup (C, N, M2, V, T) se vérifie sur le bureau réel.
 - **Dépendances tierces** (Q2, Q4, Q5, Q9) : il faut les peser pour la souveraineté et pour la maintenance.
 - **Livraisons.** Chaque livraison peut casser les applications, puisque les ruptures d'API sont permises. Les notes de migration et la vérification de compatibilité en amont en limitent le coût ; le rythme reste celui de Julien.
+- **Apports des applications.**
+  - Une partie du code d'origine n'est pas commitée dans les applications au 06/10/2026 : ses chemins peuvent bouger. `Plan-Apports.md` les date.
+  - HDevRoster ne tient pas la contrainte clavier du § 4 jusqu'à T6 (S5). C'est le choix proposé, puisque la frise est reprise et qu'aucune application ne l'utilise plus ; F12 peut l'avancer.
 - **Projection optimiste.**
   - Les jalons supposent que chaque lot couvre toutes ses lignes. Un lot qui en laisse une à 🟡 baisse d'autant.
   - Le score mesure l'étendue, pas l'effort : la ligne « formatage conditionnel » vaut la ligne « code-barres ».
@@ -328,6 +345,7 @@ Restent ouvertes ailleurs :
 - **Un lot terminé** : son statut est mis à jour dans le fichier du chantier, puis les états du benchmark, puis la projection.
 - **Une décision prise** (Q) : elle est inscrite ici et dans le chantier concerné. Les lignes ⚪ acceptées passent dans le benchmark.
 - **Les plans existants** restent maîtres de leurs identifiants (§ 1).
+- **Un apport des applications** entre par `Plan-Apports.md`, avec une seule destination. Le lot qui le reçoit le décrit en termes génériques, avec son numéro APP. L'apport est clos avec son lot.
 - **Une livraison aux applications**, quand Julien la décide, suit trois étapes :
   - fusion de la branche de développement dans `hdev`, dans les deux dépôts ;
   - notes de migration à jour ;

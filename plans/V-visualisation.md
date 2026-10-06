@@ -32,6 +32,7 @@ C'est la famille la plus faible du benchmark (4 %).
   - la sélection de plage : un curseur de plage (E9) posé sur un aperçu de graphique.
 - **Absences proposées (Q7)** : les graphiques 3D, la carte géographique et le SVG interactif.
   - La carte pourrait aussi passer par une bibliothèque libre de cartographie. Elle dépendrait alors de tuiles réseau : c'est à trancher.
+- **Les indicateurs (V5) sont dessinés maison.** Ils font évoluer HDevCard, HDevProgressBar et HDevBadge, sans dépendre ni de V0 et V1 (Q2) ni d'I1 (Q4). Ils viennent des apports des applications (`../Plan-Apports.md`).
 
 ## 2. Lots
 
@@ -43,6 +44,7 @@ C'est la famille la plus faible du benchmark (4 %).
 | **V2** | Diagrammes et carte mentale v2 | L | — | S5 | 4.10 : 2 | 🔲 |
 | **V3** | TreeMap, Sunburst, Sankey | L | V1 | S5 | 4.10 : 3 | 🔲 |
 | **V4** | Sélection de plage sur un aperçu | M | V1 | S5 | 4.10 : 1 | 🔲 |
+| **V5** | Indicateurs : tuile, jauge linéaire, progression segmentée, sparkline d'intervalles, puce d'état | M | F13 | S2 | — | 🔲 |
 <!-- fin -->
 
 ## 3. Détail des lots
@@ -84,6 +86,14 @@ C'est la famille la plus faible du benchmark (4 %).
 ### V4 : sélection de plage sur un aperçu (M)
 
 **Contenu.** Un aperçu miniature d'une série, avec une fenêtre déplaçable et redimensionnable, liée à l'axe d'un graphique.
+
+### V5 : indicateurs (M), né des apports des applications
+
+Son détail fait foi dans `../Plan-Apports.md`, § 2. Il comprend :
+- la tuile d'indicateur, avec son état « chaud » et un filtre posé au clic (APP-60) ;
+- la jauge linéaire à segments, à repère et à seuils, la micro-jauge et la progression segmentée par étape (APP-61) ;
+- la sparkline d'intervalles (APP-62) ;
+- la puce d'état teintée, au contraste calculé, et les marqueurs d'état à forme redondante (APP-63).
 
 **Acceptation.** Des tests d'interaction.
 

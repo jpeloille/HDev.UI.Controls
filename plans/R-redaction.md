@@ -56,6 +56,10 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre les tableaux 4.11 e
 
 **Objet.** Figer l'édition, le presse-papiers et l'aller-retour `storage-v1` avant R1 et R2. Le moteur de documents a déjà ses tests xUnit ; cette caractérisation y ajoute l'interaction.
 
+**Apports des applications** (`../Plan-Apports.md`). R0 grave deux constats :
+- le visualiseur HTML a un retrait interne fixe de 8 px, sans `Padding` (APP-102) ;
+- l'éditeur riche réécrit le HTML au premier aller-retour. C'est sans doute la normalisation voulue de `storage-v1`, et elle est à documenter (APP-103).
+
 ### R1 : édition courante (M)
 
 **Contenu.**
@@ -65,6 +69,8 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre les tableaux 4.11 e
 - Le ruban intégré, sur le chantier C (C3).
 
 **Acceptation.** Des tests du moteur et des tests d'interaction.
+
+**Apports des applications** (`../Plan-Apports.md`). Le visualiseur HTML gagne une propriété `Padding` (APP-102).
 
 ### R2 : tableaux et images dans le fil du texte (L)
 

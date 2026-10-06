@@ -26,8 +26,8 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre le tableau 4.12 du 
 
   L'aperçu, l'impression et le PDF consomment ce seul contrat.
 - **PDF vectoriel** (Q4). Piste privilégiée : le moteur PDF de Skia, déjà livré avec Avalonia, qui garde le texte sélectionnable et les traits nets. Une sortie raster reste le repli.
-- **Impression sous Linux** (Q4) par le portail XDG, qui donne le dialogue du bureau, ou par CUPS.
-- **Formats bureautiques** (Q5). XLSX d'abord, pour la grille : par une bibliothèque libre, ou par un écrivain maison limité aux feuilles, aux formats et aux groupes.
+- **Impression sous Linux** (Q4) par le portail XDG, qui donne le dialogue du bureau, ou par CUPS. Pièce versée : une impression par CUPS éprouvée en usage réel (APP-56, APP-104).
+- **Formats bureautiques** (Q5). XLSX d'abord, pour la grille : par une bibliothèque libre, ou par un écrivain maison limité aux feuilles, aux formats et aux groupes. Pièce versée : un export XLSX éprouvé par une bibliothèque libre (APP-105).
 - **La règle moteur et adoption** est dans `../Plan-Suite.md`, § 7 : le moteur ne coche aucune ligne de check-list, l'adoption par chaque contrôle si.
 
 ## 2. Lots
@@ -55,6 +55,18 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre le tableau 4.12 du 
 - L'aperçu est testé en headless.
 - Une page témoin est imprimée sur le bureau réel.
 
+**Apports des applications** (`../Plan-Apports.md`) :
+- **La fenêtre d'impression à planches (APP-55) :**
+  - le choix du document, avec son nombre de pages et ses options ;
+  - l'aperçu par planches, préchargé, mis en cache par options, rendu de façon temporisée et annulable ;
+  - un résumé en feuilles ; les copies, le recto verso et le PDF.
+- **L'impression par CUPS (APP-56) :**
+  - la liste des imprimantes et celle par défaut ;
+  - des sorties analysables, un délai ;
+  - une liste vide quand CUPS est absent ;
+  - la dernière imprimante en tête.
+- **Le rendu déterministe (APP-57) :** l'heure est injectée, et un même document rend des pages identiques.
+
 ### I2 : formats d'export (M)
 
 **Contenu.**
@@ -63,6 +75,14 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre le tableau 4.12 du 
 - CSV paramétrable (séparateur, culture, encodage).
 
 **Acceptation.** Des fichiers témoins relus par une application tierce, et des allers-retours testés en xUnit.
+
+**Apports des applications** (`../Plan-Apports.md`). L'export XLSX fidèle à l'écran (APP-58) :
+- un seul plan de mise en page et une seule palette, pour l'écran et pour le classeur ;
+- une écriture hors du fil d'interface ;
+- on exporte ce qui est affiché, jamais un recalcul ;
+- un test relit le XML produit.
+
+Le même principe vaut pour I3.
 
 ### I3 : adoption par la grille et le Gantt (M)
 
@@ -80,6 +100,8 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre le tableau 4.12 du 
 - La carte mentale et les graphiques (V1).
 
 **Acceptation.** La ligne « Impression » de 5.4 et la ligne « Export PDF » de 5.6 passent à ✅.
+
+**Apports des applications** (`../Plan-Apports.md`). Un rendu PDF du HTML riche existe déjà : son vocabulaire est à rapprocher de storage-v1, pour l'export PDF du texte riche et pour R3 (APP-59).
 
 ## 4. Projection
 

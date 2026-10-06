@@ -222,6 +222,8 @@ Les planches de `tests/Gallery`, en clair et en sombre, sont archivées comme r�
 - Tests d'Interaction sur les boutons, le popup (y compris le retournement mesuré en géométrie), le collage sous masque et le multiligne.
 - Planche « Champs » en clair et en sombre.
 
+**Apports des applications** (`Plan-Apports.md`). E2 réécrit la fermeture de la liste. Avant sa clôture, on rejoue donc la réouverture de la liste d'une ComboBox à suggestion après un choix (APP-09).
+
 ### E3 : portage des éditeurs existants (L)
 
 **Objet.** Faire passer tous les éditeurs existants sur le socle et supprimer les implémentations parallèles.
@@ -245,6 +247,13 @@ Les planches de `tests/Gallery`, en clair et en sombre, sont archivées comme r�
 - Les planches avant et après sont comparées.
 - 5.7 « Valeur liable » et « Socle commun » passent à **Couvert**.
 
+**Apports des applications** (`Plan-Apports.md`). Ces constats sont à graver en tête du lot :
+- la liste d'une ComboBox à suggestion se rouvre après un choix (APP-09) ;
+- la saisie n'est pas validée au départ du focus quand la liste est ouverte (APP-10) ;
+- la suggestion de SearchControl est appelée avec un élément nul, d'où un plantage (APP-11).
+
+Un banc headless d'usage réel reproduit APP-09 (APP-12).
+
 ### E4 : sélection (M)
 
 **Objet.** Sélection multiple et items riches.
@@ -257,6 +266,10 @@ Les planches de `tests/Gallery`, en clair et en sombre, sont archivées comme r�
 **Acceptation.**
 - Tests d'Interaction : souris, Espace, « Tout sélectionner », résumé.
 - Planche mise à jour.
+
+**Apports des applications** (`Plan-Apports.md`) :
+- la case à libellé riche (contenu, barré), et la liste à cases à sens unique, rétablie si l'opération est refusée (APP-13) ;
+- la liste d'énumération à styles, avec une entrée « non défini » (APP-14).
 
 ### E5 : saisie typée (M)
 
@@ -291,6 +304,14 @@ Les planches de `tests/Gallery`, en clair et en sombre, sont archivées comme r�
 - Tests d'Interaction : sélection de plage, choix d'un créneau.
 - Planche mise à jour.
 
+**Apports des applications** (`Plan-Apports.md`) :
+- **le créneau date + heure + durée (APP-15)**, avec trois cas d'acceptation :
+  - une valeur hors grille est insérée ;
+  - le passage en UTC se fait avec le décalage du jour choisi ;
+  - une duplication décale l'instant ;
+- **les dates et heures civiles**, avec « aujourd'hui » en heure locale (APP-16) ;
+- **la plage de dates bornée** (APP-17) : raccourcis, refus motivé hors période, plafond.
+
 ### E7 : lookups (M)
 
 **Objet.** Des lookups qu'on peut taper et filtrer.
@@ -302,6 +323,11 @@ Les planches de `tests/Gallery`, en clair et en sombre, sont archivées comme r�
 - **Lookup arborescent** (ligne 18) : **reporté au plan grille**, car il dépend d'un TreeList.
 
 **Acceptation.** Tests d'Interaction (frappe, filtre, Entrée, Échap, retournement), planche mise à jour.
+
+**Apports des applications** (`Plan-Apports.md`) :
+- la saisie libre, avec une valeur distincte de l'affichage, la casse résolue et un champ non touché laissé intact (APP-18) ;
+- les éléments inactifs marqués, et la création d'un élément à la volée (APP-19) ;
+- la recherche temporisée et annulable (APP-20).
 
 ### E8 : validation centralisée (S)
 
@@ -317,6 +343,8 @@ Les planches de `tests/Gallery`, en clair et en sombre, sont archivées comme r�
 - Tests xUnit du moteur de règles.
 - Test headless sur un formulaire invalide.
 - 5.7 « Validation centralisée » passe à **Couvert**.
+
+**Apports des applications** (`Plan-Apports.md`). Reconsidérer le constat E0 n° 5 : une date invalide laisse la valeur sur la dernière date valide (APP-21).
 
 ### E9 : compléments (M)
 

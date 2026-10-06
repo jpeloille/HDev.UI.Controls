@@ -57,9 +57,13 @@ Chantier du plan de la suite (`../Plan-Suite.md`). Il couvre le tableau 4.13 du 
 | **F9** | Droite-à-gauche | L | F1 | S5 | — | 🔲 |
 | **F10** | Qualification Windows et macOS | M | — | S5 | — | 🔲 |
 | **F11** | Conception visuelle : données d'exemple et prévisualisation | S | F1 | S5 | — | 🔲 |
+| **F12** | Correctifs du socle : contraste des couples d'état, Crisp public | S | — | S1 | — | 🔲 |
+| **F13** | Amorçage et thème vivant : un seul appel, palette jusqu'à la grille, jetons liés depuis le code, tons d'état, chasse fixe | M | F12 | S2 | — | 🔲 |
+| **F14** | Socle des contrôles dessinés : carte de détail, clavier en deux dimensions, légende, motifs | M | F12 | S4 | — | 🔲 |
+| **F15** | Outillage de vérification : démo pilotable, états posables par code, planches réutilisables | S | — | S1 | — | 🔲 |
 <!-- fin -->
 
-Les lots sans ligne visée servent les dimensions transverses (§ 3 du HTML), qui ne sont pas notées.
+Les lots sans ligne visée servent les dimensions transverses (§ 3 du HTML), qui ne sont pas notées. F12 à F15 viennent des apports des applications (`../Plan-Apports.md`).
 
 ## 3. Détail des lots
 
@@ -76,6 +80,12 @@ La méthode est celle d'E0 : des adaptateurs, et des constats laissés hors des 
 
 **Acceptation.** Les vérifications headless passent trois fois de suite.
 
+**Apports des applications** (`../Plan-Apports.md`). Deux constats sont à graver :
+- ToggleButtonGroup ne dit pas d'où vient un changement fait par le code, et n'offre pas de sélection par valeur (APP-42) ;
+- NavBar ne vaut jamais −1, et ne signale pas un second clic sur la même entrée (APP-43).
+
+F0 fige aussi deux acquis : l'en-tête coloré par section d'accordéon, et le badge de la puce (APP-01).
+
 ### F1 : contrat des collections (L)
 
 **Contenu.**
@@ -87,6 +97,10 @@ La méthode est celle d'E0 : des adaptateurs, et des constats laissés hors des 
 - Chaque contrôle est lié en XAML compilé à un ViewModel, dans les deux sens.
 - Les tests F0 restent verts.
 - Les ruptures sont consignées dans `MIGRATION-collections.md`.
+
+**Apports des applications** (`../Plan-Apports.md`) :
+- F1 corrige les constats sur ToggleButtonGroup et NavBar (APP-42, APP-43) ;
+- il documente que la fermeture d'une puce ne la retire pas de la collection (APP-113).
 
 ### F2 : modèles et documents liables (M)
 
@@ -113,6 +127,10 @@ La méthode est celle d'E0 : des adaptateurs, et des constats laissés hors des 
 - Aucun libellé en dur, vérifié par un test qui parcourt les sources.
 - Planches en français et en anglais.
 
+**Apports des applications** (`../Plan-Apports.md`) :
+- le formatage relatif des dates et des durées, par exemple « J+3 », « 1 h 30 » ou « 3 j », y compris au-delà de 24 h (APP-38) ;
+- les textes anglais de la grille (APP-51).
+
 ### F4 : banque d'icônes (M)
 
 **Contenu.**
@@ -133,6 +151,8 @@ La méthode est celle d'E0 : des adaptateurs, et des constats laissés hors des 
 - Les éditeurs relèvent d'E12, la grille de G3.
 
 **Acceptation.** Des tests headless sur l'arbre d'automation, et une vérification avec Orca sur le bureau réel.
+
+**Apports des applications** (`../Plan-Apports.md`). La désactivation motivée : la raison d'une désactivation s'affiche, même sur un contrôle désactivé, et devient sa description accessible (APP-39).
 
 ### F6 : persistance de l'espace de travail (M)
 
@@ -168,6 +188,11 @@ La méthode est celle d'E0 : des adaptateurs, et des constats laissés hors des 
 - `ThemeContrastTests` s'étend aux trois palettes.
 - Des planches existent pour chaque variante et chaque densité.
 
+**Apports des applications** (`../Plan-Apports.md`) :
+- une palette appliquée à une partie de l'écran seulement, et un accent réglable par instance (APP-40) ;
+- un nuancier validé, contraste et daltonisme, avant le code (APP-41) ;
+- la densité de la grille (APP-51).
+
 ### F9 : droite-à-gauche (L)
 
 **Contenu.** Tous les contrôles dessinés respectent `FlowDirection` : dispositions, chevrons et ordre des colonnes passent en miroir.
@@ -189,6 +214,27 @@ La méthode est celle d'E0 : des adaptateurs, et des constats laissés hors des 
 - Les contrôles dessinés sont rendus en conception.
 
 **Acceptation.** Chaque contrôle s'affiche dans le prévisualiseur de l'IDE.
+
+### F12 à F15 : lots nés des apports des applications
+
+Leur détail fait foi dans `../Plan-Apports.md`, § 2.
+- **F12, correctifs du socle (S, S1).** Les couples texte d'état sur fond d'état passent à 4,5:1 et sont testés ; `Crisp` devient public (APP-22, APP-24).
+- **F13, amorçage et thème vivant (M, S2) :**
+  - une extension d'amorçage unique ;
+  - une palette qui atteint la grille ;
+  - des jetons liés depuis le code ;
+  - des tons d'état et un style de valeur ;
+  - une police à chasse fixe (APP-23, APP-25 à APP-28).
+- **F14, socle des contrôles dessinés (M, S4) :**
+  - une carte de détail, dont le modèle est partagé avec les infobulles riches de C4 ;
+  - un clavier en deux dimensions ;
+  - une légende peinte ;
+  - des motifs, des outils de texte dessiné, et un défilement qui amène un élément en haut (APP-29 à APP-34).
+- **F15, outillage de vérification (S, S1) :**
+  - une démo pilotable par liens de démarrage ;
+  - des états posables par code ;
+  - un rendu PNG depuis l'application ;
+  - un kit de planches réutilisable (APP-35 à APP-37).
 
 ## 4. Projection
 

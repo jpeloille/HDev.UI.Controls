@@ -22,12 +22,17 @@ Le Gantt a son propre chantier (O, `O-gantt.md`), aligné sur MS Project depuis 
   - les rappels, les fuseaux et iCalendar ;
   - la liaison par mappings.
 - **Le roster (HDevRoster)** est un contrôle séparé, sans lien avec l'agenda.
+  - Il n'a plus de consommateur : l'application pour laquelle il avait été promu l'a remplacé par ses propres frises, plus riches (`../Plan-Apports.md`, APP-05).
+  - Il ne tient pas la contrainte clavier du plan maître (§ 4).
+  - Il perd sa sélection quand on réassigne son modèle (APP-97).
 
 ## 1. Décisions proposées
 
 - **Agenda et roster partagent le moteur de temps.**
   - L'agenda gagne une vue chronologique par ressources.
   - Le roster garde sa forme propre : bande d'amplitude et voies.
+  - **Il est repris par T6** (frise de ressources v2), qui garde son zoom, son glisser annulable et sa virtualisation ; on ne retire que ce qui a un équivalent.
+- **La matrice ressources × jours** (T7) est un contrôle distinct : la grille et la vue mois de l'agenda ne la font pas.
 - **Les ressources viennent d'un seul modèle**, défini par le Gantt (L10) et partagé avec l'agenda (décision Q13). D'où la dépendance de T1 envers L10.
 - **Les fuseaux horaires passent par `DateTimeOffset`**, conformément à D4. Le fuseau d'affichage est réglable.
 - **La liaison par mappings.** L'agenda et le Gantt se lient à des objets de l'application par des correspondances de champs, en plus de leur propre modèle (F2). C'est le lot T5, qui couvre les deux contrôles.
@@ -46,13 +51,15 @@ Le Gantt a son propre chantier (O, `O-gantt.md`), aligné sur MS Project depuis 
 | **T3** | Vues et métadonnées : année, agenda, libellés, formulaire | L | T1, M1 | S5 | 4.9 : 2 ; 5.4 : 4 | 🔲 |
 | **T4** | Fuseaux horaires, rappels, iCalendar | L | T2, E6 | S5 | 5.4 : 3 | 🔲 |
 | **T5** | Liaison par mappings : agenda et Gantt | M | F2 | S5 | 5.4 : 1 ; 5.5 : 1 | 🔲 |
+| **T6** | Frise de ressources v2 : journée décalée, groupes, couloirs, disponibilité, carte, clavier | L | T0, F14 | S5 | — | 🔲 |
+| **T7** | Matrice ressources × jours à zones figées | L | F14, V5, I2 | S5 | — | 🔲 |
 <!-- fin -->
 
 ## 3. Détail des lots
 
 ### T0 : caractérisation (S)
 
-**Objet.** Figer l'agenda et le roster avant T1 et T2 : vues, glisser, récurrences, navigation, événements annulables.
+**Objet.** Figer l'agenda et le roster avant T1, T2 et T6 : vues, glisser, récurrences, navigation, événements annulables. Pour le roster, c'est la base de sa reprise par T6 (APP-05).
 
 ### T1 : agenda à ressources et vue chronologique (XL)
 
@@ -74,6 +81,8 @@ Le Gantt a son propre chantier (O, `O-gantt.md`), aligné sur MS Project depuis 
 
 **Acceptation.** Des tests du moteur d'expansion, et des tests d'interaction.
 
+**Apports des applications** (`../Plan-Apports.md`). Un éditeur de récurrence : fréquence, champ « jour » qui s'adapte à la fréquence, cadences préréglées (APP-91).
+
 ### T3 : vues et métadonnées (L)
 
 **Contenu.**
@@ -82,6 +91,16 @@ Le Gantt a son propre chantier (O, `O-gantt.md`), aligné sur MS Project depuis 
 - Le formulaire d'édition de rendez-vous, sur le Layout Control (M1) et les éditeurs.
 
 **Acceptation.** Des tests headless et des planches.
+
+**Apports des applications** (`../Plan-Apports.md`) :
+- **la liste d'agenda du jour (APP-92) :**
+  - les événements « toute la journée » d'abord ;
+  - une colonne horaire ;
+  - l'entrée en cours mise en avant ;
+- **la navigation par jour ou par semaine (APP-93) :**
+  - « Aujourd'hui » et les flèches ;
+  - un titre long ;
+  - la semaine résumée en cartes.
 
 ### T4 : fuseaux horaires, rappels, iCalendar (L)
 
@@ -97,6 +116,42 @@ Le Gantt a son propre chantier (O, `O-gantt.md`), aligné sur MS Project depuis 
 **Contenu.** Des correspondances de champs entre les objets de l'application et les rendez-vous de l'agenda ou les tâches du Gantt.
 
 **Acceptation.** Un ViewModel témoin se lie sans adaptation, dans les deux sens.
+
+### T6 : frise de ressources v2 (L), née des apports des applications
+
+Son détail fait foi dans `../Plan-Apports.md`, § 2. Elle reprend HDevRoster et apporte :
+- **l'axe et l'organisation (APP-94) :**
+  - une journée décalée, ou un axe qui suit le modèle ;
+  - des intertitres de groupe et des hauteurs de voie variables ;
+  - une colonne figée ;
+- **les blocs et les marqueurs (APP-95) :**
+  - des couches selon la nature des blocs ;
+  - les durées entre blocs ;
+  - des marqueurs d'extrémité ;
+  - des rangées de débordement ;
+- **la disponibilité et les couloirs (APP-96) :**
+  - des bandes à trois états ;
+  - des objets à plusieurs intervalles ;
+  - des marqueurs ponctuels ;
+- **la sélection conservée** par clé quand le modèle est réassigné, et le clavier complet (APP-97) ;
+- **la frise et la liste de cartes** liées par la sélection (APP-98).
+
+Elle garde le zoom, le glisser annulable et la virtualisation.
+
+### T7 : matrice ressources × jours (L), née des apports des applications
+
+Son détail fait foi dans `../Plan-Apports.md`, § 2. Elle comprend :
+- **la matrice (APP-99) :**
+  - des zones figées ;
+  - des lignes de comptage ;
+  - des hauteurs variables ;
+  - des cases à catégorie et à code ;
+  - le même plan pour l'écran et pour l'export ;
+- **la vue de couverture (APP-100) :**
+  - les jours passés estompés ;
+  - la colonne du jour ;
+  - des jauges en bout de ligne ;
+  - une carte construite par l'hôte.
 
 ## 4. Projection
 
@@ -159,3 +214,5 @@ Le Gantt a son propre chantier (O, `O-gantt.md`), aligné sur MS Project depuis 
 
 - **T1 est de taille XL** et touche le modèle de l'agenda. T0 doit passer d'abord.
 - **Le modèle de ressources partagé (Q13)** lie le calendrier de l'agenda à celui du Gantt. Si Q13 est refusée, T1 garde son propre modèle et ne dépend plus de L10.
+- **HDevRoster reste hors de la contrainte clavier jusqu'à T6 (S5).** C'est le choix proposé, puisqu'il n'a plus de consommateur et qu'il sera repris. Le clavier peut remonter dans F12 (S1) si l'on préfère une conformité immédiate.
+- **T6 et T7 partent de code d'application en partie non commité** au 06/10/2026 : `../Plan-Apports.md` en date les chemins.
