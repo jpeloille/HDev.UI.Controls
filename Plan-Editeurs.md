@@ -202,6 +202,8 @@ Les planches de `tests/Gallery`, en clair et en sombre, sont archivées comme r�
 
 **Objet.** Construire le socle commun de D1.
 
+**Apports des applications** (`Plan-Apports.md`). E2 réécrit la fermeture de la liste. Avant sa clôture, on rejoue donc la réouverture de la liste d'une ComboBox à suggestion après un choix (APP-09).
+
 **Contenu.**
 - **Zone de valeur** : le champ texte par défaut, ou un présentateur fourni par l'éditeur (jetons, texte non éditable de la combo).
 - **Multiligne** : la hauteur n'est fixée qu'en monoligne.
@@ -221,8 +223,6 @@ Les planches de `tests/Gallery`, en clair et en sombre, sont archivées comme r�
 **Acceptation.**
 - Tests d'Interaction sur les boutons, le popup (y compris le retournement mesuré en géométrie), le collage sous masque et le multiligne.
 - Planche « Champs » en clair et en sombre.
-
-**Apports des applications** (`Plan-Apports.md`). E2 réécrit la fermeture de la liste. Avant sa clôture, on rejoue donc la réouverture de la liste d'une ComboBox à suggestion après un choix (APP-09).
 
 ### E3 : portage des éditeurs existants (L)
 
