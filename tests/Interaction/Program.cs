@@ -752,6 +752,25 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         Check("DateEdit : près du bas de la fenêtre, le calendrier s'ouvre au-dessus",
             Dessus(BoitePopup(wBas, edBas), Boite(wBas, bas)));
         wBas.Close();
+        // Bureau réel (QX-02) : ouvert d'un clic sur son bouton, le focus ailleurs, le popup
+        // restait sourd à Échap. Les boutons ne prenant pas le focus, ils le donnent au champ.
+        var autre = new TextBox { Width = 120 };
+        var deBtn = new HDevDateEdit { Width = 160 };
+        var pcBtn = new HDevDropDownEdit { Width = 160, DropDownContent = new ListBox { ItemsSource = new[] { "a", "b" } } };
+        var wBtn = Hote(new StackPanel { Spacing = 8, Children = { autre, deBtn, pcBtn } });
+        Control Bouton(Control ed) => ed.GetVisualDescendants().OfType<Control>()
+            .Last(c => c is HDevEditorGlyphButton or HDevEditorButton);
+        autre.Focus(); Pump(wBtn); ClickAt(wBtn, WindowCenter(wBtn, Bouton(deBtn)));
+        var ouvertBtn = deBtn.IsDropDownOpen && deBtn.IsKeyboardFocusWithin;
+        Touche(wBtn, PhysicalKey.Escape);
+        Check("DateEdit : ouvert par son bouton, le focus ailleurs, le champ prend le focus et Échap ferme",
+            ouvertBtn && !deBtn.IsDropDownOpen);
+        autre.Focus(); Pump(wBtn); ClickAt(wBtn, WindowCenter(wBtn, Bouton(pcBtn)));
+        ouvertBtn = pcBtn.IsDropDownOpen && pcBtn.IsKeyboardFocusWithin;
+        Touche(wBtn, PhysicalKey.Escape);
+        Check("bouton déroulant du socle : ouvert le focus ailleurs, le champ prend le focus et Échap ferme",
+            ouvertBtn && !pcBtn.IsDropDownOpen);
+        wBtn.Close();
     }
 
     // ─── HDevTimeEdit ───

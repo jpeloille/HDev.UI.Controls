@@ -520,6 +520,8 @@ public abstract class HDevEditorBase : Border
         switch (button.Kind)
         {
             case HDevEditorButtonKind.DropDown:
+                // Le bouton n'est pas focusable : sans le focus, Échap n'atteindrait pas le popup
+                FocusEditor();
                 DropDown.Toggle();
                 break;
             case HDevEditorButtonKind.Clear when !IsReadOnly && IsEffectivelyEnabled:
