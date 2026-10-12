@@ -220,10 +220,11 @@ Le Gantt, qui édite ses dates avec HDevDateEdit, n'est pas touché par le point
      - Il se ferme comme avant par un clic dans la fenêtre hors de lui, Échap, un choix ou le code.
    - **Un popup natif** (fenêtre séparée, sur d'autres plateformes ou sans overlay) garde la fermeture après 250 ms de fenêtre inactive : il ne flotte jamais au-dessus des autres applications.
    - La garde le détecte à l'exécution, popup par popup, d'après l'hôte de son contenu : hôte overlay dans la fenêtre, ou racine de popup native. Aucune option publique.
-   - Vérifié en headless, qui a des popups overlay ; le chemin natif y est couvert en substituant la détection. La vérification sur le bureau réel est refaite à part (QX-02).
+   - Vérifié en headless, qui a des popups overlay ; le chemin natif y est couvert en substituant la détection. Vérifié aussi sur le bureau réel (GNOME/XWayland, 13/10/2026).
    - **Échap ferme aussi les menus hors de la barre** : un menu contextuel (`HDevContextMenu`) ou un `HDevMenuPopup` ouvert par le code. Il ne se fermait jusqu'ici qu'au clic, et un menu qui survit à la désactivation doit se fermer au clavier. Comme dans `HDevMenuBar`, Échap ferme toute la chaîne, sous-menus compris. L'API ne change pas.
 7. **HDevDateEdit passe sur le popup du socle.** Il reçoit `IsDropDownOpen`, `DropDownOpening`, `DropDownOpened`, `DropDownClosing` et `DropDownClosed` ; Alt+↑ ferme désormais aussi le calendrier. Son bouton calendrier reste interne jusqu'au portage des boutons d'éditeur (E3).
 8. **Les boutons-glyphes des éditeurs (`HDevEditorGlyphButton`) sont cliquables sur toute leur surface**, et plus seulement sur les traits de leur glyphe : le test de clic d'Avalonia suit ce qui est dessiné.
+9. **Le bouton calendrier de HDevDateEdit et un bouton `DropDown` donnent le focus au champ** avant d'ouvrir ou de fermer le popup, comme un clic sur la zone de valeur. Les boutons ne prenant pas le focus, un popup ouvert d'un clic sur eux, le focus ailleurs, ne recevait pas Échap (constat du bureau réel, QX-02).
 
 **Ajouts**
 - Sur tout éditeur du socle : `IsMultiline`, `Buttons` et `HDevEditorButton.Click`, le popup public (`IsDropDownOpen`, `DropDownContent` et ses quatre événements).

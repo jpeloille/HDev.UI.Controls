@@ -224,7 +224,9 @@ Les planches de `tests/Gallery`, en clair et en sombre, sont archivées comme r�
 
 **Résultat : fait le 05/10/2026** (mission M-01, branche `suite-M-01`).
 - **QX-02, option (b), retenue par Julien.** Un popup dessiné dans la fenêtre (overlay, le cas de Linux) ne se ferme plus à la désactivation de la fenêtre, quelle que soit sa durée ; un popup natif garde la fermeture après 250 ms. Échap ferme tout popup, menus contextuels et menus hors barre compris.
-- **La fusion dans `suite` attend encore la vérification de l'option (b) sur le bureau réel** (GNOME/XWayland).
+- **Option (b) vérifiée sur le bureau réel le 13/10/2026** (GNOME 50, XWayland 24, démo, entrées réelles par uinput). Menu File, ComboBox, LookUpEdit, DateEdit et menu contextuel survivent à 0,1 s, 3 s et 5 s de désactivation et à la réactivation ; Échap, le clic extérieur et un choix les ferment.
+  - Constat du bureau : ouvert d'un clic sur son bouton, le focus ailleurs, le calendrier du DateEdit restait sourd à Échap. Le bouton calendrier et le bouton déroulant du socle donnent désormais le focus au champ (029009c).
+  - Non couverts sur le bureau, faute d'exemple dans la démo : sous-menus, menu déroulant du ruban, popups de SearchControl, TokenEdit et DropDownEdit ; le chemin natif (la démo est en overlay).
 - **Décisions du 05/10/2026** (questions de la mission M-01) : `HDevEditorButton` (`Kind`, `Icon`, `Click` routé), `DropDownContent`, les arguments des événements du popup (`CloseReason` : `Accepted`, `Canceled`, `LightDismiss` ; `IsValueAccepted`), les noms des glyphes, la valeur de HDevButtonEdit (`Text`, la couche typée ne déclarant plus `Value`) et de HDevDropDownEdit (`Value`, `object?`, prise à la fermeture depuis `DropDownValue`), la zone de valeur protégée.
 - **Règle de nommage** (Julien, 05/10/2026) : les conventions et les noms d'Avalonia d'abord, puis la typologie HDev ; un nom identique à une suite tierce seulement s'il est le nom logique et générique.
 - **Pièces du socle.**
@@ -240,8 +242,8 @@ Les planches de `tests/Gallery`, en clair et en sombre, sont archivées comme r�
 - **Nouveaux contrôles** : HDevButtonEdit (ligne 6) et HDevDropDownEdit (ligne 19), dont la valeur n'est prise qu'à la fermeture : Échap rend la valeur d'avant, le clic extérieur garde le choix.
 - **Vérifications.**
   - 39 vérifications « Socle des éditeurs (E2) », dont un formulaire en XAML compilé (`FormulaireE2.axaml`) : boutons (clic réel, `Click` routé jusqu'au formulaire, commande, visibilité liée), popup public (valeur en cours, Échap, clic extérieur, `ValueChanging` annulé à la fermeture), retournement mesuré au pixel, collage, sélection, multiligne.
-  - 12 vérifications « Garde de fermeture (QX-02) » : survie des popups overlay (DateEdit, ComboBox, LookUpEdit, menu, menu contextuel, menu hors barre) à 400 ms et 1,5 s de désactivation ; fermeture après le débounce pour un popup natif ; clic extérieur et Échap.
-  - Le banc complet passe trois fois à 187 sur 187 (136 avant E2, 39 pour E2, 12 pour QX-02). Un test E1 a changé de moyen, pas d'intention (`MIGRATION-editeurs.md`, E2).
+  - 14 vérifications « Garde de fermeture (QX-02) » : survie des popups overlay (DateEdit, ComboBox, LookUpEdit, menu, menu contextuel, menu hors barre) à 400 ms et 1,5 s de désactivation ; fermeture après le débounce pour un popup natif ; clic extérieur et Échap, y compris pour un popup ouvert par son bouton, le focus ailleurs.
+  - Le banc complet passe à 189 sur 189 (136 avant E2, 39 pour E2, 14 pour QX-02). Un test E1 a changé de moyen, pas d'intention (`MIGRATION-editeurs.md`, E2).
   - 380 tests xUnit verts.
   - Planches : « champs » identique au pixel jusqu'à sa nouvelle section du bas, en clair et en sombre ; « fondations » montre les nouveaux glyphes ; les autres planches sont inchangées, hors lignes « maintenant » des planches datées.
 
