@@ -1470,7 +1470,7 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         var luChoix = Equals(vm.ChefId, 3) && DernierUtilisateur(lu) && !lu.IsDropDownOpen;
         vm.ChefId = 1; Pump(w);
         Check("LookUpEdit lié sans Mode (liaisons compilées d'affichage et de valeur) : affiché, le choix remonte (origine Utilisateur), le ViewModel redescend",
-            luAffiche && luChoix && Equals(presentateurLu.Content, "Awa Wamytan") && lu.SelectedItem == vm.Equipiers[0]
+            luAffiche && luChoix && Equals(presentateurLu.Content, "Awa Wamytan") && ReferenceEquals(lu.SelectedItem, vm.Equipiers[0])
             && journal[^1].Origin == HDevValueOrigin.Code);
         lu.SelectedItem = vm.Equipiers[1]; Pump(w);
         var parLigne = Equals(vm.ChefId, 2);
