@@ -8,7 +8,7 @@ for id, obj, t, dep, j, st in [
     ('E0', 'Tests de caractérisation des éditeurs', 'S', '—', 'S1', '✅'),
     ('E1', 'Conception du socle, contrat de valeur et conventions', 'M', 'E0', 'S1', '✅'),
     ('E2', 'Socle composite : zone de valeur, boutons, popup, multiligne', 'L', 'E1', 'S1', '✅'),
-    ('E3', 'Portage des éditeurs existants sur le socle', 'L', 'E2', 'S1', '🔲'),
+    ('E3', 'Portage des éditeurs existants sur le socle', 'L', 'E2', 'S1', '✅'),
     ('E4', 'Sélection : cases, items à gabarit, liste à cases', 'M', 'E3', 'S2', '🔲'),
     ('E5', 'Saisie typée : masques typés, formats numériques, calculatrice', 'M', 'E3', 'S2', '🔲'),
     ('E6', 'Date et heure : types modernes, durées, plages, créneaux', 'L', 'E3', 'S2', '🔲'),

@@ -73,7 +73,7 @@ Les tests E0 ont fait changer d'état deux lignes de 5.7, sans changer le score.
 | **E0** | Tests de caractérisation des éditeurs | S | — | — | ✅ |
 | **E1** | Conception du socle (D1), contrat `IHDevEditor` et conventions (D2, D3) | M | E0 | — (5.7) | ✅ |
 | **E2** | Socle composite : zone de valeur, boutons, popup, multiligne | L | E1 | 6, 19 | ✅ |
-| **E3** | Portage des éditeurs existants sur le socle | L | E2 | — (5.7) | 🔲 |
+| **E3** | Portage des éditeurs existants sur le socle | L | E2 | — (5.7) | ✅ |
 | **E4** | Sélection : cases, items à gabarit, liste à cases | M | E3 | 12, 13, 22 | 🔲 |
 | **E5** | Saisie typée : masques typés, formats numériques, calculatrice | M | E3 | 2, 24, 25 | 🔲 |
 | **E6** | Date et heure : types modernes, durées, plages, créneaux | L | E3 | 32, 33, 34 (+ 30, 31, 35 enrichies) | 🔲 |

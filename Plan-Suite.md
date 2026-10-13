@@ -51,7 +51,7 @@ Un lot d'un autre programme garde son identifiant :
 ## 2. Point de départ
 
 - **Catalogue** : 166 fonctions, score **<!-- généré:SC:cat,auj -->29 %<!-- fin -->** (36 ✅, 25 🟡, 95 ❌, 10 ⚪).
-- **Profondeur** : 176 capacités sur sept contrôles phares, **<!-- généré:SC:prof,auj -->44 %<!-- fin -->** pour l'ensemble.
+- **Profondeur** : 176 capacités sur sept contrôles phares, **<!-- généré:SC:prof,auj -->45 %<!-- fin -->** pour l'ensemble.
 - **Plus gros écarts** : visualisation (4 %), grilles (7 %), impression et export (13 %), composants transverses (15 %).
 - **Plans déjà écrits**, que ce plan englobe sans les renuméroter :
   - éditeurs : `Plan-Editeurs.md` ; E0 est fait, et E1 aussi, sauf la forme du socle, à valider ;
@@ -226,8 +226,8 @@ Le script de projection vérifie cette règle.
 | 5.4 Agenda | 23 | 37 % (7/3) | 37 % (7/3) | 37 % (7/3) | 37 % (7/3) | 41 % (8/3) | 91 % (21/0) | 91 % (21/0) |
 | 5.5 Gantt | 27 | 57 % (15/1) | 57 % (15/1) | 63 % (17/0) | 74 % (20/0) | 74 % (20/0) | 85 % (23/0) | 100 % (27/0) |
 | 5.6 Texte riche | 23 | 39 % (7/4) | 39 % (7/4) | 39 % (7/4) | 39 % (7/4) | 54 % (12/1) | 91 % (21/0) | 91 % (21/0) |
-| 5.7 Socle des éditeurs | 17 | 62 % (9/3) | 68 % (11/1) | 71 % (12/0) | 88 % (15/0) | 88 % (15/0) | 88 % (15/0) | 88 % (15/0) |
-| **Profondeur** | **176** | **44 % (70/16)** | **45 % (72/14)** | **51 % (85/11)** | **60 % (101/8)** | **76 % (131/4)** | **92 % (161/1)** | **94 % (165/1)** |
+| 5.7 Socle des éditeurs | 17 | 68 % (11/1) | 68 % (11/1) | 71 % (12/0) | 88 % (15/0) | 88 % (15/0) | 88 % (15/0) | 88 % (15/0) |
+| **Profondeur** | **176** | **45 % (72/14)** | **45 % (72/14)** | **51 % (85/11)** | **60 % (101/8)** | **76 % (131/4)** | **92 % (161/1)** | **94 % (165/1)** |
 <!-- fin -->
 
 ### Dimensions transverses (§ 3 du HTML, non notées)

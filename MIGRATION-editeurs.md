@@ -252,7 +252,7 @@ Le Gantt, qui édite ses dates avec HDevDateEdit, n'est pas touché par le point
 
 **Décisions de nommage du 05/10/2026** (ordre : conventions d'Avalonia, puis typologie HDev) : `ButtonClick` devient `HDevEditorButton.Click` routé ; `Reason` devient `CloseReason` ; `Accept`, `Cancel`, `Outside` deviennent `Accepted`, `Canceled`, `LightDismiss` ; `AcceptValue` devient `IsValueAccepted` ; HDevPopupContainerEdit devient **HDevDropDownEdit**. Ces noms n'ont jamais été livrés : ce ne sont pas des ruptures pour les applications.
 
-### E3 (en cours, mission M-05)
+### E3 (13/10/2026, mission M-05)
 
 **Ruptures**
 1. **Le texte des éditeurs du socle suit son origine.** Avalonia lève `TextChanged` au tour suivant du répartiteur. Le socle relève donc l'origine de chaque changement (la valeur ou la saisie) quand il a lieu, et la rend au `TextChanged` qui suit. Un texte réécrit depuis la valeur ne passe plus pour une saisie : il ne rouvre plus une liste de suggestions (constat E0 n° 3, APP-09). L'API ne change pas.
@@ -316,6 +316,12 @@ Le Gantt, qui édite ses dates avec HDevDateEdit, n'est pas touché par le point
    - MonthCalendar : une date posée par le code garde son heure, sans l'afficher. Avant, elle était tronquée à minuit. Un jour choisi par l'utilisateur est à minuit.
    - HDevDateEdit arrête le `ValueChanged` de son calendrier : jusqu'à la fenêtre, seul celui de l'éditeur remonte.
    - HDevChip et HDevRadioCard gardent `CheckedChanged` : ils ne figurent pas dans cette table.
+
+**Écarts visuels, planches avant et après** (`tests/Gallery`, référence `avant-E3`, six thèmes) :
+- « Champs » : croix de SearchControl au glyphe `Clear` ; état Erreur de SpinEdit enfin visible (point 5) ; chevron de ComboBox et LookUpEdit 2 px plus à gauche (points 11, 13) ; champ à jetons de deux lignes 4 px plus court, d'où une planche de 1 556 px au lieu de 1 560 (point 14) ; quelques pixels d'antialiasing du texte de TextBox et de la combo, sans déplacement.
+- « Bascule » : antialiasing du texte d'un HDevTextBox, sans déplacement.
+- « Données » : seule la ligne « maintenant » des planches datées bouge.
+- Les autres planches sont identiques au pixel, dans les six thèmes.
 
 **Corrections des applications** (`Plan-Apports.md`)
 - **APP-09.** La liste d'une ComboBox éditable à suggestion ne se rouvre plus après un choix. Une frappe rapide est complétée : la complétion se fait à chaque frappe, avant le champ, et une lettre qui remplace le suffixe proposé n'est plus prise pour un effacement.

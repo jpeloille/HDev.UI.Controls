@@ -9,7 +9,7 @@ Table de correspondance contrôle par contrôle, état au **04/10/2026**.
 
   | Contrôle | Score |
   |---|---:|
-  | Socle des éditeurs | 62 % |
+  | Socle des éditeurs | 68 % |
   | Gantt | 57 % |
   | Ruban et barres | 44 % |
   | Docking | 44 % |
@@ -402,7 +402,7 @@ Le score mesure l'étendue couverte, pas l'effort restant. Un seul item DevExpre
 | Agenda (`HDevScheduler` + `HDevRoster`) | `SchedulerControl`, `TcxScheduler` | 23 | 7 | 3 | 13 | 0 | 37 % |
 | Gantt (`HDevGantt`) | `GanttControl`, `TdxGanttControl` | 27 | 15 | 1 | 11 | 0 | 57 % |
 | Texte riche (`HDevRichEdit`) | `RichEditControl`, `TdxRichEditControl` | 23 | 7 | 4 | 12 | 0 | 39 % |
-| Socle des éditeurs | `BaseEdit` + `RepositoryItem`, `EditSettings`, `TcxEditRepository` | 17 | 9 | 3 | 5 | 0 | 62 % |
+| Socle des éditeurs | `BaseEdit` + `RepositoryItem`, `EditSettings`, `TcxEditRepository` | 17 | 11 | 1 | 5 | 0 | 68 % |
 
 ### 4.1 Grille : `HDevDataGrid` ↔ `GridControl` / `TcxGrid`
 
@@ -597,18 +597,18 @@ Le score mesure l'étendue couverte, pas l'effort restant. Un seul item DevExpre
 
 | Capacité DevExpress | HDev | Remarque |
 |---|---|---|
-| Valeur liable en XAML (`EditValue`) | 🟡 | oui pour TextBox, DateEdit (contrat de valeur, lot E1), ButtonEdit, DropDownEdit (lot E2), CheckBox, RadioButton, ToggleSwitch, Slider ; non pour TimeEdit, SpinEdit, ComboBox, LookUpEdit, TokenEdit, SearchControl, MonthCalendar (propriétés CLR) |
+| Valeur liable en XAML (`EditValue`) | ✅ | tous les éditeurs, liés dans les deux sens par défaut avec la validation de liaison, un test de liaison chacun (lot E3) ; `IHDevEditor.EditValue` pour le code générique, y compris cases, bascule, radios, curseur et calendrier |
 | Masques simples | ✅ | 0, 9, L, A et littéraux ; le collage passe par le masque, et par le filtre numérique de SpinEdit (lot E2, test d'interaction) |
 | Masques numériques, date-heure, regex | 🟡 | DateEdit et SpinEdit formatent eux-mêmes ; pas de regex |
 | Validation annulable, texte et rendu d'erreur | ✅ | |
 | Validation centralisée, `IDataErrorInfo` | ❌ | |
 | Texte d'invite | ✅ | |
 | Lecture seule | ✅ | |
-| Boutons d'éditeur configurables | ✅ | `Buttons` et leur `Click` routé sur tout éditeur du socle (lot E2) ; les boutons propres aux éditeurs existants y passent en E3 |
-| Popups qui se retournent vers le haut | ✅ | tous (test d'interaction) ; écart au champ identique dessous et dessus, mesuré au pixel (lot E2) ; la ComboBox bascule encore elle-même jusqu'à son portage (E3) |
+| Boutons d'éditeur configurables | ✅ | `Buttons` et leur `Click` routé sur tout éditeur du socle (lot E2) ; calendrier de DateEdit, chevron de ComboBox et LookUpEdit, effacement de SearchControl en sont (lot E3) |
+| Popups qui se retournent vers le haut | ✅ | tous, par le popup du socle (test d'interaction) ; écart au champ identique dessous et dessus, mesuré au pixel (lots E2, E3) |
 | Autocomplétion | ✅ | ComboBox : Suggest, Append |
 | Même éditeur en autonome et in-place (grille, arbre, barres) | ❌ | |
-| Socle commun à tous les éditeurs | 🟡 | `HDevEditorBase` porte zone de valeur, multiligne, boutons, popup, masque et validation (lot E2) ; il porte DateEdit, TimeEdit, SpinEdit, SearchControl, ButtonEdit et DropDownEdit ; TextBox, ComboBox, LookUpEdit et TokenEdit sont à part jusqu'à E3 |
+| Socle commun à tous les éditeurs | ✅ | `HDevEditorBase` porte zone de valeur, multiligne, boutons, popup, masque et validation (lot E2) ; tous les éditeurs de champ y passent, TextBox, ComboBox, LookUpEdit et TokenEdit compris (lot E3) ; les contrôles de choix et le calendrier suivent le même contrat de valeur |
 | Thème clair et sombre à chaud | ✅ | |
 | États visuels cohérents, halo de focus | ✅ | |
 | Libellé flottant | ❌ | WinForms |
