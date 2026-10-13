@@ -170,3 +170,15 @@
 - Julien, QX-10 : « je choisis a ». e2 est prévenue que l'accord viendra de Julien dans sa fenêtre ; le relais ne vaut pas accord.
 - FIN M-05 (correctifs) : 143ce48. `NewValue` modifiable, appliqué par la coercition pour tout changement (utilisateur, code, liaison) ; CS8601 corrigé ; MIGRATION:71, :74, :147 à jour ; banc 239/239 ×3 (+8), xUnit 422. Interprétation à confirmer (QX-11) : `Cancel` vaut aussi pour le code et la liaison, ce qui est une rupture, consignée en 1.2 et au point 17. Worktree `missions/V-05b` (143ce48) ; verif-05b lancée. V-05 (8c6e1ef) reste à e2 pour le bureau réel.
 - VERDICT verif-05b sur 143ce48 : **FUSIONNABLE**, avec les 9 contrôles OK. CS8601 a disparu. Les 8 tests QX-09 échouent sans le correctif (mutation). Aucune boucle ni double annonce. Écarts non bloquants : (1) un refus d'un changement venu de la source (Cancel ou NewValue = OldValue) laisse le contrôle et la source diverger, contrairement à MIGRATION:51, et c'était déjà le cas avant E3 pour une coercition qui rend la valeur courante ; QX-11 est donc plus large. (2) `CoerceThroughChanging` et `CoerceOwnValue`, protégés, ne sont pas décidés ; Avalonia dit `OnCoerce<Propriété>`. (3) L'obligation de déclarer `coerce: CoerceThroughChanging` n'est pas documentée. (4) Une valeur posée dans un gestionnaire de ValueChanging donne deux ValueChanged, dont un faux. (5) Le libellé du test Program.cs:1564 est trop large.
+
+## 14/10/2026
+
+- Julien colle l'autorisation dans la fenêtre de e2 ; la vérification sur le bureau réel démarre (/tmp/e3-bureau/00-start.png).
+- Julien, sur QX-11 et les retouches de verif-05b : « ok, continue ». L'orchestratrice le lit comme un accord sur sa recommandation :
+  - ValueChanging pour toutes les origines ;
+  - le socle réécrit la valeur gardée vers la source (Cancel, substitution par l'ancienne valeur, bornage) ;
+  - `CoerceOwnValue` devient `OnCoerceValue` ;
+  - l'obligation `coerce: CoerceThroughChanging` est documentée ;
+  - la réentrance dans ValueChanging est consignée ;
+  - le libellé du test 1564 est corrigé.
+  Consigne envoyée à m-05.
