@@ -156,3 +156,5 @@
 - Julien valide les écarts de M-04 : 1 oui, 2 oui, 3 oui, 4 ligne de context.md réécrite, 5 renommage proposé. L'orchestratrice renomme `HDevThemeVariants` en `HDevThemeVariantKeys`, complète MIGRATION-themes.md (Theme null au démarrage, Apply et SetPalettes, palettes de grille de hdev à écarter) ; xUnit 422, banc 189 ALL PASS. Fusion dans `suite` : 9c35aa1.
 
 - Reprise de l'orchestration par `hdev-ui-controls-49` [28aee0]. Aucune mission en cours. Lots S1 restants : E3, F0, F1, F2, F12 (reste), F15, G0, G1, I1 (attend Q4).
+- Proposition à Julien : vague M-05 (E3), M-06 (F0 + reste de F12), M-07 (G0) ; QX-05 et Q4 avec recommandation.
+- Julien : « je te suis sur QX-05 ». `Placeholder` sort de `IHDevEditor` pour une interface propre aux éditeurs à zone de texte (nom fixé en E3). Consigné dans Conception-Socle-Editeurs et Plan-Editeurs. Vague et Q4 : sans réponse.

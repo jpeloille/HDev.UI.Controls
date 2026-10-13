@@ -54,6 +54,7 @@ Les tests E0 ont fait changer d'état deux lignes de 5.7, sans changer le score.
   - Critères retenus : simplicité d'usage en XAML et en C#, ajout d'une capacité sans nouvelle classe, réemploi tel quel dans la grille (E11).
 - **D2, des valeurs liables d'emblée.**
   - Interface `IHDevEditor` : `EditValue` non typée, pour le code générique et la grille, avec `ValueChanging` (annulable) et `ValueChanged`, plus `IsReadOnly`, `Placeholder`, `ErrorText`, `Validate()` et `FocusEditor()`.
+  - QX-05, tranché le 13/10/2026 : `Placeholder` quitte `IHDevEditor` pour une interface propre aux éditeurs à zone de texte ; les contrôles de choix n'en portent pas (`Conception-Socle-Editeurs.md`, § 10).
   - Chaque éditeur expose une `Value` typée en `StyledProperty`, `TwoWay` par défaut, avec la validation de liaison active.
   - C'est l'idiome Avalonia, et le moment le moins cher pour le poser est la refonte du socle.
 - **D3, un seul nommage, celui d'Avalonia.**
