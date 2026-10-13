@@ -1,10 +1,13 @@
 <!-- Skin Yaru (Ubuntu 26.04) pour HDevDataGrid (HDev.UI.DataGrid).
      Surcharge uniquement les ressources de thème exposées par la bibliothèque ;
      le contrôle lui-même vit dans HDev.UI.DataGrid.
-     ThemeDictionaries : la grille suit RequestedThemeVariant (bascule Light/Dark
-     à chaud pilotée par HDevWindow via HDevTheme.Variant). -->
+     ThemeDictionaries : la grille suit RequestedThemeVariant, posée à chaud par
+     HDevWindow selon le thème actif (HDevTheme.Apply / HDevTheme.Variant).
+     Light/Dark = Ubuntu 26 ; Ardoise, Lagon, IndigoOr, Cockpit = variantes
+     propres (HDevThemeVariants), en fin de fichier. -->
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:theme="using:HDev.UI.Controls.Theme">
 
   <ResourceDictionary.ThemeDictionaries>
 
@@ -64,6 +67,122 @@
       <SolidColorBrush x:Key="DataGridGroupChipBorderBrush" Color="#575757" />
       <SolidColorBrush x:Key="DataGridDropZoneActiveBrush" Color="#4A2E1D" />
       <SolidColorBrush x:Key="DataGridDropZoneActiveBorderBrush" Color="#F2704B" />
+    </ResourceDictionary>
+
+    <!-- ═══════════ Ardoise ═══════════ -->
+    <ResourceDictionary x:Key="{x:Static theme:HDevThemeVariants.Ardoise}">
+      <Color x:Key="DataGridHeaderBackground">#F1F3F5</Color>
+      <Color x:Key="DataGridHeaderBorder">#D5DAE0</Color>
+      <Color x:Key="DataGridRowAlternate">#F8F9FA</Color>
+      <Color x:Key="DataGridRowSelected">#E3EAF7</Color>
+      <Color x:Key="DataGridRowHover">#EEF1F4</Color>
+      <Color x:Key="DataGridGridLines">#E4E7EB</Color>
+      <Color x:Key="DataGridCellSelected">#C7D5F0</Color>
+      <Color x:Key="DataGridGroupBackground">#E9ECEF</Color>
+      <Color x:Key="DataGridFrozenColumnSeparator">#A9B3BE</Color>
+      <Color x:Key="DataGridPressed">#DDE2E8</Color>
+
+      <SolidColorBrush x:Key="DataGridBackgroundBrush" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="DataGridHeaderBackgroundBrush" Color="#F1F3F5" />
+      <SolidColorBrush x:Key="DataGridHeaderBorderBrush" Color="#D5DAE0" />
+      <SolidColorBrush x:Key="DataGridRowAlternateBrush" Color="#F8F9FA" />
+      <SolidColorBrush x:Key="DataGridRowSelectedBrush" Color="#E3EAF7" />
+      <SolidColorBrush x:Key="DataGridRowHoverBrush" Color="#EEF1F4" />
+      <SolidColorBrush x:Key="DataGridGridLinesBrush" Color="#E4E7EB" />
+      <SolidColorBrush x:Key="DataGridCellSelectedBrush" Color="#C7D5F0" />
+      <SolidColorBrush x:Key="DataGridGroupBackgroundBrush" Color="#E9ECEF" />
+      <SolidColorBrush x:Key="DataGridCellEditingBrush" Color="#FFF4DC" />
+      <SolidColorBrush x:Key="DataGridGroupChipBrush" Color="#E9ECEF" />
+      <SolidColorBrush x:Key="DataGridGroupChipBorderBrush" Color="#A9B3BE" />
+      <SolidColorBrush x:Key="DataGridDropZoneActiveBrush" Color="#E3EAF7" />
+      <SolidColorBrush x:Key="DataGridDropZoneActiveBorderBrush" Color="#3355A8" />
+    </ResourceDictionary>
+
+    <!-- ═══════════ Lagon ═══════════ -->
+    <ResourceDictionary x:Key="{x:Static theme:HDevThemeVariants.Lagon}">
+      <Color x:Key="DataGridHeaderBackground">#EAF4F4</Color>
+      <Color x:Key="DataGridHeaderBorder">#BFD9DA</Color>
+      <Color x:Key="DataGridRowAlternate">#F5FAFA</Color>
+      <Color x:Key="DataGridRowSelected">#D3EDEC</Color>
+      <Color x:Key="DataGridRowHover">#E3F1F1</Color>
+      <Color x:Key="DataGridGridLines">#DCEBEB</Color>
+      <Color x:Key="DataGridCellSelected">#A9DCDA</Color>
+      <Color x:Key="DataGridGroupBackground">#E1EEEE</Color>
+      <Color x:Key="DataGridFrozenColumnSeparator">#8FB9BB</Color>
+      <Color x:Key="DataGridPressed">#CFE4E4</Color>
+
+      <SolidColorBrush x:Key="DataGridBackgroundBrush" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="DataGridHeaderBackgroundBrush" Color="#EAF4F4" />
+      <SolidColorBrush x:Key="DataGridHeaderBorderBrush" Color="#BFD9DA" />
+      <SolidColorBrush x:Key="DataGridRowAlternateBrush" Color="#F5FAFA" />
+      <SolidColorBrush x:Key="DataGridRowSelectedBrush" Color="#D3EDEC" />
+      <SolidColorBrush x:Key="DataGridRowHoverBrush" Color="#E3F1F1" />
+      <SolidColorBrush x:Key="DataGridGridLinesBrush" Color="#DCEBEB" />
+      <SolidColorBrush x:Key="DataGridCellSelectedBrush" Color="#A9DCDA" />
+      <SolidColorBrush x:Key="DataGridGroupBackgroundBrush" Color="#E1EEEE" />
+      <SolidColorBrush x:Key="DataGridCellEditingBrush" Color="#FFF1DE" />
+      <SolidColorBrush x:Key="DataGridGroupChipBrush" Color="#E1EEEE" />
+      <SolidColorBrush x:Key="DataGridGroupChipBorderBrush" Color="#8FB9BB" />
+      <SolidColorBrush x:Key="DataGridDropZoneActiveBrush" Color="#D3EDEC" />
+      <SolidColorBrush x:Key="DataGridDropZoneActiveBorderBrush" Color="#0E7C80" />
+    </ResourceDictionary>
+
+    <!-- ═══════════ Indigo & Or ═══════════ -->
+    <ResourceDictionary x:Key="{x:Static theme:HDevThemeVariants.IndigoOr}">
+      <Color x:Key="DataGridHeaderBackground">#F3F1EB</Color>
+      <Color x:Key="DataGridHeaderBorder">#D9D4C7</Color>
+      <Color x:Key="DataGridRowAlternate">#FAF9F6</Color>
+      <Color x:Key="DataGridRowSelected">#E6E8F3</Color>
+      <Color x:Key="DataGridRowHover">#F0EEE7</Color>
+      <Color x:Key="DataGridGridLines">#E8E4DA</Color>
+      <Color x:Key="DataGridCellSelected">#C9CEE8</Color>
+      <Color x:Key="DataGridGroupBackground">#ECE8DE</Color>
+      <Color x:Key="DataGridFrozenColumnSeparator">#B39A55</Color>
+      <Color x:Key="DataGridPressed">#E4E0D5</Color>
+
+      <SolidColorBrush x:Key="DataGridBackgroundBrush" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="DataGridHeaderBackgroundBrush" Color="#F3F1EB" />
+      <SolidColorBrush x:Key="DataGridHeaderBorderBrush" Color="#D9D4C7" />
+      <SolidColorBrush x:Key="DataGridRowAlternateBrush" Color="#FAF9F6" />
+      <SolidColorBrush x:Key="DataGridRowSelectedBrush" Color="#E6E8F3" />
+      <SolidColorBrush x:Key="DataGridRowHoverBrush" Color="#F0EEE7" />
+      <SolidColorBrush x:Key="DataGridGridLinesBrush" Color="#E8E4DA" />
+      <SolidColorBrush x:Key="DataGridCellSelectedBrush" Color="#C9CEE8" />
+      <SolidColorBrush x:Key="DataGridGroupBackgroundBrush" Color="#ECE8DE" />
+      <SolidColorBrush x:Key="DataGridCellEditingBrush" Color="#FBF0CF" />
+      <SolidColorBrush x:Key="DataGridGroupChipBrush" Color="#ECE8DE" />
+      <SolidColorBrush x:Key="DataGridGroupChipBorderBrush" Color="#B39A55" />
+      <SolidColorBrush x:Key="DataGridDropZoneActiveBrush" Color="#E6E8F3" />
+      <SolidColorBrush x:Key="DataGridDropZoneActiveBorderBrush" Color="#2B3A73" />
+    </ResourceDictionary>
+
+    <!-- ═══════════ Cockpit (sombre) ═══════════ -->
+    <ResourceDictionary x:Key="{x:Static theme:HDevThemeVariants.Cockpit}">
+      <Color x:Key="DataGridHeaderBackground">#1C2229</Color>
+      <Color x:Key="DataGridHeaderBorder">#2E3740</Color>
+      <Color x:Key="DataGridRowAlternate">#181D23</Color>
+      <Color x:Key="DataGridRowSelected">#1D3247</Color>
+      <Color x:Key="DataGridRowHover">#222A33</Color>
+      <Color x:Key="DataGridGridLines">#252C34</Color>
+      <Color x:Key="DataGridCellSelected">#24507A</Color>
+      <Color x:Key="DataGridGroupBackground">#1F252C</Color>
+      <Color x:Key="DataGridFrozenColumnSeparator">#4C5866</Color>
+      <Color x:Key="DataGridPressed">#2A333D</Color>
+
+      <SolidColorBrush x:Key="DataGridBackgroundBrush" Color="#14181D" />
+      <SolidColorBrush x:Key="DataGridHeaderBackgroundBrush" Color="#1C2229" />
+      <SolidColorBrush x:Key="DataGridHeaderBorderBrush" Color="#2E3740" />
+      <SolidColorBrush x:Key="DataGridRowAlternateBrush" Color="#181D23" />
+      <SolidColorBrush x:Key="DataGridRowSelectedBrush" Color="#1D3247" />
+      <SolidColorBrush x:Key="DataGridRowHoverBrush" Color="#222A33" />
+      <SolidColorBrush x:Key="DataGridGridLinesBrush" Color="#252C34" />
+      <SolidColorBrush x:Key="DataGridCellSelectedBrush" Color="#24507A" />
+      <SolidColorBrush x:Key="DataGridGroupBackgroundBrush" Color="#1F252C" />
+      <SolidColorBrush x:Key="DataGridCellEditingBrush" Color="#3A2F14" />
+      <SolidColorBrush x:Key="DataGridGroupChipBrush" Color="#1F252C" />
+      <SolidColorBrush x:Key="DataGridGroupChipBorderBrush" Color="#4C5866" />
+      <SolidColorBrush x:Key="DataGridDropZoneActiveBrush" Color="#1D3247" />
+      <SolidColorBrush x:Key="DataGridDropZoneActiveBorderBrush" Color="#F2A93B" />
     </ResourceDictionary>
 
   </ResourceDictionary.ThemeDictionaries>
