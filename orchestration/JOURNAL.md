@@ -158,3 +158,4 @@
 - Reprise de l'orchestration par `hdev-ui-controls-49` [28aee0]. Aucune mission en cours. Lots S1 restants : E3, F0, F1, F2, F12 (reste), F15, G0, G1, I1 (attend Q4).
 - Proposition à Julien : vague M-05 (E3), M-06 (F0 + reste de F12), M-07 (G0) ; QX-05 et Q4 avec recommandation.
 - Julien : « je te suis sur QX-05 ». `Placeholder` sort de `IHDevEditor` pour une interface propre aux éditeurs à zone de texte (nom fixé en E3). Consigné dans Conception-Socle-Editeurs et Plan-Editeurs. Vague et Q4 : sans réponse.
+- Julien : « lance E3 ». Mission M-05 : fiche, worktrees `missions/M-05/HDev.UI.Controls` (`suite-M-05`, depuis b9573c5) et `missions/M-05/HDev.UI.DataGrid` (7dd3ae1, détachée, en lecture) ; compilation : 0 erreur. Sous-agent `m-05` lancé.
