@@ -182,3 +182,4 @@
   - la réentrance dans ValueChanging est consignée ;
   - le libellé du test 1564 est corrigé.
   Consigne envoyée à m-05.
+- FIN M-05 (QX-11) : 87dc154. Le socle réécrit la valeur gardée vers la source par `UpdateSource()` (API publique, synchrone, avec garde de réentrance) ; `OnCoerceValue` ; obligation et limite documentées ; banc 244/244 ×3 (+5, 4 FAIL sans le correctif), xUnit 422. V-05b déplacée sur 87dc154, verif-05b relancée.
