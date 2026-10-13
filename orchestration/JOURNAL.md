@@ -145,3 +145,4 @@
 - APP-09 rejoué sur le bureau réel (combo éditable SuggestAppend de la démo) : **confirmé**. Un choix dans la liste complète ouverte par le chevron rouvre la liste, filtrée sur le choix, et elle reste ouverte. Après une frappe, un clic sur la suggestion ferme sans réouverture. Une frappe rapide (« Ja ») n'a pas complété une fois et Entrée a gardé « Ja » ; à revoir en E3.
 - Fusion `suite-M-01` → `suite` : 4f16606. Plan-Suite.md : décompte 36/25/95/10. `generer.py` : aucun tableau modifié. M-02 débloquée.
 - Julien : « on lance M-02 ». Worktrees `missions/M-02/HDev.UI.Controls` (`suite-M-02`, depuis 0adcb1e) et `missions/M-02/HDev.UI.DataGrid` (`suite-M-02`, 7dd3ae1, en lecture) ; compilation : 0 erreur. Exécutante lancée en sous-agent hdev-executante.
+- QUESTION M-02 (context.md, 7 mentions ; écart cf05236 au-delà du grep). Julien : context.md hors périmètre (option a), cf05236 gardé. Consigné dans la fiche M-02.
