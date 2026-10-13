@@ -10,7 +10,7 @@ using HDev.UI.Controls.Theme;
 namespace HDev.UI.Controls;
 
 /// <summary>
-/// Notifications toast (équivalent AlertControl) : empilées en bas à droite
+/// Notifications toast : empilées en bas à droite
 /// de la fenêtre via l'OverlayLayer, auto-fermeture, clic actionnable.
 /// Usage : HDevToast.Show(fenêtre, "Nouveau message", "De : Julien", "📧",
 ///     onClick: () => ...);

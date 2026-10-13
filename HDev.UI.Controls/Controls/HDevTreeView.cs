@@ -86,7 +86,7 @@ public class HDevTreeNode
 }
 
 /// <summary>
-/// Arborescence rendue custom (équivalent TreeView/TreeList sans colonnes) :
+/// Arborescence rendue custom (arbre sans colonnes) :
 /// expand/collapse, sélection, navigation clavier complète.
 /// Hauteur au contenu : placer dans un ScrollViewer pour défiler.
 /// </summary>

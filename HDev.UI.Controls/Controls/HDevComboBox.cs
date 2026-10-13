@@ -23,7 +23,7 @@ namespace HDev.UI.Controls;
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// <summary>
-/// Collection d'items du ComboBox (équivalent à ComboBoxItemCollection)
+/// Collection d'items du ComboBox
 /// </summary>
 public class HDevComboBoxItemCollection : ObservableCollection<object>
 {
@@ -83,7 +83,7 @@ public class HDevComboBoxItemCollection : ObservableCollection<object>
 }
 
 /// <summary>
-/// Propriétés du ComboBox (équivalent à RepositoryItemComboBox)
+/// Propriétés du ComboBox, regroupées dans un objet dédié
 /// </summary>
 public class HDevComboBoxProperties : INotifyPropertyChanged
 {

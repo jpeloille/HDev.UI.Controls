@@ -90,7 +90,7 @@ public class HDevAccordionSectionEventArgs : System.ComponentModel.CancelEventAr
 }
 
 /// <summary>
-/// Accordéon (équivalent NavBar/AccordionControl vertical) : sections empilées
+/// Accordéon vertical : sections empilées
 /// à en-tête cliquable (chevron), contenu hébergé, mode exclusif ou multiple.
 /// Clavier : ↑↓ déplacent le focus d'en-tête, Enter/Espace bascule.
 /// </summary>

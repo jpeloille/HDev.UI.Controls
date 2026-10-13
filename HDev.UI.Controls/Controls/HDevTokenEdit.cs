@@ -10,7 +10,7 @@ using System.Collections.ObjectModel;
 namespace HDev.UI.Controls;
 
 /// <summary>
-/// Champ à jetons (équivalent TokenEdit — champs À/Cc) : chips avec ×,
+/// Champ à jetons (champs À/Cc d'un courriel) : chips avec ×,
 /// saisie inline, suggestions par callback, Enter/;/Tab valide,
 /// Backspace à vide retire le dernier jeton
 /// </summary>

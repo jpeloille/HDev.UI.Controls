@@ -13,7 +13,7 @@ using Calendar = Avalonia.Controls.Calendar;
 namespace HDev.UI.Controls;
 
 /// <summary>
-/// Éditeur de date avec masque et calendrier déroulant (équivalent DateEdit) :
+/// Éditeur de date avec masque et calendrier déroulant :
 /// saisie masquée selon Format, bouton calendrier, MinDate/MaxDate, validation au blur.
 /// Value est liable dans les deux sens ; l'heure de la valeur n'est ni affichée ni perdue :
 /// une date choisie par l'utilisateur garde l'heure de la valeur courante.
@@ -151,7 +151,7 @@ public class HDevDateEdit : HDevEditorBase<DateTime?>
 }
 
 /// <summary>
-/// Éditeur d'heure avec masque HH:mm et boutons spin (équivalent TimeEdit) :
+/// Éditeur d'heure avec masque HH:mm et boutons spin :
 /// flèches ±1 minute, PageUp/PageDown ±1 heure, molette
 /// </summary>
 public class HDevTimeEdit : HDevEditorBase
