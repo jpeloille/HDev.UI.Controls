@@ -98,18 +98,18 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
 | — | DateEdit `ValueChanging` (annulable) | **E1, fait** |
 | DateEdit : l'heure de `Value` tronquée à minuit | heure conservée ; une date choisie garde l'heure de la valeur courante | **E1, fait** |
 | `MinDate`, `MaxDate`, `Format` | conservés (plus clairs que `DisplayDateStart` et `CustomDateFormatString` d'Avalonia) | — |
-| TimeEdit `Value` (CLR) et `ValueChanged` | comme DateEdit | E3 |
+| TimeEdit `Value` (CLR) et `ValueChanged` | comme DateEdit : `Value` liable dans les deux sens, `ValueChanged` commun, `ValueChanging` | **E3, fait** |
 
 ### 2.3 HDevSpinEdit
 
 | Avant | Après | Lot |
 |---|---|---|
-| `Value` (`decimal`, CLR) | `Value`, StyledProperty liable | E3 |
+| `Value` (`decimal`, CLR) | `Value`, StyledProperty liable, bornée par coercition (la source liée reçoit la borne) | **E3, fait** |
 | `Value` (`decimal`) | `decimal?` (valeur nulle permise) | E5 |
-| `MinValue`, `MaxValue` | `Minimum`, `Maximum` (noms Avalonia) | E3 |
+| `MinValue`, `MaxValue` | `Minimum`, `Maximum` (noms Avalonia), StyledProperty ; les changer ramène la valeur | **E3, fait** |
 | `Increment` | conservé (nom Avalonia de `NumericUpDown`) | — |
 | `Decimals` | conservé (plus simple qu'une chaîne de format) | — |
-| `ValueChanged` (`EventHandler`) | `ValueChanged` commun | E3 |
+| `ValueChanged` (`EventHandler`) | `ValueChanged` commun ; s'y ajoute `ValueChanging` | **E3, fait** |
 
 ### 2.4 HDevTextBox
 
@@ -238,3 +238,23 @@ Le Gantt, qui édite ses dates avec HDevDateEdit, n'est pas touché par le point
   - À la fermeture, si `IsValueAccepted`, la valeur en cours est prise comme un changement de l'utilisateur (`ValueChanging` annulable, puis `ValueChanged`, `Origin = User`) ; sinon, ou si le changement est annulé, elle revient à `Value`. Le popup se ferme dans tous les cas.
 
 **Décisions de nommage du 05/10/2026** (ordre : conventions d'Avalonia, puis typologie HDev) : `ButtonClick` devient `HDevEditorButton.Click` routé ; `Reason` devient `CloseReason` ; `Accept`, `Cancel`, `Outside` deviennent `Accepted`, `Canceled`, `LightDismiss` ; `AcceptValue` devient `IsValueAccepted` ; HDevPopupContainerEdit devient **HDevDropDownEdit**. Ces noms n'ont jamais été livrés : ce ne sont pas des ruptures pour les applications.
+
+### E3 (en cours, mission M-05)
+
+**Ruptures**
+1. **Le texte des éditeurs du socle suit son origine.** Avalonia lève `TextChanged` au tour suivant du répartiteur. Le socle relève donc l'origine de chaque changement (la valeur ou la saisie) quand il a lieu, et la rend au `TextChanged` qui suit. Un texte réécrit depuis la valeur ne passe plus pour une saisie : il ne rouvre plus une liste de suggestions (constat E0 n° 3, APP-09). L'API ne change pas.
+2. **HDevSpinEdit** passe sur le contrat.
+   - `Value` est une StyledProperty liable dans les deux sens. Elle est bornée par coercition : une valeur hors bornes venue du code ou de la source est ramenée à la borne, et la source liée reçoit la borne.
+   - `MinValue` et `MaxValue` deviennent `Minimum` et `Maximum`, des StyledProperty. Les changer ramène la valeur dans le nouvel intervalle.
+   - `ValueChanged` passe de `EventHandler` au `ValueChanged` commun ; un abonnement `(s, e) => …` compile sans changement. Les flèches, la molette et les boutons lèvent un changement d'origine Utilisateur, précédé de `ValueChanging`.
+3. **HDevTimeEdit** passe sur le contrat, comme HDevDateEdit.
+   - `Value` est une StyledProperty liable dans les deux sens, avec `ValueChanged` commun et `ValueChanging`.
+   - C'est une heure du jour. Une durée de 24 h ou plus, ou négative, est ramenée dans [00:00, 24:00), comme avant, mais ce bornage atteint désormais la source liée.
+   - **Les secondes d'une valeur posée par le code sont gardées**, sans être affichées : `Value = 17:05:42` relit `17:05:42`. Avant, elles étaient tronquées (`17:05`). Une heure tapée a 0 seconde.
+
+**Corrections des applications** (`Plan-Apports.md`)
+- **APP-09.** La liste d'une ComboBox éditable à suggestion ne se rouvre plus après un choix. Une frappe rapide est complétée : la complétion se fait à chaque frappe, avant le champ, et une lettre qui remplace le suffixe proposé n'est plus prise pour un effacement.
+- **APP-10.** Le départ du focus valide la saisie d'une ComboBox éditable, liste ouverte ou non, et ferme la liste.
+- **APP-11.** `SuggestionText` de SearchControl et `TokenText` de TokenEdit ne reçoivent plus d'élément nul quand la liste recycle ses lignes.
+- **Constat E0 n° 3.** La liste de SearchControl se ferme après le choix d'une suggestion.
+

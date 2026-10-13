@@ -1,22 +1,43 @@
+using Avalonia;
+using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using System.Globalization;
-using System.Linq;
 
 namespace HDev.UI.Controls;
 
 /// <summary>
-/// Éditeur numérique avec boutons spin :
-/// Increment, MinValue/MaxValue, Decimals, molette + flèches, format culture
+/// Éditeur numérique avec boutons spin : Increment, Minimum et Maximum, Decimals, molette et
+/// flèches, format de la culture. <see cref="Value"/> est liable dans les deux sens ; une valeur
+/// hors bornes est ramenée à la borne, y compris dans la source liée.
 /// </summary>
-public class HDevSpinEdit : HDevEditorBase
+public class HDevSpinEdit : HDevEditorBase<decimal>
 {
-    private decimal _value;
-    private bool _updatingText;
+    public static readonly StyledProperty<decimal> ValueProperty =
+        AvaloniaProperty.Register<HDevSpinEdit, decimal>(nameof(Value),
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true, coerce: CoerceValue);
+
+    public static readonly StyledProperty<decimal> MinimumProperty =
+        AvaloniaProperty.Register<HDevSpinEdit, decimal>(nameof(Minimum), decimal.MinValue);
+
+    public static readonly StyledProperty<decimal> MaximumProperty =
+        AvaloniaProperty.Register<HDevSpinEdit, decimal>(nameof(Maximum), decimal.MaxValue);
 
     public decimal Increment { get; set; } = 1;
-    public decimal MinValue { get; set; } = decimal.MinValue;
-    public decimal MaxValue { get; set; } = decimal.MaxValue;
+
+    /// <summary>Borne basse de la valeur (bornage : la valeur et sa source y sont ramenées)</summary>
+    public decimal Minimum
+    {
+        get => GetValue(MinimumProperty);
+        set => SetValue(MinimumProperty, value);
+    }
+
+    /// <summary>Borne haute de la valeur (bornage : la valeur et sa source y sont ramenées)</summary>
+    public decimal Maximum
+    {
+        get => GetValue(MaximumProperty);
+        set => SetValue(MaximumProperty, value);
+    }
 
     private int _decimals;
 
@@ -24,24 +45,23 @@ public class HDevSpinEdit : HDevEditorBase
     public int Decimals
     {
         get => _decimals;
-        set { _decimals = Math.Max(0, value); SetTextFromValue(); }
+        set { _decimals = Math.Max(0, value); ResyncText(); }
     }
 
-    /// <summary>Déclenché quand Value change</summary>
-    public event EventHandler? ValueChanged;
-
+    /// <summary>Valeur, bornée à [Minimum, Maximum]</summary>
     public decimal Value
     {
-        get => _value;
-        set
-        {
-            var clamped = Math.Clamp(value, MinValue, MaxValue);
-            if (_value == clamped) return;
-            _value = clamped;
-            SetTextFromValue();
-            SetError(null);
-            ValueChanged?.Invoke(this, EventArgs.Empty);
-        }
+        get => GetValue(ValueProperty);
+        set => SetValueFromCode(value);
+    }
+
+    protected override StyledProperty<decimal> ValuePropertyCore => ValueProperty;
+
+    static HDevSpinEdit()
+    {
+        // Des bornes qui changent ramènent la valeur dans le nouvel intervalle
+        MinimumProperty.Changed.AddClassHandler<HDevSpinEdit>((x, _) => x.CoerceValue(ValueProperty));
+        MaximumProperty.Changed.AddClassHandler<HDevSpinEdit>((x, _) => x.CoerceValue(ValueProperty));
     }
 
     public HDevSpinEdit()
@@ -58,33 +78,30 @@ public class HDevSpinEdit : HDevEditorBase
         InnerTextBox.AddHandler(TextInputEvent, OnNumericInput, RoutingStrategies.Tunnel);
         InnerTextBox.AddHandler(KeyDownEvent, OnEditorKeyDown, RoutingStrategies.Tunnel);
 
-        SetTextFromValue();
+        ResyncText();
     }
 
-    private void SetTextFromValue()
+    private static decimal CoerceValue(AvaloniaObject sender, decimal value)
     {
-        _updatingText = true;
-        Text = _value.ToString($"F{_decimals}", CultureInfo.CurrentCulture);
-        _updatingText = false;
+        var spin = (HDevSpinEdit)sender;
+        var min = spin.Minimum;
+        return Math.Clamp(value, min, Math.Max(min, spin.Maximum));
     }
+
+    private string Format(decimal value) => value.ToString($"F{_decimals}", CultureInfo.CurrentCulture);
+
+    protected override string FormatValue(decimal value) => Format(value);
 
     protected override void OnInnerTextChanged()
     {
-        if (_updatingText) return;
+        if (IsUpdatingText) return;
 
         if (decimal.TryParse(Text, NumberStyles.Number, CultureInfo.CurrentCulture, out var parsed)
-            && parsed >= MinValue && parsed <= MaxValue)
-        {
-            if (_value != parsed)
-            {
-                _value = parsed;
-                SetError(null);
-                ValueChanged?.Invoke(this, EventArgs.Empty);
-            }
-        }
+            && parsed >= Minimum && parsed <= Maximum)
+            CommitUserValue(parsed, fromText: true);
     }
 
-    protected override object? ConvertTextToValue() => _value;
+    protected override object? ConvertTextToValue() => Value;
 
     protected override string? GetIntrinsicError()
     {
@@ -94,10 +111,10 @@ public class HDevSpinEdit : HDevEditorBase
         if (!decimal.TryParse(Text, NumberStyles.Number, CultureInfo.CurrentCulture, out var parsed))
             return "Nombre invalide";
 
-        if (parsed < MinValue)
-            return $"Minimum : {MinValue.ToString($"F{_decimals}", CultureInfo.CurrentCulture)}";
-        if (parsed > MaxValue)
-            return $"Maximum : {MaxValue.ToString($"F{_decimals}", CultureInfo.CurrentCulture)}";
+        if (parsed < Minimum)
+            return $"Minimum : {Format(Minimum)}";
+        if (parsed > Maximum)
+            return $"Maximum : {Format(Maximum)}";
 
         return null;
     }
@@ -124,7 +141,7 @@ public class HDevSpinEdit : HDevEditorBase
         {
             var ok = char.IsDigit(ch)
                 || (ch.ToString() == separator && _decimals > 0 && !text.Contains(separator))
-                || (ch == '-' && MinValue < 0 && caret == 0 && !text.StartsWith('-'));
+                || (ch == '-' && Minimum < 0 && caret == 0 && !text.StartsWith('-'));
 
             if (!ok)
             {
@@ -137,7 +154,7 @@ public class HDevSpinEdit : HDevEditorBase
     private void Adjust(decimal delta)
     {
         if (!IsEnabled || IsReadOnly) return;
-        Value = Math.Clamp(_value + delta, MinValue, MaxValue);
+        CommitUserValue(CoerceValue(this, Value + delta));
         FocusEditor();
     }
 
@@ -170,7 +187,7 @@ public class HDevSpinEdit : HDevEditorBase
     {
         // Reformater proprement à la sortie (ex : "5," -> "5,00")
         if (ErrorText == null)
-            SetTextFromValue();
+            ResyncText();
         base.OnLostFocus(e);
     }
 }

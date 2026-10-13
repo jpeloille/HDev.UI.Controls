@@ -1,0 +1,30 @@
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using Avalonia.Controls;
+
+namespace Interaction;
+
+/// <summary>Formulaire du portage des éditeurs (E3), lié en XAML compilé</summary>
+public partial class FormulaireE3 : UserControl
+{
+    public FormulaireE3() => InitializeComponent();
+}
+
+/// <summary>ViewModel du formulaire E3 : une propriété par éditeur porté</summary>
+public sealed class FormulaireE3Vm : INotifyPropertyChanged
+{
+    private decimal _quantite = 12.5m;
+    private TimeSpan? _heure = new TimeSpan(8, 30, 0);
+
+    public decimal Quantite { get => _quantite; set => Set(ref _quantite, value); }
+    public TimeSpan? Heure { get => _heure; set => Set(ref _heure, value); }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void Set<T>(ref T field, T value, [CallerMemberName] string? name = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value)) return;
+        field = value;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
+}

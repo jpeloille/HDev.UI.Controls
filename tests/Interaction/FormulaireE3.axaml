@@ -1,0 +1,13 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:h="using:HDev.UI.Controls"
+             xmlns:i="using:Interaction"
+             x:Class="Interaction.FormulaireE3"
+             x:DataType="i:FormulaireE3Vm"
+             x:CompileBindings="True">
+  <!-- Portage des éditeurs (E3) : chaque éditeur lié à son ViewModel, sans Mode explicite -->
+  <StackPanel x:Name="Formulaire" Margin="20" Spacing="8">
+    <h:HDevSpinEdit x:Name="Quantite" Width="120" Decimals="2" Minimum="0" Maximum="100" Value="{Binding Quantite}" />
+    <h:HDevTimeEdit x:Name="Heure" Width="120" Value="{Binding Heure}" />
+  </StackPanel>
+</UserControl>

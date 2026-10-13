@@ -151,31 +151,26 @@ public class HDevDateEdit : HDevEditorBase<DateTime?>
 }
 
 /// <summary>
-/// Éditeur d'heure avec masque HH:mm et boutons spin :
-/// flèches ±1 minute, PageUp/PageDown ±1 heure, molette
+/// Éditeur d'heure avec masque HH:mm et boutons spin : flèches ±1 minute, PageUp/PageDown
+/// ±1 heure, molette. <see cref="Value"/> est liable dans les deux sens ; c'est une heure du
+/// jour, ramenée dans [00:00, 24:00) (23:59 + 1 min donne 00:00), y compris dans la source
+/// liée. Les secondes d'une valeur posée par le code ne sont ni affichées ni perdues.
 /// </summary>
-public class HDevTimeEdit : HDevEditorBase
+public class HDevTimeEdit : HDevEditorBase<TimeSpan?>
 {
-    private TimeSpan? _value;
-    private bool _updatingText;
+    public static readonly StyledProperty<TimeSpan?> ValueProperty =
+        AvaloniaProperty.Register<HDevTimeEdit, TimeSpan?>(nameof(Value),
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true,
+            coerce: (_, v) => v.HasValue ? Normalize(v.Value) : null);
 
-    /// <summary>Déclenché quand Value change</summary>
-    public event EventHandler? ValueChanged;
-
-    /// <summary>Valeur typée (null = vide), bornée sur 24 h</summary>
+    /// <summary>Valeur typée (null = vide), heure du jour</summary>
     public TimeSpan? Value
     {
-        get => _value;
-        set
-        {
-            var normalized = value.HasValue ? Normalize(value.Value) : (TimeSpan?)null;
-            if (_value == normalized) return;
-            _value = normalized;
-            SetTextFromValue();
-            SetError(null);
-            ValueChanged?.Invoke(this, EventArgs.Empty);
-        }
+        get => GetValue(ValueProperty);
+        set => SetValueFromCode(value);
     }
+
+    protected override StyledProperty<TimeSpan?> ValuePropertyCore => ValueProperty;
 
     public HDevTimeEdit()
     {
@@ -192,38 +187,24 @@ public class HDevTimeEdit : HDevEditorBase
         InnerTextBox.AddHandler(KeyDownEvent, OnEditorKeyDown, RoutingStrategies.Tunnel);
     }
 
+    /// <summary>Ramène dans [0, 24 h), en gardant les enchaînements 23:59 + 1 min -> 00:00</summary>
     private static TimeSpan Normalize(TimeSpan t)
     {
-        // Ramener dans [0, 24h) en préservant les enchaînements 23:59 + 1 min -> 00:00
-        var minutes = ((int)t.TotalMinutes % (24 * 60) + 24 * 60) % (24 * 60);
-        return TimeSpan.FromMinutes(minutes);
+        var ticks = t.Ticks % TimeSpan.TicksPerDay;
+        return TimeSpan.FromTicks(ticks < 0 ? ticks + TimeSpan.TicksPerDay : ticks);
     }
 
-    private void SetTextFromValue()
-    {
-        _updatingText = true;
-        Text = _value.HasValue ? $"{_value.Value.Hours:00}:{_value.Value.Minutes:00}" : "";
-        _updatingText = false;
-    }
+    protected override string FormatValue(TimeSpan? value)
+        => value is { } v ? $"{v.Hours:00}:{v.Minutes:00}" : "";
 
     protected override void OnInnerTextChanged()
     {
-        if (_updatingText) return;
+        if (IsUpdatingText) return;
 
         if (IsMaskComplete && TryParseTime(Text, out var parsed))
-        {
-            if (_value != parsed)
-            {
-                _value = parsed;
-                SetError(null);
-                ValueChanged?.Invoke(this, EventArgs.Empty);
-            }
-        }
-        else if (string.IsNullOrEmpty(Text) && _value != null)
-        {
-            _value = null;
-            ValueChanged?.Invoke(this, EventArgs.Empty);
-        }
+            CommitUserValue(parsed, fromText: true);
+        else if (string.IsNullOrEmpty(Text) && Value != null)
+            CommitUserValue(null, fromText: true);
     }
 
     private static bool TryParseTime(string text, out TimeSpan value)
@@ -239,7 +220,7 @@ public class HDevTimeEdit : HDevEditorBase
         return true;
     }
 
-    protected override object? ConvertTextToValue() => _value;
+    protected override object? ConvertTextToValue() => Value;
 
     protected override string? GetIntrinsicError()
     {
@@ -252,7 +233,7 @@ public class HDevTimeEdit : HDevEditorBase
     private void Adjust(TimeSpan delta)
     {
         if (!IsEnabled || IsReadOnly) return;
-        Value = (_value ?? TimeSpan.Zero) + delta;
+        CommitUserValue(Normalize((Value ?? TimeSpan.Zero) + delta));
         FocusEditor();
     }
 

@@ -806,7 +806,7 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
 
     // ─── HDevSpinEdit ───
     {
-        var sp = new HDevSpinEdit { Width = 120, Decimals = 2, Increment = 0.5m, MinValue = 0, MaxValue = 100 };
+        var sp = new HDevSpinEdit { Width = 120, Decimals = 2, Increment = 0.5m, Minimum = 0, Maximum = 100 };
         var ed = AdSpinEdit(sp); int n = 0; ed.SurValeurChangee(() => n++);
         var autre = new HDevTextBox { Width = 80 }; Canvas.SetTop(autre, 200);
         var w = Hote(sp); ((Canvas)w.Content!).Children.Add(autre); Pump(w);
@@ -1056,7 +1056,7 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
     Console.WriteLine("Socle des éditeurs (E2) :");
     {
         var de = new HDevDateEdit { Width = 160 }; var te = new HDevTimeEdit { Width = 120 };
-        var sp = new HDevSpinEdit { Width = 120, Decimals = 2, MinValue = 0, MaxValue = 100 };
+        var sp = new HDevSpinEdit { Width = 120, Decimals = 2, Minimum = 0, Maximum = 100 };
         Canvas.SetTop(te, 80); Canvas.SetTop(sp, 140);
         var w = Hote(de); ((Canvas)w.Content!).Children.Add(te); ((Canvas)w.Content!).Children.Add(sp); Pump(w);
         void ToutSelectionner(HDevEditorBase e) { e.FocusEditor(); e.SelectAll(); Pump(w); }
@@ -1388,6 +1388,47 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
             haut > 84 && colle.Contains("\nhuit\nneuf") && colle.Split('\n').Length == 9);
         memo.IsMultiline = false; Pump(w);
         Check($"retour au monoligne : hauteur du gabarit (lu {memo.Bounds.Height})", memo.Bounds.Height == 28);
+        w.Close();
+    }
+
+    // ═══ PORTAGE DES ÉDITEURS (E3) : une liaison TwoWay par éditeur, en XAML compilé ═══
+    // FormulaireE3.axaml lie chaque éditeur porté à son ViewModel, sans Mode : la valeur du
+    // ViewModel s'affiche, la saisie y remonte (origine Utilisateur), le ViewModel redescend.
+    Console.WriteLine("Portage des éditeurs (E3) :");
+    {
+        var vm = new FormulaireE3Vm();
+        var vue = new FormulaireE3 { DataContext = vm };
+        var w = new Window { Width = 500, Height = 600, Content = vue }; w.Show(); Pump(w);
+        var journal = new List<HDevValueChangedEventArgs>();
+        vue.FindControl<StackPanel>("Formulaire")!.AddHandler(HDevEditor.ValueChangedEvent,
+            (object? _, HDevValueChangedEventArgs e) => journal.Add(e));
+        bool DernierUtilisateur(Control source) => journal.Count > 0 && journal[^1].IsUserChange && ReferenceEquals(journal[^1].Source, source);
+
+        // ─── HDevSpinEdit ───
+        var sp = vue.FindControl<HDevSpinEdit>("Quantite")!;
+        var affiche = sp.Text == "12,50";
+        sp.FocusEditor(); Touche(w, PhysicalKey.ArrowUp);
+        var monte = vm.Quantite == 13.5m && DernierUtilisateur(sp);
+        vm.Quantite = 40m; Pump(w);
+        Check("SpinEdit lié sans Mode : affiché, la flèche remonte au ViewModel (origine Utilisateur), le ViewModel redescend",
+            affiche && monte && sp.Value == 40m && sp.Text == "40,00" && journal[^1].Origin == HDevValueOrigin.Code);
+        vm.Quantite = 150m; Pump(w);
+        Check($"SpinEdit : une valeur hors bornes venue du ViewModel est bornée, et le ViewModel reçoit la borne (lu {vm.Quantite})",
+            sp.Value == 100m && vm.Quantite == 100m && sp.Text == "100,00");
+        sp.Maximum = 50m; Pump(w);
+        Check($"SpinEdit : abaisser Maximum ramène la valeur, jusqu'au ViewModel (lu {vm.Quantite})", sp.Value == 50m && vm.Quantite == 50m);
+
+        // ─── HDevTimeEdit ───
+        var te = vue.FindControl<HDevTimeEdit>("Heure")!;
+        affiche = te.Text == "08:30";
+        te.FocusEditor(); te.SelectAll(); Tape(w, "0915");
+        var saisie = vm.Heure == new TimeSpan(9, 15, 0) && DernierUtilisateur(te);
+        vm.Heure = new TimeSpan(17, 5, 42); Pump(w);
+        Check("TimeEdit lié sans Mode : affiché, la saisie remonte (origine Utilisateur), le ViewModel redescend avec ses secondes",
+            affiche && saisie && te.Text == "17:05" && te.Value == new TimeSpan(17, 5, 42) && vm.Heure == new TimeSpan(17, 5, 42));
+        vm.Heure = new TimeSpan(1, 0, 30, 0); Pump(w);
+        Check($"TimeEdit : une durée de 24 h ou plus est ramenée à l'heure du jour, jusqu'au ViewModel (lu {vm.Heure})",
+            te.Value == new TimeSpan(0, 30, 0) && vm.Heure == new TimeSpan(0, 30, 0) && te.Text == "00:30");
         w.Close();
     }
 

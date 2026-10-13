@@ -1460,8 +1460,8 @@ public partial class MainWindow : HDevWindow
         var spinEdit = this.FindControl<HDevSpinEdit>("SpinEditDemo");
         if (spinEdit != null)
         {
-            spinEdit.MinValue = 0;
-            spinEdit.MaxValue = 10_000;
+            spinEdit.Minimum = 0;
+            spinEdit.Maximum = 10_000;
             spinEdit.Decimals = 2;
             spinEdit.Increment = 0.5m;
             spinEdit.Value = 1250.50m;

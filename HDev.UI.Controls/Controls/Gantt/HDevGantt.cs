@@ -992,7 +992,7 @@ public class HDevGantt : Control
             0 => new HDevTextBox { Text = task.Name },
             1 => new HDevDateEdit { Value = task.Start, MinWidth = 40 },
             2 => new HDevDateEdit { Value = task.End, MinWidth = 40 },
-            3 => new HDevSpinEdit { MinValue = 0, MaxValue = 100, Decimals = 0, Value = (decimal)task.Progress, MinWidth = 40 },
+            3 => new HDevSpinEdit { Minimum = 0, Maximum = 100, Decimals = 0, Value = (decimal)task.Progress, MinWidth = 40 },
             _ => null
         };
         if (_cellEditor == null) return;
