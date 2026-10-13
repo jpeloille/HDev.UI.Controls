@@ -91,8 +91,6 @@ public interface IHDevEditor
 
     bool IsReadOnly { get; set; }
 
-    string? Placeholder { get; set; }
-
     /// <summary>Erreur affichée : saisie invalide d'abord, sinon erreur de la liaison (null = valide)</summary>
     string? ErrorText { get; }
 
@@ -104,4 +102,15 @@ public interface IHDevEditor
     event EventHandler<HDevValueChangingEventArgs>? ValueChanging;
 
     event EventHandler<HDevValueChangedEventArgs>? ValueChanged;
+}
+
+/// <summary>
+/// Éditeur de champ (D1) : un éditeur qui a une zone de valeur, texte ou présentateur, et donc
+/// une invite quand elle est vide (QX-05). Les contrôles de choix et le calendrier suivent
+/// <see cref="IHDevEditor"/> sans invite.
+/// </summary>
+public interface IHDevFieldEditor : IHDevEditor
+{
+    /// <summary>Invite affichée quand la valeur est vide</summary>
+    string? Placeholder { get; set; }
 }

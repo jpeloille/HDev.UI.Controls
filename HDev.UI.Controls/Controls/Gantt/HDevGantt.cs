@@ -1009,7 +1009,7 @@ public class HDevGantt : Control
         {
             switch (_cellEditor)
             {
-                case HDevTextBox tb: tb.FocusTextBox(); tb.SelectAll(); break;
+                case HDevTextBox tb: tb.FocusEditor(); tb.SelectAll(); break;
                 case HDevEditorBase eb: eb.FocusEditor(); eb.SelectAll(); break;
             }
         }, Avalonia.Threading.DispatcherPriority.Loaded);

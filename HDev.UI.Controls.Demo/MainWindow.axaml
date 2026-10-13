@@ -96,7 +96,7 @@
                             
                             <StackPanel Spacing="4">
                                 <TextBlock Text="With Error" Classes="caption"/>
-                                <hdev:HDevTextBox Text="invalid-email" HasError="True" Width="250"/>
+                                <hdev:HDevTextBox x:Name="TextBoxError" Text="invalid-email" Width="250"/>
                             </StackPanel>
                             
                             <StackPanel Spacing="4">

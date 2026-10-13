@@ -368,7 +368,7 @@ public enum HDevEditorButtonKind
     Search,
     Plus,
     Minus,
-    /// <summary>Glyphe donné par <see cref="HDevEditorButton.Icon"/> (Click)</summary>
+    /// <summary>Glyphe donné par <see cref="HDevEditorButton.Icon"/> (Click seulement)</summary>
     Custom
 }
 
@@ -409,7 +409,10 @@ public class HDevEditorButton : Control
         set => SetValue(KindProperty, value);
     }
 
-    /// <summary>Glyphe d'un bouton <see cref="HDevEditorButtonKind.Custom"/></summary>
+    /// <summary>
+    /// Glyphe du bouton : remplace celui du type quand il n'est pas <c>None</c> (le bouton
+    /// déroulant de DateEdit montre un calendrier) ; seul glyphe d'un bouton <see cref="HDevEditorButtonKind.Custom"/>
+    /// </summary>
     public HDevEditorIcon Icon
     {
         get => GetValue(IconProperty);
@@ -444,10 +447,10 @@ public class HDevEditorButton : Control
     }
 
     /// <summary>
-    /// Glyphe dessiné : celui du type, ou <see cref="Icon"/> pour un bouton personnalisé.
+    /// Glyphe dessiné : <see cref="Icon"/> s'il est posé, sinon celui du type.
     /// Interne : il sert au rendu ; à rendre public si une application en a besoin.
     /// </summary>
-    internal HDevEditorIcon EffectiveIcon => Kind switch
+    internal HDevEditorIcon EffectiveIcon => Icon != HDevEditorIcon.None ? Icon : Kind switch
     {
         HDevEditorButtonKind.DropDown => HDevEditorIcon.ChevronDown,
         HDevEditorButtonKind.Clear => HDevEditorIcon.Clear,

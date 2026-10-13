@@ -77,9 +77,11 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
 | `DoValidate()` | `Validate()` | **E1, fait** |
 | `ErrorText` (posé par `SetError`) | `ErrorText` calculé : erreur de saisie, sinon de liaison | **E1, fait** |
 | `SetError(texte)` | conservé ; ne pose plus que l'erreur de saisie | **E1, fait** |
-| `TextChanged` (`EventHandler`) | conservé | — |
+| `TextChanged` (`EventHandler`) | `EventHandler<TextChangedEventArgs>`, le type d'Avalonia (QX-08 c) : `(s, e) => …` compile sans changement | **E3, fait** |
 | `Validating`, `HDevValidatingEventArgs` | conservés (revus en E8, validation centralisée) | E8 |
 | `Mask`, `IsMaskComplete`, `Placeholder`, `IsReadOnly`, `FocusEditor()`, `SelectAll()` | conservés | — |
+| `IHDevEditor.Placeholder` | quitte `IHDevEditor` pour `IHDevFieldEditor : IHDevEditor`, l'interface des éditeurs de champ (QX-05, nom validé par QX-08 a) ; tout éditeur du socle l'implémente, les contrôles de choix et le calendrier non | **E3, fait** |
+| `HDevEditorButton.Icon` lu pour `Custom` seulement | lu pour tout type : posé, il remplace le glyphe du type (QX-08 f) | **E3, fait** |
 | `HDevEditorBase<T>.Value` (abstrait, public) | retiré ; chaque éditeur déclare sa valeur sous le nom D3 (`Value`, ou `Text` pour un éditeur de texte) ; le code générique passe par `IHDevEditor.EditValue` | **E2, fait** |
 | `Text` (CLR) | conservé, surchargeable : un éditeur de texte le porte par sa StyledProperty liable (HDevButtonEdit) | **E2, fait** |
 | — | `IsMultiline` : la hauteur n'est fixée qu'en monoligne | **E2, fait** |
@@ -115,11 +117,12 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
 
 | Avant | Après | Lot |
 |---|---|---|
-| `Text` | conservé : c'est la valeur de l'éditeur | — |
-| `TextChanged` (`EventHandler<TextChangedEventArgs>`) | conservé ; s'y ajoute le `ValueChanged` commun | E3 |
-| `HasError` (réglable, `HasError="True"`) | lecture seule ; l'erreur se pose par `SetError` ou par la validation | E3 |
-| `FocusTextBox()` | `FocusEditor()` | E3 |
-| `IsPassword`, `IsMultiline`, `MaxLength`, `Clear()` | conservés | — |
+| `Text` | conservé : c'est la valeur de l'éditeur, StyledProperty liable dans les deux sens, avec la validation de liaison | **E3, fait** |
+| `TextChanged` (`EventHandler<TextChangedEventArgs>`) | conservé, c'est celui du socle ; s'y ajoutent le `ValueChanged` commun et `ValueChanging` | **E3, fait** |
+| `HasError` (réglable, `HasError="True"`) | lecture seule ; l'erreur se pose par `SetError` ou par la validation | **E3, fait** |
+| `FocusTextBox()` | `FocusEditor()` | **E3, fait** |
+| `IsPassword`, `IsMultiline`, `MaxLength`, `Clear()` | conservés ; `IsMultiline` est celui du socle | — |
+| `HDevTextBox : Border` | `HDevTextBox : HDevEditorBase<string?>` : masque, `Buttons`, popup, `Validate()`, `Validating` du socle | **E3, fait** |
 
 ### 2.5 HDevComboBox
 
@@ -259,6 +262,17 @@ Le Gantt, qui édite ses dates avec HDevDateEdit, n'est pas touché par le point
    - La liste de suggestions passe dans le popup du socle : `IsDropDownOpen` et les événements du popup valent pour elle. F4 et Alt+↓ ouvrent les suggestions du texte courant, s'il y en a. Son habillage est celui du socle : 4 px de retrait et des coins de 8 px, au lieu de 0 et 6.
    - Le focus qui quitte le champ, ailleurs que vers la liste, ferme les suggestions. Avant, elles restaient ouvertes.
 5. **Une valeur posée par le code n'est plus réécrite par l'éditeur après coup.** Le texte réécrit depuis la valeur repassait pour une saisie au tour suivant (point 1). HDevSpinEdit à 0 décimale arrondissait ainsi `Value = 1234,5` en 1235, et effaçait l'erreur posée juste après par `SetError`. C'est corrigé ; la planche « Champs » montre désormais l'état Erreur de HDevSpinEdit.
+
+6. **`IHDevEditor` perd `Placeholder`**, qui passe dans `IHDevFieldEditor : IHDevEditor` (QX-05, QX-08 a). Le code qui lisait l'invite par `IHDevEditor` passe par `IHDevFieldEditor`. Tous les éditeurs du socle l'implémentent ; les cases, la bascule, les radios, le curseur et le calendrier implémentent `IHDevEditor` seul.
+7. **Le `TextChanged` du socle devient `EventHandler<TextChangedEventArgs>`**, le type d'Avalonia (QX-08 c). Un abonnement `(s, e) => …` ou un groupe de méthodes `(object?, EventArgs)` compile sans changement ; seul un lambda aux paramètres typés `EventArgs` est à retoucher.
+8. **HDevTextBox passe sur le socle** (`HDevEditorBase<string?>`).
+   - `Text` est une StyledProperty liable dans les deux sens, avec la validation de liaison ; la frappe lève `ValueChanged` (origine Utilisateur) à chaque caractère, précédé de `ValueChanging`.
+   - `HasError` devient lecture seule : `HasError="True"` en XAML ne compile plus. L'erreur se pose par `SetError("…")`, ou vient de la liaison. La démo est adaptée.
+   - `FocusTextBox()` devient `FocusEditor()`.
+   - Il reçoit les pièces du socle : `Buttons`, popup, masque, `Validate()` et `Validating`.
+   - Aucun changement de géométrie. Le rendu du texte diffère de quelques pixels d'antialiasing, sans déplacement : le champ interne n'est plus l'enfant direct de l'hôte.
+9. **Le bouton calendrier de HDevDateEdit est un bouton d'éditeur** : `Kind = DropDown`, `Icon = Calendar`, le premier de `Buttons` (QX-08 f). L'application peut le retirer ou en ajouter d'autres. Son comportement ne change pas.
+10. **`HDevEditorButton.Icon` vaut pour tout type** : posé, il remplace le glyphe du type ; `None` (défaut) garde celui du type.
 
 **Corrections des applications** (`Plan-Apports.md`)
 - **APP-09.** La liste d'une ComboBox éditable à suggestion ne se rouvre plus après un choix. Une frappe rapide est complétée : la complétion se fait à chaque frappe, avant le champ, et une lettre qui remplace le suffixe proposé n'est plus prise pour un effacement.

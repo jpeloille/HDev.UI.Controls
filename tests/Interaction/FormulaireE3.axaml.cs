@@ -13,10 +13,12 @@ public partial class FormulaireE3 : UserControl
 /// <summary>ViewModel du formulaire E3 : une propriété par éditeur porté</summary>
 public sealed class FormulaireE3Vm : INotifyPropertyChanged
 {
+    private string? _nom = "TY201";
     private decimal _quantite = 12.5m;
     private TimeSpan? _heure = new TimeSpan(8, 30, 0);
     private string? _recherche = "Gantt";
 
+    public string? Nom { get => _nom; set => Set(ref _nom, value); }
     public decimal Quantite { get => _quantite; set => Set(ref _quantite, value); }
     public TimeSpan? Heure { get => _heure; set => Set(ref _heure, value); }
     public string? Recherche { get => _recherche; set => Set(ref _recherche, value); }

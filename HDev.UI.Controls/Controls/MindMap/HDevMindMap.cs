@@ -777,7 +777,7 @@ public class HDevMindMap : Control
 
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
-            _editor?.FocusTextBox();
+            _editor?.FocusEditor();
             if (selectAll) _editor?.SelectAll();
         }, Avalonia.Threading.DispatcherPriority.Loaded);
     }

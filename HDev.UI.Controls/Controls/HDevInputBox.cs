@@ -69,7 +69,7 @@ public class HDevInputBox : HDevWindow
 
         // Le focus va au TextBox interne : l'hôte HDevTextBox (un Border) ne le prend pas,
         // et la boîte s'ouvrait sans caret
-        Opened += (s, e) => _input.FocusTextBox();
+        Opened += (s, e) => _input.FocusEditor();
     }
 
     /// <summary>Affiche la boîte ; retourne la saisie, ou null si annulée</summary>

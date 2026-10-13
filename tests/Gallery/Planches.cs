@@ -317,7 +317,7 @@ static class Planches
 
     private static void ChampsAfterShow(Window window)
     {
-        _selectionDemo?.FocusTextBox();
+        _selectionDemo?.FocusEditor();
         _selectionDemo?.SelectAll();
     }
 
@@ -333,7 +333,7 @@ static class Planches
         {
             case 2: box.ForceVisualState(hovered: true); break;
             case 3: box.ForceVisualState(focused: true); break;
-            case 4: box.HasError = true; break;
+            case 4: box.SetError("Valeur invalide"); break;
             case 5: box.IsEnabled = false; break;
             case 6: box.IsReadOnly = true; break;
         }

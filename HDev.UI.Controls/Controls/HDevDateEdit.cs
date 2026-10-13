@@ -59,15 +59,9 @@ public class HDevDateEdit : HDevEditorBase<DateTime?>
         Placeholder = _format.ToLowerInvariant();
         MinWidth = 130;
 
-        // Bouton calendrier, popup du socle : le calendrier est recréé à chaque ouverture
-        var button = new HDevEditorGlyphButton { Icon = HDevEditorIcon.Calendar };
-        button.Click += (s, e) =>
-        {
-            // Le bouton n'est pas focusable : sans le focus, Échap n'atteindrait pas le calendrier
-            FocusEditor();
-            DropDown.Toggle();
-        };
-        SetRightElement(button);
+        // Bouton calendrier : un bouton déroulant du socle, au glyphe de calendrier, que
+        // l'application peut retirer ou compléter ; le calendrier est recréé à chaque ouverture
+        Buttons.Add(new HDevEditorButton { Kind = HDevEditorButtonKind.DropDown, Icon = HDevEditorIcon.Calendar });
         UseDropDown();
         DropDownOpening += (_, _) => PrepareCalendar();
     }

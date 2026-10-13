@@ -187,8 +187,8 @@ public abstract class HDevEditorBase : Border
     /// <summary>Validation annulable, déclenchée à la perte de focus</summary>
     public event EventHandler<HDevValidatingEventArgs>? Validating;
 
-    /// <summary>Déclenché quand le texte change</summary>
-    public event EventHandler? TextChanged;
+    /// <summary>Déclenché quand le texte change (après le changement, comme celui d'Avalonia)</summary>
+    public event EventHandler<TextChangedEventArgs>? TextChanged;
 
     /// <summary>
     /// Texte affiché. Un éditeur dont la valeur est le texte (D3) le surcharge pour le porter
@@ -269,7 +269,7 @@ public abstract class HDevEditorBase : Border
             try
             {
                 OnInnerTextChanged();
-                TextChanged?.Invoke(this, EventArgs.Empty);
+                TextChanged?.Invoke(this, e);
             }
             finally { IsUpdatingText = outer; }
         };
@@ -867,7 +867,7 @@ public abstract class HDevEditorBase : Border
 /// public DateTime? Value { get => GetValue(ValueProperty); set => SetValueFromCode(value); }
 /// </code>
 /// </summary>
-public abstract class HDevEditorBase<T> : HDevEditorBase, IHDevEditor
+public abstract class HDevEditorBase<T> : HDevEditorBase, IHDevFieldEditor
 {
     private bool _userCommit;
     private bool _userCommitFromText;

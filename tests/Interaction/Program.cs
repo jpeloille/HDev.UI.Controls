@@ -626,9 +626,9 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
     Editeur AdTextBox(HDevTextBox e) => new()
     {
         Controle = e, PoserValeur = v => e.Text = (string?)v, LireValeur = () => e.Text, LireTexte = () => e.Text ?? "",
-        SurValeurChangee = a => e.TextChanged += (_, _) => a(), Focaliser = () => e.FocusTextBox()
+        SurValeurChangee = a => e.TextChanged += (_, _) => a(), Focaliser = () => e.FocusEditor()
     };
-    TextBox InterieurTextBox(HDevTextBox e) => Champ<TextBox>(e, "_innerTextBox");
+    TextBox InterieurTextBox(HDevTextBox e) => Champ<TextBox>(e, "InnerTextBox");
     Editeur AdDateEdit(HDevDateEdit e) => new()
     {
         Controle = e, PoserValeur = v => e.Value = (DateTime?)v, LireValeur = () => e.Value, LireTexte = () => e.Text,
@@ -1404,6 +1404,19 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
             (object? _, HDevValueChangedEventArgs e) => journal.Add(e));
         bool DernierUtilisateur(Control source) => journal.Count > 0 && journal[^1].IsUserChange && ReferenceEquals(journal[^1].Source, source);
 
+        // ─── HDevTextBox ───
+        var tb = vue.FindControl<HDevTextBox>("Nom")!;
+        var tbAffiche = tb.Text == "TY201" && InterieurDe(tb).Text == "TY201";
+        tb.FocusEditor(); InterieurDe(tb).CaretIndex = 5; Tape(w, "A");
+        var tbSaisie = vm.Nom == "TY201A" && DernierUtilisateur(tb);
+        vm.Nom = "TY305"; Pump(w);
+        Check("TextBox lié sans Mode : affiché, la frappe remonte (origine Utilisateur), le ViewModel redescend",
+            tbAffiche && tbSaisie && InterieurDe(tb).Text == "TY305" && journal[^1].Origin == HDevValueOrigin.Code);
+        IHDevFieldEditor champTb = tb; champTb.Placeholder = "Vol"; tb.SetError("Vol inconnu"); Pump(w);
+        Check("TextBox : invite par IHDevFieldEditor, erreur en lecture seule (HasError) posée par SetError",
+            InterieurDe(tb).PlaceholderText == "Vol" && tb.HasError && tb.ErrorText == "Vol inconnu");
+        tb.SetError(null);
+
         // ─── HDevSpinEdit ───
         var sp = vue.FindControl<HDevSpinEdit>("Quantite")!;
         var affiche = sp.Text == "12,50";
@@ -1445,6 +1458,26 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         Check("SearchControl : le focus qui part ailleurs ferme les suggestions, la saisie reste", propose && !sc.IsDropDownOpen && vm.Recherche == "Ga");
         sc.Buttons.Single(b => b.Kind == HDevEditorButtonKind.Clear).PerformClick(); Pump(w);
         Check("SearchControl : le bouton Effacer vide le texte, jusqu'au ViewModel", sc.Text == "" && vm.Recherche == "" && DernierUtilisateur(sc));
+        w.Close();
+    }
+
+    // ═══ PORTAGE (E3) : bouton déroulant, lecture seule et présentateur (remarque de verif-02) ═══
+    {
+        var de = new HDevDateEdit { Width = 160 };
+        var dd = new HDevDropDownEdit { Width = 160, DropDownContent = new ListBox { ItemsSource = new[] { "a", "b" } } };
+        var w = Hote(new StackPanel { Spacing = 8, Children = { de, dd } });
+        var calendrier = de.Buttons.Single();
+        Check("DateEdit : le bouton calendrier est un bouton d'éditeur déroulant, au glyphe de calendrier",
+            calendrier.Kind == HDevEditorButtonKind.DropDown && calendrier.EffectiveIcon == HDevEditorIcon.Calendar);
+        de.IsReadOnly = true; dd.IsReadOnly = true; Pump(w);
+        ClickAt(w, WindowCenter(w, calendrier)); ClickAt(w, WindowCenter(w, dd.Buttons.Single()));
+        var fermes = !de.IsDropDownOpen && !dd.IsDropDownOpen;
+        ClickAt(w, WindowCenter(w, dd)); fermes &= !dd.IsDropDownOpen;
+        Check("lecture seule : le bouton déroulant n'ouvre pas, ni sur le champ texte ni sur un présentateur, ni le clic sur la valeur", fermes);
+        de.IsReadOnly = false; dd.IsReadOnly = false; Pump(w);
+        ClickAt(w, WindowCenter(w, calendrier)); var ouvertDe = de.IsDropDownOpen; ClickAt(w, horsChamp);
+        ClickAt(w, WindowCenter(w, dd.Buttons.Single())); var ouvertDd = dd.IsDropDownOpen; ClickAt(w, horsChamp);
+        Check("modifiable : le bouton déroulant ouvre, sur le champ texte comme sur un présentateur", ouvertDe && ouvertDd);
         w.Close();
     }
 

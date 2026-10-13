@@ -1439,6 +1439,9 @@ public partial class MainWindow : HDevWindow
             if (result != null) result.Text = message;
         }
 
+        // L'erreur d'un champ se pose par SetError (ou vient de la validation de la liaison)
+        this.FindControl<HDevTextBox>("TextBoxError")?.SetError("Adresse invalide");
+
         var dateEdit = this.FindControl<HDevDateEdit>("DateEditDemo");
         if (dateEdit != null)
         {

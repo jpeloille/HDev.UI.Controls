@@ -155,7 +155,7 @@ Le contrat est dans `HDevEditorContract.cs` (`IHDevEditor`, événements) et dan
 **Deux écarts à D2**
 - **Arguments non typés : écart validé le 05/10/2026.** D2 annonçait des événements de valeur typés. Or ancienne et nouvelle valeur sont de type `object`, parce qu'un seul événement sert toute la famille. C'est ce qui permet l'écoute d'un formulaire en un seul `AddHandler`. La valeur typée se lit sur l'éditeur (`Value`).
 - **`Placeholder` dans `IHDevEditor`.** Il n'a pas de sens pour une case ou un interrupteur, qui doivent pourtant suivre le contrat (D1). C'est à trancher en E3 : soit une invite vide, soit une interface séparée pour les champs.
-  - **Tranché le 13/10/2026 (QX-05)** : `Placeholder` sort de `IHDevEditor` et passe dans une interface séparée, propre aux éditeurs à zone de texte (nom fixé en E3). Les contrôles de choix (case, bascule, groupe radio) n'en portent pas ; la ComboBox garde son invite, comme celle d'Avalonia.
+  - **Tranché le 13/10/2026 (QX-05)** : `Placeholder` sort de `IHDevEditor` et passe dans une interface séparée, propre aux éditeurs de champ, `IHDevFieldEditor : IHDevEditor` (nom fixé en E3, QX-08). Les contrôles de choix (case, bascule, groupe radio) n'en portent pas ; la ComboBox garde son invite, comme celle d'Avalonia.
 
 ## 7. D4 : typer une valeur qui admet plusieurs types
 
