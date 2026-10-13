@@ -138,10 +138,10 @@ public sealed partial record HDevPalette
         TextDisabled = Color.Parse("#9A9996"),
         TextPlaceholder = Color.Parse("#8B8A8D"),
         TextOnAccent = Color.Parse("#FFFFFF"),
-        TextLink = Color.Parse("#1C71D8"),
+        TextLink = Color.Parse("#1965C1"),           // 4,6:1 sur Background.Info (#1C71D8 : 3,9)
         TextLinkHover = Color.Parse("#1A5FB4"),
         TextSuccess = Color.Parse("#1B7443"),
-        TextWarning = Color.Parse("#9C6E03"),
+        TextWarning = Color.Parse("#8A6203"),        // 4,8:1 sur Background.Warning (#9C6E03 : 4,0)
         TextError = Color.Parse("#C01C28"),
 
         AccentPrimary = Color.Parse("#E95420"),

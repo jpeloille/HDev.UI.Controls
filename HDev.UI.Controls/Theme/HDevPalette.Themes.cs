@@ -49,7 +49,7 @@ public sealed partial record HDevPalette
         TextLink = Color.Parse("#2F5BC2"),
         TextLinkHover = Color.Parse("#24407F"),
         TextSuccess = Color.Parse("#1B7443"),
-        TextWarning = Color.Parse("#9C6E03"),
+        TextWarning = Color.Parse("#8A6203"),       // 4,8:1 sur BackgroundWarning
         TextError = Color.Parse("#C01C28"),
 
         AccentPrimary = Color.Parse("#3355A8"),
@@ -118,7 +118,7 @@ public sealed partial record HDevPalette
         TextLink = Color.Parse("#0A6B8F"),
         TextLinkHover = Color.Parse("#08566F"),
         TextSuccess = Color.Parse("#1B7443"),
-        TextWarning = Color.Parse("#9C6E03"),
+        TextWarning = Color.Parse("#8A6203"),       // 4,8:1 sur BackgroundWarning
         TextError = Color.Parse("#C01C28"),
 
         AccentPrimary = Color.Parse("#0E7C80"),
@@ -187,7 +187,7 @@ public sealed partial record HDevPalette
         TextLink = Color.Parse("#34479A"),
         TextLinkHover = Color.Parse("#2B3A73"),
         TextSuccess = Color.Parse("#1B7443"),
-        TextWarning = Color.Parse("#8A6B1F"),
+        TextWarning = Color.Parse("#8A6203"),       // 4,8:1 sur BackgroundWarning
         TextError = Color.Parse("#B3261E"),
 
         AccentPrimary = Color.Parse("#2B3A73"),
@@ -275,7 +275,7 @@ public sealed partial record HDevPalette
 
         DangerDefault = Color.Parse("#E5534B"),
         DangerHover = Color.Parse("#EE6B63"),
-        DangerPressed = Color.Parse("#C9443D"),
+        DangerPressed = Color.Parse("#D35E58"),      // texte sombre (TextOnAccent) : 4,7:1
         DangerDisabledBackground = Color.Parse("#3A2224"),
         DangerDisabledBorder = Color.Parse("#57363A"),
         DangerDisabledText = Color.Parse("#8F6B6E"),
