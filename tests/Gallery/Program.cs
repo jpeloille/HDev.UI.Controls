@@ -12,9 +12,10 @@ using HDev.UI.Controls.Gallery;
 using HDev.UI.Controls.Theme;
 
 // Planche visuelle : chaque famille de contrôles rendue hors écran, figée dans ses
-// états (survol, pression, focus, erreur, désactivé…), en clair puis en sombre.
+// états (survol, pression, focus, erreur, désactivé…), dans chaque thème du catalogue
+// (Ubuntu 26 clair et sombre, Ardoise, Lagon, Indigo & Or, Cockpit).
 //   dotnet run --project tests/Gallery [-- <libellé>]
-//   → artifacts/gallery/<libellé>/<clair|sombre>/<planche>.png + index.html
+//   → artifacts/gallery/<libellé>/<clair|sombre|ardoise|lagon|indigoor|cockpit>/<planche>.png + index.html
 // Rendre « avant » une modification puis « après » donne la comparaison visuelle.
 
 var label = args.FirstOrDefault() ?? "courant";
@@ -31,34 +32,41 @@ AppBuilder.Configure<GalleryApp>()
     .WithInterFont()
     .SetupWithoutStarting();
 
-foreach (var variant in new[] { HDevThemeVariant.Light, HDevThemeVariant.Dark })
+foreach (var theme in HDevThemeDefinition.All)
 {
-    var themeDir = Path.Combine(outDir, ThemeFolder(variant));
+    var themeDir = Path.Combine(outDir, ThemeFolder(theme));
     Directory.CreateDirectory(themeDir);
 
     foreach (var planche in Planches.All)
     {
-        // Réaffirmée à chaque planche : la planche « bascule » change de variante en cours de rendu
-        HDevTheme.Variant = variant;
+        // Réappliqué à chaque planche : la planche « bascule » change de thème en cours de rendu.
+        // Pour un thème du catalogue, elle part de l'Ubuntu 26 de variante opposée pour y arriver
+        var isBascule = planche.Id == "bascule";
+        var isUbuntu = theme == HDevThemeDefinition.Ubuntu26 || theme == HDevThemeDefinition.Ubuntu26Dark;
+        Planches.BasculeTarget = isBascule && !isUbuntu ? theme : null;
+        HDevTheme.Apply(Planches.BasculeTarget == null ? theme
+            : theme.Variant == HDevThemeVariant.Dark ? HDevThemeDefinition.Ubuntu26 : HDevThemeDefinition.Ubuntu26Dark);
         var path = Path.Combine(themeDir, planche.Id + ".png");
-        Render(planche, variant, path);
-        Console.WriteLine($"  {ThemeFolder(variant),-7} {planche.Id,-12} → {Path.GetRelativePath(root, path)}");
+        Render(planche, path);
+        Console.WriteLine($"  {ThemeFolder(theme),-9} {planche.Id,-12} → {Path.GetRelativePath(root, path)}");
     }
 }
 
-HDevTheme.Variant = HDevThemeVariant.Light;
+Planches.BasculeTarget = null;
+HDevTheme.Apply(HDevThemeDefinition.Ubuntu26);
 File.WriteAllText(Path.Combine(outDir, "index.html"), Index(label));
 Console.WriteLine($"Planche : {Path.Combine(outDir, "index.html")}");
 return 0;
 
-static void Render(Planche planche, HDevThemeVariant variant, string path)
+static void Render(Planche planche, string path)
 {
     var content = planche.Build();
     var window = planche.CreateWindow?.Invoke()
         ?? new Window { Background = new SolidColorBrush(HDevTheme.Background.Window) };
     window.Width = planche.Width;
     window.Height = 400;
-    window.RequestedThemeVariant = variant == HDevThemeVariant.Dark ? ThemeVariant.Dark : ThemeVariant.Light;
+    // Variante Avalonia du thème : Light/Dark pour Ubuntu 26, variante propre sinon (habillage de la grille)
+    window.RequestedThemeVariant = HDevTheme.AvaloniaVariant;
     window.Content = content;
     window.Show();
     Pump(window);
@@ -89,8 +97,11 @@ static void Pump(Window window)
     Dispatcher.UIThread.RunJobs();
 }
 
-static string ThemeFolder(HDevThemeVariant variant)
-    => variant == HDevThemeVariant.Dark ? "sombre" : "clair";
+// Ubuntu 26 garde les dossiers historiques (comparaison avec les rendus antérieurs)
+static string ThemeFolder(HDevThemeDefinition theme)
+    => theme == HDevThemeDefinition.Ubuntu26 ? "clair"
+        : theme == HDevThemeDefinition.Ubuntu26Dark ? "sombre"
+        : theme.Key.ToLowerInvariant();
 
 static string RepoRoot()
 {
@@ -116,9 +127,9 @@ static string Index(string label)
     foreach (var planche in Planches.All)
     {
         html.AppendLine($"<h2>{planche.Title}</h2><div class=\"row\">");
-        foreach (var theme in new[] { "clair", "sombre" })
-            html.AppendLine($"<figure><img src=\"{theme}/{planche.Id}.png\" alt=\"{planche.Title} ({theme})\">"
-                + $"<figcaption>{theme}</figcaption></figure>");
+        foreach (var theme in HDevThemeDefinition.All)
+            html.AppendLine($"<figure><img src=\"{ThemeFolder(theme)}/{planche.Id}.png\" alt=\"{planche.Title} ({theme.DisplayName})\">"
+                + $"<figcaption>{theme.DisplayName}</figcaption></figure>");
         html.AppendLine("</div>");
     }
     html.AppendLine("</body></html>");
