@@ -16,6 +16,12 @@
                       DisplayMemberBinding="{Binding Nom, x:DataType=i:Equipier}"
                       SelectedValueBinding="{Binding Id, x:DataType=i:Equipier}" Placeholder="Chef de cabine" />
     <h:HDevTokenEdit x:Name="Destinataires" Width="300" Value="{Binding Destinataires}" />
+    <h:HDevCheckBox x:Name="Confirme" Label="Confirmé" IsChecked="{Binding Confirme}" />
+    <h:HDevToggleSwitch x:Name="Actif" IsChecked="{Binding Actif}" />
+    <h:HDevRadioButton x:Name="Matin" Label="Matin" GroupName="Service" IsChecked="{Binding Matin}" />
+    <h:HDevRadioButton x:Name="Soir" Label="Soir" GroupName="Service" IsChecked="{Binding Soir}" />
+    <h:HDevSlider x:Name="Charge" Width="200" Minimum="0" Maximum="100" Step="5" Value="{Binding Charge}" />
+    <h:HDevMonthCalendar x:Name="Jour" SelectedDate="{Binding Jour}" />
     <h:HDevSearchControl x:Name="Recherche" Width="200" Text="{Binding Recherche}" />
   </StackPanel>
 </UserControl>

@@ -19,6 +19,10 @@ public sealed class FormulaireE3Vm : INotifyPropertyChanged
     private string? _recherche = "Gantt";
     private object? _priorite = "Normale";
     private object? _chefId = 2;
+    private bool? _confirme = false;
+    private bool _actif, _matin = true, _soir;
+    private double _charge = 40;
+    private DateTime? _jour = new DateTime(2026, 10, 13, 9, 30, 0);
     private IReadOnlyList<object> _destinataires = new object[] { "ops@aircal.nc" };
 
     public string? Nom { get => _nom; set => Set(ref _nom, value); }
@@ -29,6 +33,12 @@ public sealed class FormulaireE3Vm : INotifyPropertyChanged
     public Equipier[] Equipiers { get; } = { new(1, "Awa Wamytan"), new(2, "Teiki Brothers"), new(3, "Lucie Martin") };
     public object? ChefId { get => _chefId; set => Set(ref _chefId, value); }
     public IReadOnlyList<object> Destinataires { get => _destinataires; set => Set(ref _destinataires, value); }
+    public bool? Confirme { get => _confirme; set => Set(ref _confirme, value); }
+    public bool Actif { get => _actif; set => Set(ref _actif, value); }
+    public bool Matin { get => _matin; set => Set(ref _matin, value); }
+    public bool Soir { get => _soir; set => Set(ref _soir, value); }
+    public double Charge { get => _charge; set => Set(ref _charge, value); }
+    public DateTime? Jour { get => _jour; set => Set(ref _jour, value); }
     public string? Recherche { get => _recherche; set => Set(ref _recherche, value); }
 
     public event PropertyChangedEventHandler? PropertyChanged;

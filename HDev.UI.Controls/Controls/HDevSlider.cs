@@ -1,3 +1,4 @@
+using Avalonia.Data;
 using Avalonia;
 using Avalonia.Input;
 using Avalonia.Media;
@@ -9,7 +10,7 @@ namespace HDev.UI.Controls;
 /// Slider professionnel style VS2022
 /// Avec track, thumb, et affichage optionnel de la valeur
 /// </summary>
-public class HDevSlider : HDevControlBase
+public class HDevSlider : HDevControlBase, IHDevEditor
 {
     private bool _isDragging;
     
@@ -18,7 +19,9 @@ public class HDevSlider : HDevControlBase
     // ═══════════════════════════════════════════════════════════════
     
     public static readonly StyledProperty<double> ValueProperty =
-        AvaloniaProperty.Register<HDevSlider, double>(nameof(Value), 50);
+        AvaloniaProperty.Register<HDevSlider, double>(nameof(Value), 50,
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true,
+            coerce: (o, v) => o is HDevSlider s ? Math.Clamp(v, s.Minimum, Math.Max(s.Minimum, s.Maximum)) : v);
     
     public static readonly StyledProperty<double> MinimumProperty =
         AvaloniaProperty.Register<HDevSlider, double>(nameof(Minimum), 0);
@@ -38,7 +41,7 @@ public class HDevSlider : HDevControlBase
     public double Value
     {
         get => GetValue(ValueProperty);
-        set => SetValue(ValueProperty, Math.Clamp(value, Minimum, Maximum));
+        set => SetValue(ValueProperty, value);
     }
     
     public double Minimum
@@ -75,17 +78,66 @@ public class HDevSlider : HDevControlBase
     // ÉVÉNEMENTS
     // ═══════════════════════════════════════════════════════════════
     
-    /// <summary>
-    /// Déclenché à chaque changement de Value, quelle qu'en soit la source
-    /// (souris, clavier, binding, code)
-    /// </summary>
-    public event EventHandler<double>? ValueChanged;
-
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
         if (change.Property == ValueProperty)
-            ValueChanged?.Invoke(this, Value);
+            Core.OnPropertyChanged(change);
+        else if (change.Property == MinimumProperty || change.Property == MaximumProperty)
+            CoerceValue(ValueProperty);
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    // CONTRAT DE VALEUR (IHDevEditor, D2)
+    // ═══════════════════════════════════════════════════════════════
+
+    public static readonly StyledProperty<bool> IsReadOnlyProperty =
+        AvaloniaProperty.Register<HDevSlider, bool>(nameof(IsReadOnly));
+
+    /// <summary>Lecture seule : la valeur s'affiche, l'utilisateur ne la change pas</summary>
+    public bool IsReadOnly
+    {
+        get => GetValue(IsReadOnlyProperty);
+        set => SetValue(IsReadOnlyProperty, value);
+    }
+
+    private HDevValueCore<double>? _core;
+    private HDevValueCore<double> Core => _core ??= new HDevValueCore<double>(this, ValueProperty);
+
+    /// <summary>La valeur, non typée (<c>double</c>, celle de <see cref="Value"/>)</summary>
+    public object? EditValue
+    {
+        get => Value;
+        set => Value = value is null ? 0 : Convert.ToDouble(value);
+    }
+
+    /// <summary>Erreur de la liaison de la valeur (null = valide)</summary>
+    public string? ErrorText => Core.ErrorText;
+
+    /// <summary>Vrai si la valeur est valide (aucune erreur de liaison)</summary>
+    public bool Validate() => ErrorText == null;
+
+    public void FocusEditor() => Focus();
+
+    /// <summary>Changement de valeur, au code comme à l'utilisateur (événement commun, routé)</summary>
+    public event EventHandler<HDevValueChangedEventArgs>? ValueChanged
+    {
+        add => AddHandler(HDevEditor.ValueChangedEvent, value);
+        remove => RemoveHandler(HDevEditor.ValueChangedEvent, value);
+    }
+
+    /// <summary>Avant un changement de l'utilisateur ; annulable</summary>
+    public event EventHandler<HDevValueChangingEventArgs>? ValueChanging
+    {
+        add => AddHandler(HDevEditor.ValueChangingEvent, value);
+        remove => RemoveHandler(HDevEditor.ValueChangingEvent, value);
+    }
+
+    protected override void UpdateDataValidation(AvaloniaProperty property, Avalonia.Data.BindingValueType state, Exception? error)
+    {
+        base.UpdateDataValidation(property, state, error);
+        Core.OnDataValidation(property, error);
     }
 
     static HDevSlider()
@@ -117,6 +169,7 @@ public class HDevSlider : HDevControlBase
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
+        if (IsReadOnly) return;
         _isDragging = true;
         UpdateValueFromPointer(e.GetPosition(this));
         e.Pointer.Capture(this);
@@ -140,7 +193,7 @@ public class HDevSlider : HDevControlBase
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
-        if (!e.Handled && IsEnabled)
+        if (!e.Handled && IsEnabled && !IsReadOnly)
         {
             var step = Step > 0 ? Step : (Maximum - Minimum) / 100;
             double? newValue = e.Key switch
@@ -156,7 +209,7 @@ public class HDevSlider : HDevControlBase
 
             if (newValue.HasValue)
             {
-                Value = Math.Clamp(newValue.Value, Minimum, Maximum);
+                Core.CommitUser(Math.Clamp(newValue.Value, Minimum, Maximum));
                 e.Handled = true;
                 return;
             }
@@ -182,7 +235,7 @@ public class HDevSlider : HDevControlBase
 
         if (Math.Abs(newValue - Value) > 0.001)
         {
-            Value = newValue;
+            Core.CommitUser(newValue);
         }
     }
     

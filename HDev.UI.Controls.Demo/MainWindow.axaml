@@ -150,17 +150,17 @@
                     <hdev:HDevCard Title="Toggle Switches" Grid.Column="0">
                         <StackPanel Spacing="16">
                             <StackPanel Orientation="Horizontal" Spacing="16">
-                                <hdev:HDevToggleSwitch IsOn="True"/>
+                                <hdev:HDevToggleSwitch IsChecked="True"/>
                                 <TextBlock Text="Notifications enabled" VerticalAlignment="Center"/>
                             </StackPanel>
                             
                             <StackPanel Orientation="Horizontal" Spacing="16">
-                                <hdev:HDevToggleSwitch IsOn="False"/>
+                                <hdev:HDevToggleSwitch IsChecked="False"/>
                                 <TextBlock Text="Dark mode" VerticalAlignment="Center"/>
                             </StackPanel>
                             
                             <StackPanel Orientation="Horizontal" Spacing="16">
-                                <hdev:HDevToggleSwitch IsEnabled="False" IsOn="True"/>
+                                <hdev:HDevToggleSwitch IsEnabled="False" IsChecked="True"/>
                                 <TextBlock Text="Disabled (on)" VerticalAlignment="Center" Foreground="{DynamicResource HDevTextDisabledBrush}"/>
                             </StackPanel>
                             

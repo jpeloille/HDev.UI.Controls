@@ -1,3 +1,4 @@
+using Avalonia.Data;
 using Avalonia;
 using Avalonia.Media;
 using HDev.UI.Controls.Theme;
@@ -8,14 +9,15 @@ namespace HDev.UI.Controls;
 /// Toggle switch moderne style VS2022/Windows 11
 /// Avec animation fluide du curseur
 /// </summary>
-public class HDevToggleSwitch : HDevControlBase
+public class HDevToggleSwitch : HDevControlBase, IHDevEditor
 {
     // ═══════════════════════════════════════════════════════════════
     // PROPRIÉTÉS
     // ═══════════════════════════════════════════════════════════════
     
-    public static readonly StyledProperty<bool> IsOnProperty =
-        AvaloniaProperty.Register<HDevToggleSwitch, bool>(nameof(IsOn), false);
+    public static readonly StyledProperty<bool> IsCheckedProperty =
+        AvaloniaProperty.Register<HDevToggleSwitch, bool>(nameof(IsChecked), false,
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
     
     public static readonly StyledProperty<string> OnLabelProperty =
         AvaloniaProperty.Register<HDevToggleSwitch, string>(nameof(OnLabel), "On");
@@ -26,10 +28,11 @@ public class HDevToggleSwitch : HDevControlBase
     public static readonly StyledProperty<bool> ShowLabelsProperty =
         AvaloniaProperty.Register<HDevToggleSwitch, bool>(nameof(ShowLabels), false);
 
-    public bool IsOn
+    /// <summary>Bascule enclenchée (nom d'Avalonia ; anciennement IsChecked)</summary>
+    public bool IsChecked
     {
-        get => GetValue(IsOnProperty);
-        set => SetValue(IsOnProperty, value);
+        get => GetValue(IsCheckedProperty);
+        set => SetValue(IsCheckedProperty, value);
     }
     
     public string OnLabel
@@ -54,28 +57,75 @@ public class HDevToggleSwitch : HDevControlBase
     // ÉVÉNEMENTS
     // ═══════════════════════════════════════════════════════════════
     
-    /// <summary>
-    /// Déclenché à chaque changement de IsOn, quelle qu'en soit la source
-    /// (souris, clavier, binding, code)
-    /// </summary>
-    public event EventHandler<bool>? Toggled;
-
     protected override void OnClick()
     {
-        if (!IsEnabled) return;
-        IsOn = !IsOn;
+        if (!IsEnabled || IsReadOnly) return;
+        Core.CommitUser(!IsChecked);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == IsOnProperty)
-            Toggled?.Invoke(this, IsOn);
+        if (change.Property == IsCheckedProperty)
+            Core.OnPropertyChanged(change);
     }
     
+
+    // ═══════════════════════════════════════════════════════════════
+    // CONTRAT DE VALEUR (IHDevEditor, D2)
+    // ═══════════════════════════════════════════════════════════════
+
+    public static readonly StyledProperty<bool> IsReadOnlyProperty =
+        AvaloniaProperty.Register<HDevToggleSwitch, bool>(nameof(IsReadOnly));
+
+    /// <summary>Lecture seule : la valeur s'affiche, l'utilisateur ne la change pas</summary>
+    public bool IsReadOnly
+    {
+        get => GetValue(IsReadOnlyProperty);
+        set => SetValue(IsReadOnlyProperty, value);
+    }
+
+    private HDevValueCore<bool>? _core;
+    private HDevValueCore<bool> Core => _core ??= new HDevValueCore<bool>(this, IsCheckedProperty);
+
+    /// <summary>La valeur, non typée (<c>bool</c>, celle de <see cref="IsChecked"/>)</summary>
+    public object? EditValue
+    {
+        get => IsChecked;
+        set => IsChecked = value is true;
+    }
+
+    /// <summary>Erreur de la liaison de la valeur (null = valide)</summary>
+    public string? ErrorText => Core.ErrorText;
+
+    /// <summary>Vrai si la valeur est valide (aucune erreur de liaison)</summary>
+    public bool Validate() => ErrorText == null;
+
+    public void FocusEditor() => Focus();
+
+    /// <summary>Changement de valeur, au code comme à l'utilisateur (événement commun, routé)</summary>
+    public event EventHandler<HDevValueChangedEventArgs>? ValueChanged
+    {
+        add => AddHandler(HDevEditor.ValueChangedEvent, value);
+        remove => RemoveHandler(HDevEditor.ValueChangedEvent, value);
+    }
+
+    /// <summary>Avant un changement de l'utilisateur ; annulable</summary>
+    public event EventHandler<HDevValueChangingEventArgs>? ValueChanging
+    {
+        add => AddHandler(HDevEditor.ValueChangingEvent, value);
+        remove => RemoveHandler(HDevEditor.ValueChangingEvent, value);
+    }
+
+    protected override void UpdateDataValidation(AvaloniaProperty property, Avalonia.Data.BindingValueType state, Exception? error)
+    {
+        base.UpdateDataValidation(property, state, error);
+        Core.OnDataValidation(property, error);
+    }
+
     static HDevToggleSwitch()
     {
-        AffectsRender<HDevToggleSwitch>(IsOnProperty, OnLabelProperty, OffLabelProperty, ShowLabelsProperty);
+        AffectsRender<HDevToggleSwitch>(IsCheckedProperty, OnLabelProperty, OffLabelProperty, ShowLabelsProperty);
         AffectsMeasure<HDevToggleSwitch>(ShowLabelsProperty, OnLabelProperty, OffLabelProperty);
     }
 
@@ -93,7 +143,7 @@ public class HDevToggleSwitch : HDevControlBase
             return new Size(trackWidth + 6, trackHeight + 6);
         }
         
-        var label = IsOn ? OnLabel : OffLabel;
+        var label = IsChecked ? OnLabel : OffLabel;
         var labelText = CreateText(label, HDevTheme.Text.Primary, HDevTheme.Typography.FontSizeBody);
         return new Size(trackWidth + 10 + labelText.Width + 6, Math.Max(trackHeight, labelText.Height) + 6);
     }
@@ -124,7 +174,7 @@ public class HDevToggleSwitch : HDevControlBase
             thumbColor = HDevTheme.Border.Disabled;
             borderColor = HDevTheme.Border.Disabled;
         }
-        else if (IsOn)
+        else if (IsChecked)
         {
             trackColor = IsPressed ? HDevTheme.Accent.PrimaryPressed :
                         IsHovered ? HDevTheme.Accent.PrimaryHover :
@@ -154,7 +204,7 @@ public class HDevToggleSwitch : HDevControlBase
         
         // Position du thumb (curseur)
         var thumbPadding = 3.0;
-        var thumbX = IsOn 
+        var thumbX = IsChecked 
             ? trackRect.Right - thumbRadius - thumbPadding
             : trackRect.Left + thumbRadius + thumbPadding;
         var thumbCenter = new Point(thumbX, trackRect.Center.Y);
@@ -185,7 +235,7 @@ public class HDevToggleSwitch : HDevControlBase
             currentThumbRadius, currentThumbRadius);
         
         // Bordure du thumb (si off)
-        if (!IsOn && IsEnabled)
+        if (!IsChecked && IsEnabled)
         {
             var thumbBorderPen = new Pen(new SolidColorBrush(HDevTheme.Border.Strong), 1.0);
             context.DrawEllipse(null, thumbBorderPen, thumbCenter, currentThumbRadius - 0.5, currentThumbRadius - 0.5);
@@ -215,7 +265,7 @@ public class HDevToggleSwitch : HDevControlBase
         // Label
         if (ShowLabels)
         {
-            var label = IsOn ? OnLabel : OffLabel;
+            var label = IsChecked ? OnLabel : OffLabel;
             var textColor = IsEnabled ? HDevTheme.Text.Primary : HDevTheme.Text.Disabled;
             var labelText = CreateText(label, textColor, HDevTheme.Typography.FontSizeBody);
             var labelX = trackRect.Right + 10;

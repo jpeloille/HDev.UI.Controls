@@ -232,15 +232,15 @@ kbButton.Click += (s, e) => btnClicks++;
 
 var kbCheck = new HDevCheckBox { Label = "Option" };
 var checkEvents = new List<bool?>();
-kbCheck.CheckedChanged += (s, v) => checkEvents.Add(v);
+kbCheck.ValueChanged += (s, e) => checkEvents.Add((bool?)e.NewValue);
 
 var kbToggle = new HDevToggleSwitch();
 int toggleEvents = 0;
-kbToggle.Toggled += (s, v) => toggleEvents++;
+kbToggle.ValueChanged += (s, e) => toggleEvents++;
 
 var kbSlider = new HDevSlider { Minimum = 0, Maximum = 100, Step = 5, Value = 50 };
 var sliderEvents = new List<double>();
-kbSlider.ValueChanged += (s, v) => sliderEvents.Add(v);
+kbSlider.ValueChanged += (s, e) => sliderEvents.Add((double)e.NewValue!);
 
 var radioA = new HDevRadioButton { Label = "A", IsChecked = true };
 var radioB = new HDevRadioButton { Label = "B" };
@@ -281,8 +281,8 @@ Check("CheckedChanged déclenché par set programmatique", checkEvents.Count == 
 
 kbToggle.Focus();
 PressKey(PhysicalKey.Space);
-Check("Espace bascule HDevToggleSwitch", kbToggle.IsOn);
-kbToggle.IsOn = false;
+Check("Espace bascule HDevToggleSwitch", kbToggle.IsChecked);
+kbToggle.IsChecked = false;
 Check("Toggled déclenché aussi par set programmatique", toggleEvents == 2);
 
 kbSlider.Focus();
@@ -690,7 +690,7 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
     Editeur AdCalendrier(HDevMonthCalendar e) => new()
     {
         Controle = e, PoserValeur = v => e.SelectedDate = (DateTime?)v, LireValeur = () => e.SelectedDate,
-        SurValeurChangee = a => e.SelectedDateChanged += (_, _) => a(), Focaliser = () => e.Focus()
+        SurValeurChangee = a => e.ValueChanged += (_, _) => a(), Focaliser = () => e.FocusEditor()
     };
 
     // ─── HDevTextBox ───
@@ -1392,7 +1392,7 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
     {
         var vm = new FormulaireE3Vm();
         var vue = new FormulaireE3 { DataContext = vm };
-        var w = new Window { Width = 500, Height = 600, Content = vue }; w.Show(); Pump(w);
+        var w = new Window { Width = 500, Height = 1100, Content = vue }; w.Show(); Pump(w);
         var journal = new List<HDevValueChangedEventArgs>();
         vue.FindControl<StackPanel>("Formulaire")!.AddHandler(HDevEditor.ValueChangedEvent,
             (object? _, HDevValueChangedEventArgs e) => journal.Add(e));
@@ -1496,6 +1496,38 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         Check("TokenEdit : ValueChanging annulé garde le jeton ; sinon Retour arrière le retire, jusqu'au ViewModel",
             jetonGarde && tk.Value.Count == 0 && vm.Destinataires.Count == 0);
 
+        // ─── Contrôles de choix et calendrier : IHDevEditor sans invite (QX-05) ───
+        var cbx = vue.FindControl<HDevCheckBox>("Confirme")!;
+        var tg = vue.FindControl<HDevToggleSwitch>("Actif")!;
+        var matin = vue.FindControl<HDevRadioButton>("Matin")!; var soir = vue.FindControl<HDevRadioButton>("Soir")!;
+        var sl = vue.FindControl<HDevSlider>("Charge")!;
+        var cal = vue.FindControl<HDevMonthCalendar>("Jour")!;
+        Check("contrôles de choix et calendrier : IHDevEditor, mais pas IHDevFieldEditor (pas d'invite)",
+            new Control[] { cbx, tg, matin, sl, cal }.All(c => c is IHDevEditor and not IHDevFieldEditor));
+        cbx.Focus(); Touche(w, PhysicalKey.Space);
+        var cbxOk = vm.Confirme == true && DernierUtilisateur(cbx);
+        vm.Confirme = null; Pump(w);
+        Check("CheckBox liée sans Mode : Espace remonte au ViewModel (origine Utilisateur), le ViewModel redescend",
+            cbxOk && cbx.IsChecked == null && journal[^1].Origin == HDevValueOrigin.Code);
+        tg.Focus(); Touche(w, PhysicalKey.Space);
+        var tgOk = vm.Actif && DernierUtilisateur(tg);
+        tg.IsReadOnly = true; Touche(w, PhysicalKey.Space); var tgLecture = vm.Actif; tg.IsReadOnly = false;
+        Check("ToggleSwitch : IsChecked (anciennement IsOn) lié, Espace remonte ; en lecture seule, rien ne bouge", tgOk && tgLecture && tg.IsChecked);
+        matin.Focus(); Touche(w, PhysicalKey.ArrowDown);
+        Check("RadioButton liés : la flèche coche le suivant, les deux ViewModels suivent ; l'origine est l'utilisateur",
+            vm.Soir && !vm.Matin && soir.IsChecked && !matin.IsChecked && journal.Any(e => ReferenceEquals(e.Source, soir) && e.IsUserChange));
+        sl.Focus(); Touche(w, PhysicalKey.ArrowRight);
+        var slOk = vm.Charge == 45 && DernierUtilisateur(sl);
+        vm.Charge = 250; Pump(w);
+        Check($"Slider lié : la flèche remonte d'un pas ; une valeur hors bornes est ramenée, jusqu'au ViewModel (lu {vm.Charge})",
+            slOk && sl.Value == 100 && vm.Charge == 100);
+        var calAffiche = cal.DisplayMonth == new DateTime(2026, 10, 1);
+        cal.Focus(); Touche(w, PhysicalKey.ArrowRight);
+        var calOk = vm.Jour == new DateTime(2026, 10, 14) && DernierUtilisateur(cal);
+        vm.Jour = new DateTime(2027, 2, 3, 8, 0, 0); Pump(w);
+        Check("MonthCalendar : SelectedDate lié, le mois suit ; → choisit le lendemain (à minuit) ; la date du ViewModel garde son heure",
+            calAffiche && calOk && cal.SelectedDate == new DateTime(2027, 2, 3, 8, 0, 0) && cal.DisplayMonth == new DateTime(2027, 2, 1));
+
         // ─── HDevSearchControl ───
         var sc = vue.FindControl<HDevSearchControl>("Recherche")!;
         sc.SuggestionsProvider = t => new object[] { "Gamma", "Gantt", "Grille" }
@@ -1511,6 +1543,17 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         Check("SearchControl : le focus qui part ailleurs ferme les suggestions, la saisie reste", propose && !sc.IsDropDownOpen && vm.Recherche == "Ga");
         sc.Buttons.Single(b => b.Kind == HDevEditorButtonKind.Clear).PerformClick(); Pump(w);
         Check("SearchControl : le bouton Effacer vide le texte, jusqu'au ViewModel", sc.Text == "" && vm.Recherche == "" && DernierUtilisateur(sc));
+        w.Close();
+    }
+
+    // ═══ PORTAGE (E3) : encapsulation, le calendrier du popup ne fait plus sortir sa valeur ═══
+    {
+        var de = new HDevDateEdit { Width = 160 }; var w = Hote(de);
+        var sources = new List<object?>();
+        w.AddHandler(HDevEditor.ValueChangedEvent, (object? _, HDevValueChangedEventArgs e) => sources.Add(e.Source));
+        de.FocusEditor(); Touche(w, PhysicalKey.F4); ChoisirJourDuCalendrier(de, new DateTime(2026, 10, 20)); Pump(w);
+        Check("DateEdit : jusqu'à la fenêtre, seul l'éditeur lève ValueChanged quand un jour est choisi dans son calendrier",
+            de.Value == new DateTime(2026, 10, 20) && sources.Count == 1 && ReferenceEquals(sources[0], de));
         w.Close();
     }
 

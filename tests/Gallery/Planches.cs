@@ -441,8 +441,8 @@ static class Planches
             ("Indéterminée", ChoiceCells(() => new HDevCheckBox { Label = "Option", IsChecked = null })),
             ("Radio éteint", ChoiceCells(() => new HDevRadioButton { Label = "Choix" })),
             ("Radio choisi", ChoiceCells(() => new HDevRadioButton { Label = "Choix", IsChecked = true })),
-            ("Interrupteur off", ChoiceCells(() => new HDevToggleSwitch { IsOn = false })),
-            ("Interrupteur on", ChoiceCells(() => new HDevToggleSwitch { IsOn = true })),
+            ("Interrupteur off", ChoiceCells(() => new HDevToggleSwitch { IsChecked = false })),
+            ("Interrupteur on", ChoiceCells(() => new HDevToggleSwitch { IsChecked = true })),
             ("Curseur", ChoiceCells(() => new HDevSlider { Minimum = 0, Maximum = 100, Value = 70, Width = 180 })),
         });
 

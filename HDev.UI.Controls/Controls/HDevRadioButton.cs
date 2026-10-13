@@ -1,3 +1,4 @@
+using Avalonia.Data;
 using Avalonia;
 using Avalonia.Input;
 using Avalonia.Media;
@@ -10,14 +11,15 @@ namespace HDev.UI.Controls;
 /// Bouton radio (style Yaru) : exclusivité et flèches partagées avec
 /// <see cref="HDevRadioCard"/> par <see cref="HDevRadioGroup"/>
 /// </summary>
-public class HDevRadioButton : HDevControlBase
+public class HDevRadioButton : HDevControlBase, IHDevEditor
 {
     // ═══════════════════════════════════════════════════════════════
     // PROPRIÉTÉS
     // ═══════════════════════════════════════════════════════════════
     
     public static readonly StyledProperty<bool> IsCheckedProperty =
-        AvaloniaProperty.Register<HDevRadioButton, bool>(nameof(IsChecked), false);
+        AvaloniaProperty.Register<HDevRadioButton, bool>(nameof(IsChecked), false,
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
     
     public static readonly StyledProperty<string> LabelProperty =
         AvaloniaProperty.Register<HDevRadioButton, string>(nameof(Label), "");
@@ -47,16 +49,10 @@ public class HDevRadioButton : HDevControlBase
     // ÉVÉNEMENTS
     // ═══════════════════════════════════════════════════════════════
     
-    /// <summary>
-    /// Déclenché à chaque changement de IsChecked, quelle qu'en soit la source
-    /// (souris, clavier, binding, code)
-    /// </summary>
-    public event EventHandler<bool>? CheckedChanged;
-
     protected override void OnClick()
     {
-        if (!IsEnabled || IsChecked) return;
-        IsChecked = true;
+        if (!IsEnabled || IsChecked || IsReadOnly) return;
+        Core.CommitUser(true);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -70,19 +66,19 @@ public class HDevRadioButton : HDevControlBase
             if (IsChecked)
             {
                 foreach (var radio in HDevRadioGroup.Siblings(this, r => r.GroupName))
-                    radio.IsChecked = false;
+                    radio.SetCurrentValue(IsCheckedProperty, false);
             }
 
-            CheckedChanged?.Invoke(this, IsChecked);
+            Core.OnPropertyChanged(change);
         }
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
         // Navigation par flèches au sein du groupe (coche la cible, comme WPF/WinForms)
-        if (!e.Handled && IsEnabled && HDevRadioGroup.Navigate(this, e.Key, r => r.GroupName) is { } next)
+        if (!e.Handled && IsEnabled && !IsReadOnly && HDevRadioGroup.Navigate(this, e.Key, r => r.GroupName) is { } next)
         {
-            next.IsChecked = true;
+            next.Core.CommitUser(true);
             e.Handled = true;
             return;
         }
@@ -90,6 +86,59 @@ public class HDevRadioButton : HDevControlBase
         base.OnKeyDown(e);
     }
     
+
+    // ═══════════════════════════════════════════════════════════════
+    // CONTRAT DE VALEUR (IHDevEditor, D2)
+    // ═══════════════════════════════════════════════════════════════
+
+    public static readonly StyledProperty<bool> IsReadOnlyProperty =
+        AvaloniaProperty.Register<HDevRadioButton, bool>(nameof(IsReadOnly));
+
+    /// <summary>Lecture seule : la valeur s'affiche, l'utilisateur ne la change pas</summary>
+    public bool IsReadOnly
+    {
+        get => GetValue(IsReadOnlyProperty);
+        set => SetValue(IsReadOnlyProperty, value);
+    }
+
+    private HDevValueCore<bool>? _core;
+    private HDevValueCore<bool> Core => _core ??= new HDevValueCore<bool>(this, IsCheckedProperty);
+
+    /// <summary>La valeur, non typée (<c>bool</c>, celle de <see cref="IsChecked"/>)</summary>
+    public object? EditValue
+    {
+        get => IsChecked;
+        set => IsChecked = value is true;
+    }
+
+    /// <summary>Erreur de la liaison de la valeur (null = valide)</summary>
+    public string? ErrorText => Core.ErrorText;
+
+    /// <summary>Vrai si la valeur est valide (aucune erreur de liaison)</summary>
+    public bool Validate() => ErrorText == null;
+
+    public void FocusEditor() => Focus();
+
+    /// <summary>Changement de valeur, au code comme à l'utilisateur (événement commun, routé)</summary>
+    public event EventHandler<HDevValueChangedEventArgs>? ValueChanged
+    {
+        add => AddHandler(HDevEditor.ValueChangedEvent, value);
+        remove => RemoveHandler(HDevEditor.ValueChangedEvent, value);
+    }
+
+    /// <summary>Avant un changement de l'utilisateur ; annulable</summary>
+    public event EventHandler<HDevValueChangingEventArgs>? ValueChanging
+    {
+        add => AddHandler(HDevEditor.ValueChangingEvent, value);
+        remove => RemoveHandler(HDevEditor.ValueChangingEvent, value);
+    }
+
+    protected override void UpdateDataValidation(AvaloniaProperty property, Avalonia.Data.BindingValueType state, Exception? error)
+    {
+        base.UpdateDataValidation(property, state, error);
+        Core.OnDataValidation(property, error);
+    }
+
     static HDevRadioButton()
     {
         AffectsRender<HDevRadioButton>(IsCheckedProperty, LabelProperty);

@@ -1,3 +1,4 @@
+using Avalonia.Data;
 using Avalonia;
 using Avalonia.Media;
 using HDev.UI.Controls.Theme;
@@ -8,14 +9,15 @@ namespace HDev.UI.Controls;
 /// Case à cocher professionnelle style VS2022
 /// Avec support indeterminate et animations visuelles
 /// </summary>
-public class HDevCheckBox : HDevControlBase
+public class HDevCheckBox : HDevControlBase, IHDevEditor
 {
     // ═══════════════════════════════════════════════════════════════
     // PROPRIÉTÉS
     // ═══════════════════════════════════════════════════════════════
     
     public static readonly StyledProperty<bool?> IsCheckedProperty =
-        AvaloniaProperty.Register<HDevCheckBox, bool?>(nameof(IsChecked), false);
+        AvaloniaProperty.Register<HDevCheckBox, bool?>(nameof(IsChecked), false,
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
     
     public static readonly StyledProperty<string> LabelProperty =
         AvaloniaProperty.Register<HDevCheckBox, string>(nameof(Label), "");
@@ -45,38 +47,80 @@ public class HDevCheckBox : HDevControlBase
     // ÉVÉNEMENTS
     // ═══════════════════════════════════════════════════════════════
     
-    /// <summary>
-    /// Déclenché à chaque changement de IsChecked, quelle qu'en soit la source
-    /// (souris, clavier, binding, code)
-    /// </summary>
-    public event EventHandler<bool?>? CheckedChanged;
-
     protected override void OnClick()
     {
-        if (!IsEnabled) return;
+        if (!IsEnabled || IsReadOnly) return;
 
-        if (IsThreeState)
-        {
-            IsChecked = IsChecked switch
+        Core.CommitUser(IsThreeState
+            ? IsChecked switch
             {
                 false => true,
                 true => null,
                 null => false
-            };
-        }
-        else
-        {
-            IsChecked = !(IsChecked ?? false);
-        }
+            }
+            : !(IsChecked ?? false));
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
         if (change.Property == IsCheckedProperty)
-            CheckedChanged?.Invoke(this, IsChecked);
+            Core.OnPropertyChanged(change);
     }
     
+
+    // ═══════════════════════════════════════════════════════════════
+    // CONTRAT DE VALEUR (IHDevEditor, D2)
+    // ═══════════════════════════════════════════════════════════════
+
+    public static readonly StyledProperty<bool> IsReadOnlyProperty =
+        AvaloniaProperty.Register<HDevCheckBox, bool>(nameof(IsReadOnly));
+
+    /// <summary>Lecture seule : la valeur s'affiche, l'utilisateur ne la change pas</summary>
+    public bool IsReadOnly
+    {
+        get => GetValue(IsReadOnlyProperty);
+        set => SetValue(IsReadOnlyProperty, value);
+    }
+
+    private HDevValueCore<bool?>? _core;
+    private HDevValueCore<bool?> Core => _core ??= new HDevValueCore<bool?>(this, IsCheckedProperty);
+
+    /// <summary>La valeur, non typée (<c>bool?</c>, celle de <see cref="IsChecked"/>)</summary>
+    public object? EditValue
+    {
+        get => IsChecked;
+        set => IsChecked = (bool?)value;
+    }
+
+    /// <summary>Erreur de la liaison de la valeur (null = valide)</summary>
+    public string? ErrorText => Core.ErrorText;
+
+    /// <summary>Vrai si la valeur est valide (aucune erreur de liaison)</summary>
+    public bool Validate() => ErrorText == null;
+
+    public void FocusEditor() => Focus();
+
+    /// <summary>Changement de valeur, au code comme à l'utilisateur (événement commun, routé)</summary>
+    public event EventHandler<HDevValueChangedEventArgs>? ValueChanged
+    {
+        add => AddHandler(HDevEditor.ValueChangedEvent, value);
+        remove => RemoveHandler(HDevEditor.ValueChangedEvent, value);
+    }
+
+    /// <summary>Avant un changement de l'utilisateur ; annulable</summary>
+    public event EventHandler<HDevValueChangingEventArgs>? ValueChanging
+    {
+        add => AddHandler(HDevEditor.ValueChangingEvent, value);
+        remove => RemoveHandler(HDevEditor.ValueChangingEvent, value);
+    }
+
+    protected override void UpdateDataValidation(AvaloniaProperty property, Avalonia.Data.BindingValueType state, Exception? error)
+    {
+        base.UpdateDataValidation(property, state, error);
+        Core.OnDataValidation(property, error);
+    }
+
     static HDevCheckBox()
     {
         AffectsRender<HDevCheckBox>(IsCheckedProperty, LabelProperty, IsThreeStateProperty);

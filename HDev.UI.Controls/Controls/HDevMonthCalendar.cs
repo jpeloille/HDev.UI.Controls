@@ -1,3 +1,4 @@
+using Avalonia.Data;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -12,16 +13,19 @@ namespace HDev.UI.Controls;
 /// aujourd'hui, jours en gras (BoldDates : jours à événements), bornes.
 /// Remplace le Calendar Fluent (souveraineté) — utilisé par HDevDateEdit.
 /// </summary>
-public class HDevMonthCalendar : Control
+public class HDevMonthCalendar : Control, IHDevEditor
 {
     private const double HeaderHeight = 32;
     private const double WeekDayHeight = 22;
     private const double CellSize = 30;
 
     private DateTime _displayMonth = new(DateTime.Today.Year, DateTime.Today.Month, 1);
-    private DateTime? _selectedDate;
     private DateTime? _hoveredDate;
     private bool _hoverPrev, _hoverNext;
+
+    public static readonly StyledProperty<DateTime?> SelectedDateProperty =
+        AvaloniaProperty.Register<HDevMonthCalendar, DateTime?>(nameof(SelectedDate),
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
 
     /// <summary>Jours marqués en gras (jours portant des événements)</summary>
     public HashSet<DateTime> BoldDates { get; } = new();
@@ -29,23 +33,17 @@ public class HDevMonthCalendar : Control
     public DateTime MinDate { get; set; } = DateTime.MinValue;
     public DateTime MaxDate { get; set; } = DateTime.MaxValue;
 
-    /// <summary>Déclenché quand SelectedDate change (clic utilisateur ou code)</summary>
-    public event EventHandler? SelectedDateChanged;
-
+    /// <summary>
+    /// Jour choisi, liable dans les deux sens (nom d'Avalonia). Une date posée par le code garde
+    /// son heure, qui n'est pas affichée ; un jour choisi par l'utilisateur est à minuit.
+    /// </summary>
     public DateTime? SelectedDate
     {
-        get => _selectedDate;
-        set
-        {
-            var date = value?.Date;
-            if (_selectedDate == date) return;
-            _selectedDate = date;
-            if (date.HasValue)
-                _displayMonth = new DateTime(date.Value.Year, date.Value.Month, 1);
-            InvalidateVisual();
-            SelectedDateChanged?.Invoke(this, EventArgs.Empty);
-        }
+        get => GetValue(SelectedDateProperty);
+        set => SetValue(SelectedDateProperty, value);
     }
+
+    private DateTime? SelectedDay => SelectedDate?.Date;
 
     /// <summary>Mois affiché (le 1er du mois)</summary>
     public DateTime DisplayMonth
@@ -63,6 +61,76 @@ public class HDevMonthCalendar : Control
     static HDevMonthCalendar()
     {
         FocusableProperty.OverrideDefaultValue<HDevMonthCalendar>(true);
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property != SelectedDateProperty) return;
+        // Le mois affiché suit le jour choisi
+        if (SelectedDate is { } date)
+            _displayMonth = new DateTime(date.Year, date.Month, 1);
+        InvalidateVisual();
+        Core.OnPropertyChanged(change);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // CONTRAT DE VALEUR (IHDevEditor, D2) : le calendrier reste hors du socle
+    // ═══════════════════════════════════════════════════════════════
+
+    public static readonly StyledProperty<bool> IsReadOnlyProperty =
+        AvaloniaProperty.Register<HDevMonthCalendar, bool>(nameof(IsReadOnly));
+
+    /// <summary>Lecture seule : on navigue de mois en mois, on ne choisit pas de jour</summary>
+    public bool IsReadOnly
+    {
+        get => GetValue(IsReadOnlyProperty);
+        set => SetValue(IsReadOnlyProperty, value);
+    }
+
+    private HDevValueCore<DateTime?>? _core;
+    private HDevValueCore<DateTime?> Core => _core ??= new HDevValueCore<DateTime?>(this, SelectedDateProperty);
+
+    /// <summary>La valeur, non typée (<c>DateTime?</c>, celle de <see cref="SelectedDate"/>)</summary>
+    public object? EditValue
+    {
+        get => SelectedDate;
+        set => SelectedDate = (DateTime?)value;
+    }
+
+    /// <summary>Erreur de la liaison de la valeur (null = valide)</summary>
+    public string? ErrorText => Core.ErrorText;
+
+    /// <summary>Vrai si la valeur est valide (aucune erreur de liaison)</summary>
+    public bool Validate() => ErrorText == null;
+
+    public void FocusEditor() => Focus();
+
+    /// <summary>Changement du jour choisi, au code comme à l'utilisateur (événement commun, routé)</summary>
+    public event EventHandler<HDevValueChangedEventArgs>? ValueChanged
+    {
+        add => AddHandler(HDevEditor.ValueChangedEvent, value);
+        remove => RemoveHandler(HDevEditor.ValueChangedEvent, value);
+    }
+
+    /// <summary>Avant un choix de l'utilisateur ; annulable</summary>
+    public event EventHandler<HDevValueChangingEventArgs>? ValueChanging
+    {
+        add => AddHandler(HDevEditor.ValueChangingEvent, value);
+        remove => RemoveHandler(HDevEditor.ValueChangingEvent, value);
+    }
+
+    protected override void UpdateDataValidation(AvaloniaProperty property, BindingValueType state, Exception? error)
+    {
+        base.UpdateDataValidation(property, state, error);
+        Core.OnDataValidation(property, error);
+    }
+
+    /// <summary>Un jour choisi par l'utilisateur (clic, clavier)</summary>
+    private void SelectByUser(DateTime date)
+    {
+        if (IsReadOnly) return;
+        Core.CommitUser(date.Date);
     }
 
     public HDevMonthCalendar()
@@ -142,7 +210,7 @@ public class HDevMonthCalendar : Control
         var date = DateAt(pos);
         if (date != null && date >= MinDate && date <= MaxDate)
         {
-            SelectedDate = date;
+            SelectByUser(date.Value);
             e.Handled = true;
         }
         base.OnPointerPressed(e);
@@ -157,7 +225,7 @@ public class HDevMonthCalendar : Control
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
-        var current = _selectedDate ?? DateTime.Today;
+        var current = SelectedDay ?? DateTime.Today;
         DateTime? target = e.Key switch
         {
             Key.Left => current.AddDays(-1),
@@ -170,9 +238,9 @@ public class HDevMonthCalendar : Control
             _ => null
         };
 
-        if (target != null && target >= MinDate && target <= MaxDate)
+        if (target != null && target >= MinDate && target <= MaxDate && !IsReadOnly)
         {
-            SelectedDate = target;
+            SelectByUser(target.Value);
             e.Handled = true;
         }
         base.OnKeyDown(e);
@@ -219,7 +287,7 @@ public class HDevMonthCalendar : Control
 
                 var isCurrentMonth = date.Month == _displayMonth.Month;
                 var isToday = date == DateTime.Today;
-                var isSelected = date == _selectedDate;
+                var isSelected = date == SelectedDay;
                 var isHovered = date == _hoveredDate;
                 var isDisabled = date < MinDate || date > MaxDate;
 

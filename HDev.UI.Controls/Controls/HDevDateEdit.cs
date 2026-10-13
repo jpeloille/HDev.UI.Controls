@@ -129,12 +129,15 @@ public class HDevDateEdit : HDevEditorBase<DateTime?>
             MinDate = MinDate,
             MaxDate = MaxDate
         };
-        _calendar.SelectedDateChanged += OnCalendarDateSelected;
+        _calendar.ValueChanged += OnCalendarDateSelected;
         DropDown.Content = _calendar;
     }
 
-    private void OnCalendarDateSelected(object? sender, EventArgs e)
+    private void OnCalendarDateSelected(object? sender, HDevValueChangedEventArgs e)
     {
+        // Encapsulation : le calendrier vit dans le popup, hors de l'arbre de l'éditeur ; son
+        // événement de valeur s'arrête ici, seul celui de l'éditeur remonte
+        e.Handled = true;
         if (_calendar?.SelectedDate is { } date)
         {
             CommitUserValue(AtCurrentTime(date));

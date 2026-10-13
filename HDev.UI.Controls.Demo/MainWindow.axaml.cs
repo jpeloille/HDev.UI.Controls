@@ -877,7 +877,7 @@ public partial class MainWindow : HDevWindow
         {
             monthCalendar.BoldDates.Add(occ.Start.Date);
         }
-        monthCalendar.SelectedDateChanged += (s, e) =>
+        monthCalendar.ValueChanged += (s, e) =>
         {
             if (monthCalendar.SelectedDate is { } date)
                 scheduler.DisplayDate = date;
@@ -1332,13 +1332,13 @@ public partial class MainWindow : HDevWindow
         todayButton.Click += (s, e) => gantt.ScrollToToday();
 
         var criticalToggle = new HDevToggleSwitch { OnLabel = "Chemin critique", OffLabel = "Chemin critique", ShowLabels = true };
-        criticalToggle.Toggled += (s, e) => gantt.HighlightCriticalPath = criticalToggle.IsOn;
+        criticalToggle.ValueChanged += (s, e) => gantt.HighlightCriticalPath = criticalToggle.IsChecked;
 
         var autoToggle = new HDevToggleSwitch { OnLabel = "Ordonnancement auto", OffLabel = "Ordonnancement auto", ShowLabels = true };
-        autoToggle.Toggled += (s, e) =>
+        autoToggle.ValueChanged += (s, e) =>
         {
             if (gantt.Project != null)
-                gantt.Project.AutoSchedule = autoToggle.IsOn;
+                gantt.Project.AutoSchedule = autoToggle.IsChecked;
         };
         var stressButton = new HDevButton { Text = "Test de charge (2 500 tâches)", Variant = ButtonVariant.Ghost, Size = ButtonSize.Small };
         stressButton.Click += (s, e) =>
@@ -1367,11 +1367,11 @@ public partial class MainWindow : HDevWindow
         baselineButton.Click += (s, e) =>
         {
             gantt.Project?.SetBaseline();
-            baselineToggle.IsOn = true;
+            baselineToggle.IsChecked = true;
             gantt.ShowBaseline = true;
             SetStatus("Baseline figée : déplace des tâches puis compare (barres grises = prévu)");
         };
-        baselineToggle.Toggled += (s, e) => gantt.ShowBaseline = baselineToggle.IsOn;
+        baselineToggle.ValueChanged += (s, e) => gantt.ShowBaseline = baselineToggle.IsChecked;
 
         var exportButton = new HDevButton { Text = "Export PNG", Variant = ButtonVariant.Secondary, Size = ButtonSize.Small };
         exportButton.Click += async (s, e) =>

@@ -187,14 +187,16 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
 
 | Avant | Après | Lot |
 |---|---|---|
-| CheckBox `IsChecked`, RadioButton `IsChecked`, `GroupName`, `IsThreeState` | conservés, liables dans les deux sens par défaut | E3 |
-| ToggleSwitch `IsOn` | `IsChecked` (nom Avalonia) | E3 |
-| `CheckedChanged`, `Toggled` | `ValueChanged` | E3 |
+| CheckBox `IsChecked`, RadioButton `IsChecked` | conservés, liables dans les deux sens par défaut, avec la validation de liaison | **E3, fait** |
+| `GroupName`, `IsThreeState` | conservés | — |
+| ToggleSwitch `IsOn`, `IsOnProperty` | `IsChecked`, `IsCheckedProperty` (nom Avalonia), liable dans les deux sens | **E3, fait** |
+| CheckBox et RadioButton `CheckedChanged`, ToggleSwitch `Toggled` | `ValueChanged` commun (`NewValue` porte la valeur), précédé de `ValueChanging` pour l'utilisateur | **E3, fait** |
 | `Label`, `OnLabel`, `OffLabel` | conservés (texte dessiné, plus simple qu'un `Content`) | — |
-| MonthCalendar `SelectedDate` | conservé, liable | E3 |
-| MonthCalendar `SelectedDateChanged` | `ValueChanged` | E3 |
-| Slider `Value`, `Minimum`, `Maximum` | conservés, liables | E3 |
-| Slider `ValueChanged` (`EventHandler<double>`) | `ValueChanged` commun | E3 |
+| MonthCalendar `SelectedDate` (CLR, tronqué à minuit) | StyledProperty liable dans les deux sens ; une date posée par le code garde son heure | **E3, fait** |
+| MonthCalendar `SelectedDateChanged` | `ValueChanged` | **E3, fait** |
+| Slider `Value`, `Minimum`, `Maximum` | conservés ; `Value` liable dans les deux sens, bornée par coercition (la source reçoit la borne) | **E3, fait** |
+| Slider `ValueChanged` (`EventHandler<double>`) | `ValueChanged` commun : la valeur se lit sur `e.NewValue` ou sur le contrôle | **E3, fait** |
+| — | CheckBox, RadioButton, ToggleSwitch, Slider, MonthCalendar : `IHDevEditor` (`EditValue`, `IsReadOnly`, `ErrorText`, `Validate()`, `FocusEditor()`, `ValueChanging`, `ValueChanged`), sans invite (QX-05) | **E3, fait** |
 
 ## 3. Ruptures, lot par lot
 
@@ -303,6 +305,17 @@ Le Gantt, qui édite ses dates avec HDevDateEdit, n'est pas touché par le point
    - Le code qui modifiait `Tokens` pose une nouvelle liste : `Value = [..Value, x]`, `Value = Value.Where(t => t != x).ToArray()`.
    - La saisie est le champ texte du socle, à la suite des jetons : focus, état d'erreur, `Validate()`. Les suggestions passent dans le popup du socle ; F4 et Alt+↓ les ouvrent pour la saisie en cours ; le focus qui part ailleurs les ferme.
    - **Hauteur du gabarit** (constat E0 n° 8) : 28 px pour une ligne, au lieu de 29 ; chaque ligne de jetons de plus ajoute sa hauteur. La planche « Champs » est 4 px plus courte : le champ à deux lignes perd ses 2 px de retrait vertical.
+
+15. **Contrôles de choix et calendrier sur le contrat de valeur** (QX-08 b). CheckBox, RadioButton, ToggleSwitch, Slider et MonthCalendar implémentent `IHDevEditor`, sans `IHDevFieldEditor` : ils n'ont pas d'invite. Ils restent hors du socle.
+   - Leur valeur est liable dans les deux sens par défaut, avec la validation de liaison : une erreur de la source s'affiche en infobulle, `ErrorText` la donne, `Validate()` répond faux.
+   - **`IsOn` de HDevToggleSwitch devient `IsChecked`.** En XAML, `IsOn="True"` s'écrit `IsChecked="True"`.
+   - **`CheckedChanged` (CheckBox, RadioButton), `Toggled` (ToggleSwitch), `SelectedDateChanged` (MonthCalendar) et le `ValueChanged` à `double` de Slider deviennent le `ValueChanged` commun.** Un abonnement `(s, e) => …` qui n'utilisait pas l'argument compile sans changement ; la valeur se lit sur le contrôle, ou sur `e.NewValue`.
+   - **`IsReadOnly` est nouveau** sur ces cinq contrôles : la valeur s'affiche, l'utilisateur ne la change pas (le calendrier se feuillette toujours).
+   - Un clic, une touche ou un glissé lèvent `ValueChanging` (annulable), puis `ValueChanged` d'origine Utilisateur. Le radio décoché par l'exclusivité du groupe lève un `ValueChanged` d'origine Code.
+   - Slider : `Value` est bornée par coercition à [`Minimum`, `Maximum`], et la source liée reçoit la borne. Avant, seul le setter CLR bornait ; une liaison passait outre.
+   - MonthCalendar : une date posée par le code garde son heure, sans l'afficher. Avant, elle était tronquée à minuit. Un jour choisi par l'utilisateur est à minuit.
+   - HDevDateEdit arrête le `ValueChanged` de son calendrier : jusqu'à la fenêtre, seul celui de l'éditeur remonte.
+   - HDevChip et HDevRadioCard gardent `CheckedChanged` : ils ne figurent pas dans cette table.
 
 **Corrections des applications** (`Plan-Apports.md`)
 - **APP-09.** La liste d'une ComboBox éditable à suggestion ne se rouvre plus après un choix. Une frappe rapide est complétée : la complétion se fait à chaque frappe, avant le champ, et une lettre qui remplace le suffixe proposé n'est plus prise pour un effacement.

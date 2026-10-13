@@ -1,3 +1,5 @@
+using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Interactivity;
 
 namespace HDev.UI.Controls;
@@ -113,4 +115,66 @@ public interface IHDevFieldEditor : IHDevEditor
 {
     /// <summary>Invite affichée quand la valeur est vide</summary>
     string? Placeholder { get; set; }
+}
+
+/// <summary>
+/// Le contrat de valeur pour un contrôle hors du socle (cases, bascule, radios, curseur,
+/// calendrier) : changement de l'utilisateur annulable, événement commun avec son origine,
+/// erreur de la liaison. Le contrôle déclare sa StyledProperty et délègue ici.
+/// </summary>
+internal sealed class HDevValueCore<T>
+{
+    private readonly Control _owner;
+    private readonly StyledProperty<T> _property;
+    private bool _userCommit;
+    private string? _bindingError;
+
+    public HDevValueCore(Control owner, StyledProperty<T> property)
+    {
+        _owner = owner;
+        _property = property;
+    }
+
+    /// <summary>Erreur venue de la liaison de la valeur (null = valide)</summary>
+    public string? ErrorText => _bindingError;
+
+    /// <summary>
+    /// Pose une valeur venue de l'utilisateur : ValueChanging (annulable), puis SetCurrentValue,
+    /// qui garde la liaison et met la source à jour. Faux si un abonné a annulé.
+    /// </summary>
+    public bool CommitUser(T value)
+    {
+        var current = _owner.GetValue(_property);
+        if (EqualityComparer<T>.Default.Equals(value, current))
+            return true;
+
+        var changing = new HDevValueChangingEventArgs(current, value);
+        _owner.RaiseEvent(changing);
+        if (changing.Cancel)
+            return false;
+
+        _userCommit = true;
+        try { _owner.SetCurrentValue(_property, value); }
+        finally { _userCommit = false; }
+        return true;
+    }
+
+    /// <summary>À appeler depuis OnPropertyChanged : lève ValueChanged, avec son origine</summary>
+    public void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        if (change.Property == _property)
+            _owner.RaiseEvent(new HDevValueChangedEventArgs(change.OldValue, change.NewValue,
+                _userCommit ? HDevValueOrigin.User : HDevValueOrigin.Code));
+    }
+
+    /// <summary>À appeler depuis UpdateDataValidation : garde l'erreur de la liaison, en infobulle</summary>
+    public void OnDataValidation(AvaloniaProperty property, Exception? error)
+    {
+        if (property != _property) return;
+        _bindingError = error is AggregateException many
+            ? string.Join(Environment.NewLine, many.InnerExceptions.Select(x => x.Message))
+            : error?.Message;
+        ToolTip.SetTip(_owner, _bindingError);
+        _owner.InvalidateVisual();
+    }
 }
