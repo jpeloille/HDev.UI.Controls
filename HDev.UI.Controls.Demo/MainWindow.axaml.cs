@@ -1534,13 +1534,23 @@ public partial class MainWindow : HDevWindow
         });
         toolbar.AddSeparator();
 
-        // Bascule clair/sombre à chaud
-        var darkToggle = toolbar.AddToggle("🌙", "Sombre",
-            isChecked: HDev.UI.Controls.Theme.HDevTheme.IsDark);
-        darkToggle.Click += (s, e) =>
-            HDev.UI.Controls.Theme.HDevTheme.Variant = darkToggle.IsChecked
-                ? HDev.UI.Controls.Theme.HDevThemeVariant.Dark
-                : HDev.UI.Controls.Theme.HDevThemeVariant.Light;
+        // Choix du thème à chaud : chaque clic passe au thème suivant du catalogue
+        // (Ubuntu 26, Ubuntu 26 sombre, Ardoise, Lagon, Indigo & Or, Cockpit)
+        var themes = HDev.UI.Controls.Theme.HDevThemeDefinition.All;
+        var themeIndex = 0;
+        var themeButton = toolbar.AddButton("🎨", "Thème");
+        themeButton.Tooltip = $"Thème : {themes[themeIndex].DisplayName} (clic = suivant)";
+        themeButton.Click += (s, e) =>
+        {
+            themeIndex = (themeIndex + 1) % themes.Count;
+            var theme = themes[themeIndex];
+            HDev.UI.Controls.Theme.HDevTheme.Apply(theme);
+            themeButton.Tooltip = $"Thème : {theme.DisplayName} (clic = suivant)";
+
+            var statusBar = this.FindControl<HDevStatusBar>("MainStatusBar");
+            if (statusBar != null && statusBar.Items.Count > 0)
+                statusBar.Items[0].Text = $"Thème : {theme.DisplayName}";
+        };
     }
 
     private void InitializeStatusBar()

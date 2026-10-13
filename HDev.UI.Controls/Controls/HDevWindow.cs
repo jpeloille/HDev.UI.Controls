@@ -143,10 +143,10 @@ public class HDevWindow : Window
         InitializeComponent();
     }
 
+    // Variante du thème actif : Light/Dark pour Ubuntu 26, variante propre
+    // (héritant de Light ou Dark) pour les autres thèmes du catalogue
     private void ApplyThemeVariant()
-        => RequestedThemeVariant = HDevTheme.IsDark
-            ? Avalonia.Styling.ThemeVariant.Dark
-            : Avalonia.Styling.ThemeVariant.Light;
+        => RequestedThemeVariant = HDevTheme.AvaloniaVariant;
 
     private void OnThemeVariantChanged(object? sender, EventArgs e)
     {

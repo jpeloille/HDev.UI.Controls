@@ -16,7 +16,7 @@ public enum HDevThemeVariant
 /// Palette complète d'une variante (les deux instances : Light et Dark). Record : une
 /// palette hôte se dérive d'une palette existante, <c>HDevPalette.Light with { … }</c>
 /// </summary>
-public sealed record HDevPalette
+public sealed partial record HDevPalette
 {
     // Backgrounds
     public Color BackgroundWindow { get; init; }
@@ -138,10 +138,10 @@ public sealed record HDevPalette
         TextDisabled = Color.Parse("#9A9996"),
         TextPlaceholder = Color.Parse("#8B8A8D"),
         TextOnAccent = Color.Parse("#FFFFFF"),
-        TextLink = Color.Parse("#1C71D8"),
+        TextLink = Color.Parse("#1965C1"),           // 4,6:1 sur Background.Info (#1C71D8 : 3,9)
         TextLinkHover = Color.Parse("#1A5FB4"),
         TextSuccess = Color.Parse("#1B7443"),
-        TextWarning = Color.Parse("#9C6E03"),
+        TextWarning = Color.Parse("#8A6203"),        // 4,8:1 sur Background.Warning (#9C6E03 : 4,0)
         TextError = Color.Parse("#C01C28"),
 
         AccentPrimary = Color.Parse("#E95420"),
@@ -278,19 +278,55 @@ public static class HDevTheme
     private static HDevPalette? _lightOverride;
     private static HDevPalette? _darkOverride;
 
+    // Thème du catalogue appliqué (null = mode historique Variant/SetPalettes).
+    private static HDevThemeDefinition? _theme;
+
     /// <summary>Palette active</summary>
     public static HDevPalette Current => _current;
+
+    /// <summary>
+    /// Thème du catalogue actif, ou null si la suite est pilotée par
+    /// <see cref="Variant"/> / <see cref="SetPalettes"/> (comportement historique)
+    /// </summary>
+    public static HDevThemeDefinition? Theme => _theme;
+
+    /// <summary>
+    /// Variante Avalonia à poser sur les fenêtres : celle du thème actif, sinon
+    /// Light/Dark selon <see cref="Variant"/>
+    /// </summary>
+    public static Avalonia.Styling.ThemeVariant AvaloniaVariant
+        => _theme?.AvaloniaVariant
+           ?? (IsDark ? Avalonia.Styling.ThemeVariant.Dark : Avalonia.Styling.ThemeVariant.Light);
+
+    /// <summary>
+    /// Applique un thème du catalogue (<see cref="HDevThemeDefinition.All"/>) :
+    /// palette, variante et skin Avalonia d'un seul geste, avec un seul
+    /// <see cref="VariantChanged"/> pour re-brosser la suite
+    /// </summary>
+    public static void Apply(HDevThemeDefinition theme)
+    {
+        ArgumentNullException.ThrowIfNull(theme);
+        _theme = theme;
+        _variant = theme.Variant;
+        _current = theme.Palette;
+        VariantChanged?.Invoke(null, EventArgs.Empty);
+    }
 
     /// <summary>Déclenché après un changement de variante (rebrush/relayout)</summary>
     public static event EventHandler? VariantChanged;
 
-    /// <summary>Variante active — la changer rebrande toute la suite</summary>
+    /// <summary>
+    /// Variante active — la changer rebrande toute la suite. L'affecter quitte le thème
+    /// du catalogue éventuellement appliqué, même à variante égale (Ardoise → Light =
+    /// retour à la palette claire Yaru ou injectée)
+    /// </summary>
     public static HDevThemeVariant Variant
     {
         get => _variant;
         set
         {
-            if (_variant == value) return;
+            if (_variant == value && _theme == null) return;
+            _theme = null; // retour au mode historique (palettes Yaru ou injectées)
             _variant = value;
             _current = Resolve(value);
             VariantChanged?.Invoke(null, EventArgs.Empty);
@@ -306,6 +342,7 @@ public static class HDevTheme
     /// </summary>
     public static void SetPalettes(HDevPalette? light = null, HDevPalette? dark = null)
     {
+        _theme = null;
         _lightOverride = light;
         _darkOverride = dark;
         _current = Resolve(_variant);

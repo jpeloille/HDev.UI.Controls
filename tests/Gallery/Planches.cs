@@ -24,6 +24,7 @@ static class Planches
         new("barres", "Barres et popovers — menu, ruban, barre d'outils, barre d'état, cartes, toast", 1280, Barres, BarresAfterShow),
         new("donnees", "Données — Gantt, Scheduler, Roster, MindMap", 1280, Donnees, DonneesAfterShow),
         new("documents", "Documents — HtmlView, RichEdit", 1280, Documents),
+        new("grilles", "Grilles — HDevDataGrid habillée par le thème actif", 1280, Grilles, GrillesAfterShow),
         new("bascule", "Bascule de thème à chaud dans une HDevWindow", 900, Bascule, BasculeAfterShow,
             () => new HDevWindow { Title = "Bascule" }),
     };
@@ -110,8 +111,14 @@ static class Planches
             .Select(icon => (icon.ToString(), (Control)new HDevIconButton { Icon = icon }))
             .ToArray();
 
+        // Ubuntu 26 : libellé historique (Light/Dark) ; autres thèmes : leur nom
+        var active = HDevTheme.Theme is { } theme
+                     && theme != HDevThemeDefinition.Ubuntu26 && theme != HDevThemeDefinition.Ubuntu26Dark
+            ? $"{theme.DisplayName} ({HDevTheme.Variant})"
+            : HDevTheme.Variant.ToString();
+
         return Kit.Page("Fondations",
-            $"Palette active : {HDevTheme.Variant} — contraste de chaque couleur mesuré sur Background.Panel",
+            $"Palette active : {active} — contraste de chaque couleur mesuré sur Background.Panel",
             Kit.Section("Couleurs", colors),
             Kit.Section("Typographie", new StackPanel
             {
@@ -819,8 +826,8 @@ static class Planches
     // ═══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Contenu construit dans la variante de la passe, puis rendu après bascule vers
-    /// l'autre variante : seuls les contrôles HDev qui suivent VariantChanged changent
+    /// Contenu construit dans le thème de départ, puis rendu après bascule (cf.
+    /// <see cref="BasculeTarget"/>) : seuls les contrôles HDev qui suivent VariantChanged changent
     /// (l'habillage de la planche, lui, reste figé à la construction)
     /// </summary>
     private static Control Bascule()
@@ -870,8 +877,73 @@ static class Planches
         return root;
     }
 
+    /// <summary>
+    /// Thème d'arrivée de la bascule (posé par le programme) : null = Ubuntu 26, passage
+    /// à l'autre variante ; sinon le thème du catalogue, la planche étant construite dans
+    /// l'Ubuntu 26 de variante opposée
+    /// </summary>
+    public static HDevThemeDefinition? BasculeTarget { get; set; }
+
     private static void BasculeAfterShow(Window window)
-        => HDevTheme.Variant = HDevTheme.IsDark ? HDevThemeVariant.Light : HDevThemeVariant.Dark;
+    {
+        if (BasculeTarget != null)
+            HDevTheme.Apply(BasculeTarget);
+        else
+            HDevTheme.Variant = HDevTheme.IsDark ? HDevThemeVariant.Light : HDevThemeVariant.Dark;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // GRILLES
+    // ═══════════════════════════════════════════════════════════════
+
+    public sealed record Vol(string Numero, string Depart, string Arrivee, string Avion, int Sieges, bool Confirme);
+
+    private static HDev.UI.DataGrid.HDevDataGrid? _grid;
+    private static Vol? _gridSelection;
+
+    /// <summary>
+    /// L'habillage de la grille vient du thème actif (dictionnaire de YaruDataGrid.axaml
+    /// choisi par la variante Avalonia de la fenêtre) : une grille par planche
+    /// </summary>
+    private static Control Grilles()
+    {
+        var vols = new List<Vol>
+        {
+            new("TY201", "Nouméa", "Lifou", "ATR 72", 70, true),
+            new("TY203", "Nouméa", "Maré", "ATR 72", 70, true),
+            new("TY205", "Nouméa", "Ouvéa", "ATR 42", 48, false),
+            new("TY207", "Nouméa", "Koné", "ATR 42", 48, true),
+            new("TY209", "Nouméa", "Île des Pins", "ATR 72", 70, false),
+        };
+        var grid = new HDev.UI.DataGrid.HDevDataGrid
+        {
+            Height = 330,
+            ShowFilterRow = true,
+            ShowGroupPanel = true,
+        };
+        foreach (var (field, header, width) in new[]
+                 {
+                     ("Numero", "Vol", 90.0), ("Depart", "Départ", 140.0), ("Arrivee", "Arrivée", 140.0),
+                     ("Avion", "Avion", 110.0), ("Sieges", "Sièges", 90.0), ("Confirme", "Confirmé", 100.0),
+                 })
+            grid.Columns.Add(new HDev.UI.DataGrid.Models.GridColumn { FieldName = field, Header = header, Width = new GridLength(width) });
+        grid.ItemsSource = vols;
+        _grid = grid;
+        _gridSelection = vols[1];
+
+        var theme = HDevTheme.Theme?.DisplayName ?? HDevTheme.Variant.ToString();
+        return Kit.Page("Grilles", "Fond, en-tête, alternance, sélection de ligne, ligne de filtre, zone de groupement",
+            Kit.Section(theme, grid));
+    }
+
+    // La sélection posée avant l'affichage n'est pas rendue : elle se pose une fois les lignes créées
+    private static void GrillesAfterShow(Window window)
+    {
+        if (_grid != null)
+            _grid.SelectedItem = _gridSelection;
+        _grid = null;
+        _gridSelection = null;
+    }
 
     private static Control Documents()
     {

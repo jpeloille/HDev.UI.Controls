@@ -12,7 +12,8 @@ public sealed class ThemeCollection;
 
 /// <summary>
 /// Garde-fou de contraste WCAG 2.x des palettes : texte ≥ 4,5:1, indicateurs ≥ 3:1.
-/// Couvre les palettes de la bibliothèque ET des palettes hôtes qui ne fixent pas les
+/// Couvre les six thèmes du catalogue (HDevThemeDefinition.All), les palettes Yaru par
+/// HDevTheme.Variant ET des palettes hôtes qui ne fixent pas les
 /// tokens récents (Accent.Fill…), dont les valeurs sont alors dérivées.
 /// </summary>
 [Collection(nameof(ThemeCollection))]
@@ -39,12 +40,24 @@ public sealed class ThemeContrastTests : IDisposable
     // Accent trop clair pour porter du blanc : la dérivation doit l'assombrir
     private static readonly HDevPalette Yellow = Teal with { AccentPrimary = Color.Parse("#F6D32D") };
 
-    public static TheoryData<string> CompletePalettes => new() { "Light", "Dark", "Teal" };
+    // Light/Dark : palettes Yaru par HDevTheme.Variant ; les clés du catalogue passent
+    // par HDevTheme.Apply (Ubuntu26 et Ubuntu26Dark compris)
+    private static readonly string[] Catalogue = HDevThemeDefinition.All.Select(t => t.Key).ToArray();
 
-    public static TheoryData<string> AllPalettes => new() { "Light", "Dark", "Teal", "Yellow" };
+    public static TheoryData<string> CatalogueThemes => new(Catalogue);
+
+    public static TheoryData<string> CompletePalettes => new(new[] { "Light", "Dark", "Teal" }.Concat(Catalogue));
+
+    public static TheoryData<string> AllPalettes => new(new[] { "Light", "Dark", "Teal", "Yellow" }.Concat(Catalogue));
 
     private static void Use(string palette)
     {
+        if (HDevThemeDefinition.FromKey(palette) is { } theme)
+        {
+            HDevTheme.SetPalettes();
+            HDevTheme.Apply(theme);
+            return;
+        }
         switch (palette)
         {
             case "Teal": HDevTheme.SetPalettes(light: Teal); break;
@@ -98,6 +111,16 @@ public sealed class ThemeContrastTests : IDisposable
     }
 
     [Theory, MemberData(nameof(CompletePalettes))]
+    public void StateTexts_AreReadable_OnStateBackgrounds(string palette)
+    {
+        Use(palette);
+        AssertContrast(HDevTheme.Text.Success, HDevTheme.Background.Success, 4.5, "Text.Success sur Background.Success");
+        AssertContrast(HDevTheme.Text.Warning, HDevTheme.Background.Warning, 4.5, "Text.Warning sur Background.Warning");
+        AssertContrast(HDevTheme.Text.Error, HDevTheme.Background.Error, 4.5, "Text.Error sur Background.Error");
+        AssertContrast(HDevTheme.Text.Link, HDevTheme.Background.Info, 4.5, "Text.Link sur Background.Info");
+    }
+
+    [Theory, MemberData(nameof(CompletePalettes))]
     public void Indicators_AreVisible(string palette)
     {
         Use(palette);
@@ -106,6 +129,50 @@ public sealed class ThemeContrastTests : IDisposable
             AssertContrast(HDevTheme.Accent.Primary, background, 3, "Accent.Primary");
             AssertContrast(HDevTheme.Border.FocusOuter, background, 3, "Border.FocusOuter");
         }
+    }
+
+    [Theory, MemberData(nameof(CatalogueThemes))]
+    public void Apply_SetsPaletteVariantAndAvaloniaVariant(string key)
+    {
+        var theme = HDevThemeDefinition.FromKey(key)!;
+        Use(key);
+        Assert.Same(theme, HDevTheme.Theme);
+        Assert.Same(theme.Palette, HDevTheme.Current);
+        Assert.Equal(theme.Variant, HDevTheme.Variant);
+        Assert.Equal(theme.AvaloniaVariant, HDevTheme.AvaloniaVariant);
+
+        // La variante Avalonia propre retombe sur Light ou Dark (contrôles Fluent internes)
+        var root = theme.AvaloniaVariant;
+        while (root.InheritVariant is { } parent) root = parent;
+        Assert.Equal(theme.Variant == HDevThemeVariant.Dark ? "Dark" : "Light", root.Key.ToString());
+    }
+
+    [Fact]
+    public void Variant_LeavesTheCatalogueTheme_EvenAtTheSameVariant()
+    {
+        Use("Ardoise");
+        HDevTheme.Variant = HDevThemeVariant.Light;
+        Assert.Null(HDevTheme.Theme);
+        Assert.Same(HDevPalette.Light, HDevTheme.Current);
+        Assert.Equal(Avalonia.Styling.ThemeVariant.Light, HDevTheme.AvaloniaVariant);
+    }
+
+    [Fact]
+    public void Dispose_ResetsToUbuntuLight_AfterACatalogueTheme()
+    {
+        Use("Cockpit");
+        Dispose();
+        Assert.Null(HDevTheme.Theme);
+        Assert.Same(HDevPalette.Light, HDevTheme.Current);
+        Assert.False(HDevTheme.IsDark);
+    }
+
+    [Fact]
+    public void Catalogue_HasSixThemes_WithUniqueKeys()
+    {
+        Assert.Equal(6, HDevThemeDefinition.All.Count);
+        Assert.Equal(6, Catalogue.Distinct().Count());
+        Assert.Null(HDevThemeDefinition.FromKey("Inconnu"));
     }
 
     [Fact]
