@@ -30,8 +30,8 @@ Ouverte par la mission M-04, le 13/10/2026 (lots F13, F12 en partie, début de F
 
 - **Appeler `HDevTheme.ApplyTo(this)`** dans `App.Initialize`, après le chargement du XAML.
   - C'est lui qui donne aux contrôles Fluent internes (TextBox, éditeurs de la grille, barres de défilement) l'accent du thème actif, et qui publie les pinceaux `HDev*Brush`.
-  - **Retirer le bloc `SystemAccentColor*` d'`App.axaml`.** `Application.Resources` prime sur tout le reste : un accent recopié à la main fige l'accent Ubuntu (ou celui de l'application) quel que soit le thème.
-  - Une application qui n'appelle pas `ApplyTo` garde l'accent Fluent par défaut, quel que soit le thème.
+  - **Retirer le bloc `SystemAccentColor*` d'`App.axaml`.** `ApplyTo` écrit ces clés dans le même `Application.Resources`, après le chargement du XAML : le bloc recopié à la main y est écrasé, donc inutile.
+  - Une application qui n'appelle pas `ApplyTo` garde l'accent de son `App.axaml` (ou l'accent Fluent par défaut), quel que soit le thème.
 - **Poser la variante Avalonia du thème, pas Light/Dark** : `RequestedThemeVariant = HDevTheme.AvaloniaVariant`.
   - `HDevWindow` le fait déjà. Une fenêtre qui n'en dérive pas, et qui posait `HDevTheme.IsDark ? Dark : Light`, doit passer à `AvaloniaVariant`.
   - Sans cela, la grille reste habillée en Ubuntu 26 sous Ardoise, Lagon, Indigo & Or ou Cockpit.
