@@ -4,7 +4,7 @@ Mis à jour : 13/10/2026. Équipe d'agents active depuis la relance du 06/10.
 
 Tranchées : QX-01 (oui, commit 49bbeb6), QX-03 (oui, mission M-01), QX-02 (option (b), vérifiée sur le bureau réel le 13/10, M-01 fusionnée), QX-05 (13/10 : `Placeholder` sort de `IHDevEditor`, interface propre aux éditeurs à zone de texte), QX-08 (13/10 : les 8 recommandations de m-05 pour E3, voir JOURNAL et fiche M-05), QX-09 (13/10 : `NewValue` modifiable dans le contrat commun, pour tous les éditeurs).
 
-**Orchestratrice** : `hdev-ui-controls-49` [28aee0] depuis la reprise du 13/10, cheffe d'équipe, travaille dans l'atelier (`atelier/HDev.UI.Controls`, branche `suite`). Anciens noms : `hdev-orchestration-agent-teams` [2c30b3], `orchestrate-hdev-conversations`, `hdev-ui-controls-e6`. Sessions vivantes à la reprise : `hdev-ui-controls-e2` [32ff21] (IDE, sans mission), `igor-*` (hors périmètre). Le nom suit le titre de la session : le vérifier avec `ListAgents` à chaque reprise.
+**Orchestratrice** : `hdev-ui-controls-b5` [fc5171] (le 13/10 ; avant : `hdev-ui-controls-49` [28aee0], même session), cheffe d'équipe, travaille dans l'atelier (`atelier/HDev.UI.Controls`, branche `suite`). Anciens noms : `hdev-orchestration-agent-teams` [2c30b3], `orchestrate-hdev-conversations`, `hdev-ui-controls-e6`. Sessions vivantes à la reprise : `hdev-ui-controls-e2` [32ff21] (IDE, sans mission), `igor-*` (hors périmètre). Le nom suit le titre de la session : le vérifier avec `ListAgents` à chaque reprise.
 
 ## Exécutantes
 
