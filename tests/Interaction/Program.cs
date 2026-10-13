@@ -1546,6 +1546,24 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         w.Close();
     }
 
+    // ═══ PORTAGE (E3) : l'infobulle de l'application survit à la validation ═══
+    {
+        var vmTip = new ReunionVm();
+        var cbxTip = new HDevCheckBox { Label = "Visio", DataContext = vmTip };
+        ToolTip.SetTip(cbxTip, "Aide case"); cbxTip.Bind(HDevCheckBox.IsCheckedProperty, new Avalonia.Data.Binding(nameof(ReunionVm.Visio)));
+        var tbTip = new HDevTextBox { Width = 160 }; ToolTip.SetTip(tbTip, "Aide champ");
+        var autreTip = new TextBox { Width = 100 };
+        var w = Hote(new StackPanel { Spacing = 8, Children = { cbxTip, tbTip, autreTip } });
+        vmTip.Visio = true; Pump(w);
+        tbTip.FocusEditor(); Tape(w, "x"); autreTip.Focus(); Pump(w);
+        Check($"infobulle de l'application gardée : case liée après une valeur poussée, champ après validation (lu « {ToolTip.GetTip(cbxTip)} », « {ToolTip.GetTip(tbTip)} »)",
+            Equals(ToolTip.GetTip(cbxTip), "Aide case") && Equals(ToolTip.GetTip(tbTip), "Aide champ"));
+        tbTip.SetError("Erreur"); var enErreur = ToolTip.GetTip(tbTip); tbTip.SetError(null);
+        Check("une erreur remplace l'infobulle le temps qu'elle dure, puis l'infobulle de l'application revient",
+            Equals(enErreur, "Erreur") && Equals(ToolTip.GetTip(tbTip), "Aide champ"));
+        w.Close();
+    }
+
     // ═══ PORTAGE (E3) : encapsulation, le calendrier du popup ne fait plus sortir sa valeur ═══
     {
         var de = new HDevDateEdit { Width = 160 }; var w = Hote(de);

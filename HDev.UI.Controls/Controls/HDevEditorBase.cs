@@ -803,9 +803,11 @@ public abstract class HDevEditorBase : Border
         RefreshError();
     }
 
+    private HDevErrorTip _errorTip;
+
     private void RefreshError()
     {
-        ToolTip.SetTip(this, ErrorText);
+        _errorTip.Show(this, ErrorText);
         UpdateVisualState();
     }
 

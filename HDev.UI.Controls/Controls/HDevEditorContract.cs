@@ -128,6 +128,7 @@ internal sealed class HDevValueCore<T>
     private readonly StyledProperty<T> _property;
     private bool _userCommit;
     private string? _bindingError;
+    private HDevErrorTip _tip;
 
     public HDevValueCore(Control owner, StyledProperty<T> property)
     {
@@ -174,7 +175,33 @@ internal sealed class HDevValueCore<T>
         _bindingError = error is AggregateException many
             ? string.Join(Environment.NewLine, many.InnerExceptions.Select(x => x.Message))
             : error?.Message;
-        ToolTip.SetTip(_owner, _bindingError);
+        _tip.Show(_owner, _bindingError);
         _owner.InvalidateVisual();
+    }
+}
+
+/// <summary>
+/// L'erreur d'un éditeur s'affiche en infobulle le temps qu'elle dure : l'infobulle posée par
+/// l'application est mise de côté, puis rendue quand l'erreur disparaît
+/// </summary>
+internal struct HDevErrorTip
+{
+    private bool _showing;
+    private object? _appTip;
+
+    public void Show(Control owner, string? error)
+    {
+        if (error != null)
+        {
+            if (!_showing) _appTip = ToolTip.GetTip(owner);
+            _showing = true;
+            ToolTip.SetTip(owner, error);
+        }
+        else if (_showing)
+        {
+            _showing = false;
+            ToolTip.SetTip(owner, _appTip);
+            _appTip = null;
+        }
     }
 }

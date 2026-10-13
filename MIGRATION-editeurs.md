@@ -279,6 +279,7 @@ Le Gantt, qui édite ses dates avec HDevDateEdit, n'est pas touché par le point
    - `HasError` devient lecture seule : `HasError="True"` en XAML ne compile plus. L'erreur se pose par `SetError("…")`, ou vient de la liaison. La démo est adaptée.
    - `FocusTextBox()` devient `FocusEditor()`.
    - Il reçoit les pièces du socle : `Buttons`, popup, masque, `Validate()` et `Validating`.
+   - `Text` vaut `""` par défaut et n'est jamais nul à la lecture (`string`), comme sur HDevButtonEdit ; avant, il valait `null`.
    - Aucun changement de géométrie. Le rendu du texte diffère de quelques pixels d'antialiasing, sans déplacement : le champ interne n'est plus l'enfant direct de l'hôte.
 9. **Le bouton calendrier de HDevDateEdit est un bouton d'éditeur** : `Kind = DropDown`, `Icon = Calendar`, le premier de `Buttons` (QX-08 f). L'application peut le retirer ou en ajouter d'autres. Son comportement ne change pas.
 10. **`HDevEditorButton.Icon` vaut pour tout type** : posé, il remplace le glyphe du type ; `None` (défaut) garde celui du type.
@@ -302,6 +303,7 @@ Le Gantt, qui édite ses dates avec HDevDateEdit, n'est pas touché par le point
 
 14. **HDevTokenEdit passe sur le socle** (`HDevEditorBase<IReadOnlyList<object>>`), QX-08 g.
    - `Tokens` disparaît : `Value` est la liste des jetons, jamais nulle, liable dans les deux sens. Elle n'est jamais modifiée sur place ; chaque ajout ou retrait, au clavier, par une suggestion ou par la croix d'un jeton, la remplace par une nouvelle liste, précédé de `ValueChanging` (annulable) et suivi de `ValueChanged`, dont l'ancienne et la nouvelle valeur sont deux listes distinctes. `TokensChanged` devient `ValueChanged`.
+   - Poser `Value` depuis le code vide la saisie en cours, comme l'ajout d'un jeton : le champ texte porte la saisie, pas la valeur.
    - Le code qui modifiait `Tokens` pose une nouvelle liste : `Value = [..Value, x]`, `Value = Value.Where(t => t != x).ToArray()`.
    - La saisie est le champ texte du socle, à la suite des jetons : focus, état d'erreur, `Validate()`. Les suggestions passent dans le popup du socle ; F4 et Alt+↓ les ouvrent pour la saisie en cours ; le focus qui part ailleurs les ferme.
    - **Hauteur du gabarit** (constat E0 n° 8) : 28 px pour une ligne, au lieu de 29 ; chaque ligne de jetons de plus ajoute sa hauteur. La planche « Champs » est 4 px plus courte : le champ à deux lignes perd ses 2 px de retrait vertical.
@@ -316,6 +318,8 @@ Le Gantt, qui édite ses dates avec HDevDateEdit, n'est pas touché par le point
    - MonthCalendar : une date posée par le code garde son heure, sans l'afficher. Avant, elle était tronquée à minuit. Un jour choisi par l'utilisateur est à minuit.
    - HDevDateEdit arrête le `ValueChanged` de son calendrier : jusqu'à la fenêtre, seul celui de l'éditeur remonte.
    - HDevChip et HDevRadioCard gardent `CheckedChanged` : ils ne figurent pas dans cette table.
+
+16. **L'infobulle de l'application survit aux erreurs.** Une erreur (saisie, `SetError`, liaison) s'affiche en infobulle le temps qu'elle dure, puis l'infobulle posée par l'application (`ToolTip.Tip`) revient. Avant, sur les éditeurs du socle, la première validation sans erreur (au départ du focus) l'effaçait ; HDevTextBox, qui passe sur le socle, aurait hérité du défaut. Même règle pour les contrôles de choix et le calendrier.
 
 **Écarts visuels, planches avant et après** (`tests/Gallery`, référence `avant-E3`, six thèmes) :
 - « Champs » : croix de SearchControl au glyphe `Clear` ; état Erreur de SpinEdit enfin visible (point 5) ; chevron de ComboBox et LookUpEdit 2 px plus à gauche (points 11, 13) ; champ à jetons de deux lignes 4 px plus court, d'où une planche de 1 556 px au lieu de 1 560 (point 14) ; quelques pixels d'antialiasing du texte de TextBox et de la combo, sans déplacement.
