@@ -21,7 +21,7 @@ Une coéquipière meurt avec l'orchestratrice. À la reprise, relancer la missio
 |---|---|---|---|---|---|
 | [M-01](missions/M-01.md) | E2, socle composite | `atelier/missions/M-01/` (Controls + DataGrid en lecture) | `suite-M-01` | ancien sous-agent (session du 05/10, mission finie : ne pas recréer) | **fusionnée dans `suite` le 13/10 (4f16606)** ; bureau réel fait, focus des boutons 5485892, notes bc734ed, banc 189/189, xUnit 380 ; verif-02 FUSIONNABLE ; P1/P2 et chiffres d2dd2d3 (18 commits) ; verif-01 : 7 contrôles OK ; correctif (b) f4aa045 + Échap des menus 71c7cfc, banc 187/187 ×3 ; avant cela : **FIN** : 14 commits (49bbeb6..7ce4131), banc 175/175 ×3, xUnit 380 ; vérifié par l'orchestratrice (banc ALL PASS, xUnit 380, aucune mention DevExpress ni Co-Authored-By) |
 | [M-03](missions/M-03.md) | diagnostic QX-02 (popups non maintenus sur désactivation) | `atelier/missions/M-03/` (base f666e3d, détachée) + M-01 en lecture | — | `hdev-ui-controls-2a` | 71c7cfc validé : banc 60/60, GNOME sans écran OK ; **bureau réel fait le 13/10** par une conversation de l'IDE (entrées uinput, sur M-01 d2dd2d3 puis 029009c) : close |
-| [M-02](missions/M-02.md) | retrait des mentions DevExpress dans le code | à créer au lancement | `suite-M-02` | coéquipière `m-02` (hdev-executante) | validée, débloquée par la fusion de M-01 (à lancer) |
+| [M-02](missions/M-02.md) | retrait des mentions DevExpress dans le code | `atelier/missions/M-02/` (Controls ; DataGrid en lecture) | `suite-M-02` (depuis 0adcb1e) | sous-agent hdev-executante, lancé le 13/10 par la session de l'IDE du dépôt grille (meurt avec elle : relancer depuis la fiche et la branche) | **en cours** depuis le 13/10 |
 
 ## Questions en attente de Julien
 
