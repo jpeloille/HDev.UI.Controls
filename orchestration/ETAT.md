@@ -2,7 +2,7 @@
 
 Mis à jour : 13/10/2026. Équipe d'agents active depuis la relance du 06/10.
 
-Tranchées : QX-01 (oui, commit 49bbeb6), QX-03 (oui, mission M-01), QX-02 (option (b), vérifiée sur le bureau réel le 13/10, M-01 fusionnée), QX-05 (13/10 : `Placeholder` sort de `IHDevEditor`, interface propre aux éditeurs à zone de texte).
+Tranchées : QX-01 (oui, commit 49bbeb6), QX-03 (oui, mission M-01), QX-02 (option (b), vérifiée sur le bureau réel le 13/10, M-01 fusionnée), QX-05 (13/10 : `Placeholder` sort de `IHDevEditor`, interface propre aux éditeurs à zone de texte), QX-08 (13/10 : les 8 recommandations de m-05 pour E3, voir JOURNAL et fiche M-05).
 
 **Orchestratrice** : `hdev-ui-controls-49` [28aee0] depuis la reprise du 13/10, cheffe d'équipe, travaille dans l'atelier (`atelier/HDev.UI.Controls`, branche `suite`). Anciens noms : `hdev-orchestration-agent-teams` [2c30b3], `orchestrate-hdev-conversations`, `hdev-ui-controls-e6`. Sessions vivantes à la reprise : `hdev-ui-controls-e2` [32ff21] (IDE, sans mission), `igor-*` (hors périmètre). Le nom suit le titre de la session : le vérifier avec `ListAgents` à chaque reprise.
 
@@ -23,14 +23,13 @@ Une coéquipière meurt avec l'orchestratrice. À la reprise, relancer la missio
 | [M-03](missions/M-03.md) | diagnostic QX-02 (popups non maintenus sur désactivation) | `atelier/missions/M-03/` (base f666e3d, détachée) + M-01 en lecture | — | `hdev-ui-controls-2a` | 71c7cfc validé : banc 60/60, GNOME sans écran OK ; **bureau réel fait le 13/10** par une conversation de l'IDE (entrées uinput, sur M-01 d2dd2d3 puis 029009c) : close |
 | [M-02](missions/M-02.md) | retrait des mentions DevExpress dans le code | `atelier/missions/M-02/` (Controls ; DataGrid en lecture) | `suite-M-02` (depuis 0adcb1e) | sous-agent hdev-executante, lancé le 13/10 par la session de l'IDE du dépôt grille (meurt avec elle : relancer depuis la fiche et la branche) | **fusionnée dans `suite` le 13/10 (31ce3d4)** : 23173ba, cf05236, 15198fd (commentaires seulement) ; banc 189/189, xUnit 380 ; verif-03 FUSIONNABLE ; exception : `context.md` |
 | [M-04](missions/M-04.md) | F13 (+ F12 en partie, début de F8) : catalogue de thèmes `themes-catalogue` repris sur `suite`, unifié avec `cd5e68b` | `atelier/missions/M-04/` (Controls ; DataGrid en lecture) | `suite-M-04` (depuis dd88c51) | sous-agent hdev-executante `m-04`, lancé le 13/10 par l'orchestratrice | **fusionnée dans `suite` le 13/10 (9c35aa1)** : 9acb18d..b1f8a4a + renommage `HDevThemeVariantKeys` ; banc 189/189, xUnit 422 ; verif-04 FUSIONNABLE ; écarts 1–5 validés par Julien |
-| [M-05](missions/M-05.md) | E3, portage des éditeurs existants sur le socle | `atelier/missions/M-05/` (Controls ; DataGrid en lecture) | `suite-M-05` (depuis b9573c5) | sous-agent hdev-executante `m-05`, lancé le 13/10 par l'orchestratrice | **en cours, arrêtée sur QX-08** : 8d52d25 (APP-09/10/11, n° 3), b32a627 (SpinEdit, TimeEdit), 8eca09d (SearchControl) ; banc 203/203 ×3, xUnit 422 |
+| [M-05](missions/M-05.md) | E3, portage des éditeurs existants sur le socle | `atelier/missions/M-05/` (Controls ; DataGrid en lecture) | `suite-M-05` (depuis b9573c5) | sous-agent hdev-executante `m-05`, lancé le 13/10 par l'orchestratrice | **en cours** (QX-08 validée, reprise le 13/10) : 8d52d25 (APP-09/10/11, n° 3), b32a627 (SpinEdit, TimeEdit), 8eca09d (SearchControl) ; banc 203/203 ×3, xUnit 422 |
 
 ## Questions en attente de Julien
 
 | N° | De | Question |
 |---|---|---|
 | QX-04 | 2a | Décisions ouvertes du plan maître : Q2 LiveCharts2, Q4 moteur PDF/impression, Q5 formats bureautiques, Q6 IA, Q7 22 absences proposées, Q8 absences actées à reconfirmer, Q9 licences, Q10 icônes, Q11 moteur Gantt en assembly pur, Q12 formules L25, Q13 modèle de ressources agenda/Gantt. |
-| QX-08 | m-05 | M-05 (E3), 8 choix : (a) nom de l'interface Placeholder ; (b) choix d'Avalonia et Slider dans E3 ; (c) type de `TextChanged` ; (d) `ShowPlaceholder` sans le nom tiers ; (e) noms tiers de l'ancien `Properties` ; (f) bouton calendrier de DateEdit ; (g) `Value` de TokenEdit ; (h) périmètre d'APP-12. Recommandations dans le JOURNAL. |
 | QX-06 | 2a | Proposés, non faits : note datée Q1 dans UGantt-charte.md, réalignement § 0 d'IMPROVEMENTS.md (dépôt grille), mise à jour de context.md. |
 | QX-07 | 2a | Anciens : charte HDev (proposée, non validée) ; PDF du benchmark (ONLYOFFICE ou impression Edge). |
 
