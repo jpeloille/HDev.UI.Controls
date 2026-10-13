@@ -63,7 +63,7 @@ public class HDevTabClosingEventArgs : System.ComponentModel.CancelEventArgs
 }
 
 /// <summary>
-/// Contrôle à onglets (équivalent XtraTabControl) : onglets pilule style Yaru,
+/// Contrôle à onglets : onglets pilule style Yaru,
 /// contenu hébergé, fermeture optionnelle par onglet
 /// </summary>
 public class HDevTabControl : Control

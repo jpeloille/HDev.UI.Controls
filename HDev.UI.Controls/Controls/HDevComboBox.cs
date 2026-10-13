@@ -19,7 +19,7 @@ using System.Linq;
 namespace HDev.UI.Controls;
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CLASSES DE SUPPORT (similaires à DevExpress)
+// CLASSES DE SUPPORT (items, propriétés, arguments d'événements)
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// <summary>
@@ -305,11 +305,12 @@ public class HDevQueryCloseUpEventArgs : CancelEventArgs
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PROCOMBOBOX - Clone de DevExpress ComboBoxEdit
+// HDEVCOMBOBOX - liste déroulante, éditable ou non
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// <summary>
-/// Liste déroulante style VS2022 - API compatible DevExpress ComboBoxEdit
+/// Liste déroulante style VS2022 : items, saisie libre optionnelle, boutons
+/// d'éditeur, texte d'affichage personnalisable
 /// </summary>
 public class HDevComboBox : Control
 {
@@ -343,7 +344,7 @@ public class HDevComboBox : Control
         AvaloniaProperty.Register<HDevComboBox, bool>(nameof(IsEnabled), true);
 
     // ═══════════════════════════════════════════════════════════════
-    // PROPRIÉTÉS PRINCIPALES (API DevExpress)
+    // PROPRIÉTÉS PRINCIPALES
     // ═══════════════════════════════════════════════════════════════
 
     /// <summary>
@@ -455,7 +456,7 @@ public class HDevComboBox : Control
     public bool IsPopupOpen => _isDropDownOpen;
 
     // ═══════════════════════════════════════════════════════════════
-    // ÉVÉNEMENTS (API DevExpress)
+    // ÉVÉNEMENTS
     // ═══════════════════════════════════════════════════════════════
 
     /// <summary>
@@ -513,7 +514,7 @@ public class HDevComboBox : Control
     /// </summary>
     public event EventHandler<HDevCustomDisplayTextEventArgs>? CustomDisplayText;
 
-    // NOTE : l'événement owner-draw DrawItem (API DevExpress) a été retiré tant
+    // NOTE : l'événement owner-draw DrawItem a été retiré tant
     // que le rendu des items n'est pas personnalisable — utiliser CustomDisplayText.
 
     /// <summary>
@@ -683,7 +684,7 @@ public class HDevComboBox : Control
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // MÉTHODES PUBLIQUES (API DevExpress)
+    // MÉTHODES PUBLIQUES
     // ═══════════════════════════════════════════════════════════════
 
     /// <summary>
@@ -1050,7 +1051,6 @@ public class HDevComboBox : Control
 
     /// <summary>
     /// Valide le texte saisi : item correspondant si trouvé, sinon texte libre
-    /// (comportement ComboBoxEdit DevExpress)
     /// </summary>
     private void CommitTypedText()
     {

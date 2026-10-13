@@ -175,10 +175,10 @@ public class HDevLookUpEdit : Control
             OpenDropDown();
     }
 
-    /// <summary>Ouvre le dropdown (API DevExpress)</summary>
+    /// <summary>Ouvre le dropdown par programme</summary>
     public void ShowPopup() => OpenDropDown();
 
-    /// <summary>Ferme le dropdown (API DevExpress)</summary>
+    /// <summary>Ferme le dropdown par programme</summary>
     public void ClosePopup() => CloseDropDown();
 
     private void OpenDropDown()
