@@ -14,14 +14,16 @@ Ouverte par la mission M-04, le 13/10/2026 (lots F13, F12 en partie, début de F
   |---|---|---|---|---|
   | `Ubuntu26` | Ubuntu 26 | clair | `HDevPalette.Light` | `Light` |
   | `Ubuntu26Dark` | Ubuntu 26 sombre | sombre | `HDevPalette.Dark` | `Dark` |
-  | `Ardoise` | Ardoise | clair | `HDevPalette.Ardoise` | `HDevThemeVariants.Ardoise` (hérite de `Light`) |
-  | `Lagon` | Lagon | clair | `HDevPalette.Lagon` | `HDevThemeVariants.Lagon` (hérite de `Light`) |
-  | `IndigoOr` | Indigo & Or | clair | `HDevPalette.IndigoOr` | `HDevThemeVariants.IndigoOr` (hérite de `Light`) |
-  | `Cockpit` | Cockpit | sombre | `HDevPalette.Cockpit` | `HDevThemeVariants.Cockpit` (hérite de `Dark`) |
+  | `Ardoise` | Ardoise | clair | `HDevPalette.Ardoise` | `HDevThemeVariantKeys.Ardoise` (hérite de `Light`) |
+  | `Lagon` | Lagon | clair | `HDevPalette.Lagon` | `HDevThemeVariantKeys.Lagon` (hérite de `Light`) |
+  | `IndigoOr` | Indigo & Or | clair | `HDevPalette.IndigoOr` | `HDevThemeVariantKeys.IndigoOr` (hérite de `Light`) |
+  | `Cockpit` | Cockpit | sombre | `HDevPalette.Cockpit` | `HDevThemeVariantKeys.Cockpit` (hérite de `Dark`) |
 
 - **Appliquer un thème** : `HDevTheme.Apply(HDevThemeDefinition.Lagon)`.
   - Palette, variante et variante Avalonia changent d'un seul geste, avec un seul `VariantChanged`.
   - `HDevTheme.Theme` rend le thème actif ; `HDevThemeDefinition.FromKey(clé)` le retrouve à partir d'une préférence enregistrée.
+  - **`HDevTheme.Theme` vaut `null` tant qu'aucun thème n'a été appliqué**, même si Ubuntu 26 est affiché au démarrage. Pour enregistrer une préférence, écrire `HDevTheme.Theme?.Key ?? HDevThemeDefinition.Ubuntu26.Key`, ou appeler `Apply` au démarrage.
+  - **`Apply(Ubuntu26)` (ou `Ubuntu26Dark`) pose les palettes Yaru**, sans tenir compte des palettes injectées par `SetPalettes`. Celles-ci restent mémorisées : un `Variant = …` ultérieur y revient.
 - **Le mode historique reste** : `HDevTheme.Variant` et `HDevTheme.SetPalettes(...)` gardent leur comportement.
   - Les affecter **quitte le thème du catalogue**, même à variante égale : après `Apply(Ardoise)`, `Variant = Light` revient à la palette claire Yaru (ou à celle injectée par `SetPalettes`).
   - Une application qui injecte sa propre palette (`SetPalettes`) n'est pas concernée par le catalogue.
@@ -43,6 +45,7 @@ Ouverte par la mission M-04, le 13/10/2026 (lots F13, F12 en partie, début de F
 - **Les palettes de grille posées sur une grille seule** (`Theme/DataGrid/Palettes/Lagon.axaml`, `Ardoise.axaml`, `IndigoOr.axaml`, `Cockpit.axaml`, apparues sur la branche `hdev` avec le sélecteur « Palette » de la démo) **n'existent pas sur `suite`**.
   - Équivalent : appliquer le thème du même nom ; les couleurs de grille sont identiques.
   - Aucune application ne les utilisait au 13/10/2026.
+  - Lors d'une prochaine synchronisation de `hdev` vers `suite`, ces fichiers et le sélecteur sont à écarter, pour ne pas recréer le doublon.
 - Reste dans la grille (dépôt `HDev.UI.DataGrid`, hors de cette mission) : quelques couleurs en dur dans `HDevDataGrid.axaml`, dont le liseré de la ligne sélectionnée (bleu) et des textes gris, qui ne suivent pas encore le thème. Le texte de la zone de groupement est en anglais.
 
 ## 4. Teintes corrigées (contraste)

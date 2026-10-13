@@ -7,9 +7,9 @@ namespace HDev.UI.Controls.Theme;
 /// standard Light/Dark ; les autres thèmes ont leur propre variante, qui hérite
 /// de Light ou Dark : les contrôles Fluent internes retombent sur la bonne base,
 /// et les ThemeDictionaries des skins (grille, accent Fluent) peuvent les cibler
-/// par <c>{x:Static theme:HDevThemeVariants.Ardoise}</c>.
+/// par <c>{x:Static theme:HDevThemeVariantKeys.Ardoise}</c>.
 /// </summary>
-public static class HDevThemeVariants
+public static class HDevThemeVariantKeys
 {
     public static ThemeVariant Ardoise { get; } = new("Ardoise", ThemeVariant.Light);
     public static ThemeVariant Lagon { get; } = new("Lagon", ThemeVariant.Light);
@@ -56,16 +56,16 @@ public sealed class HDevThemeDefinition
         "Ubuntu26Dark", "Ubuntu 26 sombre", HDevThemeVariant.Dark, HDevPalette.Dark, ThemeVariant.Dark);
 
     public static readonly HDevThemeDefinition Ardoise = new(
-        "Ardoise", "Ardoise", HDevThemeVariant.Light, HDevPalette.Ardoise, HDevThemeVariants.Ardoise);
+        "Ardoise", "Ardoise", HDevThemeVariant.Light, HDevPalette.Ardoise, HDevThemeVariantKeys.Ardoise);
 
     public static readonly HDevThemeDefinition Lagon = new(
-        "Lagon", "Lagon", HDevThemeVariant.Light, HDevPalette.Lagon, HDevThemeVariants.Lagon);
+        "Lagon", "Lagon", HDevThemeVariant.Light, HDevPalette.Lagon, HDevThemeVariantKeys.Lagon);
 
     public static readonly HDevThemeDefinition IndigoOr = new(
-        "IndigoOr", "Indigo & Or", HDevThemeVariant.Light, HDevPalette.IndigoOr, HDevThemeVariants.IndigoOr);
+        "IndigoOr", "Indigo & Or", HDevThemeVariant.Light, HDevPalette.IndigoOr, HDevThemeVariantKeys.IndigoOr);
 
     public static readonly HDevThemeDefinition Cockpit = new(
-        "Cockpit", "Cockpit", HDevThemeVariant.Dark, HDevPalette.Cockpit, HDevThemeVariants.Cockpit);
+        "Cockpit", "Cockpit", HDevThemeVariant.Dark, HDevPalette.Cockpit, HDevThemeVariantKeys.Cockpit);
 
     /// <summary>Catalogue, dans l'ordre de présentation</summary>
     public static IReadOnlyList<HDevThemeDefinition> All { get; } =

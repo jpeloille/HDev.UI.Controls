@@ -4,7 +4,7 @@
      ThemeDictionaries : la grille suit RequestedThemeVariant, posée à chaud par
      HDevWindow selon le thème actif (HDevTheme.Apply / HDevTheme.Variant).
      Light/Dark = Ubuntu 26 ; Ardoise, Lagon, IndigoOr, Cockpit = variantes
-     propres (HDevThemeVariants), en fin de fichier. -->
+     propres (HDevThemeVariantKeys), en fin de fichier. -->
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:theme="using:HDev.UI.Controls.Theme">
@@ -70,7 +70,7 @@
     </ResourceDictionary>
 
     <!-- ═══════════ Ardoise ═══════════ -->
-    <ResourceDictionary x:Key="{x:Static theme:HDevThemeVariants.Ardoise}">
+    <ResourceDictionary x:Key="{x:Static theme:HDevThemeVariantKeys.Ardoise}">
       <Color x:Key="DataGridHeaderBackground">#F1F3F5</Color>
       <Color x:Key="DataGridHeaderBorder">#D5DAE0</Color>
       <Color x:Key="DataGridRowAlternate">#F8F9FA</Color>
@@ -99,7 +99,7 @@
     </ResourceDictionary>
 
     <!-- ═══════════ Lagon ═══════════ -->
-    <ResourceDictionary x:Key="{x:Static theme:HDevThemeVariants.Lagon}">
+    <ResourceDictionary x:Key="{x:Static theme:HDevThemeVariantKeys.Lagon}">
       <Color x:Key="DataGridHeaderBackground">#EAF4F4</Color>
       <Color x:Key="DataGridHeaderBorder">#BFD9DA</Color>
       <Color x:Key="DataGridRowAlternate">#F5FAFA</Color>
@@ -128,7 +128,7 @@
     </ResourceDictionary>
 
     <!-- ═══════════ Indigo & Or ═══════════ -->
-    <ResourceDictionary x:Key="{x:Static theme:HDevThemeVariants.IndigoOr}">
+    <ResourceDictionary x:Key="{x:Static theme:HDevThemeVariantKeys.IndigoOr}">
       <Color x:Key="DataGridHeaderBackground">#F3F1EB</Color>
       <Color x:Key="DataGridHeaderBorder">#D9D4C7</Color>
       <Color x:Key="DataGridRowAlternate">#FAF9F6</Color>
@@ -157,7 +157,7 @@
     </ResourceDictionary>
 
     <!-- ═══════════ Cockpit (sombre) ═══════════ -->
-    <ResourceDictionary x:Key="{x:Static theme:HDevThemeVariants.Cockpit}">
+    <ResourceDictionary x:Key="{x:Static theme:HDevThemeVariantKeys.Cockpit}">
       <Color x:Key="DataGridHeaderBackground">#1C2229</Color>
       <Color x:Key="DataGridHeaderBorder">#2E3740</Color>
       <Color x:Key="DataGridRowAlternate">#181D23</Color>
