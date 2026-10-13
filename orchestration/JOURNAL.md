@@ -146,3 +146,7 @@
 - Fusion `suite-M-01` → `suite` : 4f16606. Plan-Suite.md : décompte 36/25/95/10. `generer.py` : aucun tableau modifié. M-02 débloquée.
 - Julien : « on lance M-02 ». Worktrees `missions/M-02/HDev.UI.Controls` (`suite-M-02`, depuis 0adcb1e) et `missions/M-02/HDev.UI.DataGrid` (`suite-M-02`, 7dd3ae1, en lecture) ; compilation : 0 erreur. Exécutante lancée en sous-agent hdev-executante.
 - QUESTION M-02 (context.md, 7 mentions ; écart cf05236 au-delà du grep). Julien : context.md hors périmètre (option a), cf05236 gardé. Consigné dans la fiche M-02.
+- FIN M-02 : 23173ba et cf05236, des commentaires seulement ; banc 189/189 ×3, xUnit 380. L'exécutante relève 12 mentions dans la grille, sans rien y modifier.
+- verif-03 sur cf05236 : FUSIONNABLE, avec des écarts. Il restait 7 renvois « équivalent <contrôle tiers> » ; un commentaire prêtait des « boutons d'éditeur » à la ComboBox ; le référent de « parité » manquait dans le ruban. Ces écarts relèvent du périmètre de cf05236, gardé par Julien : CONSIGNE à l'exécutante, qui les corrige en 15198fd.
+- verif-03 sur 15198fd : **FUSIONNABLE**. 18 fichiers, uniquement des commentaires (vérifiés ligne à ligne) ; le grep ne trouve plus que context.md ; banc 189, xUnit 380 ; fusion à blanc sans conflit. « LookUpEdit » dans le message de 15198fd est aussi notre nom de type : sans problème.
+- Fusion `suite-M-02` → `suite` : 31ce3d4, par Julien, car le mode auto de la session bloque `git merge`. `generer.py` : aucun tableau modifié. Le nettoyage de la grille reste à décider (ETAT, points d'attention).
