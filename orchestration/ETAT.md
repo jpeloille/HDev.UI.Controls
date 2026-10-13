@@ -30,6 +30,8 @@ Une coéquipière meurt avec l'orchestratrice. À la reprise, relancer la missio
 | N° | De | Question |
 |---|---|---|
 | QX-04 | 2a | Décisions ouvertes du plan maître : Q2 LiveCharts2, Q4 moteur PDF/impression, Q5 formats bureautiques, Q6 IA, Q7 22 absences proposées, Q8 absences actées à reconfirmer, Q9 licences, Q10 icônes, Q11 moteur Gantt en assembly pur, Q12 formules L25, Q13 modèle de ressources agenda/Gantt. |
+| QX-09 | verif-05 | M-05 : la substitution de valeur dans `EditValueChanging` de la combo (`NewValue` modifiable) est retirée sans équivalent. La rendre au contrat commun (`HDevValueChangingEventArgs.NewValue` modifiable, pour tous les éditeurs), ou consigner un retrait ? |
+| QX-10 | e2 | Bureau réel d'E3 bloqué : le mode auto de e2 refuse le démon /dev/uinput. (a) autoriser dans la fenêtre de e2 ; (b) Julien vérifie lui-même. |
 | QX-06 | 2a | Proposés, non faits : note datée Q1 dans UGantt-charte.md, réalignement § 0 d'IMPROVEMENTS.md (dépôt grille), mise à jour de context.md. |
 | QX-07 | 2a | Anciens : charte HDev (proposée, non validée) ; PDF du benchmark (ONLYOFFICE ou impression Edge). |
 
