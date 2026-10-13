@@ -1489,10 +1489,10 @@ public partial class MainWindow : HDevWindow
         var lookUp = this.FindControl<HDevLookUpEdit>("LookUpDemo");
         if (lookUp != null)
         {
-            lookUp.DataSource = Employees;
-            lookUp.DisplayMember = "FullName";
-            lookUp.ValueMember = "Id";
-            lookUp.NullText = "Choisir un employé...";
+            lookUp.ItemsSource = Employees;
+            lookUp.DisplayMemberBinding = new Avalonia.Data.Binding("FullName");
+            lookUp.SelectedValueBinding = new Avalonia.Data.Binding("Id");
+            lookUp.Placeholder = "Choisir un employé...";
             lookUp.DropDownWidth = 420;
             lookUp.Columns.Add(new HDev.UI.DataGrid.Models.GridColumn
             {
@@ -1507,8 +1507,8 @@ public partial class MainWindow : HDevWindow
             {
                 FieldName = "Department", Header = "Service", Width = new Avalonia.Controls.GridLength(120)
             });
-            lookUp.EditValueChanged += (s, e) =>
-                Show($"LookUp : Id={lookUp.EditValue} ({(lookUp.SelectedRow as Employee)?.FullName})");
+            lookUp.ValueChanged += (s, e) =>
+                Show($"LookUp : Id={lookUp.Value} ({(lookUp.SelectedItem as Employee)?.FullName})");
         }
     }
 

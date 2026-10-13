@@ -159,15 +159,16 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
 
 | Avant | Après | Lot |
 |---|---|---|
-| `DataSource` | `ItemsSource` | E3 |
-| `DisplayMember` | `DisplayMemberBinding` (liaison compilée possible) | E3 |
-| `ValueMember` | `SelectedValueBinding` | E3 |
-| `EditValue` | `Value` | E3 |
-| `SelectedRow` | `SelectedItem` | E3 |
-| `NullText` | `Placeholder` | E3 |
-| `ReadOnly` | `IsReadOnly` | E3 |
-| `EditValueChanged` | `ValueChanged` | E3 |
-| `ShowPopup()`, `ClosePopup()` | `IsDropDownOpen` | E3 (pièce du socle : E2, fait) |
+| `DataSource` | `ItemsSource`, liable | **E3, fait** |
+| `DisplayMember` (nom de propriété) | `DisplayMemberBinding` (`BindingBase`, comme `ItemsControl` : `new Binding("Nom")` en C#, `{Binding Nom, x:DataType=…}` en XAML compilé) | **E3, fait** |
+| `ValueMember` (nom de propriété) | `SelectedValueBinding` (`BindingBase`, comme `SelectingItemsControl`) | **E3, fait** |
+| `EditValue` | `Value`, liable dans les deux sens (et `IHDevEditor.EditValue`) | **E3, fait** |
+| `SelectedRow` (lecture seule) | `SelectedItem`, liable ; le poser pose la valeur | **E3, fait** |
+| `NullText` | `Placeholder` | **E3, fait** |
+| `ReadOnly` | `IsReadOnly` | **E3, fait** |
+| `EditValueChanged` | `ValueChanged` commun, avec `ValueChanging` | **E3, fait** |
+| `ShowPopup()`, `ClosePopup()` | `IsDropDownOpen` | **E3, fait** |
+| `HDevLookUpEdit : Control` (dessiné) | `HDevLookUpEdit : HDevEditorBase<object?>` : présentateur, bouton `DropDown`, popup du socle | **E3, fait** |
 | `Columns`, `DropDownRows`, `DropDownWidth` | conservés | — |
 
 ### 2.7 HDevSearchControl et HDevTokenEdit
@@ -289,6 +290,12 @@ Le Gantt, qui édite ses dates avec HDevDateEdit, n'est pas touché par le point
    - Mode éditable : un clic extérieur valide aussi la saisie, comme le départ du focus (APP-10). Avant, il fermait la liste sans valider.
    - Liste non éditable : le focus qui part ailleurs que vers la liste la ferme.
 12. **Types retirés avec l'objet `Properties`** : `HDevComboBoxProperties`, `ShowNullValuePromptOptions`, `TextEditStyles`, `HDevPopupEventArgs`, `HDevCloseUpEventArgs`, `HDevQueryCloseUpEventArgs`, `HDevEditValueChangingEventArgs`. Leurs équivalents sont dans la table 2.5. `HDevComboBoxItemCollection`, `AutoCompleteMode` et `HDevCustomDisplayTextEventArgs` restent.
+
+13. **HDevLookUpEdit passe sur le socle** (`HDevEditorBase<object?>`). La table 2.6 donne chaque nom.
+   - `DisplayMember` et `ValueMember`, des noms de propriété lus par réflexion, deviennent `DisplayMemberBinding` et `SelectedValueBinding`, des liaisons, comme dans Avalonia : `DisplayMember = "Nom"` s'écrit `DisplayMemberBinding = new Binding("Nom")`.
+   - Le rendu dessiné du champ fermé est supprimé : un présentateur affiche le libellé ou l'invite. L'allure est gardée (fond de contrôle, filet et halo de focus quand la grille est ouverte) ; le chevron est un bouton d'éditeur, 2 px plus à gauche, et ne se retourne plus.
+   - La grille passe dans le popup du socle, avec l'habillage d'avant : bordure fusionnée, coins du bas seuls, largeur `DropDownWidth` ou au moins 320 px.
+   - Entrée ouvre la grille et, ouverte, la referme ; Suppr et Retour arrière vident la valeur, d'origine Utilisateur.
 
 **Corrections des applications** (`Plan-Apports.md`)
 - **APP-09.** La liste d'une ComboBox éditable à suggestion ne se rouvre plus après un choix. Une frappe rapide est complétée : la complétion se fait à chaque frappe, avant le champ, et une lettre qui remplace le suffixe proposé n'est plus prise pour un effacement.

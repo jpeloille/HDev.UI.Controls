@@ -12,6 +12,9 @@
     <h:HDevTimeEdit x:Name="Heure" Width="120" Value="{Binding Heure}" />
     <h:HDevComboBox x:Name="Priorite" Width="160" ItemsSource="{Binding Priorites}" Value="{Binding Priorite}"
                     Placeholder="Choisir…" />
+    <h:HDevLookUpEdit x:Name="Chef" Width="200" ItemsSource="{Binding Equipiers}" Value="{Binding ChefId}"
+                      DisplayMemberBinding="{Binding Nom, x:DataType=i:Equipier}"
+                      SelectedValueBinding="{Binding Id, x:DataType=i:Equipier}" Placeholder="Chef de cabine" />
     <h:HDevSearchControl x:Name="Recherche" Width="200" Text="{Binding Recherche}" />
   </StackPanel>
 </UserControl>

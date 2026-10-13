@@ -385,13 +385,13 @@ static class Planches
         var lookUp = new HDevLookUpEdit
         {
             Width = 150,
-            NullText = "Choisir…",
-            DataSource = Crew,
-            DisplayMember = nameof(CrewMember.Name),
-            ValueMember = nameof(CrewMember.Id)
+            Placeholder = "Choisir…",
+            ItemsSource = Crew,
+            DisplayMemberBinding = new Avalonia.Data.Binding(nameof(CrewMember.Name)),
+            SelectedValueBinding = new Avalonia.Data.Binding(nameof(CrewMember.Id))
         };
         if (state != 0)
-            lookUp.EditValue = 2;
+            lookUp.Value = 2;
         switch (state)
         {
             case 2: lookUp.ForceVisualState(hovered: true); break;

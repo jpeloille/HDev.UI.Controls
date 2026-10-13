@@ -1,87 +1,102 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
+using Avalonia.Data;
 using Avalonia.Input;
+using Avalonia.Layout;
 using Avalonia.Media;
 using HDev.UI.Controls.Theme;
 using HDev.UI.DataGrid;
 using HDev.UI.DataGrid.Models;
 using System.Collections;
 using System.Collections.ObjectModel;
-using System.Globalization;
-using System.Reflection;
 
 namespace HDev.UI.Controls;
 
 /// <summary>
-/// Éditeur de recherche dans un référentiel :
-/// le dropdown est un HDevDataGrid multi-colonnes ; la sélection d'une ligne pose
-/// EditValue (ValueMember) et affiche DisplayMember
+/// Éditeur de recherche dans un référentiel, sur le socle des éditeurs : le popup est un
+/// HDevDataGrid multi-colonnes ; choisir une ligne pose <see cref="SelectedItem"/> et
+/// <see cref="Value"/> (<see cref="SelectedValueBinding"/> de la ligne, à défaut la ligne),
+/// et affiche <see cref="DisplayMemberBinding"/> de la ligne.
 /// </summary>
-public class HDevLookUpEdit : Control
+public class HDevLookUpEdit : HDevEditorBase<object?>
 {
-    private bool _isHovered;
-    private bool _isDropDownOpen;
-    private object? _editValue;
-    private object? _selectedRow;
+    public static readonly StyledProperty<object?> ValueProperty =
+        AvaloniaProperty.Register<HDevLookUpEdit, object?>(nameof(Value),
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
 
-    private readonly Popup _popup;
+    public static readonly StyledProperty<object?> SelectedItemProperty =
+        AvaloniaProperty.Register<HDevLookUpEdit, object?>(nameof(SelectedItem),
+            defaultBindingMode: BindingMode.TwoWay);
+
+    public static readonly StyledProperty<IEnumerable?> ItemsSourceProperty =
+        AvaloniaProperty.Register<HDevLookUpEdit, IEnumerable?>(nameof(ItemsSource));
+
+    public static readonly StyledProperty<BindingBase?> DisplayMemberBindingProperty =
+        AvaloniaProperty.Register<HDevLookUpEdit, BindingBase?>(nameof(DisplayMemberBinding));
+
+    public static readonly StyledProperty<BindingBase?> SelectedValueBindingProperty =
+        AvaloniaProperty.Register<HDevLookUpEdit, BindingBase?>(nameof(SelectedValueBinding));
+
     private readonly HDevDataGrid _grid;
-    private readonly HDevPopupDismissGuard _guard;
-    private bool _syncingSelection;
-
-    private static readonly Dictionary<(Type, string), PropertyInfo?> PropertyCache = new();
+    private readonly ContentControl _presenter;
+    private readonly HDevBindingEvaluator _display = new();
+    private readonly HDevBindingEvaluator _selectedValue = new();
+    private bool _syncing;
 
     // ═══════════════════════════════════════════════════════════════
     // API
     // ═══════════════════════════════════════════════════════════════
 
-    /// <summary>Source de données du référentiel</summary>
-    public IEnumerable? DataSource { get; set; }
-
-    /// <summary>Propriété affichée dans la zone de texte</summary>
-    public string DisplayMember { get; set; } = "";
-
-    /// <summary>Propriété utilisée comme valeur (EditValue) ; vide = la ligne entière</summary>
-    public string ValueMember { get; set; } = "";
-
-    /// <summary>Texte affiché quand EditValue est null</summary>
-    public string NullText { get; set; } = "";
-
-    /// <summary>Colonnes du dropdown (vides = auto-génération HDevDataGrid)</summary>
-    public ObservableCollection<GridColumn> Columns { get; } = new();
-
-    /// <summary>Nombre de lignes visibles dans le dropdown</summary>
-    public int DropDownRows { get; set; } = 7;
-
-    /// <summary>Largeur du dropdown (0 = max(largeur du contrôle, 320))</summary>
-    public double DropDownWidth { get; set; }
-
-    public bool ReadOnly { get; set; }
-
-    /// <summary>Ligne sélectionnée dans le référentiel</summary>
-    public object? SelectedRow => _selectedRow;
-
-    /// <summary>Déclenché quand EditValue change</summary>
-    public event EventHandler? EditValueChanged;
+    protected override StyledProperty<object?> ValuePropertyCore => ValueProperty;
 
     /// <summary>
-    /// Valeur de l'éditeur : ValueMember de la ligne choisie (ou la ligne si ValueMember vide).
-    /// Poser une valeur recherche la ligne correspondante dans DataSource.
+    /// Valeur : <see cref="SelectedValueBinding"/> de la ligne choisie, ou la ligne si elle n'est
+    /// pas posée. Poser une valeur recherche la ligne correspondante dans <see cref="ItemsSource"/>.
     /// </summary>
-    public object? EditValue
+    public object? Value
     {
-        get => _editValue;
-        set
-        {
-            if (Equals(_editValue, value)) return;
-
-            _editValue = value;
-            _selectedRow = FindRowByValue(value);
-            InvalidateVisual();
-            EditValueChanged?.Invoke(this, EventArgs.Empty);
-        }
+        get => GetValue(ValueProperty);
+        set => SetValueFromCode(value);
     }
+
+    /// <summary>Ligne choisie dans le référentiel ; la poser pose la valeur</summary>
+    public object? SelectedItem
+    {
+        get => GetValue(SelectedItemProperty);
+        set => SetValue(SelectedItemProperty, value);
+    }
+
+    /// <summary>Lignes du référentiel</summary>
+    public IEnumerable? ItemsSource
+    {
+        get => GetValue(ItemsSourceProperty);
+        set => SetValue(ItemsSourceProperty, value);
+    }
+
+    /// <summary>Texte affiché pour une ligne (défaut : ToString) : <c>new Binding("Nom")</c> ou liaison compilée</summary>
+    [AssignBinding]
+    public BindingBase? DisplayMemberBinding
+    {
+        get => GetValue(DisplayMemberBindingProperty);
+        set => SetValue(DisplayMemberBindingProperty, value);
+    }
+
+    /// <summary>Valeur tirée d'une ligne (défaut : la ligne entière)</summary>
+    [AssignBinding]
+    public BindingBase? SelectedValueBinding
+    {
+        get => GetValue(SelectedValueBindingProperty);
+        set => SetValue(SelectedValueBindingProperty, value);
+    }
+
+    /// <summary>Colonnes du popup (vides = auto-génération HDevDataGrid)</summary>
+    public ObservableCollection<GridColumn> Columns { get; } = new();
+
+    /// <summary>Nombre de lignes visibles dans le popup</summary>
+    public int DropDownRows { get; set; } = 7;
+
+    /// <summary>Largeur du popup (0 = max(largeur du contrôle, 320))</summary>
+    public double DropDownWidth { get; set; }
 
     // ═══════════════════════════════════════════════════════════════
     // CONSTRUCTION
@@ -89,351 +104,243 @@ public class HDevLookUpEdit : Control
 
     static HDevLookUpEdit()
     {
-        FocusableProperty.OverrideDefaultValue<HDevLookUpEdit>(true);
+        ItemsSourceProperty.Changed.AddClassHandler<HDevLookUpEdit>((x, _) => x.SyncFromValue());
+        SelectedValueBindingProperty.Changed.AddClassHandler<HDevLookUpEdit>((x, _) => x.SyncFromValue());
+        DisplayMemberBindingProperty.Changed.AddClassHandler<HDevLookUpEdit>((x, _) => { x.ResyncText(); x.RefreshPresenter(); });
+        SelectedItemProperty.Changed.AddClassHandler<HDevLookUpEdit>((x, _) => x.OnSelectedItemChanged());
     }
 
     public HDevLookUpEdit()
     {
-        Height = HDevTheme.Size.EditorHeight;
         MinWidth = 160;
 
-        _grid = new HDevDataGrid
-        {
-            SelectionMode = HDev.UI.DataGrid.Models.SelectionMode.Single
-        };
+        _grid = new HDevDataGrid { SelectionMode = HDev.UI.DataGrid.Models.SelectionMode.Single };
         _grid.SelectionChanged += OnGridSelectionChanged;
 
-        var border = new Border
+        // Grille accolée au champ, bordure fusionnée, coins du bas seuls
+        DropDown.Content = _grid;
+        DropDown.Chrome.Padding = new Thickness(0);
+        DropDown.Chrome.CornerRadius = new CornerRadius(0, 0, HDevTheme.Size.CornerRadiusSmall, HDevTheme.Size.CornerRadiusSmall);
+        DropDown.SetGap(HDevPopupPlacement.FusedBorder);
+        DropDownOpening += OnDropDownOpening;
+        DropDownOpened += (_, _) => UpdateVisualState();
+        DropDownClosed += (_, _) => UpdateVisualState();
+
+        _presenter = new ContentControl
         {
-            Background = new SolidColorBrush(HDevTheme.Background.Panel),
-            BorderBrush = new SolidColorBrush(HDevTheme.Border.Default),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(0, 0, HDevTheme.Size.CornerRadiusSmall, HDevTheme.Size.CornerRadiusSmall),
-            Child = _grid,
-            BoxShadow = new BoxShadows(new BoxShadow
-            {
-                OffsetX = 0, OffsetY = 2, Blur = 8,
-                Color = HDevTheme.Shadow.Color
-            })
+            Margin = new Thickness(HDevTheme.Size.EditorTextInset, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            FontFamily = new FontFamily(HDevTheme.Typography.FontFamily),
+            FontSize = HDevTheme.Typography.FontSizeBody,
+            IsHitTestVisible = false
         };
-
-        _popup = new Popup
-        {
-            Child = border,
-            PlacementTarget = this,
-            Placement = PlacementMode.BottomEdgeAlignedLeft,
-            // Garde maison (cf. HDevComboBox) : light dismiss instable sous GNOME/XWayland
-            IsLightDismissEnabled = false
-        };
-        HDevPopupPlacement.Apply(_popup, HDevPopupPlacement.FusedBorder);
-        _guard = new HDevPopupDismissGuard(() => _isDropDownOpen, CloseDropDown);
-        _popup.Opened += (s, e) => _guard.Install(this, _popup);
-        _popup.Closed += (s, e) => { _guard.Remove(); _isDropDownOpen = false; InvalidateVisual(); };
-    }
-
-    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
-    {
-        base.OnAttachedToVisualTree(e);
-        ((ISetLogicalParent)_popup).SetParent(this);
-        HDevTheme.VariantChanged += OnThemeVariantChanged;
-    }
-
-    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
-    {
-        HDevTheme.VariantChanged -= OnThemeVariantChanged;
-        _popup.IsOpen = false;
-        ((ISetLogicalParent)_popup).SetParent(null);
-        base.OnDetachedFromVisualTree(e);
-    }
-
-    private void OnThemeVariantChanged(object? sender, EventArgs e)
-    {
-        // Le conteneur du dropdown est construit une fois (la grille elle-même
-        // suit RequestedThemeVariant via ses ThemeDictionaries)
-        if (_popup.Child is Border border)
-        {
-            border.Background = new SolidColorBrush(HDevTheme.Background.Panel);
-            border.BorderBrush = new SolidColorBrush(HDevTheme.Border.Default);
-            border.BoxShadow = new BoxShadows(new BoxShadow
-            {
-                OffsetX = 0, OffsetY = 2, Blur = 8,
-                Color = HDevTheme.Shadow.Color
-            });
-        }
-        InvalidateVisual();
+        SetValuePresenter(_presenter);
+        Buttons.Add(new HDevEditorButton { Kind = HDevEditorButtonKind.DropDown });
+        RefreshPresenter();
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // DROPDOWN
+    // VALEUR ET LIGNE
     // ═══════════════════════════════════════════════════════════════
 
-    private void ToggleDropDown()
+    /// <summary>Valeur tirée d'une ligne : SelectedValueBinding, ou la ligne</summary>
+    private object? ValueOf(object? row)
     {
-        if (_isDropDownOpen)
-            CloseDropDown();
-        else if (!_guard.JustClosed)
-            OpenDropDown();
+        if (row == null || SelectedValueBinding is not { } binding) return row;
+        _selectedValue.Use(binding);
+        return _selectedValue.Evaluate(row);
     }
 
-    /// <summary>Ouvre le dropdown par programme</summary>
-    public void ShowPopup() => OpenDropDown();
-
-    /// <summary>Ferme le dropdown par programme</summary>
-    public void ClosePopup() => CloseDropDown();
-
-    private void OpenDropDown()
+    /// <summary>Texte affiché pour une ligne : DisplayMemberBinding, ou ToString</summary>
+    private string DisplayOf(object? row)
     {
-        if (!IsEnabled || ReadOnly || DataSource == null) return;
-
-        // Colonnes explicites (sinon auto-génération HDevDataGrid)
-        if (Columns.Count > 0 && _grid.Columns.Count == 0)
+        if (row == null) return "";
+        if (DisplayMemberBinding is { } binding)
         {
-            foreach (var column in Columns)
-                _grid.Columns.Add(column);
+            _display.Use(binding);
+            if (_display.Evaluate(row) is { } shown)
+                return shown.ToString() ?? "";
         }
-
-        _grid.ItemsSource = DataSource;
-
-        _syncingSelection = true;
-        _grid.SelectedItem = _selectedRow;
-        _syncingSelection = false;
-
-        var width = DropDownWidth > 0 ? DropDownWidth : Math.Max(Bounds.Width, 320);
-        if (_popup.Child is Border b)
-        {
-            b.Width = width;
-            b.Height = DropDownRows * 30 + 40; // lignes + en-tête
-        }
-
-        _isDropDownOpen = true;
-        _popup.IsOpen = true;
-        InvalidateVisual();
-    }
-
-    private void CloseDropDown()
-    {
-        _isDropDownOpen = false;
-        _popup.IsOpen = false;
-        InvalidateVisual();
-    }
-
-    private void OnGridSelectionChanged(object? sender, Avalonia.Controls.SelectionChangedEventArgs e)
-    {
-        if (_syncingSelection || _grid.SelectedItem == null) return;
-
-        _selectedRow = _grid.SelectedItem;
-        var newValue = string.IsNullOrEmpty(ValueMember)
-            ? _selectedRow
-            : GetMemberValue(_selectedRow, ValueMember);
-
-        if (!Equals(_editValue, newValue))
-        {
-            _editValue = newValue;
-            EditValueChanged?.Invoke(this, EventArgs.Empty);
-        }
-
-        CloseDropDown();
-        Focus();
-        InvalidateVisual();
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // RÉSOLUTION DES MEMBRES (réflexion, avec cache)
-    // ═══════════════════════════════════════════════════════════════
-
-    private static object? GetMemberValue(object? row, string member)
-    {
-        if (row == null || string.IsNullOrEmpty(member)) return row;
-
-        var key = (row.GetType(), member);
-        if (!PropertyCache.TryGetValue(key, out var prop))
-        {
-            prop = row.GetType().GetProperty(member);
-            PropertyCache[key] = prop;
-        }
-        return prop?.GetValue(row);
+        return row.ToString() ?? "";
     }
 
     private object? FindRowByValue(object? value)
     {
-        if (value == null || DataSource == null) return null;
-        if (string.IsNullOrEmpty(ValueMember)) return value;
+        if (value == null || ItemsSource == null) return null;
+        if (SelectedValueBinding == null) return value;
 
-        foreach (var row in DataSource)
-        {
-            if (Equals(GetMemberValue(row, ValueMember), value))
+        foreach (var row in ItemsSource)
+            if (Equals(ValueOf(row), value))
                 return row;
-        }
         return null;
     }
 
-    private string GetDisplayText()
-    {
-        if (_selectedRow == null)
-            return NullText;
+    protected override string FormatValue(object? value) => DisplayOf(FindRowByValue(value));
 
-        var display = GetMemberValue(_selectedRow, DisplayMember);
-        return display?.ToString() ?? _selectedRow.ToString() ?? "";
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == ValueProperty)
+            SyncFromValue();
+        else if (change.Property == PlaceholderProperty || change.Property == IsEffectivelyEnabledProperty)
+            RefreshPresenter();
+    }
+
+    /// <summary>La ligne suit la valeur</summary>
+    private void SyncFromValue()
+    {
+        _syncing = true;
+        try { SetCurrentValue(SelectedItemProperty, FindRowByValue(Value)); }
+        finally { _syncing = false; }
+        RefreshPresenter();
+    }
+
+    /// <summary>SelectedItem posé par le code ou une liaison : sa valeur devient la valeur</summary>
+    private void OnSelectedItemChanged()
+    {
+        if (_syncing) return;
+        SetCurrentValue(ValueProperty, ValueOf(SelectedItem));
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // INTERACTIONS
+    // AFFICHAGE
     // ═══════════════════════════════════════════════════════════════
 
-    /// <summary>Fige le survol pour la planche visuelle headless (tests/Gallery)</summary>
-    internal void ForceVisualState(bool hovered = false)
+    private void RefreshPresenter()
     {
-        _isHovered = hovered;
-        InvalidateVisual();
+        var row = SelectedItem;
+        _presenter.Content = row != null ? DisplayOf(row) : Placeholder;
+        _presenter.Foreground = new SolidColorBrush(!IsEffectivelyEnabled ? HDevTheme.Text.Disabled
+            : row == null ? HDevTheme.Text.Placeholder : HDevTheme.Text.Primary);
     }
 
-    protected override void OnPointerEntered(PointerEventArgs e)
+    protected override void RefreshThemeBrushes()
     {
-        _isHovered = true;
-        InvalidateVisual();
-        base.OnPointerEntered(e);
+        base.RefreshThemeBrushes();
+        RefreshPresenter();
     }
 
-    protected override void OnPointerExited(PointerEventArgs e)
+    /// <summary>Fond de contrôle, filet et halo de focus quand le popup est ouvert ou le champ focalisé</summary>
+    private protected override void ApplyVisualState(bool isEnabled, bool hasError, bool isFocused, bool isHovered)
     {
-        _isHovered = false;
-        InvalidateVisual();
-        base.OnPointerExited(e);
-    }
+        var active = isFocused || (HasDropDown && DropDown.IsOpen);
+        Color bg, border;
+        Color? halo = null;
 
-    protected override void OnPointerPressed(PointerPressedEventArgs e)
-    {
-        if (!IsEnabled || ReadOnly) return;
-        Focus();
-        ToggleDropDown();
-        e.Handled = true;
-        base.OnPointerPressed(e);
-    }
-
-    protected override void OnKeyDown(KeyEventArgs e)
-    {
-        if (!IsEnabled || ReadOnly) return;
-
-        switch (e.Key)
+        if (!isEnabled)
         {
-            case Key.F4:
-            case Key.Enter:
-            case Key.Down when e.KeyModifiers.HasFlag(KeyModifiers.Alt):
-                ToggleDropDown();
-                e.Handled = true;
-                break;
-
-            case Key.Escape when _isDropDownOpen:
-                CloseDropDown();
-                e.Handled = true;
-                break;
-
-            case Key.Delete:
-            case Key.Back:
-                if (_editValue != null)
-                {
-                    _editValue = null;
-                    _selectedRow = null;
-                    InvalidateVisual();
-                    EditValueChanged?.Invoke(this, EventArgs.Empty);
-                }
-                e.Handled = true;
-                break;
+            bg = HDevTheme.Background.ControlDisabled;
+            border = HDevTheme.Border.Disabled;
         }
-
-        base.OnKeyDown(e);
-    }
-
-    protected override void OnGotFocus(FocusChangedEventArgs e)
-    {
-        InvalidateVisual();
-        base.OnGotFocus(e);
-    }
-
-    protected override void OnLostFocus(FocusChangedEventArgs e)
-    {
-        InvalidateVisual();
-        base.OnLostFocus(e);
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // MESURE + RENDU (même langage visuel que HDevComboBox)
-    // ═══════════════════════════════════════════════════════════════
-
-    protected override Size MeasureOverride(Size availableSize)
-    {
-        var height = Height > 0 ? Height : HDevTheme.Size.EditorHeight;
-        var width = Width > 0 ? Width : (MinWidth > 0 ? MinWidth : 160);
-
-        if (double.IsInfinity(availableSize.Width))
-            return new Size(width, height);
-
-        return new Size(Math.Min(availableSize.Width, width), height);
-    }
-
-    public override void Render(DrawingContext context)
-    {
-        Crisp.BeginFrame(this);
-        var bounds = new Rect(Bounds.Size);
-        var radius = HDevTheme.Size.CornerRadiusSmall;
-
-        Color bgColor, borderColor, textColor;
-
-        if (!IsEnabled)
+        else if (hasError)
         {
-            bgColor = HDevTheme.Background.ControlDisabled;
-            borderColor = HDevTheme.Border.Disabled;
-            textColor = HDevTheme.Text.Disabled;
-        }
-        else if (_isDropDownOpen || IsFocused)
-        {
-            bgColor = HDevTheme.Background.Control;
-            borderColor = HDevTheme.Border.Focused;
-            textColor = HDevTheme.Text.Primary;
-        }
-        else if (_isHovered)
-        {
-            bgColor = HDevTheme.Background.Control;
-            borderColor = HDevTheme.Border.Hover;
-            textColor = HDevTheme.Text.Primary;
+            bg = HDevTheme.Background.Error;
+            border = HDevTheme.Accent.Error;
+            halo = HDevInputChrome.ErrorHalo;
         }
         else
         {
-            bgColor = HDevTheme.Background.Control;
-            borderColor = HDevTheme.Border.Default;
-            textColor = HDevTheme.Text.Primary;
+            bg = HDevTheme.Background.Control;
+            border = active ? HDevTheme.Border.Focused : isHovered ? HDevTheme.Border.Hover : HDevTheme.Border.Default;
+            if (active) halo = HDevInputChrome.FocusHalo;
         }
 
-        // Focus : halo des champs de saisie, en plus du filet accent
-        if (IsEnabled && (_isDropDownOpen || IsFocused))
-            HDevInputChrome.DrawHalo(context, bounds, radius, HDevInputChrome.FocusHalo);
+        Background = new SolidColorBrush(bg);
+        BorderBrush = new SolidColorBrush(border);
+        BorderThickness = new Thickness(HDevTheme.Size.BorderThin);
+        BoxShadow = halo is { } h
+            ? new BoxShadows(new BoxShadow { Blur = 0, Spread = 2, Color = h })
+            : new BoxShadows();
+    }
 
-        context.DrawRectangle(new SolidColorBrush(bgColor), null, bounds, radius, radius);
-        context.DrawRectangle(null, new Pen(new SolidColorBrush(borderColor), 1),
-            bounds.Deflate(0.5), radius, radius);
+    // ═══════════════════════════════════════════════════════════════
+    // POPUP
+    // ═══════════════════════════════════════════════════════════════
 
-        // Texte
-        var displayText = GetDisplayText();
-        var isPlaceholder = _selectedRow == null;
-        if (!string.IsNullOrEmpty(displayText))
+    private void OnDropDownOpening(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        if (ItemsSource == null)
         {
-            var text = new FormattedText(displayText, CultureInfo.CurrentCulture,
-                FlowDirection.LeftToRight, new Typeface(HDevTheme.Typography.FontFamily),
-                HDevTheme.Typography.FontSizeBody,
-                new SolidColorBrush(isPlaceholder ? HDevTheme.Text.Placeholder : textColor));
+            e.Cancel = true;
+            return;
+        }
 
-            // Même retrait texte et même chevron que HDevComboBox (24 px de bouton)
-            var textInset = HDevTheme.Size.BorderThin + HDevTheme.Size.EditorTextInset;
-            var textBounds = new Rect(textInset, 0, Math.Max(0, bounds.Width - 24 - textInset), bounds.Height);
-            using (context.PushClip(textBounds))
+        // Colonnes explicites (sinon auto-génération HDevDataGrid)
+        if (Columns.Count > 0 && _grid.Columns.Count == 0)
+            foreach (var column in Columns)
+                _grid.Columns.Add(column);
+
+        _syncing = true;
+        try
+        {
+            _grid.ItemsSource = ItemsSource;
+            _grid.SelectedItem = SelectedItem;
+        }
+        finally { _syncing = false; }
+
+        DropDown.Chrome.Width = DropDownWidth > 0 ? DropDownWidth : Math.Max(Bounds.Width, 320);
+        DropDown.Chrome.Height = DropDownRows * 30 + 40; // lignes + en-tête
+    }
+
+    private void OnGridSelectionChanged(object? sender, Avalonia.Controls.SelectionChangedEventArgs e)
+    {
+        if (_syncing || _grid.SelectedItem is not { } row) return;
+
+        CommitUserValue(ValueOf(row));
+        DropDown.Close(HDevDropDownCloseReason.Accepted);
+        FocusEditor();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // CLAVIER
+    // ═══════════════════════════════════════════════════════════════
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        if (!e.Handled && IsEffectivelyEnabled && !IsReadOnly && e.KeyModifiers == KeyModifiers.None)
+        {
+            switch (e.Key)
             {
-                context.DrawText(text, Crisp.Snap(new Point(textInset, (bounds.Height - text.Height) / 2)));
+                case Key.Enter:
+                    if (DropDown.IsOpen) DropDown.Close(HDevDropDownCloseReason.Accepted);
+                    else DropDown.Open();
+                    e.Handled = true;
+                    break;
+                case Key.Delete or Key.Back when !DropDown.IsOpen:
+                    if (Value != null) CommitUserValue(null);
+                    e.Handled = true;
+                    break;
             }
         }
+        base.OnKeyDown(e);
+    }
+}
 
-        HDevEditorGlyphButton.DrawIcon(context,
-            _isDropDownOpen ? HDevEditorIcon.ChevronUp : HDevEditorIcon.ChevronDown,
-            new Point(bounds.Width - 12, bounds.Height / 2),
-            IsEnabled ? HDevTheme.Text.Secondary : HDevTheme.Text.Disabled);
+/// <summary>
+/// Évalue une liaison sur un objet quelconque (une ligne d'un référentiel) : l'objet devient
+/// le DataContext d'un élément léger, la liaison pose sa propriété
+/// </summary>
+internal sealed class HDevBindingEvaluator : StyledElement
+{
+    public static readonly StyledProperty<object?> ResultProperty =
+        AvaloniaProperty.Register<HDevBindingEvaluator, object?>("Result");
+
+    private BindingBase? _binding;
+    private BindingExpressionBase? _expression;
+
+    /// <summary>Lie le résultat à cette liaison (sans effet si c'est déjà elle)</summary>
+    public void Use(BindingBase binding)
+    {
+        if (ReferenceEquals(binding, _binding)) return;
+        _expression?.Dispose();
+        _expression = Bind(ResultProperty, binding);
+        _binding = binding;
+    }
+
+    public object? Evaluate(object? item)
+    {
+        if (!Equals(item, DataContext)) DataContext = item;
+        return GetValue(ResultProperty);
     }
 }

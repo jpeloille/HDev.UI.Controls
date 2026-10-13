@@ -665,11 +665,10 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
     void ComboChevron(Window w, HDevComboBox e) => ClickAt(w, e.TranslatePoint(new Point(e.Bounds.Width - 12, e.Bounds.Height / 2), w)!.Value);
     Editeur AdLookUpEdit(HDevLookUpEdit e) => new()
     {
-        Controle = e, PoserValeur = v => e.EditValue = v, LireValeur = () => e.EditValue,
-        LireTexte = () => (string)typeof(HDevLookUpEdit).GetMethod("GetDisplayText",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.Invoke(e, null)!,
-        SurValeurChangee = a => e.EditValueChanged += (_, _) => a(), Focaliser = () => e.Focus(),
-        PopupOuvert = () => Champ<bool>(e, "_isDropDownOpen"), ContenuPopup = () => EnfantPopup(e)
+        Controle = e, PoserValeur = v => e.Value = v, LireValeur = () => e.Value,
+        LireTexte = () => Champ<ContentControl>(e, "_presenter").Content as string ?? "",
+        SurValeurChangee = a => e.ValueChanged += (_, _) => a(), Focaliser = () => e.FocusEditor(),
+        PopupOuvert = () => e.IsDropDownOpen, ContenuPopup = () => e.DropDown.IsOpen ? e.DropDown.Chrome : null
     };
     void ChoisirLigne(HDevLookUpEdit e, object ligne) => Champ<HDev.UI.DataGrid.HDevDataGrid>(e, "_grid").SelectedItem = ligne;
     Editeur AdSearch(HDevSearchControl e) => new()
@@ -870,7 +869,7 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
     // ─── HDevLookUpEdit ───
     {
         var refs = new List<RefE0> { new(1, "Alpha"), new(2, "Beta"), new(3, "Gamma") };
-        var lu = new HDevLookUpEdit { Width = 180, DataSource = refs, DisplayMember = "Nom", ValueMember = "Id" };
+        var lu = new HDevLookUpEdit { Width = 180, ItemsSource = refs, DisplayMemberBinding = new Avalonia.Data.Binding("Nom"), SelectedValueBinding = new Avalonia.Data.Binding("Id") };
         var ed = AdLookUpEdit(lu); int n = 0; ed.SurValeurChangee(() => n++);
         var w = Hote(lu);
         ed.PoserValeur(2); Pump(w);
@@ -887,7 +886,7 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         Touche(w, PhysicalKey.F4); ClickAt(w, horsChamp);
         Check("LookUpEdit : un clic extérieur ferme la grille", !ed.PopupOuvert());
         w.Close();
-        var bas = new HDevLookUpEdit { Width = 180, DataSource = refs, DisplayMember = "Nom", ValueMember = "Id" };
+        var bas = new HDevLookUpEdit { Width = 180, ItemsSource = refs, DisplayMemberBinding = new Avalonia.Data.Binding("Nom"), SelectedValueBinding = new Avalonia.Data.Binding("Id") };
         var edBas = AdLookUpEdit(bas); var wBas = Hote(bas, top: 380); edBas.Focaliser(); Touche(wBas, PhysicalKey.F4);
         Check("LookUpEdit : près du bas de la fenêtre, la grille s'ouvre au-dessus",
             Dessus(BoitePopup(wBas, edBas), Boite(wBas, bas)));
@@ -1110,7 +1109,7 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
             c => AdTokenEdit((HDevTokenEdit)c), (w, _) => Tape(w, "C"));
         Check($"TokenEdit : 2 px de jour dessous comme dessus ({Lu(jetons)})", jetons.Dessous == 2 && jetons.Dessus == 2);
         var refs = new List<RefE0> { new(1, "Alpha"), new(2, "Beta"), new(3, "Gamma") };
-        var lookup = Ecarts(() => new HDevLookUpEdit { Width = 180, DataSource = refs, DisplayMember = "Nom", ValueMember = "Id" },
+        var lookup = Ecarts(() => new HDevLookUpEdit { Width = 180, ItemsSource = refs, DisplayMemberBinding = new Avalonia.Data.Binding("Nom"), SelectedValueBinding = new Avalonia.Data.Binding("Id") },
             c => AdLookUpEdit((HDevLookUpEdit)c), (w, _) => Touche(w, PhysicalKey.F4));
         Check($"LookUpEdit : bordure fusionnée dessous comme dessus ({Lu(lookup)})", lookup.Dessous == -1 && lookup.Dessus == -1);
     }
@@ -1322,9 +1321,9 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
             cb400 && cb1500 && !cb.IsDropDownOpen);
         wCb.Close();
         var refs = new List<RefE0> { new(1, "Alpha"), new(2, "Beta") };
-        var lu = new HDevLookUpEdit { Width = 180, DataSource = refs, DisplayMember = "Nom", ValueMember = "Id" };
-        var wLu = Hote(lu); wLu.Activate(); lu.Focus(); Touche(wLu, PhysicalKey.F4);
-        var luOuvert = () => Champ<bool>(lu, "_isDropDownOpen");
+        var lu = new HDevLookUpEdit { Width = 180, ItemsSource = refs, DisplayMemberBinding = new Avalonia.Data.Binding("Nom"), SelectedValueBinding = new Avalonia.Data.Binding("Id") };
+        var wLu = Hote(lu); wLu.Activate(); lu.FocusEditor(); Touche(wLu, PhysicalKey.F4);
+        var luOuvert = () => lu.IsDropDownOpen;
         var lu400 = SurvitA(wLu, luOuvert, 400); var lu1500 = SurvitA(wLu, luOuvert, 1500);
         Touche(wLu, PhysicalKey.Escape);
         Check("overlay, LookUpEdit : la grille survit à 400 ms et 1,5 s de désactivation ; Échap la ferme",
@@ -1466,6 +1465,23 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
             ouverteParValeur && clicsCb == 1 && !cb.IsDropDownOpen);
         vm.Priorite = null; Pump(w);
         Check("ComboBox : valeur vide, l'invite est affichée", Equals(presentateurCb.Content, "Choisir…") && cb.SelectedItem == null);
+
+        // ─── HDevLookUpEdit ───
+        var lu = vue.FindControl<HDevLookUpEdit>("Chef")!;
+        var presentateurLu = Champ<ContentControl>(lu, "_presenter");
+        var luAffiche = Equals(presentateurLu.Content, "Teiki Brothers") && lu.SelectedItem is Equipier { Id: 2 };
+        lu.FocusEditor(); Touche(w, PhysicalKey.F4);
+        Champ<HDev.UI.DataGrid.HDevDataGrid>(lu, "_grid").SelectedItem = vm.Equipiers[2]; Pump(w);
+        var luChoix = Equals(vm.ChefId, 3) && DernierUtilisateur(lu) && !lu.IsDropDownOpen;
+        vm.ChefId = 1; Pump(w);
+        Check("LookUpEdit lié sans Mode (liaisons compilées d'affichage et de valeur) : affiché, le choix remonte (origine Utilisateur), le ViewModel redescend",
+            luAffiche && luChoix && Equals(presentateurLu.Content, "Awa Wamytan") && lu.SelectedItem == vm.Equipiers[0]
+            && journal[^1].Origin == HDevValueOrigin.Code);
+        lu.SelectedItem = vm.Equipiers[1]; Pump(w);
+        var parLigne = Equals(vm.ChefId, 2);
+        vm.ChefId = null; Pump(w);
+        Check("LookUpEdit : poser SelectedItem pose la valeur ; valeur vide, l'invite est affichée",
+            parLigne && lu.SelectedItem == null && Equals(presentateurLu.Content, "Chef de cabine"));
 
         // ─── HDevSearchControl ───
         var sc = vue.FindControl<HDevSearchControl>("Recherche")!;
