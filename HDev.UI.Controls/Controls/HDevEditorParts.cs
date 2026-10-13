@@ -770,6 +770,10 @@ internal sealed class HDevEditorDropDown
 
     public Action<HDevDropDownCloseReason>? Closed { get; set; }
 
+    /// <summary>Vrai si l'élément est dans le popup (son contenu vit en overlay, hors de l'éditeur)</summary>
+    public bool Contains(IInputElement? element)
+        => element is Visual v && (ReferenceEquals(v, _chrome) || _chrome.IsVisualAncestorOf(v));
+
     /// <summary>Vrai si la garde vient de fermer le popup sur ce même clic (anti-réouverture)</summary>
     public bool JustClosedByGuard => _guard.JustClosed;
 

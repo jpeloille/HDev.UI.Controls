@@ -166,8 +166,9 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
 
 | Avant | Après | Lot |
 |---|---|---|
-| SearchControl `Text` | conservé : c'est la valeur | — |
+| SearchControl `Text` | conservé : c'est la valeur, désormais StyledProperty liable dans les deux sens, avec `ValueChanged` commun et `ValueChanging` | **E3, fait** |
 | SearchControl `SuggestionsProvider`, `SuggestionText`, `SearchRequested`, `SuggestionChosen` | conservés | — |
+| SearchControl : liste de suggestions dans son propre popup, croix d'effacement interne | popup du socle (`IsDropDownOpen`, `DropDownOpening`…) ; bouton d'éditeur `Clear` dans `Buttons` | **E3, fait** |
 | TokenEdit `Tokens` | `Value` : la collection de jetons, liable | E3 |
 | TokenEdit `TokensChanged` | `ValueChanged` | E3 |
 | TokenEdit `TokenText`, `TokenValidator`, `SuggestionsProvider`, `Placeholder` | conservés | — |
@@ -251,6 +252,13 @@ Le Gantt, qui édite ses dates avec HDevDateEdit, n'est pas touché par le point
    - `Value` est une StyledProperty liable dans les deux sens, avec `ValueChanged` commun et `ValueChanging`.
    - C'est une heure du jour. Une durée de 24 h ou plus, ou négative, est ramenée dans [00:00, 24:00), comme avant, mais ce bornage atteint désormais la source liée.
    - **Les secondes d'une valeur posée par le code sont gardées**, sans être affichées : `Value = 17:05:42` relit `17:05:42`. Avant, elles étaient tronquées (`17:05`). Une heure tapée a 0 seconde.
+
+4. **HDevSearchControl** passe sur le contrat.
+   - `Text` est sa valeur (D3) : une StyledProperty liable dans les deux sens, avec `ValueChanged` commun et `ValueChanging`. La frappe lève un changement d'origine Utilisateur à chaque caractère, comme HDevButtonEdit.
+   - La croix d'effacement devient un bouton d'éditeur `Clear` dans `Buttons` : l'application peut le retirer ou le compléter.
+   - La liste de suggestions passe dans le popup du socle : `IsDropDownOpen` et les événements du popup valent pour elle. F4 et Alt+↓ ouvrent les suggestions du texte courant, s'il y en a. Son habillage est celui du socle : 4 px de retrait et des coins de 8 px, au lieu de 0 et 6.
+   - Le focus qui quitte le champ, ailleurs que vers la liste, ferme les suggestions. Avant, elles restaient ouvertes.
+5. **Une valeur posée par le code n'est plus réécrite par l'éditeur après coup.** Le texte réécrit depuis la valeur repassait pour une saisie au tour suivant (point 1). HDevSpinEdit à 0 décimale arrondissait ainsi `Value = 1234,5` en 1235, et effaçait l'erreur posée juste après par `SetError`. C'est corrigé ; la planche « Champs » montre désormais l'état Erreur de HDevSpinEdit.
 
 **Corrections des applications** (`Plan-Apports.md`)
 - **APP-09.** La liste d'une ComboBox éditable à suggestion ne se rouvre plus après un choix. Une frappe rapide est complétée : la complétion se fait à chaque frappe, avant le champ, et une lettre qui remplace le suffixe proposé n'est plus prise pour un effacement.

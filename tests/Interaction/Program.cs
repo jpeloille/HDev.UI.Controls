@@ -675,7 +675,7 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
     Editeur AdSearch(HDevSearchControl e) => new()
     {
         Controle = e, LireTexte = () => e.Text, Focaliser = () => { e.FocusEditor(); e.SelectAll(); },
-        PopupOuvert = () => Champ<bool>(e, "_isOpen"), ContenuPopup = () => EnfantPopup(e)
+        PopupOuvert = () => e.IsDropDownOpen, ContenuPopup = () => e.DropDown.IsOpen ? e.DropDown.Chrome : null
     };
     int NbSuggestions(HDevSearchControl e) => Champ<ListBox>(e, "_listBox").ItemCount;
     // Textes affichés par les lignes réalisées de la liste de suggestions, dans l'ordre
@@ -1429,6 +1429,22 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         vm.Heure = new TimeSpan(1, 0, 30, 0); Pump(w);
         Check($"TimeEdit : une durée de 24 h ou plus est ramenée à l'heure du jour, jusqu'au ViewModel (lu {vm.Heure})",
             te.Value == new TimeSpan(0, 30, 0) && vm.Heure == new TimeSpan(0, 30, 0) && te.Text == "00:30");
+
+        // ─── HDevSearchControl ───
+        var sc = vue.FindControl<HDevSearchControl>("Recherche")!;
+        sc.SuggestionsProvider = t => new object[] { "Gamma", "Gantt", "Grille" }
+            .Where(x => ((string)x).StartsWith(t, StringComparison.OrdinalIgnoreCase));
+        affiche = sc.Text == "Gantt" && InterieurDe(sc).Text == "Gantt" && !sc.IsDropDownOpen;
+        sc.FocusEditor(); sc.SelectAll(); Tape(w, "Gr");
+        saisie = vm.Recherche == "Gr" && DernierUtilisateur(sc) && sc.IsDropDownOpen;
+        vm.Recherche = "Grille"; Pump(w);
+        Check("SearchControl lié sans Mode : affiché, la frappe remonte (origine Utilisateur) et propose, le ViewModel redescend",
+            affiche && saisie && InterieurDe(sc).Text == "Grille" && journal[^1].Origin == HDevValueOrigin.Code);
+        sc.FocusEditor(); sc.SelectAll(); Tape(w, "Ga"); var propose = sc.IsDropDownOpen;
+        te.FocusEditor(); Pump(w);
+        Check("SearchControl : le focus qui part ailleurs ferme les suggestions, la saisie reste", propose && !sc.IsDropDownOpen && vm.Recherche == "Ga");
+        sc.Buttons.Single(b => b.Kind == HDevEditorButtonKind.Clear).PerformClick(); Pump(w);
+        Check("SearchControl : le bouton Effacer vide le texte, jusqu'au ViewModel", sc.Text == "" && vm.Recherche == "" && DernierUtilisateur(sc));
         w.Close();
     }
 

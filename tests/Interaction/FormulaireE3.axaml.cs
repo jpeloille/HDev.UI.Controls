@@ -15,9 +15,11 @@ public sealed class FormulaireE3Vm : INotifyPropertyChanged
 {
     private decimal _quantite = 12.5m;
     private TimeSpan? _heure = new TimeSpan(8, 30, 0);
+    private string? _recherche = "Gantt";
 
     public decimal Quantite { get => _quantite; set => Set(ref _quantite, value); }
     public TimeSpan? Heure { get => _heure; set => Set(ref _heure, value); }
+    public string? Recherche { get => _recherche; set => Set(ref _recherche, value); }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 

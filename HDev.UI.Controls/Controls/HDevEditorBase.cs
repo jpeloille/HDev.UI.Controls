@@ -278,6 +278,11 @@ public abstract class HDevEditorBase : Border
         InnerTextBox.LostFocus += (s, e) =>
         {
             _isFocusedState = false;
+            // Liste de suggestions : le focus qui quitte le champ, et pas vers le popup, la
+            // ferme comme un clic extérieur (APP-10)
+            if (CloseDropDownOnFocusLoss && _dropDown is { IsOpen: true } dropDown
+                && !dropDown.Contains(e.NewFocusedElement))
+                dropDown.Close(HDevDropDownCloseReason.LightDismiss);
             Validate();
             UpdateVisualState();
         };
@@ -458,6 +463,13 @@ public abstract class HDevEditorBase : Border
 
     /// <summary>L'éditeur a un popup dès sa construction (calendrier de DateEdit…)</summary>
     internal void UseDropDown() => _ = DropDown;
+
+    /// <summary>
+    /// Vrai : le popup se ferme (<see cref="HDevDropDownCloseReason.LightDismiss"/>) quand le
+    /// focus quitte le champ ailleurs que vers lui. Pour les listes de suggestions, qui suivent
+    /// la frappe : elles n'ont plus de sens hors du champ.
+    /// </summary>
+    private protected bool CloseDropDownOnFocusLoss { get; set; }
 
     private bool _syncingDropDown;
     private bool _closingIsValueAccepted;

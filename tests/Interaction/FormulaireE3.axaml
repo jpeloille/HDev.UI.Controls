@@ -9,5 +9,6 @@
   <StackPanel x:Name="Formulaire" Margin="20" Spacing="8">
     <h:HDevSpinEdit x:Name="Quantite" Width="120" Decimals="2" Minimum="0" Maximum="100" Value="{Binding Quantite}" />
     <h:HDevTimeEdit x:Name="Heure" Width="120" Value="{Binding Heure}" />
+    <h:HDevSearchControl x:Name="Recherche" Width="200" Text="{Binding Recherche}" />
   </StackPanel>
 </UserControl>
