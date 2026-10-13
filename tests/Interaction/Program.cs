@@ -1649,6 +1649,65 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         }
     }
 
+    // ═══ BANC D'USAGE RÉEL (APP-12) : un sélecteur de responsable, comme dans une application ═══
+    // Un dialogue lié à son ViewModel : intitulé, date, heureReunion, responsable (combo éditable à
+    // suggestion, le réglage par défaut), salle (LookUpEdit), case et bouton de validation. On le
+    // remplit comme un utilisateur, à la souris et au clavier, et on lit ce que reçoit le ViewModel.
+    Console.WriteLine("Banc d'usage réel (APP-12) :");
+    {
+        var personnes = new object[] { "Awa Wamytan", "Jacques Brel", "Janine Kowalski", "Jean Dupont",
+            "Lucie Martin", "Marc Tein", "Teiki Brothers", "Yves Montand" };
+        var salles = new List<RefE0> { new(1, "Hangar"), new(2, "Briefing"), new(3, "Simulateur") };
+        var vm = new ReunionVm();
+        Control Lie(Control c, AvaloniaProperty p, string chemin) { c.Bind(p, new Avalonia.Data.Binding(chemin)); return c; }
+        var intitule = (HDevTextBox)Lie(new HDevTextBox { Width = 260 }, HDevTextBox.TextProperty, nameof(ReunionVm.Intitule));
+        var dateReunion = (HDevDateEdit)Lie(new HDevDateEdit { Width = 160 }, HDevDateEdit.ValueProperty, nameof(ReunionVm.Jour));
+        var heureReunion = (HDevTimeEdit)Lie(new HDevTimeEdit { Width = 100 }, HDevTimeEdit.ValueProperty, nameof(ReunionVm.Heure));
+        var responsable = new HDevComboBox { Width = 220, TextEditStyle = HDevTextEditStyle.Editable, Placeholder = "Responsable" };
+        responsable.Items.AddRange(personnes);
+        Lie(responsable, HDevComboBox.ValueProperty, nameof(ReunionVm.Responsable));
+        var salle = (HDevLookUpEdit)Lie(new HDevLookUpEdit
+        {
+            Width = 220, ItemsSource = salles, DisplayMemberBinding = new Avalonia.Data.Binding("Nom"),
+            SelectedValueBinding = new Avalonia.Data.Binding("Id")
+        }, HDevLookUpEdit.ValueProperty, nameof(ReunionVm.SalleId));
+        var visio = (HDevCheckBox)Lie(new HDevCheckBox { Label = "Visioconférence" }, HDevCheckBox.IsCheckedProperty, nameof(ReunionVm.Visio));
+        var valide = 0; var ok = new HDevButton { Text = "Valider" }; ok.Click += (_, _) => valide++;
+        var dialogue = new StackPanel { Spacing = 6, Margin = new Thickness(12), DataContext = vm,
+            Children = { intitule, dateReunion, heureReunion, responsable, salle, visio, ok } };
+        var w = new Window { Width = 500, Height = 420, Content = dialogue }; w.Show(); Pump(w);
+
+        intitule.FocusEditor(); Tape(w, "Revue CPA");
+        Touche(w, PhysicalKey.Tab); dateReunion.SelectAll(); Tape(w, "20102026");
+        Touche(w, PhysicalKey.Tab); heureReunion.SelectAll(); Tape(w, "0930");
+        Check("APP-12 : le dialogue se remplit au clavier, Tab de champ en champ, et le ViewModel suit",
+            vm.Intitule == "Revue CPA" && vm.Jour == new DateTime(2026, 10, 20) && vm.Heure == new TimeSpan(9, 30, 0));
+
+        // APP-09 dans son usage d'origine : la liste complète, ouverte par le chevron, puis un choix
+        ComboChevron(w, responsable); var ouverte = responsable.IsDropDownOpen;
+        ClickAt(w, WindowCenter(w, ComboItem(responsable, 3)!));
+        for (var i = 0; i < 3; i++) Pump(w);
+        Check("APP-12 : responsable choisi dans la liste ouverte par le chevron ; la liste ne se rouvre pas (APP-09)",
+            ouverte && Equals(vm.Responsable, "Jean Dupont") && !responsable.IsDropDownOpen);
+
+        // Frappe rapide puis Tab : complétée, validée au départ du focus, liste fermée (APP-09, APP-10)
+        responsable.FocusEditor(); responsable.SelectAll(); w.KeyTextInput("J"); w.KeyTextInput("a"); Pump(w);
+        var complete = InterieurDe(responsable).Text; var propose = responsable.IsDropDownOpen;
+        Touche(w, PhysicalKey.Tab);
+        Check($"APP-12 : « Ja » est complété (lu « {complete} »), Tab valide la saisie et ferme la liste (APP-10)",
+            complete == "Jacques Brel" && propose && Equals(vm.Responsable, "Jacques Brel") && !responsable.IsDropDownOpen);
+
+        // Texte libre, Entrée ; puis la salle par la grille, la case à la souris, et Valider
+        responsable.FocusEditor(); responsable.SelectAll(); Tape(w, "Zoé Invitée"); Touche(w, PhysicalKey.Enter);
+        var libre = Equals(vm.Responsable, "Zoé Invitée") && !responsable.IsDropDownOpen;
+        salle.FocusEditor(); Touche(w, PhysicalKey.F4); ChoisirLigne(salle, salles[1]); Pump(w);
+        // La case se clique sur sa coche : étirée dans le dialogue, elle ne dessine rien au-delà de son libellé
+        ClickAt(w, visio.TranslatePoint(new Point(12, visio.Bounds.Height / 2), w)!.Value); ClickAt(w, WindowCenter(w, ok));
+        Check("APP-12 : texte libre accepté, salle choisie dans la grille, case cochée, Valider : le ViewModel a tout reçu",
+            libre && Equals(vm.SalleId, 2) && vm.Visio == true && valide == 1 && !salle.IsDropDownOpen);
+        w.Close();
+    }
+
     System.Globalization.CultureInfo.CurrentCulture = cultureAvant;
     System.Globalization.CultureInfo.CurrentUICulture = cultureUiAvant;
 }
@@ -1691,4 +1750,30 @@ sealed class Editeur
     public Func<Control?> ContenuPopup { get; init; } = () => null;
     public Func<bool> Valider { get; init; } = () => true;
     public Func<string?> Erreur { get; init; } = () => null;
+}
+
+/// <summary>ViewModel du banc d'usage réel (APP-12)</summary>
+sealed class ReunionVm : System.ComponentModel.INotifyPropertyChanged
+{
+    private string? _intitule = "";
+    private DateTime? _jour;
+    private TimeSpan? _heure;
+    private object? _responsable, _salleId;
+    private bool? _visio = false;
+
+    public string? Intitule { get => _intitule; set => Set(ref _intitule, value); }
+    public DateTime? Jour { get => _jour; set => Set(ref _jour, value); }
+    public TimeSpan? Heure { get => _heure; set => Set(ref _heure, value); }
+    public object? Responsable { get => _responsable; set => Set(ref _responsable, value); }
+    public object? SalleId { get => _salleId; set => Set(ref _salleId, value); }
+    public bool? Visio { get => _visio; set => Set(ref _visio, value); }
+
+    public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+
+    private void Set<T>(ref T field, T value, [System.Runtime.CompilerServices.CallerMemberName] string? name = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value)) return;
+        field = value;
+        PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(name));
+    }
 }
