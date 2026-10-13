@@ -184,7 +184,7 @@ public class HDevTimeEdit : HDevEditorBase<TimeSpan?>
     }
 
     /// <summary>Heure du jour : ramenée dans [0, 24 h)</summary>
-    protected override TimeSpan? CoerceOwnValue(TimeSpan? value) => value.HasValue ? Normalize(value.Value) : null;
+    protected override TimeSpan? OnCoerceValue(TimeSpan? value) => value.HasValue ? Normalize(value.Value) : null;
 
     /// <summary>Ramène dans [0, 24 h), en gardant les enchaînements 23:59 + 1 min -> 00:00</summary>
     private static TimeSpan Normalize(TimeSpan t)

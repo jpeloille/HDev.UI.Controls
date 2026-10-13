@@ -129,10 +129,12 @@ Le contrat est dans `HDevEditorContract.cs` (`IHDevEditor`, événements) et dan
   ```csharp
   public static readonly StyledProperty<DateTime?> ValueProperty =
       AvaloniaProperty.Register<HDevDateEdit, DateTime?>(nameof(Value),
-          defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
+          defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true, coerce: CoerceThroughChanging);
   protected override StyledProperty<DateTime?> ValuePropertyCore => ValueProperty;
   public DateTime? Value { get => GetValue(ValueProperty); set => SetValueFromCode(value); }
   ```
+
+  **`coerce: CoerceThroughChanging` est obligatoire** (depuis E3, QX-09 et QX-11). C'est cette coercition qui lève `ValueChanging` pour tout changement, applique la valeur substituée et réécrit vers la source d'une liaison une valeur refusée ou ramenée à la valeur courante. Un éditeur dérivé qui l'omet perd ces fonctions sans erreur de compilation. Sa coercition propre (bornes, plage) passe par le crochet protégé `OnCoerceValue`, nommé comme dans Avalonia.
 
   Depuis E2 (décision du 05/10/2026), la couche typée ne déclare plus de `Value` public : l'éditeur concret déclare sa propriété sous le nom D3, `Value`, ou `Text` pour un éditeur de texte (HDevButtonEdit surcharge le `Text` du socle). Il n'y a ainsi qu'un nom par valeur.
 
@@ -144,7 +146,7 @@ Le contrat est dans `HDevEditorContract.cs` (`IHDevEditor`, événements) et dan
 - **Les événements.**
   - `ValueChanged` est routé et commun (`HDevEditor.ValueChangedEvent`). Il est levé pour le code comme pour l'utilisateur, ce qui règle le constat E0 n° 1 pour les éditeurs portés.
   - `ValueChanging` est annulable, et réservé aux changements de l'utilisateur. Une valeur du code ou de la source ne s'annule pas : elle se valide.
-    - **Révisé le 13/10/2026 (QX-09)** : `ValueChanging` est levé pour tout changement, utilisateur, code ou liaison, depuis la coercition de la propriété de valeur ; son `NewValue` est modifiable, et la valeur substituée repasse par la coercition propre de l'éditeur (`MIGRATION-editeurs.md`, 1.2).
+    - **Révisé le 13/10/2026 (QX-09, QX-11)** : `ValueChanging` est levé pour tout changement, utilisateur, code ou liaison, depuis la coercition de la propriété de valeur ; son `NewValue` est modifiable, et la valeur substituée repasse par la coercition propre de l'éditeur (`OnCoerceValue`). Une valeur de la source refusée, ramenée à l'ancienne ou bornée à la valeur courante est réécrite vers la source (`MIGRATION-editeurs.md`, 1.2).
 - **Les erreurs.** Il y a deux sources, gardées à part : la saisie et la liaison.
   - L'affichage montre la saisie d'abord.
   - Une saisie valide n'efface que l'erreur de saisie. L'erreur du ViewModel reste jusqu'à ce que la source la retire (vérifié).

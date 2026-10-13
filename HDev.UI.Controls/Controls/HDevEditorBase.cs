@@ -883,7 +883,7 @@ public abstract class HDevEditorBase : Border
 /// <code>
 /// public static readonly StyledProperty&lt;DateTime?&gt; ValueProperty =
 ///     AvaloniaProperty.Register&lt;HDevDateEdit, DateTime?&gt;(nameof(Value),
-///         defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
+///         defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true, coerce: CoerceThroughChanging);
 /// protected override StyledProperty&lt;DateTime?&gt; ValuePropertyCore => ValueProperty;
 /// public DateTime? Value { get => GetValue(ValueProperty); set => SetValueFromCode(value); }
 /// </code>
@@ -893,7 +893,7 @@ public abstract class HDevEditorBase<T> : HDevEditorBase, IHDevFieldEditor
     private bool _userCommit;
     private bool _userCommitFromText;
     private T _requested = default!;
-    private bool _raisingChanging;
+    private HDevValueChanging.State _changingState;
 
     /// <summary>La StyledProperty <c>Value</c> de l'éditeur concret</summary>
     protected abstract StyledProperty<T> ValuePropertyCore { get; }
@@ -932,21 +932,24 @@ public abstract class HDevEditorBase<T> : HDevEditorBase, IHDevFieldEditor
     }
 
     /// <summary>
-    /// Coercition de la propriété de valeur, que chaque éditeur déclare à son enregistrement
-    /// (<c>coerce: CoerceThroughChanging</c>) : la coercition propre à l'éditeur
-    /// (<see cref="CoerceOwnValue"/>), puis ValueChanging, levé pour tout changement (utilisateur,
-    /// code, liaison), dont la valeur substituée repasse par la coercition propre (QX-09). La
-    /// valeur rendue est celle que prend la propriété, et que reçoit une source liée.
+    /// Coercition de la propriété de valeur, que chaque éditeur déclare à son enregistrement :
+    /// <code>AvaloniaProperty.Register&lt;MonEditeur, T&gt;(nameof(Value), …, coerce: CoerceThroughChanging)</code>
+    /// <b>Obligatoire</b> : sans elle, l'éditeur perd ValueChanging, sans erreur de compilation.
+    /// Elle applique la coercition propre à l'éditeur (<see cref="OnCoerceValue"/>), puis lève
+    /// ValueChanging pour tout changement (utilisateur, code, liaison) ; la valeur substituée
+    /// repasse par <see cref="OnCoerceValue"/> (QX-09). La valeur rendue est celle que prend la
+    /// propriété, et que reçoit une source liée ; une valeur refusée ou ramenée à la valeur
+    /// courante y est réécrite (QX-11).
     /// </summary>
     protected static T CoerceThroughChanging(AvaloniaObject sender, T value)
     {
         var editor = (HDevEditorBase<T>)sender;
-        return HDevValueChanging.Coerce(editor, editor.GetValue(editor.ValuePropertyCore), value,
-            editor.CoerceOwnValue, ref editor._raisingChanging);
+        return HDevValueChanging.Coerce(editor, editor.ValuePropertyCore, value, editor.OnCoerceValue,
+            ref editor._changingState);
     }
 
     /// <summary>Coercition propre à l'éditeur : bornes, plage (défaut : aucune)</summary>
-    protected virtual T CoerceOwnValue(T value) => value;
+    protected virtual T OnCoerceValue(T baseValue) => baseValue;
 
     /// <summary>
     /// Pose une valeur venue de l'utilisateur par SetCurrentValue, qui garde les liaisons en place

@@ -1,3 +1,4 @@
+using Avalonia.Data;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
@@ -50,7 +51,11 @@ public class HDevValueChangedEventArgs : RoutedEventArgs
 /// sa propre coercition (bornes, plage), l'affiche, la transmet à la source liée et la donne à
 /// <c>ValueChanged</c>. Une valeur d'un autre type que celle de l'éditeur est ignorée.</item>
 /// <item>Substituer l'ancienne valeur, ou poser <see cref="Cancel"/>, annule le changement :
-/// la valeur reste, le texte y revient, aucun <c>ValueChanged</c>.</item>
+/// la valeur reste, le texte y revient, aucun <c>ValueChanged</c>. Une source liée dans les deux
+/// sens qui avait posé la valeur refusée reçoit la valeur gardée (QX-11).</item>
+/// <item>Ne pas poser la valeur de l'éditeur depuis un gestionnaire : le changement imbriqué
+/// et le changement en cours lèveraient deux <c>ValueChanged</c>, le second avec une ancienne
+/// valeur fausse. On écrit <see cref="NewValue"/>.</item>
 /// </list>
 /// </summary>
 public class HDevValueChangingEventArgs : RoutedEventArgs
@@ -78,27 +83,60 @@ public class HDevValueChangingEventArgs : RoutedEventArgs
 /// </summary>
 internal static class HDevValueChanging
 {
-    /// <param name="own">La coercition propre à l'éditeur (bornes…), appliquée avant et après</param>
-    public static T Coerce<T>(Interactive owner, T current, T candidate, Func<T, T>? own, ref bool raising)
+    /// <summary>État de la coercition d'un éditeur : garde contre la réentrance</summary>
+    internal struct State
     {
+        /// <summary>Vrai pendant que les gestionnaires de ValueChanging s'exécutent</summary>
+        public bool Raising;
+
+        /// <summary>Vrai pendant la réécriture de la valeur gardée vers la source</summary>
+        public bool WritingBack;
+    }
+
+    /// <param name="own">La coercition propre à l'éditeur (bornes…), appliquée avant et après</param>
+    public static T Coerce<T>(Control owner, StyledProperty<T> property, T candidate, Func<T, T>? own, ref State state)
+    {
+        var comparer = EqualityComparer<T>.Default;
+        var current = owner.GetValue(property);
         var coerced = own != null ? own(candidate) : candidate;
+        var result = coerced;
+
         // Un changement fait par un gestionnaire de ValueChanging ne relève pas l'événement
-        if (raising || EqualityComparer<T>.Default.Equals(coerced, current))
-            return coerced;
+        if (!state.Raising && !state.WritingBack && !comparer.Equals(coerced, current))
+        {
+            var changing = new HDevValueChangingEventArgs(current, coerced);
+            state.Raising = true;
+            try { owner.RaiseEvent(changing); }
+            finally { state.Raising = false; }
 
-        var changing = new HDevValueChangingEventArgs(current, coerced);
-        raising = true;
-        try { owner.RaiseEvent(changing); }
-        finally { raising = false; }
+            if (changing.Cancel)
+                result = current;
+            else if (!Equals(changing.NewValue, coerced))
+            {
+                // Valeur substituée : du type de l'éditeur (nul permis s'il l'admet), sinon ignorée
+                var substituted = changing.NewValue is T t ? t
+                    : changing.NewValue is null && default(T) is null ? default! : coerced;
+                result = own != null ? own(substituted) : substituted;
+            }
+        }
 
-        if (changing.Cancel)
-            return current;
-        if (Equals(changing.NewValue, coerced))
-            return coerced;
-        // Valeur substituée : du type de l'éditeur (nul permis s'il l'admet), sinon ignorée
-        var substituted = changing.NewValue is T t ? t
-            : changing.NewValue is null && default(T) is null ? default! : coerced;
-        return own != null ? own(substituted) : substituted;
+        // La valeur demandée est refusée, ramenée à l'ancienne ou bornée à la valeur courante :
+        // la propriété ne change pas, et Avalonia ne réécrit donc pas la source d'une liaison
+        // dans les deux sens, qui garderait la valeur refusée. La valeur gardée y est réécrite
+        // ici (sans effet si la source l'a déjà : changement du code, d'un SetCurrentValue)
+        if (!state.WritingBack && comparer.Equals(result, current) && !comparer.Equals(result, candidate))
+            WriteBack(owner, property, ref state);
+
+        return result;
+    }
+
+    private static void WriteBack(Control owner, AvaloniaProperty property, ref State state)
+    {
+        if (BindingOperations.GetBindingExpressionBase(owner, property) is not { } binding)
+            return;
+        state.WritingBack = true;
+        try { binding.UpdateSource(); }
+        finally { state.WritingBack = false; }
     }
 }
 
@@ -178,14 +216,16 @@ internal sealed class HDevValueCore<T>
     /// <summary>Erreur venue de la liaison de la valeur (null = valide)</summary>
     public string? ErrorText => _bindingError;
 
-    private bool _raising;
+    private HDevValueChanging.State _state;
 
     /// <summary>
-    /// Coercition de la propriété de valeur, à déclarer à son enregistrement : la coercition
-    /// propre au contrôle, puis ValueChanging (annulable, valeur substituable), pour tout changement
+    /// Coercition de la propriété de valeur, à déclarer à son enregistrement
+    /// (<c>coerce: (o, v) => ((MonControle)o).Core.Coerce(v)</c>) : la coercition propre au
+    /// contrôle, puis ValueChanging (annulable, valeur substituable), pour tout changement. Sans
+    /// cette déclaration, le contrôle perd ValueChanging, sans erreur de compilation.
     /// </summary>
     public T Coerce(T value, Func<T, T>? own = null)
-        => HDevValueChanging.Coerce(_owner, _owner.GetValue(_property), value, own, ref _raising);
+        => HDevValueChanging.Coerce(_owner, _property, value, own, ref _state);
 
     /// <summary>
     /// Pose une valeur venue de l'utilisateur par SetCurrentValue, qui garde la liaison et met la

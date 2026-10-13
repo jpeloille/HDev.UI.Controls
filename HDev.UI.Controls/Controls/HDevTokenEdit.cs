@@ -92,7 +92,7 @@ public class HDevTokenEdit : HDevEditorBase<IReadOnlyList<object>>
     }
 
     /// <summary>Jamais nulle : une liste vide à la place</summary>
-    protected override IReadOnlyList<object> CoerceOwnValue(IReadOnlyList<object> value) => value ?? Array.Empty<object>();
+    protected override IReadOnlyList<object> OnCoerceValue(IReadOnlyList<object> value) => value ?? Array.Empty<object>();
 
     private string GetTokenText(object token) => TokenText?.Invoke(token) ?? token.ToString() ?? "";
 

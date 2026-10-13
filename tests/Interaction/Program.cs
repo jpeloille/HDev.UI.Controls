@@ -1552,20 +1552,21 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
     // ValueChanged. Une substitution par l'ancienne valeur vaut une annulation.
     Console.WriteLine("Substitution de la valeur (QX-09) :");
     {
-        // Éditeur de saisie : SpinEdit, au clavier, puis une substitution hors bornes
-        var sp = new HDevSpinEdit { Width = 120, Decimals = 2, Increment = 1, Minimum = 0, Maximum = 100 };
+        // Éditeur de saisie : SpinEdit, au clavier puis au code, dans les bornes puis au-delà
+        var sp = new HDevSpinEdit { Width = 120, Decimals = 2, Increment = 15, Minimum = 0, Maximum = 100 };
         var w = Hote(sp); sp.Value = 10m; Pump(w);
         var recus = new List<HDevValueChangedEventArgs>(); sp.ValueChanged += (_, e) => recus.Add(e);
         EventHandler<HDevValueChangingEventArgs> double_ = (_, e) => { if (e.NewValue is decimal d) e.NewValue = d * 2; };
         sp.ValueChanging += double_;
         sp.FocusEditor(); Touche(w, PhysicalKey.ArrowUp);
-        var auClavier = sp.Value == 22m && InterieurDe(sp).Text == "22,00" && recus.Count == 1 && Equals(recus[0].NewValue, 22m);
+        var auClavier = sp.Value == 50m && InterieurDe(sp).Text == "50,00" && recus.Count == 1 && Equals(recus[0].NewValue, 50m);
         sp.FocusEditor(); Touche(w, PhysicalKey.ArrowUp);
-        Check($"SpinEdit : la valeur substituée est prise, affichée et levée ; hors bornes, elle repasse par le bornage (lu {sp.Value})",
-            auClavier && sp.Value == 46m && Equals(recus[^1].NewValue, 46m));
-        sp.Value = 60m; Pump(w);
-        Check($"SpinEdit : la substitution vaut aussi pour une valeur posée par le code, bornée à 100 (lu {sp.Value})",
-            sp.Value == 100m && InterieurDe(sp).Text == "100,00");
+        Check($"SpinEdit au clavier : la valeur substituée est prise, affichée et levée ; hors bornes (65 × 2), elle repasse par le bornage (lu {sp.Value})",
+            auClavier && sp.Value == 100m && InterieurDe(sp).Text == "100,00" && Equals(recus[^1].NewValue, 100m));
+        sp.Value = 30m; Pump(w); var parCode = sp.Value == 60m && InterieurDe(sp).Text == "60,00";
+        sp.Value = 70m; Pump(w);
+        Check($"SpinEdit au code : la substitution vaut aussi, et repasse par le bornage (lu {sp.Value})",
+            parCode && sp.Value == 100m && InterieurDe(sp).Text == "100,00");
         sp.ValueChanging -= double_;
         EventHandler<HDevValueChangingEventArgs> garde = (_, e) => e.NewValue = e.OldValue;
         sp.ValueChanging += garde; var nRecus = recus.Count;
@@ -1579,7 +1580,7 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         sp.FocusEditor(); Touche(w, PhysicalKey.ArrowDown); sp.Value = 50m; Pump(w); sp.Value = 50m; Pump(w);
         sp.ValueChanging -= compte;
         Check($"ValueChanging levé une fois par changement, au clavier comme au code, pas pour une valeur inchangée (lu {annonces.Count})",
-            annonces.SequenceEqual(new (object?, object?)[] { (100m, 99m), (99m, 50m) }));
+            annonces.SequenceEqual(new (object?, object?)[] { (100m, 85m), (85m, 50m) }));
         w.Close();
     }
     {
@@ -1624,6 +1625,37 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         vm.Quantite = 41m; Pump(w);
         Check($"liaison TwoWay : la source reçoit la valeur substituée, après une saisie comme après sa propre valeur (lu {vm.Quantite})",
             parUtilisateur && sp.Value == 45m && vm.Quantite == 45m && sp.Text == "45,00");
+        w.Close();
+    }
+    {
+        // Liaison TwoWay : une valeur de la source refusée, ramenée à l'ancienne ou bornée à la
+        // valeur courante ne laisse pas la source diverger du contrôle (QX-11)
+        var vm = new FormulaireE3Vm();
+        var vue = new FormulaireE3 { DataContext = vm };
+        var w = new Window { Width = 500, Height = 1100, Content = vue }; w.Show(); Pump(w);
+        var sp = vue.FindControl<HDevSpinEdit>("Quantite")!;
+        var recus = new List<HDevValueChangedEventArgs>(); sp.ValueChanged += (_, e) => recus.Add(e);
+        var annonces = 0; sp.ValueChanging += (_, _) => annonces++;
+        EventHandler<HDevValueChangingEventArgs> refusSource = (_, e) => e.Cancel = true;
+        sp.ValueChanging += refusSource; vm.Quantite = 41m; Pump(w); sp.ValueChanging -= refusSource;
+        Check($"liaison TwoWay, Cancel : la source reprend la valeur gardée par le contrôle, sans ValueChanged (lu contrôle {sp.Value}, source {vm.Quantite})",
+            sp.Value == 12.5m && vm.Quantite == 12.5m && recus.Count == 0 && annonces == 1);
+        EventHandler<HDevValueChangingEventArgs> gardeSource = (_, e) => e.NewValue = e.OldValue;
+        sp.ValueChanging += gardeSource; vm.Quantite = 30m; Pump(w); sp.ValueChanging -= gardeSource;
+        Check($"liaison TwoWay, substitution par l'ancienne valeur : la source la reprend aussi (lu contrôle {sp.Value}, source {vm.Quantite})",
+            sp.Value == 12.5m && vm.Quantite == 12.5m && recus.Count == 0 && annonces == 2);
+        vm.Quantite = 100m; Pump(w); var nRecus = recus.Count;
+        vm.Quantite = 180m; Pump(w);
+        Check($"liaison TwoWay, bornage à la valeur courante : au maximum, une source posée au-delà reçoit le maximum (lu contrôle {sp.Value}, source {vm.Quantite})",
+            sp.Value == 100m && vm.Quantite == 100m && recus.Count == nRecus && sp.Text == "100,00");
+        vm.Quantite = 20m; Pump(w);
+        Check("liaison TwoWay : après ces réécritures, la source pilote toujours le contrôle",
+            sp.Value == 20m && vm.Quantite == 20m && recus.Count == nRecus + 1 && Equals(recus[^1].OldValue, 100m));
+        var cbx = vue.FindControl<HDevCheckBox>("Confirme")!;
+        EventHandler<HDevValueChangingEventArgs> refusCase = (_, e) => e.Cancel = true;
+        cbx.ValueChanging += refusCase; vm.Confirme = true; Pump(w); cbx.ValueChanging -= refusCase;
+        Check($"liaison TwoWay hors socle (CheckBox), Cancel : la source reprend la valeur gardée (lu contrôle {cbx.IsChecked}, source {vm.Confirme})",
+            cbx.IsChecked == false && vm.Confirme == false);
         w.Close();
     }
 

@@ -84,7 +84,7 @@ public class HDevSpinEdit : HDevEditorBase<decimal>
     }
 
     /// <summary>Bornage à [Minimum, Maximum]</summary>
-    protected override decimal CoerceOwnValue(decimal value)
+    protected override decimal OnCoerceValue(decimal value)
         => Math.Clamp(value, Minimum, Math.Max(Minimum, Maximum));
 
     private string Format(decimal value) => value.ToString($"F{_decimals}", CultureInfo.CurrentCulture);
@@ -153,7 +153,7 @@ public class HDevSpinEdit : HDevEditorBase<decimal>
     private void Adjust(decimal delta)
     {
         if (!IsEnabled || IsReadOnly) return;
-        CommitUserValue(CoerceOwnValue(Value + delta));
+        CommitUserValue(OnCoerceValue(Value + delta));
         FocusEditor();
     }
 
