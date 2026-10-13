@@ -1,26 +1,22 @@
 using Avalonia;
+using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
+using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.LogicalTree;
+using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.VisualTree;
 using HDev.UI.Controls.Theme;
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using System.ComponentModel;
-using System.Globalization;
-using System.Linq;
 
 namespace HDev.UI.Controls;
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CLASSES DE SUPPORT (items, propriétés, arguments d'événements)
+// CLASSES DE SUPPORT
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// <summary>
@@ -83,179 +79,34 @@ public class HDevComboBoxItemCollection : ObservableCollection<object>
     }
 }
 
-/// <summary>
-/// Propriétés du ComboBox, regroupées dans un objet dédié
-/// </summary>
-public class HDevComboBoxProperties : INotifyPropertyChanged
+/// <summary>Quand l'invite (<see cref="HDevEditorBase.Placeholder"/>) d'une liste non éditable s'affiche</summary>
+public enum HDevPlaceholderVisibility
 {
-    private readonly HDevComboBox _owner;
-    private HDevComboBoxItemCollection _items;
-    private bool _allowNullInput = true;
-    private string _nullText = "";
-    private string _nullValuePrompt = "";
-    private ShowNullValuePromptOptions _showNullValuePrompt = ShowNullValuePromptOptions.EmptyValue;
-    private bool _readOnly;
-    private int _dropDownRows = 7;
-    private bool _showDropDown = true;
-    private bool _caseSensitiveSearch;
-    private bool _sorted;
-    private TextEditStyles _textEditStyle = TextEditStyles.DisableTextEditor;
-    private AutoCompleteMode _autoComplete = AutoCompleteMode.Default;
-    private bool _immediatePopup;
+    /// <summary>Valeur vide, hors lecture seule (défaut)</summary>
+    WhenEditable,
 
-    public event PropertyChangedEventHandler? PropertyChanged;
+    /// <summary>Valeur vide, champ focalisé, hors lecture seule</summary>
+    WhenFocused,
 
-    public HDevComboBoxProperties(HDevComboBox owner)
-    {
-        _owner = owner;
-        _items = new HDevComboBoxItemCollection();
-        _items.CollectionChanged += (s, e) => _owner.OnItemsChanged();
-    }
+    /// <summary>Valeur vide, lecture seule comprise</summary>
+    Always
+}
 
-    /// <summary>
-    /// Collection des items du dropdown
-    /// </summary>
-    public HDevComboBoxItemCollection Items => _items;
+/// <summary>Style d'édition du texte d'une <see cref="HDevComboBox"/></summary>
+public enum HDevTextEditStyle
+{
+    /// <summary>Zone de saisie éditable, avec auto-complétion ; un texte libre peut devenir la valeur</summary>
+    Editable,
 
-    /// <summary>
-    /// Permet les valeurs null
-    /// </summary>
-    public bool AllowNullInput
-    {
-        get => _allowNullInput;
-        set { _allowNullInput = value; OnPropertyChanged(nameof(AllowNullInput)); }
-    }
+    /// <summary>Texte affiché mais non éditable : choix par la liste seule (défaut)</summary>
+    SelectOnly,
 
-    /// <summary>
-    /// Texte affiché quand la valeur est null
-    /// </summary>
-    public string NullText
-    {
-        get => _nullText;
-        set { _nullText = value; OnPropertyChanged(nameof(NullText)); _owner.InvalidateVisual(); }
-    }
-
-    /// <summary>
-    /// Texte de placeholder (NullValuePrompt)
-    /// </summary>
-    public string NullValuePrompt
-    {
-        get => _nullValuePrompt;
-        set { _nullValuePrompt = value; OnPropertyChanged(nameof(NullValuePrompt)); _owner.OnPropertiesVisualChanged(); }
-    }
-
-    /// <summary>
-    /// Quand afficher le NullValuePrompt
-    /// </summary>
-    public ShowNullValuePromptOptions ShowNullValuePrompt
-    {
-        get => _showNullValuePrompt;
-        set { _showNullValuePrompt = value; OnPropertyChanged(nameof(ShowNullValuePrompt)); }
-    }
-
-    /// <summary>
-    /// Mode lecture seule
-    /// </summary>
-    public bool ReadOnly
-    {
-        get => _readOnly;
-        set { _readOnly = value; OnPropertyChanged(nameof(ReadOnly)); _owner.OnPropertiesVisualChanged(); }
-    }
-
-    /// <summary>
-    /// Nombre de lignes visibles dans le dropdown
-    /// </summary>
-    public int DropDownRows
-    {
-        get => _dropDownRows;
-        set { _dropDownRows = Math.Max(1, value); OnPropertyChanged(nameof(DropDownRows)); }
-    }
-
-    /// <summary>
-    /// Afficher le bouton dropdown
-    /// </summary>
-    public bool ShowDropDown
-    {
-        get => _showDropDown;
-        set { _showDropDown = value; OnPropertyChanged(nameof(ShowDropDown)); _owner.InvalidateVisual(); }
-    }
-
-    /// <summary>
-    /// Recherche sensible à la casse (type-to-select clavier, FindItem)
-    /// </summary>
-    public bool CaseSensitiveSearch
-    {
-        get => _caseSensitiveSearch;
-        set { _caseSensitiveSearch = value; OnPropertyChanged(nameof(CaseSensitiveSearch)); }
-    }
-
-    /// <summary>
-    /// Trier les items affichés dans le dropdown (ordre alphabétique du texte affiché)
-    /// </summary>
-    public bool Sorted
-    {
-        get => _sorted;
-        set { _sorted = value; OnPropertyChanged(nameof(Sorted)); }
-    }
-
-    /// <summary>
-    /// Style d'édition : Standard = zone de saisie éditable,
-    /// DisableTextEditor = sélection seule (défaut), HideTextEditor = pas de texte
-    /// </summary>
-    public TextEditStyles TextEditStyle
-    {
-        get => _textEditStyle;
-        set { _textEditStyle = value; OnPropertyChanged(nameof(TextEditStyle)); _owner.OnTextEditStyleChanged(); }
-    }
-
-    /// <summary>
-    /// Auto-complétion en mode Standard (Default = SuggestAppend) :
-    /// Suggest filtre le dropdown, Append complète le texte saisi
-    /// </summary>
-    public AutoCompleteMode AutoComplete
-    {
-        get => _autoComplete;
-        set { _autoComplete = value; OnPropertyChanged(nameof(AutoComplete)); }
-    }
-
-    /// <summary>Ouvrir le dropdown dès la première frappe (mode Standard)</summary>
-    public bool ImmediatePopup
-    {
-        get => _immediatePopup;
-        set { _immediatePopup = value; OnPropertyChanged(nameof(ImmediatePopup)); }
-    }
-
-    protected void OnPropertyChanged(string propertyName)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
+    /// <summary>Aucun texte affiché : le bouton seul</summary>
+    NoText
 }
 
 /// <summary>
-/// Options d'affichage du placeholder
-/// </summary>
-public enum ShowNullValuePromptOptions
-{
-    EmptyValue,
-    EditorFocused,
-    EditorReadOnly
-}
-
-/// <summary>
-/// Style d'édition du texte
-/// </summary>
-public enum TextEditStyles
-{
-    /// <summary>Zone de saisie éditable avec auto-complétion</summary>
-    Standard,
-    /// <summary>Texte affiché mais non éditable — sélection par dropdown seule (défaut)</summary>
-    DisableTextEditor,
-    /// <summary>Aucun texte affiché</summary>
-    HideTextEditor
-}
-
-/// <summary>
-/// Mode d'auto-complétion (mode Standard)
+/// Mode d'auto-complétion (mode Editable)
 /// </summary>
 public enum AutoCompleteMode
 {
@@ -269,10 +120,6 @@ public enum AutoCompleteMode
     SuggestAppend
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ÉVÉNEMENTS ARGS
-// ═══════════════════════════════════════════════════════════════════════════
-
 /// <summary>
 /// Arguments pour l'événement CustomDisplayText
 /// </summary>
@@ -282,267 +129,169 @@ public class HDevCustomDisplayTextEventArgs : EventArgs
     public string DisplayText { get; set; } = "";
 }
 
-/// <summary>
-/// Arguments pour l'événement Popup
-/// </summary>
-public class HDevPopupEventArgs : CancelEventArgs
-{
-}
-
-/// <summary>
-/// Arguments pour l'événement CloseUp
-/// </summary>
-public class HDevCloseUpEventArgs : EventArgs
-{
-    public object? Value { get; set; }
-    public bool AcceptValue { get; set; } = true;
-}
-
-/// <summary>
-/// Arguments pour l'événement QueryCloseUp
-/// </summary>
-public class HDevQueryCloseUpEventArgs : CancelEventArgs
-{
-}
-
 // ═══════════════════════════════════════════════════════════════════════════
 // HDEVCOMBOBOX - liste déroulante, éditable ou non
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// <summary>
-/// Liste déroulante style VS2022 : items, saisie libre optionnelle, chevron de
-/// déroulement (événement ButtonClick), texte d'affichage personnalisable
+/// Liste déroulante sur le socle des éditeurs : items (<see cref="Items"/> ou
+/// <see cref="ItemsSource"/>), saisie libre et auto-complétion optionnelles, bouton déroulant.
+/// <list type="bullet">
+/// <item><see cref="Value"/> est l'élément choisi ou, en saisie libre, le texte validé ; liable
+/// dans les deux sens. <see cref="SelectedItem"/> est l'élément de la liste (nul pour un texte libre).</item>
+/// <item>Liste ouverte, les flèches déplacent la surbrillance sans changer la valeur ; Entrée ou
+/// un clic l'acceptent, Échap rend la valeur d'ouverture.</item>
+/// <item>Fermée et non éditable, ↑ et ↓ changent la valeur, une frappe sélectionne par préfixe.</item>
+/// </list>
 /// </summary>
-public class HDevComboBox : Control
+public class HDevComboBox : HDevEditorBase<object?>
 {
-    // ═══════════════════════════════════════════════════════════════
-    // CHAMPS PRIVÉS
-    // ═══════════════════════════════════════════════════════════════
+    public static readonly StyledProperty<object?> ValueProperty =
+        AvaloniaProperty.Register<HDevComboBox, object?>(nameof(Value),
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
 
-    private bool _isHovered;
+    public static readonly StyledProperty<object?> SelectedItemProperty =
+        AvaloniaProperty.Register<HDevComboBox, object?>(nameof(SelectedItem),
+            defaultBindingMode: BindingMode.TwoWay);
+
+    public static readonly StyledProperty<IEnumerable?> ItemsSourceProperty =
+        AvaloniaProperty.Register<HDevComboBox, IEnumerable?>(nameof(ItemsSource));
+
+    public static readonly StyledProperty<IDataTemplate?> ItemTemplateProperty =
+        AvaloniaProperty.Register<HDevComboBox, IDataTemplate?>(nameof(ItemTemplate));
+
+    public static readonly StyledProperty<HDevTextEditStyle> TextEditStyleProperty =
+        AvaloniaProperty.Register<HDevComboBox, HDevTextEditStyle>(nameof(TextEditStyle), HDevTextEditStyle.SelectOnly);
+
+    public static readonly StyledProperty<HDevPlaceholderVisibility> ShowPlaceholderProperty =
+        AvaloniaProperty.Register<HDevComboBox, HDevPlaceholderVisibility>(nameof(ShowPlaceholder));
+
+    private readonly ListBox _listBox;
+    private readonly ContentControl _presenter;
+    private INotifyCollectionChanged? _observedSource;
+    private bool _syncingSelection;
+    private bool _highlightByUser;
     private bool _isPressed;
-    private bool _isDropDownOpen;
-    private Popup? _popup;
-    private ListBox? _listBox;
-    private HDevComboBoxProperties _properties;
-    private object? _editValue;
-    private object? _oldEditValue;
-    private bool _isModified;
-    private string _text = "";
-
-    // Mode Standard (éditable) : zone de saisie réelle + auto-complétion
-    private TextBox? _editTextBox;
-    private bool _syncingEditText;
-    private readonly Queue<bool> _editTextOrigins = new();
-
-    private bool IsEditable => _properties.TextEditStyle == TextEditStyles.Standard;
 
     // ═══════════════════════════════════════════════════════════════
-    // STYLED PROPERTIES (Avalonia)
+    // PROPRIÉTÉS
     // ═══════════════════════════════════════════════════════════════
 
-    public static new readonly StyledProperty<bool> IsEnabledProperty =
-        AvaloniaProperty.Register<HDevComboBox, bool>(nameof(IsEnabled), true);
+    protected override StyledProperty<object?> ValuePropertyCore => ValueProperty;
 
-    // ═══════════════════════════════════════════════════════════════
-    // PROPRIÉTÉS PRINCIPALES
-    // ═══════════════════════════════════════════════════════════════
-
-    /// <summary>
-    /// Propriétés du ComboBox (items, style de saisie), regroupées dans un objet dédié
-    /// </summary>
-    public HDevComboBoxProperties Properties => _properties;
-
-    /// <summary>
-    /// Valeur de l'éditeur : l'item sélectionné ou, en saisie libre, le texte validé
-    /// </summary>
-    public object? EditValue
+    /// <summary>Valeur : l'élément choisi ou, en saisie libre, le texte validé</summary>
+    public object? Value
     {
-        get => _editValue;
-        set
-        {
-            if (!Equals(_editValue, value))
-            {
-                var args = new HDevEditValueChangingEventArgs(_editValue, value);
-                EditValueChanging?.Invoke(this, args);
-
-                if (!args.Cancel)
-                {
-                    _editValue = args.NewValue;
-                    _isModified = true;
-                    UpdateTextFromEditValue();
-                    InvalidateVisual();
-                    EditValueChanged?.Invoke(this, EventArgs.Empty);
-                }
-            }
-        }
+        get => GetValue(ValueProperty);
+        set => SetValueFromCode(value);
     }
 
-    /// <summary>
-    /// Ancienne valeur (avant modification)
-    /// </summary>
-    public object? OldEditValue => _oldEditValue;
-
-    /// <summary>
-    /// Indique si la valeur a été modifiée
-    /// </summary>
-    public bool IsModified
-    {
-        get => _isModified;
-        set => _isModified = value;
-    }
-
-    /// <summary>
-    /// Index de l'item sélectionné
-    /// </summary>
-    public int SelectedIndex
-    {
-        get
-        {
-            if (_editValue == null) return -1;
-            return _properties.Items.IndexOf(_editValue);
-        }
-        set
-        {
-            if (value >= 0 && value < _properties.Items.Count)
-            {
-                EditValue = _properties.Items[value];
-            }
-            else if (value == -1)
-            {
-                EditValue = null;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Item sélectionné
-    /// </summary>
+    /// <summary>L'élément de la liste qui est la valeur ; nul pour un texte libre ou une valeur vide</summary>
     public object? SelectedItem
     {
-        get => _editValue;
-        set => EditValue = value;
+        get => GetValue(SelectedItemProperty);
+        set => SetValue(SelectedItemProperty, value);
     }
 
-    /// <summary>
-    /// Texte affiché
-    /// </summary>
-    public string Text
+    /// <summary>Index de l'élément choisi dans la liste (-1 : aucun)</summary>
+    public int SelectedIndex
     {
-        get => _text;
+        get => IndexOf(Value);
         set
         {
-            if (_text != value)
-            {
-                _text = value;
-                SyncEditTextBox();
-                InvalidateVisual();
-                TextChanged?.Invoke(this, EventArgs.Empty);
-            }
+            var items = EffectiveItems;
+            if (value >= 0 && value < items.Count) Value = items[value];
+            else if (value == -1) Value = null;
         }
     }
 
-    /// <summary>
-    /// Lecture seule
-    /// </summary>
-    public bool ReadOnly
+    /// <summary>Éléments posés par le code ; ignorés quand <see cref="ItemsSource"/> est posé</summary>
+    public HDevComboBoxItemCollection Items { get; } = new();
+
+    /// <summary>Source liée des éléments ; prend le pas sur <see cref="Items"/></summary>
+    public IEnumerable? ItemsSource
     {
-        get => _properties.ReadOnly;
-        set => _properties.ReadOnly = value;
+        get => GetValue(ItemsSourceProperty);
+        set => SetValue(ItemsSourceProperty, value);
+    }
+
+    /// <summary>Gabarit d'un élément, dans la liste et dans le champ non éditable (défaut : son texte)</summary>
+    public IDataTemplate? ItemTemplate
+    {
+        get => GetValue(ItemTemplateProperty);
+        set => SetValue(ItemTemplateProperty, value);
     }
 
     /// <summary>
-    /// Popup ouvert
+    /// Style d'édition : <see cref="HDevTextEditStyle.Editable"/> = zone de saisie éditable,
+    /// <see cref="HDevTextEditStyle.SelectOnly"/> = sélection seule (défaut),
+    /// <see cref="HDevTextEditStyle.NoText"/> = pas de texte
     /// </summary>
-    public bool IsPopupOpen => _isDropDownOpen;
+    public HDevTextEditStyle TextEditStyle
+    {
+        get => GetValue(TextEditStyleProperty);
+        set => SetValue(TextEditStyleProperty, value);
+    }
 
-    // ═══════════════════════════════════════════════════════════════
-    // ÉVÉNEMENTS
-    // ═══════════════════════════════════════════════════════════════
-
-    /// <summary>
-    /// Déclenché quand EditValue change
-    /// </summary>
-    public event EventHandler? EditValueChanged;
-
-    /// <summary>
-    /// Déclenché avant que EditValue change (peut être annulé)
-    /// </summary>
-    public event EventHandler<HDevEditValueChangingEventArgs>? EditValueChanging;
-
-    /// <summary>
-    /// Déclenché quand SelectedIndex change
-    /// </summary>
-    public event EventHandler? SelectedIndexChanged;
+    /// <summary>Quand l'invite s'affiche, valeur vide, en mode non éditable</summary>
+    public HDevPlaceholderVisibility ShowPlaceholder
+    {
+        get => GetValue(ShowPlaceholderProperty);
+        set => SetValue(ShowPlaceholderProperty, value);
+    }
 
     /// <summary>
-    /// Déclenché quand SelectedValue change
+    /// Auto-complétion en mode Editable (Default = SuggestAppend) :
+    /// Suggest filtre la liste, Append complète le texte saisi
     /// </summary>
-    public event EventHandler? SelectedValueChanged;
+    public AutoCompleteMode AutoComplete { get; set; } = AutoCompleteMode.Default;
 
-    /// <summary>
-    /// Déclenché quand le texte change
-    /// </summary>
-    public event EventHandler? TextChanged;
+    /// <summary>Recherche sensible à la casse (sélection par préfixe, complétion, FindItem)</summary>
+    public bool CaseSensitiveSearch { get; set; }
 
-    /// <summary>
-    /// Déclenché avant l'ouverture du popup (peut être annulé)
-    /// </summary>
-    public event EventHandler<HDevPopupEventArgs>? Popup;
+    /// <summary>Ouvrir la liste dès la première frappe (mode Editable), quel que soit AutoComplete</summary>
+    public bool OpenDropDownOnInput { get; set; }
 
-    /// <summary>
-    /// Déclenché à la fermeture du popup
-    /// </summary>
-    public event EventHandler<HDevCloseUpEventArgs>? CloseUp;
+    /// <summary>La valeur peut être vidée (Suppr, Retour arrière, texte effacé)</summary>
+    public bool AllowNull { get; set; } = true;
 
-    /// <summary>
-    /// Déclenché avant la fermeture du popup (peut être annulé)
-    /// </summary>
-    public event EventHandler<HDevQueryCloseUpEventArgs>? QueryCloseUp;
+    /// <summary>Nombre de lignes visibles dans la liste</summary>
+    public int DropDownRows
+    {
+        get => _dropDownRows;
+        set => _dropDownRows = Math.Max(1, value);
+    }
 
-    /// <summary>
-    /// Déclenché quand le popup s'ouvre
-    /// </summary>
-    public event EventHandler? PopupOpened;
+    private int _dropDownRows = 7;
 
-    /// <summary>
-    /// Déclenché quand le popup se ferme
-    /// </summary>
-    public event EventHandler? PopupClosed;
+    /// <summary>Trier les éléments affichés dans la liste (ordre alphabétique de leur texte)</summary>
+    public bool Sorted { get; set; }
 
-    /// <summary>
-    /// Déclenché pour personnaliser le texte affiché
-    /// </summary>
+    /// <summary>La valeur a changé depuis la création ou le dernier <see cref="Reset"/></summary>
+    public bool IsModified { get; set; }
+
+    private bool IsEditable => TextEditStyle == HDevTextEditStyle.Editable;
+
+    /// <summary>Texte affiché pour personnaliser celui d'un élément</summary>
     public event EventHandler<HDevCustomDisplayTextEventArgs>? CustomDisplayText;
 
-    // NOTE : l'événement owner-draw DrawItem a été retiré tant
-    // que le rendu des items n'est pas personnalisable — utiliser CustomDisplayText.
-
-    /// <summary>
-    /// Déclenché lors du clic sur un bouton
-    /// </summary>
-    public event EventHandler? ButtonClick;
-
     // ═══════════════════════════════════════════════════════════════
-    // CONSTRUCTEUR
+    // CONSTRUCTION
     // ═══════════════════════════════════════════════════════════════
 
     static HDevComboBox()
     {
-        FocusableProperty.OverrideDefaultValue<HDevComboBox>(true);
+        TextEditStyleProperty.Changed.AddClassHandler<HDevComboBox>((x, _) => x.ApplyTextEditStyle());
+        ItemsSourceProperty.Changed.AddClassHandler<HDevComboBox>((x, _) => x.OnItemsSourceChanged());
+        ItemTemplateProperty.Changed.AddClassHandler<HDevComboBox>((x, _) => { x.ApplyItemTemplate(); x.RefreshPresenter(); });
+        ShowPlaceholderProperty.Changed.AddClassHandler<HDevComboBox>((x, _) => x.RefreshPresenter());
+        SelectedItemProperty.Changed.AddClassHandler<HDevComboBox>((x, _) => x.OnSelectedItemChanged());
     }
 
     public HDevComboBox()
     {
-        _properties = new HDevComboBoxProperties(this);
-        Height = HDevTheme.Size.EditorHeight;
         MinWidth = 120;
 
-        CreatePopup();
-    }
-
-    private void CreatePopup()
-    {
         _listBox = new ListBox
         {
             Background = new SolidColorBrush(HDevTheme.Background.Panel),
@@ -551,397 +300,418 @@ public class HDevComboBox : Control
             Margin = new Thickness(0),
             SelectionMode = SelectionMode.Single
         };
-
-        // Template pour afficher le texte personnalisé via GetItemText()
-        _listBox.ItemTemplate = new FuncDataTemplate<object>((item, _) =>
-        {
-            return new TextBlock
-            {
-                Text = GetItemText(item),
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Margin = new Thickness(4, 2)
-            };
-        });
-
+        ApplyItemTemplate();
         _listBox.PointerReleased += OnListBoxPointerReleased;
 
-        var scrollViewer = new ScrollViewer
+        // Liste accolée au champ, bordure fusionnée, coins du bas seuls : l'habillage de la
+        // liste d'avant le socle
+        DropDown.Content = new ScrollViewer
         {
             Content = _listBox,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto
         };
+        DropDown.Chrome.Padding = new Thickness(0);
+        DropDown.Chrome.CornerRadius = new CornerRadius(0, 0, HDevTheme.Size.CornerRadiusSmall, HDevTheme.Size.CornerRadiusSmall);
+        DropDown.SetGap(HDevPopupPlacement.FusedBorder);
+        DropDown.MatchOwnerWidth = true;
+        CloseDropDownOnFocusLoss = true;
+        DropDownOpening += OnDropDownOpening;
+        DropDownOpened += (_, _) => UpdateVisualState();
+        DropDownClosed += OnDropDownClosed;
 
-        var dropdownBorder = new Border
+        _presenter = new ContentControl
         {
-                Background = new SolidColorBrush(HDevTheme.Background.Panel),
-                BorderBrush = new SolidColorBrush(HDevTheme.Border.Default),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(0, 0, HDevTheme.Size.CornerRadiusSmall, HDevTheme.Size.CornerRadiusSmall),
-                Child = scrollViewer,
-                BoxShadow = new BoxShadows(new BoxShadow
-                {
-                    OffsetX = 0,
-                    OffsetY = 2,
-                    Blur = 8,
-                    Color = HDevTheme.Shadow.Color
-                })
-        };
-        // Pas de SubpixelAntialias sur le dropdown : surface popup transparente,
-        // le rendu LCD n'y peint aucun glyphe (cf. HDevMenuPopup)
-
-        _popup = new Popup
-        {
-            Child = dropdownBorder,
-            PlacementTarget = this,
-            Placement = PlacementMode.Bottom,
-            // Garde maison (cf. HDevMenuPopup) : le light dismiss Avalonia ferme
-            // le dropdown à la moindre désactivation de fenêtre
-            IsLightDismissEnabled = false,
-            // Bas/Haut décidé nous-mêmes dans OpenDropDown (les popups overlay
-            // sont clippés aux bords de la fenêtre) : on ne garde que le glissement
-            // horizontal automatique, pas le flip vertical qui entrerait en conflit.
-            PlacementConstraintAdjustment =
-                Avalonia.Controls.Primitives.PopupPositioning.PopupPositionerConstraintAdjustment.SlideX,
-            HorizontalOffset = 0,
-            VerticalOffset = -1
+            Margin = new Thickness(HDevTheme.Size.EditorTextInset, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            FontFamily = new FontFamily(HDevTheme.Typography.FontFamily),
+            FontSize = HDevTheme.Typography.FontSizeBody,
+            IsHitTestVisible = false
         };
 
-        _guard = new HDevPopupDismissGuard(() => _isDropDownOpen, () => CloseDropDown());
-        _popup.Opened += (s, e) => _guard.Install(this, _popup);
-        _popup.Closed += OnPopupClosed;
+        Buttons.Add(new HDevEditorButton { Kind = HDevEditorButtonKind.DropDown });
+        Items.CollectionChanged += (_, _) => { if (ItemsSource == null) OnItemsChanged(); };
+
+        // Mode éditable : complétion à la frappe, clavier de la liste, validation au départ du focus
+        InnerTextBox.AddHandler(TextInputEvent, OnEditTextInput, RoutingStrategies.Tunnel);
+        InnerTextBox.AddHandler(KeyDownEvent, OnEditTextBoxKeyDown, RoutingStrategies.Tunnel);
+        InnerTextBox.LostFocus += (_, e) =>
+        {
+            // Le focus quitte la combo, pas vers sa liste (clic sur un item) : la saisie est validée (APP-10)
+            if (!DropDown.Contains(e.NewFocusedElement))
+                CommitTypedText();
+        };
+
+        ApplyTextEditStyle();
     }
 
-    /// <summary>Garde de fermeture commune à toute la suite (clic extérieur, désactivation débouncée)</summary>
-    private HDevPopupDismissGuard _guard = null!;
+    // ═══════════════════════════════════════════════════════════════
+    // ÉLÉMENTS
+    // ═══════════════════════════════════════════════════════════════
 
-    private void OnListBoxPointerReleased(object? sender, PointerReleasedEventArgs e)
+    /// <summary>Les éléments en vigueur : la source liée, sinon <see cref="Items"/></summary>
+    private IReadOnlyList<object> EffectiveItems
+        => ItemsSource switch
+        {
+            null => Items,
+            IReadOnlyList<object> list => list,
+            var source => source.Cast<object>().ToList()
+        };
+
+    private int IndexOf(object? item)
     {
-        if (_listBox?.SelectedItem != null)
-        {
-            var oldIndex = SelectedIndex;
-            EditValue = _listBox.SelectedItem;
-            CloseDropDown();
-
-            if (oldIndex != SelectedIndex)
-            {
-                SelectedIndexChanged?.Invoke(this, EventArgs.Empty);
-                SelectedValueChanged?.Invoke(this, EventArgs.Empty);
-            }
-        }
+        if (item == null) return -1;
+        var items = EffectiveItems;
+        for (var i = 0; i < items.Count; i++)
+            if (Equals(items[i], item)) return i;
+        return -1;
     }
 
-    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    private void OnItemsSourceChanged()
     {
-        base.OnAttachedToVisualTree(e);
-
-        if (_popup != null)
-        {
-            ((ISetLogicalParent)_popup).SetParent(this);
-        }
-
-        HDevTheme.VariantChanged += OnThemeVariantChanged;
+        if (_observedSource != null) _observedSource.CollectionChanged -= OnSourceCollectionChanged;
+        _observedSource = ItemsSource as INotifyCollectionChanged;
+        if (_observedSource != null) _observedSource.CollectionChanged += OnSourceCollectionChanged;
+        OnItemsChanged();
     }
 
-    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    private void OnSourceCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) => OnItemsChanged();
+
+    private void OnItemsChanged()
     {
-        HDevTheme.VariantChanged -= OnThemeVariantChanged;
-
-        if (_popup != null)
-        {
-            _popup.IsOpen = false;
-            ((ISetLogicalParent)_popup).SetParent(null);
-        }
-
-        base.OnDetachedFromVisualTree(e);
+        SyncSelectedItem();
+        if (DropDown.IsOpen) RefreshDropDownItems(null);
+        RefreshPresenter();
     }
 
-    private void OnThemeVariantChanged(object? sender, EventArgs e)
-    {
-        if (_editTextBox != null)
-            HDevInputChrome.Neutralize(_editTextBox);
-
-        // Le dropdown est construit une fois : re-brusher fond, bordure, liste
-        if (_listBox != null)
-            _listBox.Background = new SolidColorBrush(HDevTheme.Background.Panel);
-        if (_popup?.Child is Border border)
+    private void ApplyItemTemplate()
+        // Une ligne recyclée est reconstruite pour un contenu nul : jamais de texte pour le nul (APP-11)
+        => _listBox.ItemTemplate = ItemTemplate ?? new FuncDataTemplate<object?>((item, _) => new TextBlock
         {
-            border.Background = new SolidColorBrush(HDevTheme.Background.Panel);
-            border.BorderBrush = new SolidColorBrush(HDevTheme.Border.Default);
-            border.BoxShadow = new BoxShadows(new BoxShadow
-            {
-                OffsetX = 0, OffsetY = 2, Blur = 8,
-                Color = HDevTheme.Shadow.Color
-            });
-        }
-        if (_editTextBox != null)
-        {
-            _editTextBox.Foreground = new SolidColorBrush(HDevTheme.Text.Primary);
-            _editTextBox.CaretBrush = new SolidColorBrush(HDevTheme.Text.Primary);
-            _editTextBox.SelectionBrush = new SolidColorBrush(HDevTheme.Background.TextSelection);
-            _editTextBox.SelectionForegroundBrush = new SolidColorBrush(HDevTheme.Text.Primary);
-        }
-        InvalidateVisual();
-    }
+            Text = item is null ? "" : GetItemText(item),
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(4, 2)
+        });
 
     // ═══════════════════════════════════════════════════════════════
     // MÉTHODES PUBLIQUES
     // ═══════════════════════════════════════════════════════════════
 
-    /// <summary>
-    /// Affiche le popup
-    /// </summary>
-    public void ShowPopup()
-    {
-        OpenDropDown();
-    }
-
-    /// <summary>
-    /// Ferme le popup
-    /// </summary>
-    public void ClosePopup()
-    {
-        CloseDropDown();
-    }
-
-    /// <summary>
-    /// Ferme le popup (alias)
-    /// </summary>
-    public void HidePopup()
-    {
-        CloseDropDown();
-    }
-
-    /// <summary>
-    /// Réinitialise l'éditeur
-    /// </summary>
+    /// <summary>Vide la valeur (changement du code) et remet <see cref="IsModified"/> à faux</summary>
     public void Reset()
     {
-        EditValue = null;
-        _isModified = false;
-        _oldEditValue = null;
+        Value = null;
+        IsModified = false;
     }
 
-    /// <summary>
-    /// Sélectionne tout le texte de la zone de saisie (mode Standard)
-    /// </summary>
-    public void SelectAll() => _editTextBox?.SelectAll();
+    /// <summary>Désélectionne le texte de la zone de saisie (mode Editable)</summary>
+    public void DeselectAll() => InnerTextBox.ClearSelection();
 
-    /// <summary>
-    /// Désélectionne le texte de la zone de saisie (mode Standard)
-    /// </summary>
-    public void DeselectAll() => _editTextBox?.ClearSelection();
+    /// <summary>Trouve un item par son texte</summary>
+    public int FindItem(string text) => FindItem(text, 0);
 
-    /// <summary>
-    /// Trouve un item par son texte
-    /// </summary>
-    public int FindItem(string text)
-    {
-        return FindItem(text, 0);
-    }
-
-    /// <summary>
-    /// Trouve un item par son texte à partir d'un index
-    /// </summary>
+    /// <summary>Trouve un item par son texte à partir d'un index</summary>
     public int FindItem(string text, int startIndex)
     {
-        var comparison = _properties.CaseSensitiveSearch
-            ? StringComparison.Ordinal
-            : StringComparison.OrdinalIgnoreCase;
-
-        for (int i = startIndex; i < _properties.Items.Count; i++)
-        {
-            var itemText = GetItemText(_properties.Items[i]);
-            if (itemText.Equals(text, comparison))
+        var items = EffectiveItems;
+        for (var i = startIndex; i < items.Count; i++)
+            if (GetItemText(items[i]).Equals(text, OrdinalComparison))
                 return i;
-        }
         return -1;
     }
 
-    /// <summary>
-    /// Trouve un item par préfixe
-    /// </summary>
+    /// <summary>Trouve un item par préfixe</summary>
     public int FindItemByPrefix(string prefix)
     {
-        var comparison = _properties.CaseSensitiveSearch
-            ? StringComparison.Ordinal
-            : StringComparison.OrdinalIgnoreCase;
-
-        for (int i = 0; i < _properties.Items.Count; i++)
-        {
-            var itemText = GetItemText(_properties.Items[i]);
-            if (itemText.StartsWith(prefix, comparison))
+        var items = EffectiveItems;
+        for (var i = 0; i < items.Count; i++)
+            if (GetItemText(items[i]).StartsWith(prefix, OrdinalComparison))
                 return i;
-        }
         return -1;
     }
 
-    /// <summary>
-    /// Obtient le texte affiché pour un item
-    /// </summary>
+    private StringComparison OrdinalComparison
+        => CaseSensitiveSearch ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+
+    /// <summary>Texte affiché pour un item (<see cref="CustomDisplayText"/>, sinon ToString)</summary>
     public string GetItemText(object? item)
     {
         if (item == null) return "";
 
-        // Permettre la personnalisation via événement
-        var args = new HDevCustomDisplayTextEventArgs
-        {
-            Value = item,
-            DisplayText = item.ToString() ?? ""
-        };
+        var args = new HDevCustomDisplayTextEventArgs { Value = item, DisplayText = item.ToString() ?? "" };
         CustomDisplayText?.Invoke(this, args);
-
         return args.DisplayText;
     }
 
-    /// <summary>
-    /// Rafraîchit l'affichage
-    /// </summary>
-    public void RefreshEditValue()
-    {
-        UpdateTextFromEditValue();
-        InvalidateVisual();
-    }
-
-    /// <summary>
-    /// Force la validation
-    /// </summary>
-    public bool DoValidate()
-    {
-        _oldEditValue = _editValue;
-        _isModified = false;
-        return true;
-    }
-
     // ═══════════════════════════════════════════════════════════════
-    // MÉTHODES INTERNES
+    // VALEUR
     // ═══════════════════════════════════════════════════════════════
 
-    internal void OnItemsChanged()
+    protected override string FormatValue(object? value) => GetItemText(value);
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
-        if (_listBox != null)
+        base.OnPropertyChanged(change);
+        if (change.Property == ValueProperty)
         {
-            _listBox.ItemsSource = _properties.Items;
+            IsModified = true;
+            SyncSelectedItem();
+            RefreshPresenter();
         }
-        InvalidateVisual();
-    }
-
-    /// <summary>Répercute NullValuePrompt/ReadOnly sur la zone de saisie interne</summary>
-    internal void OnPropertiesVisualChanged()
-    {
-        if (_editTextBox != null)
+        else if (change.Property == PlaceholderProperty || change.Property == IsReadOnlyProperty
+                 || change.Property == IsEffectivelyEnabledProperty)
         {
-            _editTextBox.PlaceholderText = _properties.NullValuePrompt;
-            _editTextBox.IsReadOnly = _properties.ReadOnly;
+            RefreshPresenter();
+            UpdateVisualState();
         }
-        InvalidateVisual();
     }
 
-    private void UpdateTextFromEditValue()
+    /// <summary>SelectedItem suit la valeur : l'élément de la liste, ou nul</summary>
+    private void SyncSelectedItem()
     {
-        _text = GetItemText(_editValue);
-        SyncEditTextBox();
+        _syncingSelection = true;
+        try { SetCurrentValue(SelectedItemProperty, IndexOf(Value) >= 0 ? Value : null); }
+        finally { _syncingSelection = false; }
+    }
+
+    /// <summary>SelectedItem posé par le code ou une liaison : il devient la valeur</summary>
+    private void OnSelectedItemChanged()
+    {
+        if (_syncingSelection || Equals(SelectedItem, Value)) return;
+        if (SelectedItem == null && IndexOf(Value) < 0) return;
+        SetCurrentValue(ValueProperty, SelectedItem);
+    }
+
+    /// <summary>Un choix de l'utilisateur</summary>
+    private void CommitItem(object? item) => CommitUserValue(item);
+
+    /// <summary>Valide le texte saisi : item correspondant si trouvé, sinon texte libre</summary>
+    private void CommitTypedText()
+    {
+        if (!IsEditable || IsReadOnly) return;
+
+        var typed = InnerText;
+        if (string.IsNullOrEmpty(typed))
+        {
+            if (AllowNull && Value != null)
+                CommitItem(null);
+            return;
+        }
+
+        var index = FindItem(typed);
+        if (index >= 0)
+            CommitItem(EffectiveItems[index]);
+        else if (!Equals(Value, typed))
+            CommitItem(typed); // texte libre
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // MODE ÉDITABLE (TextEditStyle.Standard) : saisie + auto-complétion
+    // AFFICHAGE
     // ═══════════════════════════════════════════════════════════════
 
-    internal void OnTextEditStyleChanged()
+    private void ApplyTextEditStyle()
     {
-        if (IsEditable && _editTextBox == null)
-            CreateEditTextBox();
-        else if (!IsEditable && _editTextBox != null)
-            RemoveEditTextBox();
-
-        InvalidateMeasure();
-        InvalidateVisual();
+        SetValuePresenter(IsEditable ? null : _presenter);
+        RefreshPresenter();
+        UpdateVisualState();
     }
 
-    private void CreateEditTextBox()
+    /// <summary>Champ non éditable : l'élément par son gabarit, son texte, ou l'invite</summary>
+    private void RefreshPresenter()
     {
-        _editTextBox = new TextBox
+        if (TextEditStyle == HDevTextEditStyle.NoText)
         {
-            // Arrangé à x = 1 (dans le filet) : même retrait que le texte dessiné
-            Padding = new Thickness(HDevTheme.Size.EditorTextInset, 0, 0, 0),
-            VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
-            FontFamily = new FontFamily(HDevTheme.Typography.FontFamily),
-            FontSize = HDevTheme.Typography.FontSizeBody,
-            Foreground = new SolidColorBrush(HDevTheme.Text.Primary),
-            CaretBrush = new SolidColorBrush(HDevTheme.Text.Primary),
-            SelectionBrush = new SolidColorBrush(HDevTheme.Background.TextSelection),
-            SelectionForegroundBrush = new SolidColorBrush(HDevTheme.Text.Primary),
-            PlaceholderText = _properties.NullValuePrompt,
-            IsReadOnly = _properties.ReadOnly,
-            Text = _text
-        };
-        HDevInputChrome.Neutralize(_editTextBox);
+            _presenter.Content = null;
+            return;
+        }
 
-        // TextChanged arrive au tour suivant du répartiteur : l'origine (code ou frappe) de
-        // chaque changement est relevée à TextChanging, qui est synchrone (APP-09)
-        _editTextBox.TextChanging += (s, e) => _editTextOrigins.Enqueue(_syncingEditText);
-        _editTextBox.TextChanged += (s, e) =>
+        var value = Value;
+        var text = GetItemText(value);
+        var empty = value == null || string.IsNullOrEmpty(text);
+        if (!empty)
         {
-            var fromCode = _editTextOrigins.Count > 0 && _editTextOrigins.Dequeue();
-            if (!fromCode) OnEditTextChanged();
+            _presenter.ContentTemplate = ItemTemplate;
+            _presenter.Content = ItemTemplate != null ? value : text;
+            _presenter.Foreground = new SolidColorBrush(IsEffectivelyEnabled ? HDevTheme.Text.Primary : HDevTheme.Text.Disabled);
+            return;
+        }
+
+        var promptAllowed = ShowPlaceholder switch
+        {
+            HDevPlaceholderVisibility.WhenEditable => !IsReadOnly,
+            HDevPlaceholderVisibility.WhenFocused => IsFocused && !IsReadOnly,
+            _ => true
         };
-        _editTextBox.AddHandler(TextInputEvent, OnEditTextInput, RoutingStrategies.Tunnel);
-        _editTextBox.AddHandler(KeyDownEvent, OnEditTextBoxKeyDown, RoutingStrategies.Tunnel);
-        _editTextBox.GotFocus += (s, e) => InvalidateVisual();
-        _editTextBox.LostFocus += (s, e) =>
+        _presenter.ContentTemplate = null;
+        _presenter.Content = promptAllowed ? Placeholder : null;
+        _presenter.Foreground = new SolidColorBrush(IsEffectivelyEnabled ? HDevTheme.Text.Placeholder : HDevTheme.Text.Disabled);
+    }
+
+    protected override void RefreshThemeBrushes()
+    {
+        base.RefreshThemeBrushes();
+        _listBox.Background = new SolidColorBrush(HDevTheme.Background.Panel);
+        RefreshPresenter();
+    }
+
+    /// <summary>
+    /// Non éditable, la combo garde l'allure d'une liste déroulante : le gris des boutons, au
+    /// survol et à la pression, le filet accent liste ouverte. Éditable, c'est un champ de
+    /// saisie. Dans les deux cas : filet et halo de focus, fond grisé en lecture seule.
+    /// </summary>
+    private protected override void ApplyVisualState(bool isEnabled, bool hasError, bool isFocused, bool isHovered)
+    {
+        // Appelé dès le constructeur du socle : le popup n'existe peut-être pas encore
+        var open = HasDropDown && DropDown.IsOpen;
+        Color bg, border;
+        Color? halo = null;
+
+        if (!isEnabled)
         {
-            // Le focus quitte la combo (pas vers sa liste, clic sur un item) : la saisie est
-            // validée et la liste se ferme, ouverte ou non (APP-10)
-            if (!IsInDropDown(e.NewFocusedElement))
-            {
+            bg = HDevTheme.Background.ControlDisabled;
+            border = HDevTheme.Border.Subtle;
+        }
+        else if (IsEditable)
+        {
+            bg = HDevTheme.Background.Input;
+            border = open ? HDevTheme.Accent.Primary : isHovered ? HDevTheme.Border.Hover : HDevTheme.Border.Default;
+        }
+        else
+        {
+            bg = open ? HDevTheme.Background.Control
+                : _isPressed ? HDevTheme.Background.ControlPressed
+                : isHovered ? HDevTheme.Background.ControlHover
+                : HDevTheme.Background.Control;
+            border = open || _isPressed ? HDevTheme.Accent.Primary : HDevTheme.Border.Default;
+        }
+
+        if (isEnabled && hasError)
+        {
+            bg = HDevTheme.Background.Error;
+            border = HDevTheme.Accent.Error;
+            halo = HDevInputChrome.ErrorHalo;
+        }
+        else if (isEnabled && isFocused)
+        {
+            border = HDevTheme.Border.Focused;
+            halo = HDevInputChrome.FocusHalo;
+        }
+
+        if (IsReadOnly)
+            bg = HDevTheme.Background.ControlDisabled;
+
+        Background = new SolidColorBrush(bg);
+        BorderBrush = new SolidColorBrush(border);
+        BorderThickness = new Thickness(HDevTheme.Size.BorderThin);
+        BoxShadow = halo is { } h
+            ? new BoxShadows(new BoxShadow { Blur = 0, Spread = 2, Color = h })
+            : new BoxShadows();
+        InnerTextBox.Foreground = new SolidColorBrush(isEnabled ? HDevTheme.Text.Primary : HDevTheme.Text.Disabled);
+    }
+
+    /// <summary>Fige survol et pression pour la planche visuelle headless (tests/Gallery)</summary>
+    internal new void ForceVisualState(bool hovered = false, bool pressed = false)
+    {
+        _isPressed = pressed;
+        base.ForceVisualState(hovered: hovered);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // LISTE
+    // ═══════════════════════════════════════════════════════════════
+
+    private void OnDropDownOpening(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        if (EffectiveItems.Count == 0)
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        RefreshDropDownItems(null);
+        _listBox.SelectedItem = SelectedItem;
+        _highlightByUser = false;
+        _listBox.MaxHeight = DropDownRows * 24;
+        DropDown.Chrome.MaxWidth = Bounds.Width;
+    }
+
+    /// <summary>
+    /// Fermeture : un choix accepté (Entrée, clic extérieur) prend l'élément en surbrillance si
+    /// l'utilisateur l'a déplacée, sinon, en mode éditable, le texte saisi ; Échap ne change rien
+    /// (constat E0 n° 2 : la valeur d'ouverture reste)
+    /// </summary>
+    private void OnDropDownClosed(object? sender, HDevDropDownClosedEventArgs e)
+    {
+        var highlight = _highlightByUser ? _listBox.SelectedItem : null;
+        _highlightByUser = false;
+        if (e.IsValueAccepted)
+        {
+            if (highlight != null)
+                CommitItem(highlight);
+            else if (e.CloseReason == HDevDropDownCloseReason.LightDismiss)
                 CommitTypedText();
-                if (_isDropDownOpen) CloseDropDown(refocus: false);
-            }
-            InvalidateVisual();
-        };
-
-        VisualChildren.Add(_editTextBox);
-        LogicalChildren.Add(_editTextBox);
-    }
-
-    private void RemoveEditTextBox()
-    {
-        if (_editTextBox == null) return;
-        VisualChildren.Remove(_editTextBox);
-        LogicalChildren.Remove(_editTextBox);
-        _editTextBox = null;
-    }
-
-    private void SyncEditTextBox()
-    {
-        if (_editTextBox != null && _editTextBox.Text != _text)
-        {
-            _syncingEditText = true;
-            _editTextBox.Text = _text;
-            _syncingEditText = false;
         }
+        UpdateVisualState();
     }
 
-    private AutoCompleteMode EffectiveAutoComplete => _properties.AutoComplete == AutoCompleteMode.Default
-        ? AutoCompleteMode.SuggestAppend
-        : _properties.AutoComplete;
+    /// <summary>Alimente la liste : vue triée si Sorted, filtrée sur le préfixe en mode Suggest</summary>
+    private void RefreshDropDownItems(string? filter)
+    {
+        IEnumerable<object> source = EffectiveItems;
+        if (Sorted)
+            source = source.OrderBy(GetItemText, StringComparer.CurrentCultureIgnoreCase);
+
+        if (!string.IsNullOrEmpty(filter))
+        {
+            var comparison = CaseSensitiveSearch
+                ? StringComparison.CurrentCulture
+                : StringComparison.CurrentCultureIgnoreCase;
+            source = source.Where(i => GetItemText(i).StartsWith(filter, comparison));
+        }
+
+        var list = source.ToList();
+        _listBox.ItemsSource = list;
+
+        if (list.Count == 0 && DropDown.IsOpen)
+            DropDown.Close(HDevDropDownCloseReason.Canceled);
+    }
+
+    private void OnListBoxPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (_listBox.SelectedItem is not { } item) return;
+        _highlightByUser = false;
+        CommitItem(item);
+        DropDown.Close(HDevDropDownCloseReason.Accepted);
+    }
+
+    /// <summary>Déplace la surbrillance de la liste ouverte (la valeur ne change qu'à l'acceptation)</summary>
+    private void MoveHighlight(int delta, bool toEnd = false)
+    {
+        var count = _listBox.ItemCount;
+        if (count == 0) return;
+        var index = toEnd ? (delta < 0 ? 0 : count - 1)
+            : Math.Clamp(_listBox.SelectedIndex + delta, 0, count - 1);
+        _listBox.SelectedIndex = index;
+        _listBox.ScrollIntoView(index);
+        _highlightByUser = true;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // MODE ÉDITABLE : saisie et auto-complétion
+    // ═══════════════════════════════════════════════════════════════
+
+    private AutoCompleteMode EffectiveAutoComplete
+        => AutoComplete == AutoCompleteMode.Default ? AutoCompleteMode.SuggestAppend : AutoComplete;
 
     /// <summary>
     /// Changement du texte par l'utilisateur hors complétion (effacement, coupe, frappe sans
-    /// correspondance) : suit le texte et filtre les suggestions
+    /// correspondance) : filtre les suggestions. Un texte réécrit depuis la valeur n'ouvre rien (APP-09).
     /// </summary>
-    private void OnEditTextChanged()
+    protected override void OnInnerTextChanged()
     {
-        if (_editTextBox == null) return;
-
-        var typed = _editTextBox.Text ?? "";
-        _text = typed;
-        TextChanged?.Invoke(this, EventArgs.Empty);
-
-        // Suggestions : seulement pendant une frappe de l'utilisateur. Un texte posé par code
-        // (SelectedIndex, EditValue, texte initial) n'ouvre rien — pas même sur une combo désactivée
-        if (!_editTextBox.IsFocused) return;
-        Suggest(typed);
+        if (IsUpdatingText || !IsEditable || !InnerTextBox.IsFocused) return;
+        Suggest(InnerText);
     }
 
     /// <summary>Suggest : ouvrir et filtrer la liste sur le préfixe saisi</summary>
@@ -949,17 +719,16 @@ public class HDevComboBox : Control
     {
         if (string.IsNullOrEmpty(typed))
         {
-            if (_isDropDownOpen)
+            if (DropDown.IsOpen)
                 RefreshDropDownItems(null);
             return;
         }
 
-        if (EffectiveAutoComplete is AutoCompleteMode.Suggest or AutoCompleteMode.SuggestAppend
-            || _properties.ImmediatePopup)
+        if (EffectiveAutoComplete is AutoCompleteMode.Suggest or AutoCompleteMode.SuggestAppend || OpenDropDownOnInput)
         {
-            if (!_isDropDownOpen && !_guard.JustClosed)
-                OpenDropDown();
-            if (_isDropDownOpen)
+            if (!DropDown.IsOpen && !DropDown.JustClosedByGuard)
+                DropDown.Open();
+            if (DropDown.IsOpen)
                 RefreshDropDownItems(typed);
         }
     }
@@ -971,497 +740,136 @@ public class HDevComboBox : Control
     /// </summary>
     private void OnEditTextInput(object? sender, TextInputEventArgs e)
     {
-        if (_editTextBox == null || string.IsNullOrEmpty(e.Text) || _properties.ReadOnly
+        if (!IsEditable || string.IsNullOrEmpty(e.Text) || IsReadOnly
             || EffectiveAutoComplete is not (AutoCompleteMode.Append or AutoCompleteMode.SuggestAppend))
             return;
 
-        var text = _editTextBox.Text ?? "";
-        var start = Math.Min(_editTextBox.SelectionStart, _editTextBox.SelectionEnd);
-        var end = Math.Max(_editTextBox.SelectionStart, _editTextBox.SelectionEnd);
-        if (start == end) start = end = Math.Min(_editTextBox.CaretIndex, text.Length);
+        var text = InnerText;
+        var start = Math.Min(InnerTextBox.SelectionStart, InnerTextBox.SelectionEnd);
+        var end = Math.Max(InnerTextBox.SelectionStart, InnerTextBox.SelectionEnd);
+        if (start == end) start = end = Math.Min(InnerTextBox.CaretIndex, text.Length);
         // Compléter seulement en bout de texte
         if (end < text.Length) return;
 
         var typed = text[..start] + e.Text;
         var index = FindItemByPrefix(typed);
         if (index < 0) return;
-        var full = GetItemText(_properties.Items[index]);
+        var full = GetItemText(EffectiveItems[index]);
         if (full.Length <= typed.Length) return;
 
         e.Handled = true;
-        _syncingEditText = true;
-        _editTextBox.Text = full;
-        _editTextBox.SelectionStart = typed.Length;
-        _editTextBox.SelectionEnd = full.Length;
-        _syncingEditText = false;
-        _text = full;
-        TextChanged?.Invoke(this, EventArgs.Empty);
+        SetTextFromValue(full);
+        InnerTextBox.SelectionStart = typed.Length;
+        InnerTextBox.SelectionEnd = full.Length;
         Suggest(typed);
-    }
-
-    /// <summary>Vrai si l'élément est dans la liste déroulante (qui vit en overlay)</summary>
-    private bool IsInDropDown(IInputElement? element)
-        => element is Visual v && _popup?.Child is Visual list
-           && (ReferenceEquals(v, list) || list.IsVisualAncestorOf(v));
-
-    /// <summary>
-    /// Alimente le dropdown : vue triée si Sorted, filtrée sur le préfixe en mode Suggest
-    /// </summary>
-    private void RefreshDropDownItems(string? filter)
-    {
-        if (_listBox == null) return;
-
-        IEnumerable<object> source = _properties.Items;
-        if (_properties.Sorted)
-            source = source.OrderBy(GetItemText, StringComparer.CurrentCultureIgnoreCase);
-
-        if (!string.IsNullOrEmpty(filter))
-        {
-            var comparison = _properties.CaseSensitiveSearch
-                ? StringComparison.CurrentCulture
-                : StringComparison.CurrentCultureIgnoreCase;
-            source = source.Where(i => GetItemText(i).StartsWith(filter, comparison));
-        }
-
-        var list = source.ToList();
-        _listBox.ItemsSource = list;
-
-        if (list.Count == 0 && _isDropDownOpen)
-            CloseDropDown();
     }
 
     private void OnEditTextBoxKeyDown(object? sender, KeyEventArgs e)
     {
+        if (!IsEditable || e.Handled) return;
+        var open = DropDown.IsOpen;
+        var plain = e.KeyModifiers == KeyModifiers.None;
+
         switch (e.Key)
         {
-            case Key.F4:
-            case Key.Down when e.KeyModifiers.HasFlag(KeyModifiers.Alt):
-                ToggleDropDown();
+            case Key.Down when open && plain:
+                MoveHighlight(1);
                 e.Handled = true;
                 break;
 
-            case Key.Escape when _isDropDownOpen:
-                CloseDropDown();
+            case Key.Up when open && plain:
+                MoveHighlight(-1);
                 e.Handled = true;
                 break;
 
-            case Key.Down when _isDropDownOpen:
-                MoveListSelection(1);
-                e.Handled = true;
-                break;
-
-            case Key.Up when _isDropDownOpen:
-                MoveListSelection(-1);
-                e.Handled = true;
-                break;
-
-            case Key.Enter:
-                if (_isDropDownOpen && _listBox?.SelectedItem != null)
-                    CommitItem(_listBox.SelectedItem);
+            case Key.Enter when plain:
+                if (open && _highlightByUser && _listBox.SelectedItem != null)
+                {
+                    var item = _listBox.SelectedItem;
+                    _highlightByUser = false;
+                    CommitItem(item);
+                }
                 else
                     CommitTypedText();
-                CloseDropDown();
+                DropDown.Close(HDevDropDownCloseReason.Canceled);
                 e.Handled = true;
                 break;
         }
     }
 
-    private void MoveListSelection(int delta)
-    {
-        if (_listBox == null || _listBox.ItemCount == 0) return;
-        _listBox.SelectedIndex = Math.Clamp(_listBox.SelectedIndex + delta, 0, _listBox.ItemCount - 1);
-        _listBox.ScrollIntoView(_listBox.SelectedIndex);
-    }
-
-    private void CommitItem(object item)
-    {
-        var oldIndex = SelectedIndex;
-        EditValue = item;
-
-        if (oldIndex != SelectedIndex)
-        {
-            SelectedIndexChanged?.Invoke(this, EventArgs.Empty);
-            SelectedValueChanged?.Invoke(this, EventArgs.Empty);
-        }
-    }
-
-    /// <summary>
-    /// Valide le texte saisi : item correspondant si trouvé, sinon texte libre
-    /// </summary>
-    private void CommitTypedText()
-    {
-        if (!IsEditable || _editTextBox == null) return;
-
-        var typed = _editTextBox.Text ?? "";
-
-        if (string.IsNullOrEmpty(typed))
-        {
-            if (_properties.AllowNullInput && _editValue != null)
-                CommitItem(null!);
-            return;
-        }
-
-        var index = FindItem(typed);
-        if (index >= 0)
-            CommitItem(_properties.Items[index]);
-        else if (!Equals(_editValue, typed))
-            EditValue = typed; // texte libre
-    }
-
     // ═══════════════════════════════════════════════════════════════
-    // MESURE
+    // MODE NON ÉDITABLE : clavier et souris du champ
     // ═══════════════════════════════════════════════════════════════
-
-    protected override Size MeasureOverride(Size availableSize)
-    {
-        var height = Height > 0 ? Height : HDevTheme.Size.EditorHeight;
-        var width = Width > 0 ? Width : (MinWidth > 0 ? MinWidth : 120);
-
-        _editTextBox?.Measure(availableSize);
-
-        if (double.IsInfinity(availableSize.Width))
-            return new Size(width, height);
-
-        return new Size(Math.Min(availableSize.Width, width), height);
-    }
-
-    protected override Size ArrangeOverride(Size finalSize)
-    {
-        // Zone de saisie = zone texte (le bouton dropdown reste dessiné/hit-testé)
-        if (_editTextBox != null)
-        {
-            var arrowWidth = _properties.ShowDropDown ? 24 : 0;
-            var rect = new Rect(1, 1,
-                Math.Max(0, finalSize.Width - arrowWidth - 2), Math.Max(0, finalSize.Height - 2));
-            _editTextBox.Arrange(rect);
-        }
-        return finalSize;
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // RENDU
-    // ═══════════════════════════════════════════════════════════════
-
-    public override void Render(DrawingContext context)
-    {
-        Crisp.BeginFrame(this);
-        var bounds = new Rect(Bounds.Size);
-        var cornerRadius = HDevTheme.Size.CornerRadiusSmall;
-
-        // Couleurs selon l'état
-        Color bgColor, borderColor, textColor;
-
-        if (!IsEnabled)
-        {
-            bgColor = HDevTheme.Background.ControlDisabled;
-            borderColor = HDevTheme.Border.Subtle;
-            textColor = HDevTheme.Text.Disabled;
-        }
-        else if (_isDropDownOpen)
-        {
-            bgColor = HDevTheme.Background.Control;
-            borderColor = HDevTheme.Accent.Primary;
-            textColor = HDevTheme.Text.Primary;
-        }
-        else if (_isPressed)
-        {
-            bgColor = HDevTheme.Background.ControlPressed;
-            borderColor = HDevTheme.Accent.Primary;
-            textColor = HDevTheme.Text.Primary;
-        }
-        else if (_isHovered)
-        {
-            bgColor = HDevTheme.Background.ControlHover;
-            borderColor = HDevTheme.Border.Default;
-            textColor = HDevTheme.Text.Primary;
-        }
-        else
-        {
-            bgColor = HDevTheme.Background.Control;
-            borderColor = HDevTheme.Border.Default;
-            textColor = HDevTheme.Text.Primary;
-        }
-
-        // Éditable = champ de saisie : fond de champ, le survol ne passe que par
-        // le filet. Non éditable = liste déroulante : garde le gris des boutons
-        if (IsEditable && IsEnabled)
-        {
-            bgColor = HDevTheme.Background.Input;
-            if (_isHovered && !_isDropDownOpen)
-                borderColor = HDevTheme.Border.Hover;
-        }
-
-        // Focus (en mode éditable, c'est le TextBox interne qui porte le focus) :
-        // filet accent ET halo, comme tout champ de saisie
-        var isFocused = (IsFocused || _editTextBox?.IsFocused == true) && IsEnabled;
-        if (isFocused)
-        {
-            borderColor = HDevTheme.Border.Focused;
-            HDevInputChrome.DrawHalo(context, bounds, cornerRadius, HDevInputChrome.FocusHalo);
-        }
-
-        // ReadOnly
-        if (_properties.ReadOnly)
-        {
-            bgColor = HDevTheme.Background.ControlDisabled;
-        }
-
-        // Fond
-        context.DrawRectangle(
-            new SolidColorBrush(bgColor),
-            null,
-            bounds,
-            cornerRadius, cornerRadius);
-
-        // Bordure
-        var borderPen = new Pen(new SolidColorBrush(borderColor), 1);
-        context.DrawRectangle(null, borderPen, bounds.Deflate(0.5), cornerRadius, cornerRadius);
-
-        // Zone de texte
-        var arrowWidth = _properties.ShowDropDown ? 24 : 0;
-        var textInset = HDevTheme.Size.BorderThin + HDevTheme.Size.EditorTextInset;
-        var textBounds = new Rect(textInset, 0, bounds.Width - arrowWidth - textInset, bounds.Height);
-
-        // Déterminer le texte à afficher — en mode Standard c'est le TextBox
-        // interne qui affiche texte et placeholder ; en HideTextEditor, rien
-        string displayText;
-        bool isPlaceholder = false;
-
-        if (IsEditable || _properties.TextEditStyle == TextEditStyles.HideTextEditor)
-        {
-            displayText = "";
-        }
-        else if (_editValue == null || string.IsNullOrEmpty(_text))
-        {
-            // ShowNullValuePrompt conditionne l'affichage du placeholder
-            var promptAllowed = _properties.ShowNullValuePrompt switch
-            {
-                ShowNullValuePromptOptions.EmptyValue => !_properties.ReadOnly,
-                ShowNullValuePromptOptions.EditorFocused => IsFocused && !_properties.ReadOnly,
-                ShowNullValuePromptOptions.EditorReadOnly => true,
-                _ => true
-            };
-
-            // Afficher NullValuePrompt ou NullText
-            if (promptAllowed && !string.IsNullOrEmpty(_properties.NullValuePrompt))
-            {
-                displayText = _properties.NullValuePrompt;
-                isPlaceholder = true;
-            }
-            else if (!string.IsNullOrEmpty(_properties.NullText))
-            {
-                displayText = _properties.NullText;
-                isPlaceholder = true;
-            }
-            else
-            {
-                displayText = "";
-            }
-        }
-        else
-        {
-            displayText = _text;
-        }
-
-        if (!string.IsNullOrEmpty(displayText))
-        {
-            var formattedText = new FormattedText(
-                displayText,
-                CultureInfo.CurrentCulture,
-                FlowDirection.LeftToRight,
-                new Typeface(HDevTheme.Typography.FontFamily),
-                HDevTheme.Typography.FontSizeBody,
-                new SolidColorBrush(isPlaceholder ? HDevTheme.Text.Placeholder : textColor));
-
-            var textY = (bounds.Height - formattedText.Height) / 2;
-
-            using (context.PushClip(textBounds))
-            {
-                context.DrawText(formattedText, Crisp.Snap(new Point(textBounds.X, textY)));
-            }
-        }
-
-        // Flèche dropdown
-        if (_properties.ShowDropDown)
-        {
-            HDevEditorGlyphButton.DrawIcon(context,
-                _isDropDownOpen ? HDevEditorIcon.ChevronUp : HDevEditorIcon.ChevronDown,
-                new Point(bounds.Width - arrowWidth / 2.0, bounds.Height / 2),
-                IsEnabled ? HDevTheme.Text.Secondary : HDevTheme.Text.Disabled);
-        }
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // INTERACTIONS
-    // ═══════════════════════════════════════════════════════════════
-
-    /// <summary>Fige survol et pression pour la planche visuelle headless (tests/Gallery)</summary>
-    internal void ForceVisualState(bool hovered = false, bool pressed = false)
-    {
-        _isHovered = hovered;
-        _isPressed = pressed;
-        InvalidateVisual();
-    }
-
-    protected override void OnPointerEntered(PointerEventArgs e)
-    {
-        _isHovered = true;
-        InvalidateVisual();
-        base.OnPointerEntered(e);
-    }
-
-    protected override void OnPointerExited(PointerEventArgs e)
-    {
-        _isHovered = false;
-        _isPressed = false;
-        InvalidateVisual();
-        base.OnPointerExited(e);
-    }
-
-    /// <summary>En mode éditable, seul le bouton flèche ouvre le dropdown</summary>
-    private bool IsInDropDownButton(Point pos)
-        => !IsEditable || pos.X >= Bounds.Width - 24;
-
-    protected override void OnPointerPressed(PointerPressedEventArgs e)
-    {
-        if (!IsEnabled || _properties.ReadOnly)
-            return;
-
-        // Clic dans la zone de saisie : laisser le TextBox interne prendre le focus
-        if (IsEditable && !IsInDropDownButton(e.GetPosition(this)))
-        {
-            base.OnPointerPressed(e);
-            return;
-        }
-
-        _isPressed = true;
-        InvalidateVisual();
-
-        e.Handled = true;
-        if (!IsEditable)
-            Focus();
-
-        base.OnPointerPressed(e);
-    }
-
-    protected override void OnPointerReleased(PointerReleasedEventArgs e)
-    {
-        if (!IsEnabled || _properties.ReadOnly)
-            return;
-
-        if (IsEditable && !IsInDropDownButton(e.GetPosition(this)))
-        {
-            base.OnPointerReleased(e);
-            return;
-        }
-
-        if (_isPressed && _isHovered)
-        {
-            ToggleDropDown();
-            ButtonClick?.Invoke(this, EventArgs.Empty);
-        }
-
-        _isPressed = false;
-        InvalidateVisual();
-
-        base.OnPointerReleased(e);
-    }
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
-        if (!IsEnabled || _properties.ReadOnly)
-            return;
-
-        switch (e.Key)
-        {
-            case Key.Enter:
-            case Key.Space:
-                ToggleDropDown();
-                e.Handled = true;
-                break;
-
-            case Key.Escape:
-                if (_isDropDownOpen)
-                {
-                    CloseDropDown();
-                    e.Handled = true;
-                }
-                break;
-
-            case Key.Down:
-                if (e.KeyModifiers.HasFlag(KeyModifiers.Alt))
-                {
-                    OpenDropDown();
-                }
-                else if (_isDropDownOpen)
-                {
-                    SelectNextItem();
-                }
-                else
-                {
-                    SelectNextItem();
-                }
-                e.Handled = true;
-                break;
-
-            case Key.Up:
-                if (_isDropDownOpen)
-                {
-                    SelectPreviousItem();
-                }
-                else
-                {
-                    SelectPreviousItem();
-                }
-                e.Handled = true;
-                break;
-
-            case Key.Home:
-                SelectFirstItem();
-                e.Handled = true;
-                break;
-
-            case Key.End:
-                SelectLastItem();
-                e.Handled = true;
-                break;
-
-            case Key.F4:
-                ToggleDropDown();
-                e.Handled = true;
-                break;
-
-            case Key.Delete:
-            case Key.Back:
-                // AllowNullInput : effacer la valeur au clavier
-                if (_properties.AllowNullInput && _editValue != null)
-                {
-                    var oldIdx = SelectedIndex;
-                    EditValue = null;
-                    if (_listBox != null)
-                        _listBox.SelectedItem = null;
-                    if (oldIdx != -1)
-                    {
-                        SelectedIndexChanged?.Invoke(this, EventArgs.Empty);
-                        SelectedValueChanged?.Invoke(this, EventArgs.Empty);
-                    }
-                }
-                e.Handled = true;
-                break;
-        }
-
+        if (!IsEditable && !e.Handled && IsEffectivelyEnabled && !IsReadOnly && e.KeyModifiers == KeyModifiers.None)
+            HandleSelectKey(e);
         base.OnKeyDown(e);
     }
 
-    // Type-to-select : taper les premières lettres d'un item le sélectionne
-    // (buffer de préfixe réinitialisé après 1 s d'inactivité, cf. combos WinForms)
+    private void HandleSelectKey(KeyEventArgs e)
+    {
+        var open = DropDown.IsOpen;
+        switch (e.Key)
+        {
+            case Key.Enter or Key.Space when open:
+                DropDown.Close(HDevDropDownCloseReason.Accepted);
+                e.Handled = true;
+                break;
+            case Key.Enter or Key.Space:
+                DropDown.Open();
+                e.Handled = true;
+                break;
+            case Key.Down:
+                if (open) MoveHighlight(1); else SelectItemAt(SelectedIndex + 1);
+                e.Handled = true;
+                break;
+            case Key.Up:
+                if (open) MoveHighlight(-1); else if (SelectedIndex > 0) SelectItemAt(SelectedIndex - 1);
+                e.Handled = true;
+                break;
+            case Key.Home:
+                if (open) MoveHighlight(-1, toEnd: true); else SelectItemAt(0);
+                e.Handled = true;
+                break;
+            case Key.End:
+                if (open) MoveHighlight(1, toEnd: true); else SelectItemAt(EffectiveItems.Count - 1);
+                e.Handled = true;
+                break;
+            case Key.Delete or Key.Back when !open:
+                // AllowNull : effacer la valeur au clavier
+                if (AllowNull && Value != null)
+                    CommitItem(null);
+                e.Handled = true;
+                break;
+        }
+    }
+
+    /// <summary>Fermée : l'élément devient la valeur ; ouverte : il passe en surbrillance</summary>
+    private void SelectItemAt(int index)
+    {
+        var items = EffectiveItems;
+        if (index < 0 || index >= items.Count) return;
+
+        if (DropDown.IsOpen)
+        {
+            _listBox.SelectedItem = items[index];
+            _highlightByUser = true;
+        }
+        else
+            CommitItem(items[index]);
+    }
+
+    // Sélection par préfixe : taper les premières lettres d'un item le sélectionne
+    // (préfixe réinitialisé après 1 s d'inactivité)
     private string _searchPrefix = "";
     private DateTime _lastSearchInput;
 
     protected override void OnTextInput(TextInputEventArgs e)
     {
-        // En mode éditable, la saisie va au TextBox interne (auto-complétion)
-        if (IsEditable || !IsEnabled || _properties.ReadOnly || string.IsNullOrEmpty(e.Text))
+        // En mode éditable, la saisie va au champ (auto-complétion)
+        if (IsEditable || e.Handled || !IsEffectivelyEnabled || IsReadOnly || string.IsNullOrEmpty(e.Text))
         {
             base.OnTextInput(e);
             return;
@@ -1472,7 +880,7 @@ public class HDevComboBox : Control
             _searchPrefix = "";
         _lastSearchInput = now;
 
-        // Espace seul = toggle du dropdown (géré par OnKeyDown), pas une recherche
+        // Espace seul = ouverture de la liste (OnKeyDown), pas une recherche
         if (e.Text == " " && _searchPrefix.Length == 0)
         {
             base.OnTextInput(e);
@@ -1480,7 +888,6 @@ public class HDevComboBox : Control
         }
 
         _searchPrefix += e.Text;
-
         var index = FindItemByPrefix(_searchPrefix);
         if (index >= 0)
             SelectItemAt(index);
@@ -1489,241 +896,44 @@ public class HDevComboBox : Control
         base.OnTextInput(e);
     }
 
-    private void SelectItemAt(int index)
+    protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
-        if (index < 0 || index >= _properties.Items.Count)
-            return;
-
-        var oldIndex = SelectedIndex;
-        SelectedIndex = index;
-        if (_listBox != null)
-            _listBox.SelectedIndex = index;
-
-        if (oldIndex != SelectedIndex)
+        if (!IsEditable && IsEffectivelyEnabled && !IsReadOnly)
         {
-            SelectedIndexChanged?.Invoke(this, EventArgs.Empty);
-            SelectedValueChanged?.Invoke(this, EventArgs.Empty);
+            _isPressed = true;
+            UpdateVisualState();
         }
+        base.OnPointerPressed(e);
+    }
+
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    {
+        if (_isPressed)
+        {
+            _isPressed = false;
+            UpdateVisualState();
+        }
+        base.OnPointerReleased(e);
+    }
+
+    protected override void OnPointerExited(PointerEventArgs e)
+    {
+        _isPressed = false;
+        base.OnPointerExited(e);
     }
 
     protected override void OnGotFocus(FocusChangedEventArgs e)
     {
-        _oldEditValue = _editValue;
-        InvalidateVisual();
         base.OnGotFocus(e);
+        RefreshPresenter();
     }
 
     protected override void OnLostFocus(FocusChangedEventArgs e)
     {
-        DoValidate();
-        InvalidateVisual();
         base.OnLostFocus(e);
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // DROPDOWN
-    // ═══════════════════════════════════════════════════════════════
-
-    private void ToggleDropDown()
-    {
-        if (_isDropDownOpen)
-        {
-            CloseDropDown();
-        }
-        else if (!_guard.JustClosed)
-        {
-            // Ignorer la réouverture si le garde vient de fermer sur ce même clic
-            OpenDropDown();
-        }
-    }
-
-    private void OpenDropDown()
-    {
-        if (_popup == null || _listBox == null || _properties.Items.Count == 0)
-            return;
-
-        // Événement Popup (peut être annulé)
-        var popupArgs = new HDevPopupEventArgs();
-        Popup?.Invoke(this, popupArgs);
-        if (popupArgs.Cancel)
-            return;
-
-        // Mettre à jour les items (vue triée si Sorted, la collection n'est pas modifiée)
-        RefreshDropDownItems(null);
-        _listBox.SelectedItem = _editValue;
-
-        // Largeur du popup = largeur du combo
-        if (_popup.Child is Border border)
-        {
-            border.MinWidth = Bounds.Width;
-            border.MaxWidth = Bounds.Width;
-        }
-
-        // Hauteur basée sur DropDownRows
-        var itemHeight = 24;
-        _listBox.MaxHeight = _properties.DropDownRows * itemHeight;
-
-        // Placement Bas par défaut, basculé en Haut si le dropdown déborderait
-        // le bas de la fenêtre : un popup overlay est clippé aux bords de la
-        // fenêtre principale, il ne peut pas s'afficher en dehors.
-        var visibleRows = Math.Min(_properties.Items.Count, _properties.DropDownRows);
-        var estimatedHeight = visibleRows * itemHeight + 2; // + bordure
-        var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel != null && this.TranslatePoint(new Point(0, 0), topLevel) is { } comboTopInWin)
-        {
-            var spaceBelow = topLevel.ClientSize.Height - (comboTopInWin.Y + Bounds.Height);
-            var spaceAbove = comboTopInWin.Y;
-            if (spaceBelow < estimatedHeight && spaceAbove > spaceBelow)
-            {
-                _popup.Placement = PlacementMode.Top;
-                _popup.VerticalOffset = 1; // chevauche la bordure du combo
-            }
-            else
-            {
-                _popup.Placement = PlacementMode.Bottom;
-                _popup.VerticalOffset = -1;
-            }
-        }
-
-        _isDropDownOpen = true;
-        _popup.IsOpen = true;
-        InvalidateVisual();
-
-        PopupOpened?.Invoke(this, EventArgs.Empty);
-    }
-
-    /// <param name="refocus">Faux quand le focus quitte déjà la combo (il n'y revient pas)</param>
-    private void CloseDropDown(bool refocus = true)
-    {
-        if (_popup == null)
-            return;
-
-        // QueryCloseUp (peut être annulé)
-        var queryArgs = new HDevQueryCloseUpEventArgs();
-        QueryCloseUp?.Invoke(this, queryArgs);
-        if (queryArgs.Cancel)
-            return;
-
-        _isDropDownOpen = false;
-        _popup.IsOpen = false;
-        InvalidateVisual();
-
-        // En mode éditable, rendre le focus à la zone de saisie, pas au contrôle
-        if (!refocus) { }
-        else if (IsEditable)
-            _editTextBox?.Focus();
-        else
-            Focus();
-
-        // CloseUp
-        var closeUpArgs = new HDevCloseUpEventArgs { Value = _editValue };
-        CloseUp?.Invoke(this, closeUpArgs);
-
-        PopupClosed?.Invoke(this, EventArgs.Empty);
-    }
-
-    private void OnPopupClosed(object? sender, EventArgs e)
-    {
-        _guard.Remove();
-
-        if (_isDropDownOpen)
-        {
-            _isDropDownOpen = false;
-            InvalidateVisual();
-            PopupClosed?.Invoke(this, EventArgs.Empty);
-        }
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // NAVIGATION
-    // ═══════════════════════════════════════════════════════════════
-
-    private void SelectNextItem()
-    {
-        var newIndex = SelectedIndex + 1;
-        if (newIndex < _properties.Items.Count)
-        {
-            var oldIndex = SelectedIndex;
-            SelectedIndex = newIndex;
-            if (_listBox != null)
-                _listBox.SelectedIndex = newIndex;
-
-            if (oldIndex != SelectedIndex)
-            {
-                SelectedIndexChanged?.Invoke(this, EventArgs.Empty);
-                SelectedValueChanged?.Invoke(this, EventArgs.Empty);
-            }
-        }
-    }
-
-    private void SelectPreviousItem()
-    {
-        var newIndex = SelectedIndex - 1;
-        if (newIndex >= 0)
-        {
-            var oldIndex = SelectedIndex;
-            SelectedIndex = newIndex;
-            if (_listBox != null)
-                _listBox.SelectedIndex = newIndex;
-
-            if (oldIndex != SelectedIndex)
-            {
-                SelectedIndexChanged?.Invoke(this, EventArgs.Empty);
-                SelectedValueChanged?.Invoke(this, EventArgs.Empty);
-            }
-        }
-    }
-
-    private void SelectFirstItem()
-    {
-        if (_properties.Items.Count > 0)
-        {
-            var oldIndex = SelectedIndex;
-            SelectedIndex = 0;
-            if (_listBox != null)
-                _listBox.SelectedIndex = 0;
-
-            if (oldIndex != SelectedIndex)
-            {
-                SelectedIndexChanged?.Invoke(this, EventArgs.Empty);
-                SelectedValueChanged?.Invoke(this, EventArgs.Empty);
-            }
-        }
-    }
-
-    private void SelectLastItem()
-    {
-        if (_properties.Items.Count > 0)
-        {
-            var oldIndex = SelectedIndex;
-            SelectedIndex = _properties.Items.Count - 1;
-            if (_listBox != null)
-                _listBox.SelectedIndex = _properties.Items.Count - 1;
-
-            if (oldIndex != SelectedIndex)
-            {
-                SelectedIndexChanged?.Invoke(this, EventArgs.Empty);
-                SelectedValueChanged?.Invoke(this, EventArgs.Empty);
-            }
-        }
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// ÉVÉNEMENT ARGS SUPPLÉMENTAIRES
-// ═══════════════════════════════════════════════════════════════════════════
-
-/// <summary>
-/// Arguments pour EditValueChanging
-/// </summary>
-public class HDevEditValueChangingEventArgs : CancelEventArgs
-{
-    public object? OldValue { get; }
-    public object? NewValue { get; set; }
-
-    public HDevEditValueChangingEventArgs(object? oldValue, object? newValue)
-    {
-        OldValue = oldValue;
-        NewValue = newValue;
+        // Liste non éditable : le focus qui part ailleurs que vers la liste la ferme
+        if (!IsEditable && DropDown.IsOpen && !IsKeyboardFocusWithin && !DropDown.Contains(e.NewFocusedElement))
+            DropDown.Close(HDevDropDownCloseReason.LightDismiss);
+        RefreshPresenter();
     }
 }

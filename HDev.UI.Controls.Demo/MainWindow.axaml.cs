@@ -1475,15 +1475,15 @@ public partial class MainWindow : HDevWindow
         var comboEditable = this.FindControl<HDevComboBox>("ComboEditable");
         if (comboEditable != null)
         {
-            comboEditable.Properties.TextEditStyle = TextEditStyles.Standard;
-            comboEditable.Properties.NullValuePrompt = "Taper un pays...";
-            comboEditable.Properties.Items.AddRange(new object[]
+            comboEditable.TextEditStyle = HDevTextEditStyle.Editable;
+            comboEditable.Placeholder = "Taper un pays...";
+            comboEditable.Items.AddRange(new object[]
             {
                 "France", "Nouvelle-Calédonie", "Nouvelle-Zélande", "Australie",
                 "Japon", "Singapour", "Allemagne", "Espagne"
             });
-            comboEditable.EditValueChanged += (s, e) =>
-                Show($"Combo éditable : {comboEditable.EditValue}");
+            comboEditable.ValueChanged += (s, e) =>
+                Show($"Combo éditable : {comboEditable.Value}");
         }
 
         var lookUp = this.FindControl<HDevLookUpEdit>("LookUpDemo");
@@ -1647,15 +1647,15 @@ public partial class MainWindow : HDevWindow
         var comboCountries = this.FindControl<HDevComboBox>("ComboCountries");
         if (comboCountries != null)
         {
-            comboCountries.Properties.NullValuePrompt = "Sélectionner un pays...";
-            comboCountries.Properties.Items.Add(new Country { Code = "FR", Name = "France" });
-            comboCountries.Properties.Items.Add(new Country { Code = "DE", Name = "Allemagne" });
-            comboCountries.Properties.Items.Add(new Country { Code = "ES", Name = "Espagne" });
-            comboCountries.Properties.Items.Add(new Country { Code = "IT", Name = "Italie" });
-            comboCountries.Properties.Items.Add(new Country { Code = "GB", Name = "Royaume-Uni" });
-            comboCountries.Properties.Items.Add(new Country { Code = "US", Name = "États-Unis" });
-            comboCountries.Properties.Items.Add(new Country { Code = "JP", Name = "Japon" });
-            comboCountries.Properties.Items.Add(new Country { Code = "CN", Name = "Chine" });
+            comboCountries.Placeholder = "Sélectionner un pays...";
+            comboCountries.Items.Add(new Country { Code = "FR", Name = "France" });
+            comboCountries.Items.Add(new Country { Code = "DE", Name = "Allemagne" });
+            comboCountries.Items.Add(new Country { Code = "ES", Name = "Espagne" });
+            comboCountries.Items.Add(new Country { Code = "IT", Name = "Italie" });
+            comboCountries.Items.Add(new Country { Code = "GB", Name = "Royaume-Uni" });
+            comboCountries.Items.Add(new Country { Code = "US", Name = "États-Unis" });
+            comboCountries.Items.Add(new Country { Code = "JP", Name = "Japon" });
+            comboCountries.Items.Add(new Country { Code = "CN", Name = "Chine" });
 
             // CustomDisplayText pour afficher le nom du pays
             comboCountries.CustomDisplayText += (s, e) =>
@@ -1671,8 +1671,8 @@ public partial class MainWindow : HDevWindow
         var comboWithSelection = this.FindControl<HDevComboBox>("ComboWithSelection");
         if (comboWithSelection != null)
         {
-            comboWithSelection.Properties.NullValuePrompt = "Choisir...";
-            comboWithSelection.Properties.Items.AddRange(priorities);
+            comboWithSelection.Placeholder = "Choisir...";
+            comboWithSelection.Items.AddRange(priorities);
             comboWithSelection.SelectedIndex = 1; // "Normale"
         }
 
@@ -1680,29 +1680,29 @@ public partial class MainWindow : HDevWindow
         var comboDisabled = this.FindControl<HDevComboBox>("ComboDisabled");
         if (comboDisabled != null)
         {
-            comboDisabled.Properties.NullValuePrompt = "Non disponible";
-            comboDisabled.Properties.Items.AddRange(priorities);
+            comboDisabled.Placeholder = "Non disponible";
+            comboDisabled.Items.AddRange(priorities);
         }
 
         // ComboBox readonly avec valeur
         var comboReadOnly = this.FindControl<HDevComboBox>("ComboReadOnly");
         if (comboReadOnly != null)
         {
-            comboReadOnly.Properties.Items.AddRange(priorities);
+            comboReadOnly.Items.AddRange(priorities);
             comboReadOnly.SelectedIndex = 2; // "Haute"
-            comboReadOnly.ReadOnly = true;
+            comboReadOnly.IsReadOnly = true;
         }
 
         // ComboBox trié + type-to-select (taper "ma" sélectionne Marseille)
         var comboSorted = this.FindControl<HDevComboBox>("ComboSorted");
         if (comboSorted != null)
         {
-            comboSorted.Properties.NullValuePrompt = "Taper pour rechercher...";
-            comboSorted.Properties.Items.AddRange(new object[]
+            comboSorted.Placeholder = "Taper pour rechercher...";
+            comboSorted.Items.AddRange(new object[]
             {
                 "Nouméa", "Paris", "Marseille", "Lyon", "Bordeaux", "Toulouse", "Auckland", "Sydney"
             });
-            comboSorted.Properties.Sorted = true;
+            comboSorted.Sorted = true;
         }
     }
     

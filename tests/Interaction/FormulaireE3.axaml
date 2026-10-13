@@ -10,6 +10,8 @@
     <h:HDevTextBox x:Name="Nom" Width="200" Text="{Binding Nom}" />
     <h:HDevSpinEdit x:Name="Quantite" Width="120" Decimals="2" Minimum="0" Maximum="100" Value="{Binding Quantite}" />
     <h:HDevTimeEdit x:Name="Heure" Width="120" Value="{Binding Heure}" />
+    <h:HDevComboBox x:Name="Priorite" Width="160" ItemsSource="{Binding Priorites}" Value="{Binding Priorite}"
+                    Placeholder="Choisir…" />
     <h:HDevSearchControl x:Name="Recherche" Width="200" Text="{Binding Recherche}" />
   </StackPanel>
 </UserControl>

@@ -828,8 +828,14 @@ public abstract class HDevEditorBase : Border
     }
 
     protected void UpdateVisualState()
-        => HDevInputChrome.ApplyState(this, InnerTextBox,
-            IsEnabled, HasError, _isFocusedState, _isHovered);
+        => ApplyVisualState(IsEnabled, HasError, _isFocusedState, _isHovered);
+
+    /// <summary>
+    /// Pose fond, filet et halo selon l'état ; les champs de saisie partagent celui de
+    /// <see cref="HDevInputChrome"/>, une liste déroulante non éditable garde le sien
+    /// </summary>
+    private protected virtual void ApplyVisualState(bool isEnabled, bool hasError, bool isFocused, bool isHovered)
+        => HDevInputChrome.ApplyState(this, InnerTextBox, isEnabled, hasError, isFocused, isHovered);
 
     /// <summary>Fige survol et focus pour la planche visuelle headless (tests/Gallery)</summary>
     internal void ForceVisualState(bool hovered = false, bool focused = false)

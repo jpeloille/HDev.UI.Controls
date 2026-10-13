@@ -128,27 +128,32 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
 
 | Avant | Après | Lot |
 |---|---|---|
-| `Properties` (objet de réglages) | supprimé : réglages directs sur le contrôle | E3 |
-| `Properties.Items` | `Items`, et `ItemsSource` pour une source liée | E3 |
-| `Properties.NullText`, `Properties.NullValuePrompt` | `Placeholder` | E3 |
-| `Properties.ShowNullValuePrompt` | `ShowPlaceholder`, propriété directe : conservé, et renommé comme l'invite (`Placeholder`) ; décidé le 05/10/2026 | E3 |
-| `Properties.ReadOnly`, `ReadOnly` | `IsReadOnly` | E3 |
-| `Properties.TextEditStyle` | `TextEditStyle`, propriété directe : conservé avec ses trois modes, car `HideTextEditor` n'a pas d'équivalent dans Avalonia, qui n'a que `IsEditable` ; décidé le 05/10/2026 | E3 |
-| `Properties.AutoComplete`, `CaseSensitiveSearch`, `ImmediatePopup`, `AllowNullInput`, `DropDownRows` | conservés, en propriétés directes | E3 |
-| `Properties.Sorted` | `Sorted`, propriété directe : conservé | E3 |
-| `Properties.ShowDropDown` | remplacé par les boutons d'éditeur (`Buttons`) | E3 (pièce du socle : E2, fait) |
-| `EditValue` | `Value` (et `IHDevEditor.EditValue`) | E3 |
-| `OldEditValue` | supprimé : `OldValue` des arguments de `ValueChanged` | E3 |
-| `EditValueChanged`, `SelectedIndexChanged`, `SelectedValueChanged` | `ValueChanged`, levé aussi pour un changement par le code (constat E0 n° 1) | E3 |
-| `EditValueChanging` | `ValueChanging` | E3 |
-| `IsPopupOpen` (lecture seule) | `IsDropDownOpen`, StyledProperty liable | E3 (pièce du socle : E2, fait) |
-| `ShowPopup()`, `ClosePopup()`, `HidePopup()` | `IsDropDownOpen = true / false` | E3 (pièce du socle : E2, fait) |
-| `Popup` (annulable), `PopupOpened` | `DropDownOpening` (annulable), `DropDownOpened` | E3 (pièce du socle : E2, fait) |
-| `QueryCloseUp`, `CloseUp`, `PopupClosed` | `DropDownClosing` (annulable, avec acceptation de la valeur), `DropDownClosed` | E3 (pièce du socle : E2, fait) |
-| `ButtonClick` | `HDevEditorButton.Click`, routé, des boutons d'éditeur du socle | E3 (pièce du socle : E2, fait) |
-| `DoValidate()` | `Validate()` | E3 |
-| `RefreshEditValue()` | supprimé : les liaisons s'en chargent | E3 |
-| `SelectedIndex`, `SelectedItem`, `Text`, `TextChanged`, `IsModified`, `CustomDisplayText`, `Reset()`, `SelectAll()`, `DeselectAll()`, `FindItem()`, `FindItemByPrefix()`, `GetItemText()` | conservés | — |
+| `Properties` (objet de réglages, `HDevComboBoxProperties`) | supprimé : réglages directs sur le contrôle | **E3, fait** |
+| `Properties.Items` | `Items` ; `ItemsSource` (liable) pour une source liée, qui prend le pas sur `Items`, comme dans `ItemsControl` | **E3, fait** |
+| — | `ItemTemplate` : gabarit d'un élément, dans la liste et dans le champ non éditable | **E3, fait** |
+| `Properties.NullText`, `Properties.NullValuePrompt` | `Placeholder` (`IHDevFieldEditor`) | **E3, fait** |
+| `Properties.ShowNullValuePrompt` (`ShowNullValuePromptOptions` : `EmptyValue`, `EditorFocused`, `EditorReadOnly`) | `ShowPlaceholder` (`HDevPlaceholderVisibility` : `WhenEditable`, `WhenFocused`, `Always`), QX-08 d | **E3, fait** |
+| `Properties.ReadOnly`, `ReadOnly` | `IsReadOnly` | **E3, fait** |
+| `Properties.TextEditStyle` (`TextEditStyles` : `Standard`, `DisableTextEditor`, `HideTextEditor`) | `TextEditStyle` (`HDevTextEditStyle` : `Editable`, `SelectOnly` par défaut, `NoText`), QX-08 e | **E3, fait** |
+| `Properties.ImmediatePopup` | `OpenDropDownOnInput`, QX-08 e | **E3, fait** |
+| `Properties.AllowNullInput` | `AllowNull`, QX-08 e | **E3, fait** |
+| `Properties.AutoComplete` (`AutoCompleteMode`), `CaseSensitiveSearch`, `DropDownRows`, `Sorted` | conservés, en propriétés directes | **E3, fait** |
+| `Properties.ShowDropDown` | remplacé par les boutons d'éditeur : un bouton `DropDown` par défaut, dans `Buttons` | **E3, fait** |
+| `EditValue` | `Value`, liable dans les deux sens (et `IHDevEditor.EditValue`) | **E3, fait** |
+| `SelectedItem` (CLR, la valeur même en saisie libre) | StyledProperty liable ; l'élément de la liste, nul pour un texte libre ; le poser pose la valeur | **E3, fait** |
+| `OldEditValue` | supprimé : `OldValue` des arguments de `ValueChanged` | **E3, fait** |
+| `EditValueChanged`, `SelectedIndexChanged`, `SelectedValueChanged` | `ValueChanged`, levé aussi pour un changement par le code (constat E0 n° 1) | **E3, fait** |
+| `EditValueChanging` (`HDevEditValueChangingEventArgs`, `NewValue` modifiable) | `ValueChanging` (`HDevValueChangingEventArgs`, annulable) | **E3, fait** |
+| `IsPopupOpen` (lecture seule) | `IsDropDownOpen`, StyledProperty liable | **E3, fait** |
+| `ShowPopup()`, `ClosePopup()`, `HidePopup()` | `IsDropDownOpen = true / false` | **E3, fait** |
+| `Popup` (annulable, `HDevPopupEventArgs`), `PopupOpened` | `DropDownOpening` (annulable), `DropDownOpened` | **E3, fait** |
+| `QueryCloseUp`, `CloseUp` (`HDevCloseUpEventArgs`), `PopupClosed` | `DropDownClosing` (annulable, avec acceptation de la valeur), `DropDownClosed` | **E3, fait** |
+| `ButtonClick` | `HDevEditorButton.Click`, routé, des boutons d'éditeur ; un clic sur la valeur ouvre la liste sans le lever | **E3, fait** |
+| `DoValidate()` | `Validate()` | **E3, fait** |
+| `RefreshEditValue()` | supprimé : les liaisons s'en chargent | **E3, fait** |
+| `IsEnabledProperty` (redéclarée par `new`) | supprimée : celle d'Avalonia | **E3, fait** |
+| `HDevComboBox : Control` (dessinée) | `HDevComboBox : HDevEditorBase<object?>` : champ texte en mode `Editable`, présentateur sinon, popup du socle | **E3, fait** |
+| `SelectedIndex`, `Text`, `TextChanged`, `IsModified`, `CustomDisplayText`, `Reset()`, `SelectAll()`, `DeselectAll()`, `FindItem()`, `FindItemByPrefix()`, `GetItemText()` | conservés | — |
 
 ### 2.6 HDevLookUpEdit
 
@@ -273,6 +278,17 @@ Le Gantt, qui édite ses dates avec HDevDateEdit, n'est pas touché par le point
    - Aucun changement de géométrie. Le rendu du texte diffère de quelques pixels d'antialiasing, sans déplacement : le champ interne n'est plus l'enfant direct de l'hôte.
 9. **Le bouton calendrier de HDevDateEdit est un bouton d'éditeur** : `Kind = DropDown`, `Icon = Calendar`, le premier de `Buttons` (QX-08 f). L'application peut le retirer ou en ajouter d'autres. Son comportement ne change pas.
 10. **`HDevEditorButton.Icon` vaut pour tout type** : posé, il remplace le glyphe du type ; `None` (défaut) garde celui du type.
+
+11. **HDevComboBox passe sur le socle** (`HDevEditorBase<object?>`). La table 2.5 donne chaque nom.
+   - Le rendu dessiné du champ fermé est supprimé. En mode `Editable`, la zone de valeur est le champ texte du socle ; sinon, un présentateur affiche l'élément par `ItemTemplate`, à défaut son texte, ou l'invite.
+   - L'allure est gardée : gris des boutons en mode non éditable (survol, pression, filet accent liste ouverte), fond de champ en mode éditable, fond grisé en lecture seule. Le chevron est désormais un bouton d'éditeur de 26 px : il est 2 px plus à gauche qu'avant, aligné sur ceux des autres champs. Il ne se retourne plus quand la liste est ouverte. Le rendu du texte diffère de quelques pixels d'antialiasing, sans déplacement.
+   - La combo reçoit l'état d'erreur du socle (`SetError`, validation de liaison), qu'elle n'avait pas.
+   - La liste passe dans le popup du socle (garde, retournement par le positionneur, thème), avec l'habillage d'avant : accolée au champ, bordure fusionnée, coins du bas seuls, largeur du champ. La bascule manuelle vers le haut disparaît.
+   - **Clavier, liste ouverte : les flèches, Début et Fin déplacent la surbrillance sans changer la valeur.** Entrée, Espace ou un clic acceptent l'élément ; **Échap rend la valeur d'ouverture** (constat E0 n° 2, décision du 04/10/2026) ; un clic extérieur garde l'élément mis en surbrillance au clavier. Avant, chaque flèche changeait la valeur, liste ouverte. Liste fermée, rien ne change : ↑ et ↓ changent la valeur, une frappe sélectionne par préfixe.
+   - `SelectedIndex` ou `Value` posés par le code lèvent `ValueChanged` (origine Code), une fois (constat E0 n° 1).
+   - Mode éditable : un clic extérieur valide aussi la saisie, comme le départ du focus (APP-10). Avant, il fermait la liste sans valider.
+   - Liste non éditable : le focus qui part ailleurs que vers la liste la ferme.
+12. **Types retirés avec l'objet `Properties`** : `HDevComboBoxProperties`, `ShowNullValuePromptOptions`, `TextEditStyles`, `HDevPopupEventArgs`, `HDevCloseUpEventArgs`, `HDevQueryCloseUpEventArgs`, `HDevEditValueChangingEventArgs`. Leurs équivalents sont dans la table 2.5. `HDevComboBoxItemCollection`, `AutoCompleteMode` et `HDevCustomDisplayTextEventArgs` restent.
 
 **Corrections des applications** (`Plan-Apports.md`)
 - **APP-09.** La liste d'une ComboBox éditable à suggestion ne se rouvre plus après un choix. Une frappe rapide est complétée : la complétion se fait à chaque frappe, avant le champ, et une lettre qui remplace le suffixe proposé n'est plus prise pour un effacement.

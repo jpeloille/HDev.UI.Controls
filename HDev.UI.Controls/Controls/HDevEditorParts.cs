@@ -760,6 +760,12 @@ internal sealed class HDevEditorDropDown
 
     public bool IsOpen { get; private set; }
 
+    /// <summary>
+    /// Écart vertical au champ : <see cref="HDevPopupPlacement.Gap"/> (défaut) ou
+    /// <see cref="HDevPopupPlacement.FusedBorder"/> pour une liste accolée au champ
+    /// </summary>
+    public void SetGap(double gap) => HDevPopupPlacement.Apply(Popup, gap);
+
     /// <summary>Largeur minimale du popup = largeur de l'éditeur</summary>
     public bool MatchOwnerWidth { get; set; }
 

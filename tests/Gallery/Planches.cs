@@ -362,17 +362,17 @@ static class Planches
             return null;
 
         var combo = new HDevComboBox { Width = 150 };
-        combo.Properties.NullValuePrompt = "Choisir…";
-        combo.Properties.Items.AddRange(new object[] { "Basse", "Normale", "Haute" });
+        combo.Placeholder = "Choisir…";
+        combo.Items.AddRange(new object[] { "Basse", "Normale", "Haute" });
         if (editable)
-            combo.Properties.TextEditStyle = TextEditStyles.Standard;
+            combo.TextEditStyle = HDevTextEditStyle.Editable;
         if (state != 0)
             combo.SelectedIndex = 1;
         switch (state)
         {
             case 2: combo.ForceVisualState(hovered: true); break;
             case 5: combo.IsEnabled = false; break;
-            case 6: combo.ReadOnly = true; break;
+            case 6: combo.IsReadOnly = true; break;
         }
         return combo;
     }

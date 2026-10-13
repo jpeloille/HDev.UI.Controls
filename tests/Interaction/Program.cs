@@ -543,14 +543,14 @@ themedWindow.Close();
 
 // Combo éditable : une valeur posée par code n'ouvre pas les suggestions
 var editableCombo = new HDevComboBox { Width = 160 };
-editableCombo.Properties.Items.AddRange(new object[] { "Basse", "Normale", "Haute" });
-editableCombo.Properties.TextEditStyle = TextEditStyles.Standard;
+editableCombo.Items.AddRange(new object[] { "Basse", "Normale", "Haute" });
+editableCombo.TextEditStyle = HDevTextEditStyle.Editable;
 var comboWindow = new Window { Width = 300, Height = 200, Content = editableCombo };
 comboWindow.Show();
 Pump(comboWindow);
 editableCombo.SelectedIndex = 1;
 Pump(comboWindow);
-Check("combo éditable : SelectedIndex par code n'ouvre pas les suggestions", !editableCombo.IsPopupOpen);
+Check("combo éditable : SelectedIndex par code n'ouvre pas les suggestions", !editableCombo.IsDropDownOpen);
 comboWindow.Close();
 
 // Liste : GroupSelector posé après ItemsSource est pris en compte
@@ -650,17 +650,17 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
     };
     Editeur AdComboBox(HDevComboBox e) => new()
     {
-        Controle = e, PoserValeur = v => e.SelectedIndex = (int)v!, LireValeur = () => e.EditValue, LireTexte = () => e.Text,
-        SurValeurChangee = a => e.EditValueChanged += (_, _) => a(), Focaliser = () => e.Focus(),
-        PopupOuvert = () => e.IsPopupOpen, ContenuPopup = () => EnfantPopup(e)
+        Controle = e, PoserValeur = v => e.SelectedIndex = (int)v!, LireValeur = () => e.Value, LireTexte = () => e.Text,
+        SurValeurChangee = a => e.ValueChanged += (_, _) => a(), Focaliser = () => e.FocusEditor(),
+        PopupOuvert = () => e.IsDropDownOpen, ContenuPopup = () => e.DropDown.IsOpen ? e.DropDown.Chrome : null
     };
-    void ComboItems(HDevComboBox e, params object[] items) => e.Properties.Items.AddRange(items);
-    void ComboEditable(HDevComboBox e) => e.Properties.TextEditStyle = TextEditStyles.Standard;
+    void ComboItems(HDevComboBox e, params object[] items) => e.Items.AddRange(items);
+    void ComboEditable(HDevComboBox e) => e.TextEditStyle = HDevTextEditStyle.Editable;
     int ComboIndex(HDevComboBox e) => e.SelectedIndex;
-    void SurChoixUtilisateur(HDevComboBox e, Action a) => e.SelectedIndexChanged += (_, _) => a();
+    void SurChoixUtilisateur(HDevComboBox e, Action a) => e.ValueChanged += (_, v) => { if (v.IsUserChange) a(); };
     Control? ComboItem(HDevComboBox e, int i) => Champ<ListBox>(e, "_listBox").ContainerFromIndex(i) as Control;
-    void FocaliserSaisieCombo(HDevComboBox e) => Champ<TextBox>(e, "_editTextBox").Focus();
-    void ToutSelectionnerCombo(HDevComboBox e) => Champ<TextBox>(e, "_editTextBox").SelectAll();
+    void FocaliserSaisieCombo(HDevComboBox e) => e.FocusEditor();
+    void ToutSelectionnerCombo(HDevComboBox e) => e.SelectAll();
     // Clic réel sur le chevron d'une combo éditable (le bouton déroulant, au bout à droite)
     void ComboChevron(Window w, HDevComboBox e) => ClickAt(w, e.TranslatePoint(new Point(e.Bounds.Width - 12, e.Bounds.Height / 2), w)!.Value);
     Editeur AdLookUpEdit(HDevLookUpEdit e) => new()
@@ -1314,12 +1314,12 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         w.Close();
 
         // ComboBox et LookUpEdit (hors socle, même garde)
-        var cb = new HDevComboBox { Width = 160 }; cb.Properties.Items.AddRange(new object[] { "a", "b", "c" });
-        var wCb = Hote(cb); wCb.Activate(); cb.Focus(); Touche(wCb, PhysicalKey.F4);
-        var cb400 = SurvitA(wCb, () => cb.IsPopupOpen, 400); var cb1500 = SurvitA(wCb, () => cb.IsPopupOpen, 1500);
+        var cb = new HDevComboBox { Width = 160 }; cb.Items.AddRange(new object[] { "a", "b", "c" });
+        var wCb = Hote(cb); wCb.Activate(); cb.FocusEditor(); Touche(wCb, PhysicalKey.F4);
+        var cb400 = SurvitA(wCb, () => cb.IsDropDownOpen, 400); var cb1500 = SurvitA(wCb, () => cb.IsDropDownOpen, 1500);
         ClickAt(wCb, horsChamp);
         Check("overlay, ComboBox : la liste survit à 400 ms et 1,5 s de désactivation ; le clic extérieur la ferme",
-            cb400 && cb1500 && !cb.IsPopupOpen);
+            cb400 && cb1500 && !cb.IsDropDownOpen);
         wCb.Close();
         var refs = new List<RefE0> { new(1, "Alpha"), new(2, "Beta") };
         var lu = new HDevLookUpEdit { Width = 180, DataSource = refs, DisplayMember = "Nom", ValueMember = "Id" };
@@ -1442,6 +1442,30 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         vm.Heure = new TimeSpan(1, 0, 30, 0); Pump(w);
         Check($"TimeEdit : une durée de 24 h ou plus est ramenée à l'heure du jour, jusqu'au ViewModel (lu {vm.Heure})",
             te.Value == new TimeSpan(0, 30, 0) && vm.Heure == new TimeSpan(0, 30, 0) && te.Text == "00:30");
+
+        // ─── HDevComboBox ───
+        var cb = vue.FindControl<HDevComboBox>("Priorite")!;
+        var presentateurCb = Champ<ContentControl>(cb, "_presenter");
+        var cbAffiche = Equals(presentateurCb.Content, "Normale") && Equals(cb.SelectedItem, "Normale") && cb.SelectedIndex == 1;
+        cb.FocusEditor(); Pump(w); Touche(w, PhysicalKey.ArrowDown);
+        var cbChoix = Equals(vm.Priorite, "Haute") && DernierUtilisateur(cb);
+        vm.Priorite = "Basse"; Pump(w);
+        Check("ComboBox liée sans Mode (ItemsSource, Value) : affichée, ↓ remonte au ViewModel (origine Utilisateur), le ViewModel redescend",
+            cbAffiche && cbChoix && Equals(cb.Value, "Basse") && Equals(presentateurCb.Content, "Basse") && journal[^1].Origin == HDevValueOrigin.Code);
+        var nJ = journal.Count; cb.SelectedIndex = 2; Pump(w);
+        Check("ComboBox : SelectedIndex posé par le code lève un seul ValueChanged, origine Code (constat E0 n° 1)",
+            journal.Count == nJ + 1 && journal[^1].Origin == HDevValueOrigin.Code && Equals(vm.Priorite, "Haute"));
+        Touche(w, PhysicalKey.F4); Touche(w, PhysicalKey.ArrowUp); Touche(w, PhysicalKey.ArrowUp);
+        var pendant = cb.Value; Touche(w, PhysicalKey.Escape);
+        Check("ComboBox : liste ouverte, les flèches ne changent pas la valeur, Échap rend la valeur d'ouverture (constat E0 n° 2)",
+            Equals(pendant, "Haute") && Equals(cb.Value, "Haute") && !cb.IsDropDownOpen && Equals(vm.Priorite, "Haute"));
+        var clicsCb = 0; cb.AddHandler(HDevEditorButton.ClickEvent, (object? _, Avalonia.Interactivity.RoutedEventArgs _) => clicsCb++);
+        ClickAt(w, cb.TranslatePoint(new Point(20, cb.Bounds.Height / 2), w)!.Value); var ouverteParValeur = cb.IsDropDownOpen;
+        ClickAt(w, WindowCenter(w, cb.Buttons[0]));
+        Check("ComboBox : un clic sur la valeur ouvre sans lever Click ; le bouton déroulant lève Click et referme (remarque de verif-03)",
+            ouverteParValeur && clicsCb == 1 && !cb.IsDropDownOpen);
+        vm.Priorite = null; Pump(w);
+        Check("ComboBox : valeur vide, l'invite est affichée", Equals(presentateurCb.Content, "Choisir…") && cb.SelectedItem == null);
 
         // ─── HDevSearchControl ───
         var sc = vue.FindControl<HDevSearchControl>("Recherche")!;
