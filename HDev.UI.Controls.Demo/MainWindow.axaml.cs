@@ -1607,6 +1607,75 @@ public partial class MainWindow : HDevWindow
                     $"Vue courante exportée (tri + filtres appliqués) :\n{path}", "Export CSV");
             };
         }
+
+        InitializeGridPalettes(dataGrid);
+    }
+
+    // Palettes de grille : chacune est conçue pour une seule variante (Cockpit = sombre,
+    // les autres = clair). Yaru (null) suit les deux variantes via ses ThemeDictionaries.
+    private sealed record GridPalette(string Name, string? Source,
+        HDev.UI.Controls.Theme.HDevThemeVariant? Variant);
+
+    private static readonly GridPalette[] GridPalettes =
+    {
+        new("Yaru", null, null),
+        new("Lagon", "avares://HDev.UI.Controls/Theme/DataGrid/Palettes/Lagon.axaml",
+            HDev.UI.Controls.Theme.HDevThemeVariant.Light),
+        new("Ardoise", "avares://HDev.UI.Controls/Theme/DataGrid/Palettes/Ardoise.axaml",
+            HDev.UI.Controls.Theme.HDevThemeVariant.Light),
+        new("Indigo & Or", "avares://HDev.UI.Controls/Theme/DataGrid/Palettes/IndigoOr.axaml",
+            HDev.UI.Controls.Theme.HDevThemeVariant.Light),
+        new("Cockpit", "avares://HDev.UI.Controls/Theme/DataGrid/Palettes/Cockpit.axaml",
+            HDev.UI.Controls.Theme.HDevThemeVariant.Dark),
+    };
+
+    private void InitializeGridPalettes(HDev.UI.DataGrid.HDevDataGrid? dataGrid)
+    {
+        var combo = this.FindControl<HDevComboBox>("ComboGridPalette");
+        if (combo == null || dataGrid == null) return;
+
+        Avalonia.Controls.IResourceProvider? applied = null;
+
+        void Apply(GridPalette palette)
+        {
+            // La palette se pose sur la grille seule : elle masque Yaru sans toucher au reste
+            if (applied != null)
+                dataGrid.Resources.MergedDictionaries.Remove(applied);
+            applied = palette.Source == null
+                ? null
+                : new Avalonia.Markup.Xaml.Styling.ResourceInclude((System.Uri?)null)
+                    { Source = new System.Uri(palette.Source) };
+            if (applied != null)
+                dataGrid.Resources.MergedDictionaries.Add(applied);
+        }
+
+        // Ne propose que Yaru et les palettes de la variante courante ; revient sur Yaru
+        // si la palette choisie ne convient plus après une bascule clair/sombre.
+        void Populate()
+        {
+            var current = combo.SelectedItem as GridPalette;
+            var variant = HDev.UI.Controls.Theme.HDevTheme.Variant;
+            combo.Properties.Items.Clear();
+            foreach (var palette in GridPalettes)
+                if (palette.Variant == null || palette.Variant == variant)
+                    combo.Properties.Items.Add(palette);
+            combo.SelectedItem = current != null && combo.Properties.Items.Contains(current)
+                ? current
+                : GridPalettes[0];
+        }
+
+        combo.CustomDisplayText += (s, e) =>
+        {
+            if (e.Value is GridPalette palette)
+                e.DisplayText = palette.Name;
+        };
+        combo.EditValueChanged += (s, e) =>
+        {
+            if (combo.SelectedItem is GridPalette palette)
+                Apply(palette);
+        };
+        HDev.UI.Controls.Theme.HDevTheme.VariantChanged += (s, e) => Populate();
+        Populate();
     }
 
     private void InitializeComboBoxDemo()

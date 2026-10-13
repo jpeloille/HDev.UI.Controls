@@ -24,6 +24,7 @@ static class Planches
         new("barres", "Barres et popovers — menu, ruban, barre d'outils, barre d'état, cartes, toast", 1280, Barres, BarresAfterShow),
         new("donnees", "Données — Gantt, Scheduler, Roster, MindMap", 1280, Donnees, DonneesAfterShow),
         new("documents", "Documents — HtmlView, RichEdit", 1280, Documents),
+        new("grilles", "Grilles — HDevDataGrid sous chaque palette de la variante", 1280, Grilles, GrillesAfterShow),
         new("bascule", "Bascule de thème à chaud dans une HDevWindow", 900, Bascule, BasculeAfterShow,
             () => new HDevWindow { Title = "Bascule" }),
     };
@@ -750,6 +751,76 @@ static class Planches
     {
         _gantt?.ZoomToFit();
         _mindMap?.ZoomToFit();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // GRILLES
+    // ═══════════════════════════════════════════════════════════════
+
+    // Palettes de Theme/DataGrid/Palettes : chacune ne vaut que pour une variante
+    // (Cockpit = sombre, les autres = clair) ; Yaru suit les deux
+    private static readonly (string Name, string? File, HDevThemeVariant? Variant)[] GridPalettes =
+    {
+        ("Yaru", null, null),
+        ("Lagon", "Lagon", HDevThemeVariant.Light),
+        ("Ardoise", "Ardoise", HDevThemeVariant.Light),
+        ("Indigo & Or", "IndigoOr", HDevThemeVariant.Light),
+        ("Cockpit", "Cockpit", HDevThemeVariant.Dark),
+    };
+
+    public sealed record Vol(string Numero, string Depart, string Arrivee, string Avion, int Sieges, bool Confirme);
+
+    private static Control Grilles()
+    {
+        var sections = new List<Control>();
+        foreach (var (name, file, variant) in GridPalettes)
+        {
+            if (variant != null && variant != HDevTheme.Variant)
+                continue;
+            sections.Add(Kit.Section(name, GridIn(file)));
+        }
+        return Kit.Page("Grilles", "Fond, en-tête, alternance, sélection de ligne et de cellule, ligne de filtre, zone de groupement",
+            sections.ToArray());
+    }
+
+    private static Control GridIn(string? palette)
+    {
+        var vols = new List<Vol>
+        {
+            new("TY201", "Nouméa", "Lifou", "ATR 72", 70, true),
+            new("TY203", "Nouméa", "Maré", "ATR 72", 70, true),
+            new("TY205", "Nouméa", "Ouvéa", "ATR 42", 48, false),
+            new("TY207", "Nouméa", "Koné", "ATR 42", 48, true),
+            new("TY209", "Nouméa", "Île des Pins", "ATR 72", 70, false),
+        };
+        var grid = new HDev.UI.DataGrid.HDevDataGrid
+        {
+            Height = 330,
+            ShowFilterRow = true,
+            ShowGroupPanel = true,
+        };
+        foreach (var (field, header, width) in new[]
+                 {
+                     ("Numero", "Vol", 90.0), ("Depart", "Départ", 140.0), ("Arrivee", "Arrivée", 140.0),
+                     ("Avion", "Avion", 110.0), ("Sieges", "Sièges", 90.0), ("Confirme", "Confirmé", 100.0),
+                 })
+            grid.Columns.Add(new HDev.UI.DataGrid.Models.GridColumn { FieldName = field, Header = header, Width = new GridLength(width) });
+        if (palette != null)
+            grid.Resources.MergedDictionaries.Add(new Avalonia.Markup.Xaml.Styling.ResourceInclude((Uri?)null)
+                { Source = new Uri($"avares://HDev.UI.Controls/Theme/DataGrid/Palettes/{palette}.axaml") });
+        grid.ItemsSource = vols;
+        _grids.Add((grid, vols[1]));
+        return grid;
+    }
+
+    private static readonly List<(HDev.UI.DataGrid.HDevDataGrid Grid, Vol Selected)> _grids = new();
+
+    // La sélection posée avant l'affichage n'est pas rendue : elle se pose une fois les lignes créées
+    private static void GrillesAfterShow(Window window)
+    {
+        foreach (var (grid, selected) in _grids)
+            grid.SelectedItem = selected;
+        _grids.Clear();
     }
 
     // ═══════════════════════════════════════════════════════════════

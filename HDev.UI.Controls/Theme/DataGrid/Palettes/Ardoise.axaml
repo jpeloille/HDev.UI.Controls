@@ -1,0 +1,27 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- Palette Ardoise : gris froids, accent indigo -->
+
+  <!-- Couleurs consommées directement par les templates -->
+  <Color x:Key="DataGridRowHover">#EEF1F4</Color>
+  <Color x:Key="DataGridPressed">#DDE2E8</Color>
+  <Color x:Key="DataGridFrozenColumnSeparator">#A9B3BE</Color>
+
+  <!-- Pinceaux -->
+  <SolidColorBrush x:Key="DataGridBackgroundBrush" Color="#FFFFFF" />
+  <SolidColorBrush x:Key="DataGridHeaderBackgroundBrush" Color="#F1F3F5" />
+  <SolidColorBrush x:Key="DataGridHeaderBorderBrush" Color="#D5DAE0" />
+  <SolidColorBrush x:Key="DataGridRowAlternateBrush" Color="#F8F9FA" />
+  <SolidColorBrush x:Key="DataGridRowHoverBrush" Color="#EEF1F4" />
+  <SolidColorBrush x:Key="DataGridRowSelectedBrush" Color="#E3EAF7" />
+  <SolidColorBrush x:Key="DataGridCellSelectedBrush" Color="#C7D5F0" />
+  <SolidColorBrush x:Key="DataGridGridLinesBrush" Color="#E4E7EB" />
+  <SolidColorBrush x:Key="DataGridGroupBackgroundBrush" Color="#E9ECEF" />
+  <SolidColorBrush x:Key="DataGridGroupChipBrush" Color="#E9ECEF" />
+  <SolidColorBrush x:Key="DataGridGroupChipBorderBrush" Color="#A9B3BE" />
+  <SolidColorBrush x:Key="DataGridCellEditingBrush" Color="#FFF4DC" />
+  <SolidColorBrush x:Key="DataGridDropZoneActiveBrush" Color="#E3EAF7" />
+  <SolidColorBrush x:Key="DataGridDropZoneActiveBorderBrush" Color="#3355A8" />
+
+</ResourceDictionary>

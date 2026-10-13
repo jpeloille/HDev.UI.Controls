@@ -338,6 +338,8 @@
                     <StackPanel Spacing="12">
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <hdev:HDevButton x:Name="BtnExportCsv" Text="Exporter CSV" Variant="Secondary" Size="Small"/>
+                            <TextBlock Text="Palette" VerticalAlignment="Center" Classes="caption"/>
+                            <hdev:HDevComboBox x:Name="ComboGridPalette" Width="150"/>
                             <TextBlock VerticalAlignment="Center" Classes="caption"
                                        Text="Shift+clic en-tête = multi-tri · pin = colonne figée · double-clic bord d'en-tête = largeur auto · bouton ≈ de la ligne de filtre = opérateur · Ctrl+C = copier la sélection"/>
                         </StackPanel>
