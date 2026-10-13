@@ -132,3 +132,15 @@
   - Fusion de M-01 vérifiée à blanc : sans conflit.
   - APP-09 (réouverture de la liste d'une ComboBox à suggestion) est à rejouer à la fusion de M-01.
   - Signalés à Julien : eBurner.App, troisième consommateur de `hdev`, absent de la vérification de compatibilité ; liens de démarrage des applications, piste pour M-03.
+
+## 13/10/2026
+
+- Vérification de QX-02 (option (b)) sur le bureau réel, par une conversation de l'IDE (session du dépôt grille), sur l'autorisation de Julien d'injecter des entrées.
+  - XTEST et XSendEvent sont ignorés par GNOME 50 / Xwayland 24. Les entrées passent par `/dev/uinput` (python-evdev) : un pointeur absolu et un clavier, que Mutter traite comme du matériel. Une fenêtre témoin (xmessage) désactive la démo ; la désactivation est contrôlée par `getactivewindow`.
+  - Démo de M-01 (d2dd2d3) : menu File, ComboBox, LookUpEdit, DateEdit et menu contextuel du Roster survivent à 0,1 s, 3 s (et 5 s pour File) de désactivation et à la réactivation ; Échap, le clic extérieur et un choix les ferment. Captures : `/tmp/qx02`.
+  - Constat : ouvert d'un clic sur son bouton, le focus ailleurs, le calendrier du DateEdit restait sourd à Échap (les boutons d'éditeur ne prennent pas le focus). Même défaut pour le bouton DropDown du socle.
+  - Non couverts (absents de la démo) : sous-menus, menu déroulant du ruban, popups de SearchControl, TokenEdit et DropDownEdit ; chemin natif.
+- Julien : « corrige dateedit ». Sur `suite-M-01` : le bouton calendrier et le bouton DropDown donnent le focus au champ (5485892), 2 vérifications d'Interaction qui échouent sans le correctif ; banc 189/189, xUnit 380 ; revérifié sur le bureau réel. Notes Plan-Editeurs et MIGRATION-editeurs (bc734ed).
+- verif-02 sur f8583ab : NON FUSIONNABLE pour la seule ligne Co-Authored-By de deux messages de commit. Messages réécrits, arbres identiques (029009c → 5485892, f8583ab → bc734ed). verif-02 sur bc734ed : **FUSIONNABLE**, 7 contrôles OK. Écart mineur : le bouton DropDown sur un éditeur en lecture seule ou à présentateur n'est pas testé (code relu, juste).
+- APP-09 rejoué sur le bureau réel (combo éditable SuggestAppend de la démo) : **confirmé**. Un choix dans la liste complète ouverte par le chevron rouvre la liste, filtrée sur le choix, et elle reste ouverte. Après une frappe, un clic sur la suggestion ferme sans réouverture. Une frappe rapide (« Ja ») n'a pas complété une fois et Entrée a gardé « Ja » ; à revoir en E3.
+- Fusion `suite-M-01` → `suite` : 4f16606. Plan-Suite.md : décompte 36/25/95/10. `generer.py` : aucun tableau modifié. M-02 débloquée.

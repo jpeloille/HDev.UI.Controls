@@ -50,7 +50,7 @@ Un lot d'un autre programme garde son identifiant :
 
 ## 2. Point de départ
 
-- **Catalogue** : 166 fonctions, score **<!-- généré:SC:cat,auj -->29 %<!-- fin -->** (34 ✅, 25 🟡, 97 ❌, 10 ⚪).
+- **Catalogue** : 166 fonctions, score **<!-- généré:SC:cat,auj -->29 %<!-- fin -->** (36 ✅, 25 🟡, 95 ❌, 10 ⚪).
 - **Profondeur** : 176 capacités sur sept contrôles phares, **<!-- généré:SC:prof,auj -->44 %<!-- fin -->** pour l'ensemble.
 - **Plus gros écarts** : visualisation (4 %), grilles (7 %), impression et export (13 %), composants transverses (15 %).
 - **Plans déjà écrits**, que ce plan englobe sans les renuméroter :

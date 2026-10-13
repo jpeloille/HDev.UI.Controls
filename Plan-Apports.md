@@ -323,8 +323,8 @@ Ils s'inscrivent dans les chantiers existants, et leur détail fait foi ici. `lo
 
 ### 3.2 Éditeurs (`Plan-Editeurs.md`)
 
-**APP-09 — Une ComboBox éditable à suggestion rouvre sa liste après chaque choix.** (d) → E3. À rejouer à la clôture d'E2.
-- Constat, non vérifié :
+**APP-09 — Une ComboBox éditable à suggestion rouvre sa liste après chaque choix.** (d) → E3. Rejoué à la clôture d'E2 (13/10/2026, bureau réel) : **confirmé** après un choix dans la liste complète ouverte par le chevron ; pas de réouverture après un clic sur une suggestion filtrée par la frappe.
+- Constat d'origine :
   - le défaut se produit en `SuggestAppend`, le réglage par défaut ;
   - sous Avalonia 12, `TextChanged` est différé : la garde `_syncingEditText` retombe trop tôt, et `CloseDropDown` rend le focus au champ ;
   - l'atelier a une garde de 250 ms (`HDevComboBox.cs:961-985`) ;
