@@ -620,7 +620,7 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
     }
     Editeur AdTextBox(HDevTextBox e) => new()
     {
-        Controle = e, PoserValeur = v => e.Text = (string?)v, LireValeur = () => e.Text, LireTexte = () => e.Text ?? "",
+        Controle = e, PoserValeur = v => e.Text = (string?)v ?? "", LireValeur = () => e.Text, LireTexte = () => e.Text ?? "",
         SurValeurChangee = a => e.TextChanged += (_, _) => a(), Focaliser = () => e.FocusEditor()
     };
     TextBox InterieurTextBox(HDevTextBox e) => Champ<TextBox>(e, "InnerTextBox");
@@ -1543,6 +1543,87 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         Check("SearchControl : le focus qui part ailleurs ferme les suggestions, la saisie reste", propose && !sc.IsDropDownOpen && vm.Recherche == "Ga");
         sc.Buttons.Single(b => b.Kind == HDevEditorButtonKind.Clear).PerformClick(); Pump(w);
         Check("SearchControl : le bouton Effacer vide le texte, jusqu'au ViewModel", sc.Text == "" && vm.Recherche == "" && DernierUtilisateur(sc));
+        w.Close();
+    }
+
+    // ═══ QX-09 : NewValue de ValueChanging est substituable, pour tous les éditeurs ═══
+    // Le gestionnaire réécrit la valeur à venir : l'éditeur prend la valeur substituée, repassée
+    // par sa propre coercition, l'affiche, la transmet à la source liée et la donne à
+    // ValueChanged. Une substitution par l'ancienne valeur vaut une annulation.
+    Console.WriteLine("Substitution de la valeur (QX-09) :");
+    {
+        // Éditeur de saisie : SpinEdit, au clavier, puis une substitution hors bornes
+        var sp = new HDevSpinEdit { Width = 120, Decimals = 2, Increment = 1, Minimum = 0, Maximum = 100 };
+        var w = Hote(sp); sp.Value = 10m; Pump(w);
+        var recus = new List<HDevValueChangedEventArgs>(); sp.ValueChanged += (_, e) => recus.Add(e);
+        EventHandler<HDevValueChangingEventArgs> double_ = (_, e) => { if (e.NewValue is decimal d) e.NewValue = d * 2; };
+        sp.ValueChanging += double_;
+        sp.FocusEditor(); Touche(w, PhysicalKey.ArrowUp);
+        var auClavier = sp.Value == 22m && InterieurDe(sp).Text == "22,00" && recus.Count == 1 && Equals(recus[0].NewValue, 22m);
+        sp.FocusEditor(); Touche(w, PhysicalKey.ArrowUp);
+        Check($"SpinEdit : la valeur substituée est prise, affichée et levée ; hors bornes, elle repasse par le bornage (lu {sp.Value})",
+            auClavier && sp.Value == 46m && Equals(recus[^1].NewValue, 46m));
+        sp.Value = 60m; Pump(w);
+        Check($"SpinEdit : la substitution vaut aussi pour une valeur posée par le code, bornée à 100 (lu {sp.Value})",
+            sp.Value == 100m && InterieurDe(sp).Text == "100,00");
+        sp.ValueChanging -= double_;
+        EventHandler<HDevValueChangingEventArgs> garde = (_, e) => e.NewValue = e.OldValue;
+        sp.ValueChanging += garde; var nRecus = recus.Count;
+        sp.FocusEditor(); Touche(w, PhysicalKey.ArrowDown); sp.Value = 5m; Pump(w);
+        sp.ValueChanging -= garde;
+        Check("substitution par l'ancienne valeur : vaut une annulation, au clavier comme au code, sans ValueChanged",
+            sp.Value == 100m && InterieurDe(sp).Text == "100,00" && recus.Count == nRecus);
+        var annonces = new List<(object? Ancienne, object? Nouvelle)>();
+        EventHandler<HDevValueChangingEventArgs> compte = (_, e) => annonces.Add((e.OldValue, e.NewValue));
+        sp.ValueChanging += compte;
+        sp.FocusEditor(); Touche(w, PhysicalKey.ArrowDown); sp.Value = 50m; Pump(w); sp.Value = 50m; Pump(w);
+        sp.ValueChanging -= compte;
+        Check($"ValueChanging levé une fois par changement, au clavier comme au code, pas pour une valeur inchangée (lu {annonces.Count})",
+            annonces.SequenceEqual(new (object?, object?)[] { (100m, 99m), (99m, 50m) }));
+        w.Close();
+    }
+    {
+        // Champ texte : la frappe est substituée (majuscules), le texte suit
+        var tb = new HDevTextBox { Width = 160 }; var w = Hote(tb);
+        tb.ValueChanging += (_, e) => { if (e.NewValue is string t) e.NewValue = t.ToUpperInvariant(); };
+        tb.FocusEditor(); Tape(w, "ty"); Pump(w);
+        Check($"TextBox : la saisie substituée devient la valeur et le texte affiché (lu « {tb.Text} », « {InterieurDe(tb).Text} »)",
+            tb.Text == "TY" && InterieurDe(tb).Text == "TY");
+        w.Close();
+    }
+    {
+        // ComboBox : un choix dans la liste et un index posé par le code sont substitués
+        var cb = new HDevComboBox { Width = 160 }; ComboItems(cb, "Basse", "Normale", "Haute"); var w = Hote(cb);
+        cb.ValueChanging += (_, e) => { if (Equals(e.NewValue, "Haute")) e.NewValue = "Normale"; };
+        cb.FocusEditor(); Touche(w, PhysicalKey.F4); ClickAt(w, WindowCenter(w, ComboItem(cb, 2)!));
+        var auClic = Equals(cb.Value, "Normale") && cb.SelectedIndex == 1 && !cb.IsDropDownOpen;
+        cb.SelectedIndex = 0; Pump(w); cb.SelectedIndex = 2; Pump(w);
+        Check($"ComboBox : « Haute » choisie au clic ou posée par le code devient « Normale » (lu {cb.Value}, SelectedItem {cb.SelectedItem})",
+            auClic && Equals(cb.Value, "Normale") && Equals(cb.SelectedItem, "Normale")
+            && Equals(Champ<ContentControl>(cb, "_presenter").Content, "Normale"));
+        w.Close();
+    }
+    {
+        // Contrôle de choix : la case cliquée passe à l'état indéterminé au lieu de cochée
+        var cbx = new HDevCheckBox { Label = "Option", IsThreeState = true }; var w = Hote(cbx);
+        cbx.ValueChanging += (_, e) => { if (Equals(e.NewValue, true)) e.NewValue = null; };
+        cbx.Focus(); Touche(w, PhysicalKey.Space);
+        Check($"CheckBox : la valeur substituée (indéterminée) est prise (lu {cbx.IsChecked?.ToString() ?? "null"})", cbx.IsChecked == null);
+        w.Close();
+    }
+    {
+        // Éditeur lié dans les deux sens : la source reçoit la valeur substituée, qu'elle vienne
+        // de l'utilisateur ou de la source elle-même
+        var vm = new FormulaireE3Vm();
+        var vue = new FormulaireE3 { DataContext = vm };
+        var w = new Window { Width = 500, Height = 1100, Content = vue }; w.Show(); Pump(w);
+        var sp = vue.FindControl<HDevSpinEdit>("Quantite")!;
+        sp.ValueChanging += (_, e) => { if (e.NewValue is decimal d) e.NewValue = Math.Ceiling(d / 5) * 5; };
+        sp.FocusEditor(); Touche(w, PhysicalKey.ArrowUp);
+        var parUtilisateur = vm.Quantite == 15m && sp.Value == 15m;
+        vm.Quantite = 41m; Pump(w);
+        Check($"liaison TwoWay : la source reçoit la valeur substituée, après une saisie comme après sa propre valeur (lu {vm.Quantite})",
+            parUtilisateur && sp.Value == 45m && vm.Quantite == 45m && sp.Text == "45,00");
         w.Close();
     }
 

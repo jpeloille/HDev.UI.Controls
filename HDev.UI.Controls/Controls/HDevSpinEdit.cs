@@ -15,7 +15,7 @@ public class HDevSpinEdit : HDevEditorBase<decimal>
 {
     public static readonly StyledProperty<decimal> ValueProperty =
         AvaloniaProperty.Register<HDevSpinEdit, decimal>(nameof(Value),
-            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true, coerce: CoerceValue);
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true, coerce: CoerceThroughChanging);
 
     public static readonly StyledProperty<decimal> MinimumProperty =
         AvaloniaProperty.Register<HDevSpinEdit, decimal>(nameof(Minimum), decimal.MinValue);
@@ -59,9 +59,11 @@ public class HDevSpinEdit : HDevEditorBase<decimal>
 
     static HDevSpinEdit()
     {
-        // Des bornes qui changent ramènent la valeur dans le nouvel intervalle
-        MinimumProperty.Changed.AddClassHandler<HDevSpinEdit>((x, _) => x.CoerceValue(ValueProperty));
-        MaximumProperty.Changed.AddClassHandler<HDevSpinEdit>((x, _) => x.CoerceValue(ValueProperty));
+        // Des bornes qui changent ramènent la valeur dans le nouvel intervalle. La valeur courante
+        // est reposée, et pas recoercée depuis la valeur d'origine : une valeur substituée par
+        // ValueChanging ne revient pas à celle qui avait été demandée
+        MinimumProperty.Changed.AddClassHandler<HDevSpinEdit>((x, _) => x.SetCurrentValue(ValueProperty, x.Value));
+        MaximumProperty.Changed.AddClassHandler<HDevSpinEdit>((x, _) => x.SetCurrentValue(ValueProperty, x.Value));
     }
 
     public HDevSpinEdit()
@@ -81,12 +83,9 @@ public class HDevSpinEdit : HDevEditorBase<decimal>
         ResyncText();
     }
 
-    private static decimal CoerceValue(AvaloniaObject sender, decimal value)
-    {
-        var spin = (HDevSpinEdit)sender;
-        var min = spin.Minimum;
-        return Math.Clamp(value, min, Math.Max(min, spin.Maximum));
-    }
+    /// <summary>Bornage à [Minimum, Maximum]</summary>
+    protected override decimal CoerceOwnValue(decimal value)
+        => Math.Clamp(value, Minimum, Math.Max(Minimum, Maximum));
 
     private string Format(decimal value) => value.ToString($"F{_decimals}", CultureInfo.CurrentCulture);
 
@@ -154,7 +153,7 @@ public class HDevSpinEdit : HDevEditorBase<decimal>
     private void Adjust(decimal delta)
     {
         if (!IsEnabled || IsReadOnly) return;
-        CommitUserValue(CoerceValue(this, Value + delta));
+        CommitUserValue(CoerceOwnValue(Value + delta));
         FocusEditor();
     }
 

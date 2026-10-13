@@ -17,7 +17,7 @@ public class HDevSearchControl : HDevEditorBase<string?>
 {
     public static readonly StyledProperty<string?> TextProperty =
         AvaloniaProperty.Register<HDevSearchControl, string?>(nameof(Text), "",
-            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true, coerce: CoerceThroughChanging);
 
     private readonly ListBox _listBox;
     private bool _openingFromQuery;

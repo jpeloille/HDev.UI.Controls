@@ -19,7 +19,8 @@ public class HDevRadioButton : HDevControlBase, IHDevEditor
     
     public static readonly StyledProperty<bool> IsCheckedProperty =
         AvaloniaProperty.Register<HDevRadioButton, bool>(nameof(IsChecked), false,
-            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true,
+            coerce: (o, v) => ((HDevRadioButton)o).Core.Coerce(v));
     
     public static readonly StyledProperty<string> LabelProperty =
         AvaloniaProperty.Register<HDevRadioButton, string>(nameof(Label), "");

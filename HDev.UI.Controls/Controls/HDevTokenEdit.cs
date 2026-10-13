@@ -22,8 +22,7 @@ public class HDevTokenEdit : HDevEditorBase<IReadOnlyList<object>>
 {
     public static readonly StyledProperty<IReadOnlyList<object>> ValueProperty =
         AvaloniaProperty.Register<HDevTokenEdit, IReadOnlyList<object>>(nameof(Value), Array.Empty<object>(),
-            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true,
-            coerce: (_, v) => v ?? Array.Empty<object>());
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true, coerce: CoerceThroughChanging);
 
     private readonly WrapPanel _panel;
     private readonly ListBox _listBox;
@@ -91,6 +90,9 @@ public class HDevTokenEdit : HDevEditorBase<IReadOnlyList<object>>
         // F4 et Alt+↓ ouvrent les suggestions de la saisie, s'il y en a
         DropDownOpening += (_, e) => { if (!_openingFromQuery) e.Cancel = !LoadSuggestions(InnerText); };
     }
+
+    /// <summary>Jamais nulle : une liste vide à la place</summary>
+    protected override IReadOnlyList<object> CoerceOwnValue(IReadOnlyList<object> value) => value ?? Array.Empty<object>();
 
     private string GetTokenText(object token) => TokenText?.Invoke(token) ?? token.ToString() ?? "";
 

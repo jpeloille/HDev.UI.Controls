@@ -22,7 +22,7 @@ public class HDevDateEdit : HDevEditorBase<DateTime?>
 {
     public static readonly StyledProperty<DateTime?> ValueProperty =
         AvaloniaProperty.Register<HDevDateEdit, DateTime?>(nameof(Value),
-            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true, coerce: CoerceThroughChanging);
 
     private string _format = "dd/MM/yyyy";
 
@@ -157,8 +157,7 @@ public class HDevTimeEdit : HDevEditorBase<TimeSpan?>
 {
     public static readonly StyledProperty<TimeSpan?> ValueProperty =
         AvaloniaProperty.Register<HDevTimeEdit, TimeSpan?>(nameof(Value),
-            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true,
-            coerce: (_, v) => v.HasValue ? Normalize(v.Value) : null);
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true, coerce: CoerceThroughChanging);
 
     /// <summary>Valeur typée (null = vide), heure du jour</summary>
     public TimeSpan? Value
@@ -183,6 +182,9 @@ public class HDevTimeEdit : HDevEditorBase<TimeSpan?>
 
         InnerTextBox.AddHandler(KeyDownEvent, OnEditorKeyDown, RoutingStrategies.Tunnel);
     }
+
+    /// <summary>Heure du jour : ramenée dans [0, 24 h)</summary>
+    protected override TimeSpan? CoerceOwnValue(TimeSpan? value) => value.HasValue ? Normalize(value.Value) : null;
 
     /// <summary>Ramène dans [0, 24 h), en gardant les enchaînements 23:59 + 1 min -> 00:00</summary>
     private static TimeSpan Normalize(TimeSpan t)

@@ -22,7 +22,7 @@ public class HDevLookUpEdit : HDevEditorBase<object?>
 {
     public static readonly StyledProperty<object?> ValueProperty =
         AvaloniaProperty.Register<HDevLookUpEdit, object?>(nameof(Value),
-            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true, coerce: CoerceThroughChanging);
 
     public static readonly StyledProperty<object?> SelectedItemProperty =
         AvaloniaProperty.Register<HDevLookUpEdit, object?>(nameof(SelectedItem),

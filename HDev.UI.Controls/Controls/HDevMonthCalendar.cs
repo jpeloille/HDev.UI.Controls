@@ -25,7 +25,8 @@ public class HDevMonthCalendar : Control, IHDevEditor
 
     public static readonly StyledProperty<DateTime?> SelectedDateProperty =
         AvaloniaProperty.Register<HDevMonthCalendar, DateTime?>(nameof(SelectedDate),
-            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true,
+            coerce: (o, v) => ((HDevMonthCalendar)o).Core.Coerce(v));
 
     /// <summary>Jours marqués en gras (jours portant des événements)</summary>
     public HashSet<DateTime> BoldDates { get; } = new();

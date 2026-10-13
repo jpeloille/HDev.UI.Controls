@@ -21,7 +21,7 @@ public class HDevSlider : HDevControlBase, IHDevEditor
     public static readonly StyledProperty<double> ValueProperty =
         AvaloniaProperty.Register<HDevSlider, double>(nameof(Value), 50,
             defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true,
-            coerce: (o, v) => o is HDevSlider s ? Math.Clamp(v, s.Minimum, Math.Max(s.Minimum, s.Maximum)) : v);
+            coerce: (o, v) => ((HDevSlider)o).Core.Coerce(v, ((HDevSlider)o).Clamp));
     
     public static readonly StyledProperty<double> MinimumProperty =
         AvaloniaProperty.Register<HDevSlider, double>(nameof(Minimum), 0);
@@ -78,13 +78,17 @@ public class HDevSlider : HDevControlBase, IHDevEditor
     // ÉVÉNEMENTS
     // ═══════════════════════════════════════════════════════════════
     
+    /// <summary>Bornage à [Minimum, Maximum]</summary>
+    private double Clamp(double value) => Math.Clamp(value, Minimum, Math.Max(Minimum, Maximum));
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
         if (change.Property == ValueProperty)
             Core.OnPropertyChanged(change);
         else if (change.Property == MinimumProperty || change.Property == MaximumProperty)
-            CoerceValue(ValueProperty);
+            // La valeur courante est reposée (bornée), pas recoercée depuis celle d'origine
+            SetCurrentValue(ValueProperty, Value);
     }
 
 

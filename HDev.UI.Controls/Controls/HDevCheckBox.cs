@@ -17,7 +17,8 @@ public class HDevCheckBox : HDevControlBase, IHDevEditor
     
     public static readonly StyledProperty<bool?> IsCheckedProperty =
         AvaloniaProperty.Register<HDevCheckBox, bool?>(nameof(IsChecked), false,
-            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true,
+            coerce: (o, v) => ((HDevCheckBox)o).Core.Coerce(v));
     
     public static readonly StyledProperty<string> LabelProperty =
         AvaloniaProperty.Register<HDevCheckBox, string>(nameof(Label), "");

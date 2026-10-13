@@ -892,6 +892,8 @@ public abstract class HDevEditorBase<T> : HDevEditorBase, IHDevFieldEditor
 {
     private bool _userCommit;
     private bool _userCommitFromText;
+    private T _requested = default!;
+    private bool _raisingChanging;
 
     /// <summary>La StyledProperty <c>Value</c> de l'éditeur concret</summary>
     protected abstract StyledProperty<T> ValuePropertyCore { get; }
@@ -930,9 +932,27 @@ public abstract class HDevEditorBase<T> : HDevEditorBase, IHDevFieldEditor
     }
 
     /// <summary>
-    /// Pose une valeur venue de l'utilisateur : ValueChanging (annulable), puis SetCurrentValue,
-    /// qui garde les liaisons en place et met la source à jour. Faux si un abonné a annulé :
-    /// le texte revient alors à la valeur courante.
+    /// Coercition de la propriété de valeur, que chaque éditeur déclare à son enregistrement
+    /// (<c>coerce: CoerceThroughChanging</c>) : la coercition propre à l'éditeur
+    /// (<see cref="CoerceOwnValue"/>), puis ValueChanging, levé pour tout changement (utilisateur,
+    /// code, liaison), dont la valeur substituée repasse par la coercition propre (QX-09). La
+    /// valeur rendue est celle que prend la propriété, et que reçoit une source liée.
+    /// </summary>
+    protected static T CoerceThroughChanging(AvaloniaObject sender, T value)
+    {
+        var editor = (HDevEditorBase<T>)sender;
+        return HDevValueChanging.Coerce(editor, editor.GetValue(editor.ValuePropertyCore), value,
+            editor.CoerceOwnValue, ref editor._raisingChanging);
+    }
+
+    /// <summary>Coercition propre à l'éditeur : bornes, plage (défaut : aucune)</summary>
+    protected virtual T CoerceOwnValue(T value) => value;
+
+    /// <summary>
+    /// Pose une valeur venue de l'utilisateur par SetCurrentValue, qui garde les liaisons en place
+    /// et met la source à jour ; ValueChanging est levé par la coercition. Faux si la valeur prise
+    /// n'est pas celle demandée : annulée, le texte revient à la valeur courante ; substituée, il
+    /// affiche la valeur prise.
     /// </summary>
     /// <param name="fromText">Vrai si la valeur vient du texte tapé, qui reste alors tel quel</param>
     protected bool CommitUserValue(T value, bool fromText = false)
@@ -941,19 +961,19 @@ public abstract class HDevEditorBase<T> : HDevEditorBase, IHDevFieldEditor
         if (EqualityComparer<T>.Default.Equals(value, current))
             return true;
 
-        var changing = new HDevValueChangingEventArgs(current, value);
-        RaiseEvent(changing);
-        if (changing.Cancel)
-        {
-            ResyncText();
-            return false;
-        }
-
         _userCommit = true;
         _userCommitFromText = fromText;
+        _requested = value;
         try { SetCurrentValue(ValuePropertyCore, value); }
-        finally { _userCommit = false; _userCommitFromText = false; }
-        return true;
+        finally { _userCommit = false; _userCommitFromText = false; _requested = default!; }
+
+        var taken = GetValue(ValuePropertyCore);
+        if (EqualityComparer<T>.Default.Equals(taken, value))
+            return true;
+        // Annulé : aucun changement n'a réécrit le texte
+        if (EqualityComparer<T>.Default.Equals(taken, current))
+            ResyncText();
+        return false;
     }
 
     /// <summary>Réaffiche la valeur courante et efface l'erreur de saisie</summary>
@@ -969,8 +989,9 @@ public abstract class HDevEditorBase<T> : HDevEditorBase, IHDevFieldEditor
         if (change.Property != ValuePropertyCore)
             return;
 
-        // Le texte suit la valeur, sauf quand l'utilisateur vient de la taper
-        if (_userCommit && _userCommitFromText)
+        // Le texte suit la valeur, sauf quand l'utilisateur vient de la taper telle quelle
+        // (une valeur substituée par ValueChanging, ou bornée, est réaffichée)
+        if (_userCommit && _userCommitFromText && Equals(change.NewValue, _requested))
             SetError(null);
         else
             ResyncText();

@@ -144,6 +144,7 @@ Le contrat est dans `HDevEditorContract.cs` (`IHDevEditor`, événements) et dan
 - **Les événements.**
   - `ValueChanged` est routé et commun (`HDevEditor.ValueChangedEvent`). Il est levé pour le code comme pour l'utilisateur, ce qui règle le constat E0 n° 1 pour les éditeurs portés.
   - `ValueChanging` est annulable, et réservé aux changements de l'utilisateur. Une valeur du code ou de la source ne s'annule pas : elle se valide.
+    - **Révisé le 13/10/2026 (QX-09)** : `ValueChanging` est levé pour tout changement, utilisateur, code ou liaison, depuis la coercition de la propriété de valeur ; son `NewValue` est modifiable, et la valeur substituée repasse par la coercition propre de l'éditeur (`MIGRATION-editeurs.md`, 1.2).
 - **Les erreurs.** Il y a deux sources, gardées à part : la saisie et la liaison.
   - L'affichage montre la saisie d'abord.
   - Une saisie valide n'efface que l'erreur de saisie. L'erreur du ViewModel reste jusqu'à ce que la source la retire (vérifié).

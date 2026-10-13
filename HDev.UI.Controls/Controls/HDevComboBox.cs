@@ -148,7 +148,7 @@ public class HDevComboBox : HDevEditorBase<object?>
 {
     public static readonly StyledProperty<object?> ValueProperty =
         AvaloniaProperty.Register<HDevComboBox, object?>(nameof(Value),
-            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true, coerce: CoerceThroughChanging);
 
     public static readonly StyledProperty<object?> SelectedItemProperty =
         AvaloniaProperty.Register<HDevComboBox, object?>(nameof(SelectedItem),

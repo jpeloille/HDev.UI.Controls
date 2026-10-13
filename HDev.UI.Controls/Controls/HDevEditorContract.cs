@@ -43,9 +43,15 @@ public class HDevValueChangedEventArgs : RoutedEventArgs
 }
 
 /// <summary>
-/// Changement de valeur à venir, annulable (<see cref="HDevEditor.ValueChangingEvent"/>).
-/// Levé pour les changements de l'utilisateur seulement : une valeur posée par le code ou
-/// par la source d'une liaison ne s'annule pas, elle se valide.
+/// Changement de valeur à venir (<see cref="HDevEditor.ValueChangingEvent"/>), levé pour tout
+/// changement : utilisateur, code ou source d'une liaison (QX-09).
+/// <list type="bullet">
+/// <item><see cref="NewValue"/> se réécrit : l'éditeur prend la valeur substituée, repassée par
+/// sa propre coercition (bornes, plage), l'affiche, la transmet à la source liée et la donne à
+/// <c>ValueChanged</c>. Une valeur d'un autre type que celle de l'éditeur est ignorée.</item>
+/// <item>Substituer l'ancienne valeur, ou poser <see cref="Cancel"/>, annule le changement :
+/// la valeur reste, le texte y revient, aucun <c>ValueChanged</c>.</item>
+/// </list>
 /// </summary>
 public class HDevValueChangingEventArgs : RoutedEventArgs
 {
@@ -57,10 +63,43 @@ public class HDevValueChangingEventArgs : RoutedEventArgs
     }
 
     public object? OldValue { get; }
-    public object? NewValue { get; }
+
+    /// <summary>La valeur à venir ; un gestionnaire peut la remplacer (QX-09)</summary>
+    public object? NewValue { get; set; }
 
     /// <summary>Vrai : la valeur ne change pas et le texte revient à la valeur courante</summary>
     public bool Cancel { get; set; }
+}
+
+/// <summary>
+/// ValueChanging levé depuis la coercition de la propriété de valeur : c'est le seul point par
+/// où passent tous les changements (utilisateur, code, liaison), et la valeur qu'il rend est
+/// celle que prend la propriété, et que reçoit une source liée dans les deux sens.
+/// </summary>
+internal static class HDevValueChanging
+{
+    /// <param name="own">La coercition propre à l'éditeur (bornes…), appliquée avant et après</param>
+    public static T Coerce<T>(Interactive owner, T current, T candidate, Func<T, T>? own, ref bool raising)
+    {
+        var coerced = own != null ? own(candidate) : candidate;
+        // Un changement fait par un gestionnaire de ValueChanging ne relève pas l'événement
+        if (raising || EqualityComparer<T>.Default.Equals(coerced, current))
+            return coerced;
+
+        var changing = new HDevValueChangingEventArgs(current, coerced);
+        raising = true;
+        try { owner.RaiseEvent(changing); }
+        finally { raising = false; }
+
+        if (changing.Cancel)
+            return current;
+        if (Equals(changing.NewValue, coerced))
+            return coerced;
+        // Valeur substituée : du type de l'éditeur (nul permis s'il l'admet), sinon ignorée
+        var substituted = changing.NewValue is T t ? t
+            : changing.NewValue is null && default(T) is null ? default! : coerced;
+        return own != null ? own(substituted) : substituted;
+    }
 }
 
 /// <summary>
@@ -139,25 +178,29 @@ internal sealed class HDevValueCore<T>
     /// <summary>Erreur venue de la liaison de la valeur (null = valide)</summary>
     public string? ErrorText => _bindingError;
 
+    private bool _raising;
+
     /// <summary>
-    /// Pose une valeur venue de l'utilisateur : ValueChanging (annulable), puis SetCurrentValue,
-    /// qui garde la liaison et met la source à jour. Faux si un abonné a annulé.
+    /// Coercition de la propriété de valeur, à déclarer à son enregistrement : la coercition
+    /// propre au contrôle, puis ValueChanging (annulable, valeur substituable), pour tout changement
+    /// </summary>
+    public T Coerce(T value, Func<T, T>? own = null)
+        => HDevValueChanging.Coerce(_owner, _owner.GetValue(_property), value, own, ref _raising);
+
+    /// <summary>
+    /// Pose une valeur venue de l'utilisateur par SetCurrentValue, qui garde la liaison et met la
+    /// source à jour ; ValueChanging est levé par la coercition. Faux si la valeur prise n'est pas
+    /// celle demandée (annulée ou substituée).
     /// </summary>
     public bool CommitUser(T value)
     {
-        var current = _owner.GetValue(_property);
-        if (EqualityComparer<T>.Default.Equals(value, current))
+        if (EqualityComparer<T>.Default.Equals(value, _owner.GetValue(_property)))
             return true;
-
-        var changing = new HDevValueChangingEventArgs(current, value);
-        _owner.RaiseEvent(changing);
-        if (changing.Cancel)
-            return false;
 
         _userCommit = true;
         try { _owner.SetCurrentValue(_property, value); }
         finally { _userCommit = false; }
-        return true;
+        return EqualityComparer<T>.Default.Equals(_owner.GetValue(_property), value);
     }
 
     /// <summary>À appeler depuis OnPropertyChanged : lève ValueChanged, avec son origine</summary>

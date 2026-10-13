@@ -29,7 +29,7 @@ public class HDevDropDownEdit : HDevEditorBase<object?>
 {
     public static readonly StyledProperty<object?> ValueProperty =
         AvaloniaProperty.Register<HDevDropDownEdit, object?>(nameof(Value),
-            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true, coerce: CoerceThroughChanging);
 
     public static readonly StyledProperty<object?> DropDownValueProperty =
         AvaloniaProperty.Register<HDevDropDownEdit, object?>(nameof(DropDownValue),

@@ -17,7 +17,8 @@ public class HDevToggleSwitch : HDevControlBase, IHDevEditor
     
     public static readonly StyledProperty<bool> IsCheckedProperty =
         AvaloniaProperty.Register<HDevToggleSwitch, bool>(nameof(IsChecked), false,
-            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true,
+            coerce: (o, v) => ((HDevToggleSwitch)o).Core.Coerce(v));
     
     public static readonly StyledProperty<string> OnLabelProperty =
         AvaloniaProperty.Register<HDevToggleSwitch, string>(nameof(OnLabel), "On");

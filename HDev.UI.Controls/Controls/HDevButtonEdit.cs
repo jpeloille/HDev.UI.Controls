@@ -13,7 +13,7 @@ public class HDevButtonEdit : HDevEditorBase<string?>
 {
     public static readonly StyledProperty<string?> TextProperty =
         AvaloniaProperty.Register<HDevButtonEdit, string?>(nameof(Text), "",
-            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true, coerce: CoerceThroughChanging);
 
     protected override StyledProperty<string?> ValuePropertyCore => TextProperty;
 

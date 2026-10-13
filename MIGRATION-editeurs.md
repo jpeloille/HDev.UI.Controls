@@ -33,7 +33,7 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
   - Une date hors bornes n'est jamais bornée en silence.
     - Posée par le code, elle s'affiche telle quelle, et la validation la signale.
     - Tapée par l'utilisateur, elle n'est pas prise.
-- **Une valeur posée par le code ou par la source n'est pas modifiée par l'éditeur.** Par exemple, HDevDateEdit garde l'heure d'une valeur qu'il n'affiche pas.
+- **Une valeur posée par le code ou par la source n'est pas modifiée par l'éditeur**, hors bornage et hors substitution par un gestionnaire de `ValueChanging` (1.2). Par exemple, HDevDateEdit garde l'heure d'une valeur qu'il n'affiche pas.
 
 ### 1.2 Les événements
 
@@ -46,9 +46,10 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
     ```
 
   - Ancienne et nouvelle valeur sont de type `object` ; la valeur typée se lit sur l'éditeur. Ce choix est validé depuis le 05/10/2026.
-- **`ValueChanging`** est levé avant un changement venu de l'utilisateur, et lui seulement.
-  - On peut l'annuler avec `e.Cancel = true` : la valeur reste, et le texte revient à la valeur courante.
-  - Une valeur venue du code ou de la source ne s'annule pas : elle se valide.
+- **`ValueChanging`** est levé avant tout changement de valeur, qu'il vienne de l'utilisateur, du code ou de la source d'une liaison (décision QX-09 du 13/10/2026 ; jusqu'à E3, il n'était levé que pour l'utilisateur).
+  - **`NewValue` est modifiable** : l'éditeur prend la valeur substituée, après l'avoir repassée par sa propre coercition (bornes de SpinEdit, heure du jour de TimeEdit…). C'est elle qui s'affiche, part à la source liée et figure dans `ValueChanged`. Une valeur d'un autre type que celle de l'éditeur est ignorée.
+  - On l'annule avec `e.Cancel = true`, ou en substituant l'ancienne valeur : la valeur reste, le texte revient à la valeur courante, et aucun `ValueChanged` n'est levé. C'est vrai aussi pour une valeur venue du code ou de la source : une source liée dans les deux sens reçoit alors la valeur gardée.
+  - Les arguments ne disent pas l'origine du changement ; `ValueChanged` la donne.
 - **Encapsulation.** Un éditeur ne fait pas sortir les événements de valeur de ses pièces internes (le calendrier de DateEdit, la grille de LookUpEdit). Le formulaire ne voit que ceux de l'éditeur.
 
 ### 1.3 Les erreurs
@@ -67,10 +68,10 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
 ## 2. Table des noms
 
 « Conservé » signifie que le nom ne change pas. Le lot indique quand la rupture a lieu.
-- **Seules les lignes marquées « E1, fait » ou « E2, fait » sont faites.** Toutes les autres sont des propositions, confirmées au lot indiqué.
+- **Seules les lignes marquées « E1, fait », « E2, fait » ou « E3, fait » sont faites.** Toutes les autres sont des propositions, confirmées au lot indiqué.
 - **Une fonction n'est retirée que si elle a un équivalent** (décision du 05/10/2026). Une ligne « supprimé » donne donc toujours l'équivalent.
 
-### 2.1 Socle (HDevEditorBase : DateEdit, TimeEdit, SpinEdit, SearchControl, ButtonEdit, DropDownEdit)
+### 2.1 Socle (HDevEditorBase : TextBox, ComboBox, LookUpEdit, DateEdit, TimeEdit, SpinEdit, SearchControl, TokenEdit, ButtonEdit, DropDownEdit)
 
 | Avant | Après | Lot |
 |---|---|---|
@@ -143,7 +144,7 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
 | `SelectedItem` (CLR, la valeur même en saisie libre) | StyledProperty liable ; l'élément de la liste, nul pour un texte libre ; le poser pose la valeur | **E3, fait** |
 | `OldEditValue` | supprimé : `OldValue` des arguments de `ValueChanged` | **E3, fait** |
 | `EditValueChanged`, `SelectedIndexChanged`, `SelectedValueChanged` | `ValueChanged`, levé aussi pour un changement par le code (constat E0 n° 1) | **E3, fait** |
-| `EditValueChanging` (`HDevEditValueChangingEventArgs`, `NewValue` modifiable) | `ValueChanging` (`HDevValueChangingEventArgs`, annulable) | **E3, fait** |
+| `EditValueChanging` (`HDevEditValueChangingEventArgs`, `NewValue` modifiable) | `ValueChanging` (`HDevValueChangingEventArgs`, annulable) : `NewValue` reste modifiable, désormais pour tous les éditeurs et pour tout changement, utilisateur, code ou liaison (QX-09) | **E3, fait** |
 | `IsPopupOpen` (lecture seule) | `IsDropDownOpen`, StyledProperty liable | **E3, fait** |
 | `ShowPopup()`, `ClosePopup()`, `HidePopup()` | `IsDropDownOpen = true / false` | **E3, fait** |
 | `Popup` (annulable, `HDevPopupEventArgs`), `PopupOpened` | `DropDownOpening` (annulable), `DropDownOpened` | **E3, fait** |
@@ -190,7 +191,7 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
 | CheckBox `IsChecked`, RadioButton `IsChecked` | conservés, liables dans les deux sens par défaut, avec la validation de liaison | **E3, fait** |
 | `GroupName`, `IsThreeState` | conservés | — |
 | ToggleSwitch `IsOn`, `IsOnProperty` | `IsChecked`, `IsCheckedProperty` (nom Avalonia), liable dans les deux sens | **E3, fait** |
-| CheckBox et RadioButton `CheckedChanged`, ToggleSwitch `Toggled` | `ValueChanged` commun (`NewValue` porte la valeur), précédé de `ValueChanging` pour l'utilisateur | **E3, fait** |
+| CheckBox et RadioButton `CheckedChanged`, ToggleSwitch `Toggled` | `ValueChanged` commun (`NewValue` porte la valeur), précédé de `ValueChanging` | **E3, fait** |
 | `Label`, `OnLabel`, `OffLabel` | conservés (texte dessiné, plus simple qu'un `Content`) | — |
 | MonthCalendar `SelectedDate` (CLR, tronqué à minuit) | StyledProperty liable dans les deux sens ; une date posée par le code garde son heure | **E3, fait** |
 | MonthCalendar `SelectedDateChanged` | `ValueChanged` | **E3, fait** |
@@ -208,7 +209,7 @@ Les renvois « E3 (pièce du socle : E2, fait) » de la table : la pièce existe
 2. **`ErrorText` est calculé** : l'erreur de saisie d'abord, sinon celle de la liaison. `SetError` ne pose plus que l'erreur de saisie.
 3. **HDevDateEdit.`Value`** est une StyledProperty liable dans les deux sens, avec la validation de liaison.
 4. **HDevDateEdit.`ValueChanged`** passe de `EventHandler` à `EventHandler<HDevValueChangedEventArgs>`, routé et commun. Un abonnement `(s, e) => …` compile sans changement.
-5. **HDevDateEdit.`ValueChanging`** est nouveau. Il est annulable et n'est levé que pour les changements de l'utilisateur.
+5. **HDevDateEdit.`ValueChanging`** est nouveau. Il est annulable et n'est levé que pour les changements de l'utilisateur (étendu à tout changement en E3, QX-09).
 6. **HDevDateEdit ne tronque plus l'heure.**
    - Avant : `Value = 14/09/2026 10:30` relisait `14/09/2026 00:00`.
    - Maintenant : la valeur garde son heure, qui n'est pas affichée. Une date choisie par l'utilisateur garde l'heure de la valeur courante, ou minuit si elle était vide.
@@ -320,6 +321,12 @@ Le Gantt, qui édite ses dates avec HDevDateEdit, n'est pas touché par le point
    - HDevChip et HDevRadioCard gardent `CheckedChanged` : ils ne figurent pas dans cette table.
 
 16. **L'infobulle de l'application survit aux erreurs.** Une erreur (saisie, `SetError`, liaison) s'affiche en infobulle le temps qu'elle dure, puis l'infobulle posée par l'application (`ToolTip.Tip`) revient. Avant, sur les éditeurs du socle, la première validation sans erreur (au départ du focus) l'effaçait ; HDevTextBox, qui passe sur le socle, aurait hérité du défaut. Même règle pour les contrôles de choix et le calendrier.
+
+17. **`ValueChanging` : `NewValue` modifiable, levé pour tout changement** (décision QX-09 du 13/10/2026 ; règle en 1.2).
+   - `HDevValueChangingEventArgs.NewValue` passe en lecture et écriture. La fonction de l'ancien `EditValueChanging` de la combo est conservée, et étendue à tous les éditeurs : socle, contrôles de choix et calendrier.
+   - **Rupture : `ValueChanging` est levé aussi pour une valeur posée par le code ou par une liaison**, et `e.Cancel` vaut aussi pour elle. Un gestionnaire qui annulait tout, en supposant ne voir que l'utilisateur, bloque désormais aussi le code : il lit l'origine sur `ValueChanged`, ou se désabonne autour d'un changement fait par le code.
+   - L'événement est levé depuis la coercition de la propriété de valeur, seul point par où passent tous les changements. Une source liée dans les deux sens reçoit la valeur substituée, y compris quand le changement vient d'elle.
+   - HDevSpinEdit et HDevSlider ramènent la valeur dans les nouvelles bornes en reposant la valeur courante, pas en la recalculant depuis celle d'origine : une valeur substituée ne revient pas à celle qui avait été demandée.
 
 **Écarts visuels, planches avant et après** (`tests/Gallery`, référence `avant-E3`, six thèmes) :
 - « Champs » : croix de SearchControl au glyphe `Clear` ; état Erreur de SpinEdit enfin visible (point 5) ; chevron de ComboBox et LookUpEdit 2 px plus à gauche (points 11, 13) ; champ à jetons de deux lignes 4 px plus court, d'où une planche de 1 556 px au lieu de 1 560 (point 14) ; quelques pixels d'antialiasing du texte de TextBox et de la combo, sans déplacement.

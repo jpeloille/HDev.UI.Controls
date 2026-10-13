@@ -12,7 +12,7 @@ public class HDevTextBox : HDevEditorBase<string?>
 {
     public static readonly StyledProperty<string?> TextProperty =
         AvaloniaProperty.Register<HDevTextBox, string?>(nameof(Text), "",
-            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true, coerce: CoerceThroughChanging);
 
     public static readonly StyledProperty<bool> IsPasswordProperty =
         AvaloniaProperty.Register<HDevTextBox, bool>(nameof(IsPassword));
