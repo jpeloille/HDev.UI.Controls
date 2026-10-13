@@ -1536,21 +1536,34 @@ public partial class MainWindow : HDevWindow
 
         // Choix du thème à chaud : chaque clic passe au thème suivant du catalogue
         // (Ubuntu 26, Ubuntu 26 sombre, Ardoise, Lagon, Indigo & Or, Cockpit)
-        var themes = HDev.UI.Controls.Theme.HDevThemeDefinition.All;
-        var themeIndex = 0;
-        var themeButton = toolbar.AddButton("🎨", "Thème");
-        themeButton.Tooltip = $"Thème : {themes[themeIndex].DisplayName} (clic = suivant)";
-        themeButton.Click += (s, e) =>
-        {
-            themeIndex = (themeIndex + 1) % themes.Count;
-            var theme = themes[themeIndex];
-            HDev.UI.Controls.Theme.HDevTheme.Apply(theme);
-            themeButton.Tooltip = $"Thème : {theme.DisplayName} (clic = suivant)";
+        _themeButton = toolbar.AddButton("🎨", "Thème");
+        _themeButton.Click += (s, e) => SelectNextTheme();
+        RefreshThemeIndicators();
+    }
 
-            var statusBar = this.FindControl<HDevStatusBar>("MainStatusBar");
-            if (statusBar != null && statusBar.Items.Count > 0)
-                statusBar.Items[0].Text = $"Thème : {theme.DisplayName}";
-        };
+    // ── Thème : un seul point d'entrée pour le menu, la barre d'état et la barre d'outils ──
+    private static readonly System.Collections.Generic.IReadOnlyList<HDev.UI.Controls.Theme.HDevThemeDefinition> Themes =
+        HDev.UI.Controls.Theme.HDevThemeDefinition.All;
+    private int _themeIndex;
+    private HDevToolbarButton? _themeButton;
+    private HDevStatusBarPanel? _themePanel;
+    private readonly System.Collections.Generic.List<HDevMenuItem> _themeMenuItems = new();
+
+    private void SelectNextTheme() => SelectTheme((_themeIndex + 1) % Themes.Count);
+
+    private void SelectTheme(int index)
+    {
+        _themeIndex = index;
+        HDev.UI.Controls.Theme.HDevTheme.Apply(Themes[index]);
+        RefreshThemeIndicators();
+    }
+
+    private void RefreshThemeIndicators()
+    {
+        var name = Themes[_themeIndex].DisplayName;
+        if (_themeButton != null) _themeButton.Tooltip = $"Thème : {name} (clic = suivant)";
+        if (_themePanel != null) _themePanel.Text = $"Thème : {name}";
+        for (var i = 0; i < _themeMenuItems.Count; i++) _themeMenuItems[i].IsChecked = i == _themeIndex;
     }
 
     private void InitializeStatusBar()
@@ -1565,6 +1578,10 @@ public partial class MainWindow : HDevWindow
         statusBar.AddSeparator(HDevStatusBarPanelAlignment.Right);
         var zoomPanel = statusBar.AddPanel("100 %", HDevStatusBarPanelAlignment.Right, icon: "🔍");
         zoomPanel.Click += (s, e) => zoomPanel.Text = zoomPanel.Text == "100 %" ? "125 %" : "100 %";
+        statusBar.AddSeparator(HDevStatusBarPanelAlignment.Right);
+        _themePanel = statusBar.AddPanel("Thème", HDevStatusBarPanelAlignment.Right, icon: "🎨");
+        _themePanel.Click += (s, e) => SelectNextTheme();
+        RefreshThemeIndicators();
     }
 
     private void InitializeMessageBoxDemo()
@@ -1728,6 +1745,17 @@ public partial class MainWindow : HDevWindow
         viewMenu.Items.Add(HDevMenuItem.Separator());
         viewMenu.Items.Add(new HDevMenuItem { Header = "Show Grid", IsCheckable = true, IsChecked = true });
         viewMenu.Items.Add(new HDevMenuItem { Header = "Show Rulers", IsCheckable = true });
+        viewMenu.Items.Add(HDevMenuItem.Separator());
+        var themeMenu = new HDevMenuItem("Thème", "🎨") { Items = new() };
+        for (var i = 0; i < Themes.Count; i++)
+        {
+            var index = i;
+            var item = new HDevMenuItem(Themes[i].DisplayName, null, null, () => SelectTheme(index)) { IsCheckable = true };
+            _themeMenuItems.Add(item);
+            themeMenu.Items.Add(item);
+        }
+        viewMenu.Items.Add(themeMenu);
+        RefreshThemeIndicators();
         menuBar.Items.Add(viewMenu);
         
         // Help menu
