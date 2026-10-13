@@ -256,7 +256,56 @@ static class Planches
             {
                 IsMultiline = true, Width = 320, Text = "Ligne 1 du mémo\nLigne 2 du mémo",
                 HorizontalAlignment = HorizontalAlignment.Left
-            }));
+            }),
+            SocleE2());
+    }
+
+    /// <summary>Socle composite (lot E2), ajouté en bas : le haut de la planche reste comparable au pixel</summary>
+    private static Control SocleE2()
+    {
+        var rows = new List<(string, Control?[])>
+        {
+            ("HDevButtonEdit", Cells(s => EditorIn(new HDevButtonEdit(), s, e => e.Text = "/data/vols"))),
+            ("HDevDropDownEdit", Cells(s => EditorIn(new HDevDropDownEdit { Placeholder = "Équipier" }, s,
+                e => ((HDevDropDownEdit)e).Value = "Awa Wamytan"))),
+        };
+
+        HDevButtonEdit WithButtons(params HDevEditorButton[] buttons)
+        {
+            var edit = new HDevButtonEdit { Width = 260, Text = "Planning été" };
+            edit.Buttons.Clear();
+            edit.Buttons.AddRange(buttons);
+            return edit;
+        }
+        HDevEditorButton B(HDevEditorButtonKind kind, HDevEditorIcon icon = HDevEditorIcon.None) => new() { Kind = kind, Icon = icon };
+
+        var kinds = Kit.Row(
+            WithButtons(B(HDevEditorButtonKind.Clear), B(HDevEditorButtonKind.Search), B(HDevEditorButtonKind.DropDown)),
+            WithButtons(B(HDevEditorButtonKind.Minus), B(HDevEditorButtonKind.Plus), B(HDevEditorButtonKind.Ellipsis)),
+            WithButtons(B(HDevEditorButtonKind.Custom, HDevEditorIcon.Clock), B(HDevEditorButtonKind.Custom, HDevEditorIcon.Calculator),
+                B(HDevEditorButtonKind.Custom, HDevEditorIcon.Link), B(HDevEditorButtonKind.Custom, HDevEditorIcon.Folder),
+                B(HDevEditorButtonKind.Custom, HDevEditorIcon.Swatch)));
+
+        var disabled = WithButtons(B(HDevEditorButtonKind.Clear), B(HDevEditorButtonKind.Ellipsis));
+        disabled.IsEnabled = false;
+        var memo = new HDevButtonEdit
+        {
+            IsMultiline = true, Width = 320, Text = "Ligne 1 du mémo\nLigne 2 du mémo",
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+        memo.Buttons.Insert(0, new HDevEditorButton { Kind = HDevEditorButtonKind.Clear });
+
+        return new StackPanel
+        {
+            Spacing = 20,
+            Children =
+            {
+                Kit.Section("Socle des éditeurs (E2) : champ à boutons et popup libre × états", Kit.Matrix(FieldStates, rows)),
+                Kit.Section("Boutons d'éditeur : types et glyphes", kinds),
+                Kit.Section("Boutons d'éditeur désactivés, multiligne à boutons", Kit.Row(disabled, memo),
+                    "En multiligne, les boutons restent sur la première ligne")
+            }
+        };
     }
 
     private static void ChampsAfterShow(Window window)

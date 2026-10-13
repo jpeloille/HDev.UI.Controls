@@ -131,8 +131,10 @@ Le contrat est dans `HDevEditorContract.cs` (`IHDevEditor`, événements) et dan
       AvaloniaProperty.Register<HDevDateEdit, DateTime?>(nameof(Value),
           defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
   protected override StyledProperty<DateTime?> ValuePropertyCore => ValueProperty;
-  public override DateTime? Value { get => GetValue(ValueProperty); set => SetValueFromCode(value); }
+  public DateTime? Value { get => GetValue(ValueProperty); set => SetValueFromCode(value); }
   ```
+
+  Depuis E2 (décision du 05/10/2026), la couche typée ne déclare plus de `Value` public : l'éditeur concret déclare sa propriété sous le nom D3, `Value`, ou `Text` pour un éditeur de texte (HDevButtonEdit surcharge le `Text` du socle). Il n'y a ainsi qu'un nom par valeur.
 
   La couche typée fait le reste :
   - `CommitUserValue` pour les changements de l'utilisateur ;

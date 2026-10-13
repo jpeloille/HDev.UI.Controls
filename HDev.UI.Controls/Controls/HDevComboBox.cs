@@ -605,51 +605,13 @@ public class HDevComboBox : Control
             VerticalOffset = -1
         };
 
-        _popup.Opened += OnPopupOpenedInstallGuard;
+        _guard = new HDevPopupDismissGuard(() => _isDropDownOpen, CloseDropDown);
+        _popup.Opened += (s, e) => _guard.Install(this, _popup);
         _popup.Closed += OnPopupClosed;
     }
 
-    private DateTime _lastDropDownClose;
-    private TopLevel? _dismissRoot;
-
-    private void OnPopupOpenedInstallGuard(object? sender, EventArgs e)
-    {
-        _dismissRoot = TopLevel.GetTopLevel(this);
-        if (_dismissRoot == null) return;
-
-        _dismissRoot.AddHandler(PointerPressedEvent, OnRootPointerPressed,
-            RoutingStrategies.Tunnel, handledEventsToo: true);
-        if (_dismissRoot is Window w)
-            w.Deactivated += OnRootDeactivated;
-    }
-
-    private void RemoveDismissGuard()
-    {
-        if (_dismissRoot == null) return;
-        _dismissRoot.RemoveHandler(PointerPressedEvent, OnRootPointerPressed);
-        if (_dismissRoot is Window w)
-            w.Deactivated -= OnRootDeactivated;
-        _dismissRoot = null;
-    }
-
-    private void OnRootPointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (e.Source is Avalonia.Visual v && HDevMenuPopup.IsInsidePopupHost(v)) return;
-
-        _lastDropDownClose = DateTime.UtcNow;
-        CloseDropDown();
-    }
-
-    private void OnRootDeactivated(object? sender, EventArgs e)
-    {
-        // Certains bureaux (GNOME/XWayland) font rebondir l'activation de la
-        // fenêtre en permanence : ne fermer que si elle reste inactive 250 ms
-        Avalonia.Threading.DispatcherTimer.RunOnce(() =>
-        {
-            if (_isDropDownOpen && _dismissRoot is Window { IsActive: false })
-                CloseDropDown();
-        }, TimeSpan.FromMilliseconds(250));
-    }
+    /// <summary>Garde de fermeture commune à toute la suite (clic extérieur, désactivation débouncée)</summary>
+    private HDevPopupDismissGuard _guard = null!;
 
     private void OnListBoxPointerReleased(object? sender, PointerReleasedEventArgs e)
     {
@@ -978,7 +940,7 @@ public class HDevComboBox : Control
         if (mode is AutoCompleteMode.Suggest or AutoCompleteMode.SuggestAppend
             || _properties.ImmediatePopup)
         {
-            if (!_isDropDownOpen && (DateTime.UtcNow - _lastDropDownClose).TotalMilliseconds > 250)
+            if (!_isDropDownOpen && !_guard.JustClosed)
                 OpenDropDown();
             if (_isDropDownOpen)
                 RefreshDropDownItems(typed);
@@ -1532,7 +1494,7 @@ public class HDevComboBox : Control
         {
             CloseDropDown();
         }
-        else if ((DateTime.UtcNow - _lastDropDownClose).TotalMilliseconds > 250)
+        else if (!_guard.JustClosed)
         {
             // Ignorer la réouverture si le garde vient de fermer sur ce même clic
             OpenDropDown();
@@ -1624,7 +1586,7 @@ public class HDevComboBox : Control
 
     private void OnPopupClosed(object? sender, EventArgs e)
     {
-        RemoveDismissGuard();
+        _guard.Remove();
 
         if (_isDropDownOpen)
         {

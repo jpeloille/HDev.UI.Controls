@@ -633,7 +633,7 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
     {
         Controle = e, PoserValeur = v => e.Value = (DateTime?)v, LireValeur = () => e.Value, LireTexte = () => e.Text,
         SurValeurChangee = a => e.ValueChanged += (_, _) => a(), Focaliser = () => { e.FocusEditor(); e.SelectAll(); },
-        PopupOuvert = () => Champ<bool>(e, "_isPopupOpen"), ContenuPopup = () => EnfantPopup(e),
+        PopupOuvert = () => e.DropDown.IsOpen, ContenuPopup = () => e.DropDown.IsOpen ? e.DropDown.Chrome : null,
         Valider = () => e.Validate(), Erreur = () => e.ErrorText
     };
     void ChoisirJourDuCalendrier(HDevDateEdit e, DateTime jour) => Champ<HDevMonthCalendar>(e, "_calendar").SelectedDate = jour;
@@ -676,6 +676,7 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         PopupOuvert = () => Champ<bool>(e, "_isOpen"), ContenuPopup = () => EnfantPopup(e)
     };
     int NbSuggestions(HDevSearchControl e) => Champ<ListBox>(e, "_listBox").ItemCount;
+    TextBox InterieurDe(HDevEditorBase e) => Champ<TextBox>(e, "InnerTextBox");
     void ViderSaisieJeton(HDevTokenEdit e) => Champ<TextBox>(e, "_input").Text = "";
     Editeur AdTokenEdit(HDevTokenEdit e) => new()
     {
@@ -751,6 +752,25 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         Check("DateEdit : près du bas de la fenêtre, le calendrier s'ouvre au-dessus",
             Dessus(BoitePopup(wBas, edBas), Boite(wBas, bas)));
         wBas.Close();
+        // Bureau réel (QX-02) : ouvert d'un clic sur son bouton, le focus ailleurs, le popup
+        // restait sourd à Échap. Les boutons ne prenant pas le focus, ils le donnent au champ.
+        var autre = new TextBox { Width = 120 };
+        var deBtn = new HDevDateEdit { Width = 160 };
+        var pcBtn = new HDevDropDownEdit { Width = 160, DropDownContent = new ListBox { ItemsSource = new[] { "a", "b" } } };
+        var wBtn = Hote(new StackPanel { Spacing = 8, Children = { autre, deBtn, pcBtn } });
+        Control Bouton(Control ed) => ed.GetVisualDescendants().OfType<Control>()
+            .Last(c => c is HDevEditorGlyphButton or HDevEditorButton);
+        autre.Focus(); Pump(wBtn); ClickAt(wBtn, WindowCenter(wBtn, Bouton(deBtn)));
+        var ouvertBtn = deBtn.IsDropDownOpen && deBtn.IsKeyboardFocusWithin;
+        Touche(wBtn, PhysicalKey.Escape);
+        Check("DateEdit : ouvert par son bouton, le focus ailleurs, le champ prend le focus et Échap ferme",
+            ouvertBtn && !deBtn.IsDropDownOpen);
+        autre.Focus(); Pump(wBtn); ClickAt(wBtn, WindowCenter(wBtn, Bouton(pcBtn)));
+        ouvertBtn = pcBtn.IsDropDownOpen && pcBtn.IsKeyboardFocusWithin;
+        Touche(wBtn, PhysicalKey.Escape);
+        Check("bouton déroulant du socle : ouvert le focus ailleurs, le champ prend le focus et Échap ferme",
+            ouvertBtn && !pcBtn.IsDropDownOpen);
+        wBtn.Close();
     }
 
     // ─── HDevTimeEdit ───
@@ -1003,10 +1023,12 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
             vm.Depart == new DateTime(2026, 10, 7) && journal.Count == nJournal + 1
             && ReferenceEquals(journal[^1].Source, de) && journal[^1].IsUserChange);
 
-        de.FocusEditor(); de.SelectAll(); Colle(w, "abc"); var texteColle = de.Text;
+        // Texte invalide obtenu par une saisie incomplète : depuis E2, un collage « abc » est refusé
+        // par le masque (constat E0 n° 6) et ne peut plus servir à fabriquer un texte invalide
+        Saisit("15"); var texteInvalide = de.Text;
         de.Value = de.Value; Pump(w);
         Check("reposer la valeur courante par code réaffiche son texte (constat E0 n° 5)",
-            texteColle == "abc" && de.Text == "07/10/2026" && de.ErrorText == null);
+            texteInvalide == "15" && de.Text == "07/10/2026" && de.ErrorText == null);
 
         vm.Depart = new DateTime(2026, 10, 7, 10, 30, 0); Pump(w);
         var heureGardee = vm.Depart == new DateTime(2026, 10, 7, 10, 30, 0) && de.Text == "07/10/2026";
@@ -1018,6 +1040,345 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         contrat.EditValue = new DateTime(2026, 11, 11); Pump(w);
         Check("IHDevEditor : EditValue pose la valeur typée, jusqu'au ViewModel",
             vm.Depart == new DateTime(2026, 11, 11) && Equals(contrat.EditValue, new DateTime(2026, 11, 11)));
+        w.Close();
+    }
+
+    // ═══ SOCLE COMPOSITE (E2) : masque et collage ═══
+    Console.WriteLine("Socle des éditeurs (E2) :");
+    {
+        var de = new HDevDateEdit { Width = 160 }; var te = new HDevTimeEdit { Width = 120 };
+        var sp = new HDevSpinEdit { Width = 120, Decimals = 2, MinValue = 0, MaxValue = 100 };
+        Canvas.SetTop(te, 80); Canvas.SetTop(sp, 140);
+        var w = Hote(de); ((Canvas)w.Content!).Children.Add(te); ((Canvas)w.Content!).Children.Add(sp); Pump(w);
+        void ToutSelectionner(HDevEditorBase e) { e.FocusEditor(); e.SelectAll(); Pump(w); }
+
+        ToutSelectionner(de); Colle(w, "20092026");
+        Check("collage sous masque : « 20092026 » passe par le masque et donne la date (constat E0 n° 6)",
+            de.Text == "20/09/2026" && de.Value == new DateTime(2026, 9, 20));
+        ToutSelectionner(de); Colle(w, "2026-09-21"); var iso = de.Text;
+        ToutSelectionner(de); Colle(w, "abc");
+        Check("collage sous masque : un texte qui ne tient pas dans le masque est refusé en entier",
+            iso == "20/09/2026" && de.Text == "20/09/2026" && de.Value == new DateTime(2026, 9, 20));
+        ToutSelectionner(te); Colle(w, "1745");
+        Check("collage sous masque : « 1745 » donne 17:45 dans TimeEdit", te.Text == "17:45" && te.Value == new TimeSpan(17, 45, 0));
+        ToutSelectionner(sp); Colle(w, "12a,5"); var texteRefuse = sp.Text;
+        ToutSelectionner(sp); Colle(w, "12,5");
+        Check("collage filtré : SpinEdit refuse « 12a,5 » et prend « 12,5 »",
+            texteRefuse == "0,00" && sp.Text == "12,5" && sp.Value == 12.5m);
+        ToutSelectionner(de); Colle(w, "20/09/2026"); ToutSelectionner(de); Tape(w, "14092026");
+        Touche(w, PhysicalKey.Backspace);
+        Check("après un collage, une frappe en bloc réduit la sélection : Retour arrière n'efface qu'un chiffre (constat E0 n° 7)",
+            de.Text == "14/09/202");
+        w.Close();
+    }
+
+    // ═══ SOCLE COMPOSITE (E2) : retournement des popups, mesuré en géométrie (constat E0 n° 4) ═══
+    // L'écart au champ doit être le même dessous et dessus : 2 px de jour, ou 1 px de bordure
+    // fusionnée (LookUpEdit). Les contrôles Dessous/Dessus d'E0 tolèrent 2 px et ne le voient pas.
+    {
+        (double Dessous, double Dessus) Ecarts(Func<Control> creer, Func<Control, Editeur> adapter, Action<Window, Editeur> ouvrir)
+        {
+            double Mesure(double top, bool dessus)
+            {
+                var c = creer(); var ed = adapter(c); var w = Hote(c, top); ed.Focaliser(); Pump(w); ouvrir(w, ed);
+                var champ = Boite(w, c); var pop = BoitePopup(w, ed); w.Close();
+                if (pop is not { } r) return double.NaN;
+                return dessus ? champ.Top - r.Bottom : r.Top - champ.Bottom;
+            }
+            return (Mesure(20, false), Mesure(380, true));
+        }
+        string Lu((double Dessous, double Dessus) e) => $"lu {e.Dessous:0.##} dessous, {e.Dessus:0.##} dessus";
+        Func<string, IEnumerable<object>> suggestions = t => new object[] { "Gamma", "Gantt", "Carla" }
+            .Where(x => ((string)x).StartsWith(t, StringComparison.OrdinalIgnoreCase));
+
+        var date = Ecarts(() => new HDevDateEdit { Width = 160 }, c => AdDateEdit((HDevDateEdit)c),
+            (w, _) => Touche(w, PhysicalKey.F4));
+        Check($"DateEdit : 2 px de jour dessous comme dessus ({Lu(date)})", date.Dessous == 2 && date.Dessus == 2);
+        var search = Ecarts(() => new HDevSearchControl { Width = 200, SuggestionsProvider = suggestions },
+            c => AdSearch((HDevSearchControl)c), (w, _) => Tape(w, "Ga"));
+        Check($"SearchControl : 2 px de jour dessous comme dessus ({Lu(search)})", search.Dessous == 2 && search.Dessus == 2);
+        var jetons = Ecarts(() => new HDevTokenEdit { Width = 260, SuggestionsProvider = suggestions },
+            c => AdTokenEdit((HDevTokenEdit)c), (w, _) => Tape(w, "C"));
+        Check($"TokenEdit : 2 px de jour dessous comme dessus ({Lu(jetons)})", jetons.Dessous == 2 && jetons.Dessus == 2);
+        var refs = new List<RefE0> { new(1, "Alpha"), new(2, "Beta"), new(3, "Gamma") };
+        var lookup = Ecarts(() => new HDevLookUpEdit { Width = 180, DataSource = refs, DisplayMember = "Nom", ValueMember = "Id" },
+            c => AdLookUpEdit((HDevLookUpEdit)c), (w, _) => Touche(w, PhysicalKey.F4));
+        Check($"LookUpEdit : bordure fusionnée dessous comme dessus ({Lu(lookup)})", lookup.Dessous == -1 && lookup.Dessus == -1);
+    }
+
+    // ═══ SOCLE COMPOSITE (E2) : popup du socle, clavier et focus ═══
+    {
+        var nu = new EditeurNuE2 { Width = 200 }; var w = Hote(nu);
+        var dedans = new TextBox { Width = 160 };
+        nu.DropDown.Content = dedans;
+        nu.FocusEditor(); Touche(w, PhysicalKey.F4); var f4 = nu.DropDown.IsOpen;
+        Touche(w, PhysicalKey.ArrowUp, RawInputModifiers.Alt); var altHaut = !nu.DropDown.IsOpen;
+        Touche(w, PhysicalKey.ArrowDown, RawInputModifiers.Alt); var altBas = nu.DropDown.IsOpen;
+        Touche(w, PhysicalKey.Escape);
+        Check("popup du socle : F4 et Alt+↓ ouvrent, Alt+↑ et Échap ferment", f4 && altHaut && altBas && !nu.DropDown.IsOpen);
+        Touche(w, PhysicalKey.F4); dedans.Focus(); Pump(w); var focusDedans = dedans.IsFocused;
+        Touche(w, PhysicalKey.Escape);
+        Check("popup du socle : Échap depuis le contenu ferme et rend le focus au champ",
+            focusDedans && !nu.DropDown.IsOpen && nu.IsKeyboardFocusWithin);
+        nu.IsReadOnly = true; Touche(w, PhysicalKey.F4); var lectureSeule = nu.DropDown.IsOpen; nu.IsReadOnly = false;
+        Check("popup du socle : pas d'ouverture en lecture seule", !lectureSeule);
+        w.Close();
+    }
+
+    // ═══ SOCLE COMPOSITE (E2) : boutons d'éditeur et popup public, en XAML compilé ═══
+    {
+        var vm = new FormulaireE2Vm();
+        var vue = new FormulaireE2 { DataContext = vm };
+        var w = new Window { Width = 500, Height = 420, Content = vue }; w.Show(); Pump(w);
+        var be = vue.FindControl<HDevButtonEdit>("Chemin")!;
+        var pc = vue.FindControl<HDevDropDownEdit>("Equipage")!;
+        var clics = new List<HDevEditorButtonKind>();
+        // Click est routé : le formulaire écoute tous les boutons d'éditeur d'un seul AddHandler
+        vue.AddHandler(HDevEditorButton.ClickEvent, (object? _, Avalonia.Interactivity.RoutedEventArgs e) => clics.Add(((HDevEditorButton)e.Source!).Kind));
+        HDevEditorButton Bouton(HDevEditorBase e, HDevEditorButtonKind k) => e.Buttons.First(b => b.Kind == k);
+
+        // ─── HDevButtonEdit : texte liable, boutons ───
+        Check("ButtonEdit : Text lié sans Mode, un bouton « … » par défaut, puis ceux du XAML dans l'ordre",
+            be.Text == "/data/vols" && be.Buttons.Select(b => b.Kind).SequenceEqual(new[]
+                { HDevEditorButtonKind.Ellipsis, HDevEditorButtonKind.Clear, HDevEditorButtonKind.Custom }));
+        be.FocusEditor(); InterieurDe(be).CaretIndex = 0; Tape(w, "/mnt");
+        var saisie = vm.Chemin;
+        vm.Chemin = "/srv"; Pump(w);
+        Check("ButtonEdit : la saisie remonte au ViewModel, le ViewModel redescend", saisie == "/mnt/data/vols" && be.Text == "/srv");
+
+        var effacer = Bouton(be, HDevEditorButtonKind.Clear); var dossier = Bouton(be, HDevEditorButtonKind.Custom);
+        var cacheAvant = effacer.IsEffectivelyVisible; vm.EffacerVisible = true; Pump(w);
+        Check("bouton d'éditeur : visibilité liée au ViewModel, infobulle d'Avalonia, glyphe du type ou Icon",
+            !cacheAvant && effacer.IsEffectivelyVisible && (string?)ToolTip.GetTip(effacer) == "Effacer"
+            && effacer.EffectiveIcon == HDevEditorIcon.Clear && dossier.EffectiveIcon == HDevEditorIcon.Folder);
+        var champ = Boite(w, be); var bDossier = Boite(w, dossier);
+        Check($"boutons à droite du champ, à sa hauteur (dossier {bDossier})",
+            Math.Abs(bDossier.Right - (champ.Right - 1)) < 0.5 && bDossier.Height == 26 && Boite(w, effacer).Right <= bDossier.Left);
+
+        var journal = new List<HDevValueChangedEventArgs>(); be.ValueChanged += (_, e) => journal.Add(e);
+        ClickAt(w, WindowCenter(w, effacer));
+        Check("clic réel sur Effacer : Click routé jusqu'au formulaire, puis la valeur est vidée par l'utilisateur, jusqu'au ViewModel",
+            clics.LastOrDefault() == HDevEditorButtonKind.Clear && be.Text == "" && vm.Chemin == ""
+            && journal.Count == 1 && journal[0].IsUserChange);
+        vm.Chemin = "/srv"; Pump(w);
+        EventHandler<Avalonia.Interactivity.RoutedEventArgs> garde = (_, e) => e.Handled = true;
+        be.AddHandler(HDevEditorButton.ClickEvent, garde); ClickAt(w, WindowCenter(w, effacer)); be.RemoveHandler(HDevEditorButton.ClickEvent, garde);
+        Check("Effacer marqué traité dans Click : la valeur reste", be.Text == "/srv" && vm.Chemin == "/srv");
+
+        var nClics = clics.Count; var pe = WindowCenter(w, Bouton(be, HDevEditorButtonKind.Ellipsis)); ClickAt(w, pe);
+        Check("« … » ne fait que lever Click", clics.Count == nClics + 1 && clics[^1] == HDevEditorButtonKind.Ellipsis
+            && be.Text == "/srv" && !be.IsDropDownOpen);
+        ClickAt(w, WindowCenter(w, dossier)); var executee = vm.Parcourir.Executions;
+        vm.Parcourir.Active = false; Pump(w); ClickAt(w, WindowCenter(w, dossier));
+        Check("Command du bouton exécutée au clic ; CanExecute faux grise le bouton, qui ne fait plus rien",
+            executee == 1 && vm.Parcourir.Executions == 1 && !dossier.IsEffectivelyEnabled);
+        be.IsReadOnly = true; vm.Chemin = "/srv"; Pump(w); effacer.PerformClick(); var lectureSeule = be.Text; be.IsReadOnly = false;
+        Check("lecture seule : Effacer ne vide pas", lectureSeule == "/srv");
+
+        // ─── HDevDropDownEdit : valeur libre, popup public ───
+        var ouvertures = 0; var fermetures = new List<HDevDropDownClosedEventArgs>();
+        pc.DropDownOpened += (_, _) => ouvertures++; pc.DropDownClosed += (_, e) => fermetures.Add(e);
+        var liste = (ListBox)pc.DropDownContent!;
+        var presentateur = Champ<ContentControl>(pc, "_presenter");
+        Check("DropDownEdit : valeur vide, l'invite est affichée, pas de champ texte",
+            pc.Value == null && Equals(presentateur.Content, "Choisir un équipier") && !InterieurDe(pc).IsVisible);
+        ClickAt(w, WindowCenter(w, pc)); Pump(w);
+        var boitePc = Boite(w, pc); var boitePop = Boite(w, pc.DropDown.Chrome);
+        Check($"un clic sur le champ ouvre le popup sous lui, à sa largeur (lu {boitePop})",
+            pc.IsDropDownOpen && ouvertures == 1 && boitePop.Top - boitePc.Bottom == 2 && boitePop.Width >= boitePc.Width);
+        var journalPc = new List<HDevValueChangedEventArgs>(); pc.ValueChanged += (_, e) => journalPc.Add(e);
+        Control Membre(int i) => (Control)liste.ContainerFromIndex(i)!;
+        ClickAt(w, WindowCenter(w, Membre(1)));
+        Check("popup ouvert : le contenu écrit la valeur en cours (DropDownValue) ; Value, le ViewModel et le champ ne bougent pas",
+            Equals(pc.DropDownValue, "Teiki Brothers") && pc.Value == null && vm.Equipage == null && journalPc.Count == 0
+            && Equals(presentateur.Content, "Choisir un équipier") && pc.IsDropDownOpen);
+        Touche(w, PhysicalKey.Escape);
+        Check("Échap ferme sans accepter (CloseReason Canceled, IsValueAccepted faux) : la valeur d'avant reste, la valeur en cours y revient",
+            !pc.IsDropDownOpen && fermetures.Count == 1 && fermetures[0].CloseReason == HDevDropDownCloseReason.Canceled
+            && !fermetures[0].IsValueAccepted && pc.Value == null && pc.DropDownValue == null && journalPc.Count == 0
+            && pc.IsKeyboardFocusWithin);
+        Touche(w, PhysicalKey.F4); Membre(2).Focus(); Pump(w); Touche(w, PhysicalKey.Enter);
+        Check("Entrée dans la liste choisit et ferme en acceptant : la valeur est prise, origine Utilisateur, jusqu'au ViewModel",
+            Equals(pc.Value, "Lucie Martin") && Equals(vm.Equipage, "Lucie Martin") && !pc.IsDropDownOpen
+            && fermetures[^1].CloseReason == HDevDropDownCloseReason.Accepted && fermetures[^1].IsValueAccepted
+            && journalPc.Count == 1 && journalPc[0].IsUserChange && Equals(presentateur.Content, "Lucie Martin"));
+        EventHandler<HDevValueChangingEventArgs> refuseChangement = (_, e) => e.Cancel = true;
+        pc.ValueChanging += refuseChangement;
+        Touche(w, PhysicalKey.F4); var depart = pc.DropDownValue; ClickAt(w, WindowCenter(w, Membre(0))); Touche(w, PhysicalKey.Enter);
+        pc.ValueChanging -= refuseChangement;
+        Check("ValueChanging annulé à la fermeture : le popup se ferme, la valeur reste, la valeur en cours y revient",
+            Equals(depart, "Lucie Martin") && !pc.IsDropDownOpen && Equals(pc.Value, "Lucie Martin")
+            && Equals(vm.Equipage, "Lucie Martin") && Equals(pc.DropDownValue, "Lucie Martin") && journalPc.Count == 1);
+        Touche(w, PhysicalKey.F4); ClickAt(w, WindowCenter(w, Membre(0))); ClickAt(w, horsChamp);
+        Check("clic extérieur (CloseReason LightDismiss) : le choix est gardé",
+            !pc.IsDropDownOpen && fermetures[^1].CloseReason == HDevDropDownCloseReason.LightDismiss && fermetures[^1].IsValueAccepted
+            && Equals(pc.Value, "Awa Wamytan") && Equals(vm.Equipage, "Awa Wamytan") && journalPc.Count == 2);
+        vm.Equipage = "Teiki Brothers"; Pump(w);
+        Check("popup fermé, la valeur en cours suit Value", Equals(pc.DropDownValue, "Teiki Brothers"));
+
+        EventHandler<System.ComponentModel.CancelEventArgs> refuseOuverture = (_, e) => e.Cancel = true;
+        pc.DropDownOpening += refuseOuverture; pc.IsDropDownOpen = true; Pump(w); var refusee = !pc.IsDropDownOpen && !pc.DropDown.IsOpen;
+        pc.DropDownOpening -= refuseOuverture;
+        Check("DropDownOpening annulé : le popup reste fermé, IsDropDownOpen revient à faux", refusee);
+        EventHandler<HDevDropDownClosingEventArgs> retient = (_, e) => { if (e.CloseReason == HDevDropDownCloseReason.LightDismiss) e.Cancel = true; };
+        pc.DropDownClosing += retient; pc.IsDropDownOpen = true; Pump(w); ClickAt(w, horsChamp); var retenu = pc.IsDropDownOpen;
+        pc.DropDownClosing -= retient; ClickAt(w, horsChamp);
+        Check("DropDownClosing annulé sur clic extérieur : reste ouvert ; sinon le clic extérieur ferme (CloseReason LightDismiss)",
+            retenu && !pc.IsDropDownOpen && fermetures[^1].CloseReason == HDevDropDownCloseReason.LightDismiss);
+        pc.IsDropDownOpen = true; Pump(w); var parCode = pc.DropDown.IsOpen; pc.IsDropDownOpen = false; Pump(w);
+        Check("IsDropDownOpen posé par le code ouvre et ferme", parCode && !pc.DropDown.IsOpen && fermetures[^1].CloseReason == HDevDropDownCloseReason.Canceled);
+        pc.ValueTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<object>((o, _) => new TextBlock { Text = "★ " + o }); Pump(w);
+        Check("ValueTemplate affiche la valeur", presentateur.ContentTemplate != null
+            && presentateur.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "★ Teiki Brothers"));
+        w.Close();
+    }
+
+    // ═══ SOCLE COMPOSITE (E2) : un popup sur n'importe quel éditeur (forme B) ═══
+    {
+        var be = new HDevButtonEdit { Width = 200 }; var w = Hote(be, top: 380);
+        be.Buttons.Clear(); be.Buttons.Add(new HDevEditorButton { Kind = HDevEditorButtonKind.DropDown });
+        be.DropDownContent = new TextBlock { Text = "Aide", Width = 120 };
+        be.FocusEditor(); Touche(w, PhysicalKey.F4);
+        var champ = Boite(w, be); var pop = Boite(w, be.DropDown.Chrome);
+        Check($"ButtonEdit + bouton déroulant + DropDownContent : F4 ouvre, retourné au-dessus avec 2 px (lu {champ.Top - pop.Bottom})",
+            be.IsDropDownOpen && champ.Top - pop.Bottom == 2);
+        ClickAt(w, WindowCenter(w, be.Buttons[0]));
+        Check("le bouton déroulant referme", !be.IsDropDownOpen);
+        be.IsMultiline = true; be.Text = "1\n2\n3\n4\n5"; Pump(w);
+        var bouton = Boite(w, be.Buttons[0]); champ = Boite(w, be);
+        Check($"multiligne : les boutons restent sur la première ligne (bouton {bouton}, champ {champ})",
+            champ.Height > 84 && bouton.Top == champ.Top + 1 && bouton.Height == 26);
+        w.Close();
+    }
+
+    // ═══ GARDE DE FERMETURE (QX-02, option b) : désactivation de la fenêtre ═══
+    // La désactivation passe par les rappels Activated/Deactivated de l'implémentation de
+    // fenêtre headless, puis le répartiteur tourne le temps voulu (minuteries comprises).
+    // Le headless a des popups overlay (AvaloniaHeadlessPlatformOptions.OverlayPopups) ; le
+    // chemin natif se couvre en substituant la détection de la garde.
+    Console.WriteLine("Garde de fermeture (QX-02) :");
+    {
+        void Attente(Window w, int ms)
+        {
+            using var cts = new CancellationTokenSource(ms);
+            Dispatcher.UIThread.MainLoop(cts.Token);
+            Pump(w);
+        }
+        void Activation(Window w, bool actif)
+        {
+            var impl = typeof(TopLevel).GetProperty("PlatformImpl", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic
+                | System.Reflection.BindingFlags.Instance)!.GetValue(w)!;
+            var rappel = impl.GetType().GetProperty(actif ? "Activated" : "Deactivated", System.Reflection.BindingFlags.Public
+                | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+            ((Action?)rappel.GetValue(impl))?.Invoke();
+        }
+        bool SurvitA(Window w, Func<bool> ouvert, int ms)
+        {
+            Activation(w, false); Attente(w, ms); var pendant = ouvert() && !w.IsActive;
+            Activation(w, true); Attente(w, 300);
+            return pendant && ouvert();
+        }
+
+        // DateEdit (popup du socle)
+        var de = new HDevDateEdit { Width = 160 }; var w = Hote(de); w.Activate(); de.FocusEditor(); Touche(w, PhysicalKey.F4);
+        Check("headless : les popups sont dessinés dans la fenêtre (overlay)",
+            de.DropDown.IsOpen && HDevPopupDismissGuard.IsOverlayHosted(de.DropDown.Popup));
+        var date400 = SurvitA(w, () => de.DropDown.IsOpen, 400); var date1500 = SurvitA(w, () => de.DropDown.IsOpen, 1500);
+        Check("overlay, DateEdit : le calendrier survit à une désactivation de 400 ms puis de 1,5 s", date400 && date1500);
+        ClickAt(w, horsChamp);
+        Check("overlay, DateEdit : le clic dans la fenêtre hors du popup ferme toujours", !de.DropDown.IsOpen);
+        de.FocusEditor(); Touche(w, PhysicalKey.F4); Activation(w, false); Attente(w, 400); Activation(w, true); Attente(w, 50);
+        Touche(w, PhysicalKey.Escape);
+        Check("overlay, DateEdit : Échap ferme toujours, après une désactivation", !de.DropDown.IsOpen);
+
+        // Chemin natif (fenêtre séparée) : la fermeture après le débounce de 250 ms est conservée
+        var detection = HDevPopupDismissGuard.IsDrawnInWindow;
+        HDevPopupDismissGuard.IsDrawnInWindow = _ => false;
+        try
+        {
+            Touche(w, PhysicalKey.F4); var rebond = SurvitA(w, () => de.DropDown.IsOpen, 100);
+            Activation(w, false); Attente(w, 400); var fermeNatif = !de.DropDown.IsOpen; Activation(w, true); Attente(w, 50);
+            Check("popup natif : un rebond de 100 ms est absorbé, une désactivation de 400 ms ferme (débounce de 250 ms)",
+                rebond && fermeNatif);
+        }
+        finally { HDevPopupDismissGuard.IsDrawnInWindow = detection; }
+        w.Close();
+
+        // ComboBox et LookUpEdit (hors socle, même garde)
+        var cb = new HDevComboBox { Width = 160 }; cb.Properties.Items.AddRange(new object[] { "a", "b", "c" });
+        var wCb = Hote(cb); wCb.Activate(); cb.Focus(); Touche(wCb, PhysicalKey.F4);
+        var cb400 = SurvitA(wCb, () => cb.IsPopupOpen, 400); var cb1500 = SurvitA(wCb, () => cb.IsPopupOpen, 1500);
+        ClickAt(wCb, horsChamp);
+        Check("overlay, ComboBox : la liste survit à 400 ms et 1,5 s de désactivation ; le clic extérieur la ferme",
+            cb400 && cb1500 && !cb.IsPopupOpen);
+        wCb.Close();
+        var refs = new List<RefE0> { new(1, "Alpha"), new(2, "Beta") };
+        var lu = new HDevLookUpEdit { Width = 180, DataSource = refs, DisplayMember = "Nom", ValueMember = "Id" };
+        var wLu = Hote(lu); wLu.Activate(); lu.Focus(); Touche(wLu, PhysicalKey.F4);
+        var luOuvert = () => Champ<bool>(lu, "_isDropDownOpen");
+        var lu400 = SurvitA(wLu, luOuvert, 400); var lu1500 = SurvitA(wLu, luOuvert, 1500);
+        Touche(wLu, PhysicalKey.Escape);
+        Check("overlay, LookUpEdit : la grille survit à 400 ms et 1,5 s de désactivation ; Échap la ferme",
+            lu400 && lu1500 && !luOuvert());
+        wLu.Close();
+
+        // Menus (HDevMenuPopup)
+        var item = new HDevMenuItem("Nouveau"); var menu = new HDevMenuBarItem("Fichier"); menu.Items.Add(item);
+        var barre = new HDevMenuBar(); barre.Items.Add(menu);
+        var wMenu = new Window { Width = 500, Height = 300, Content = barre }; wMenu.Show(); Pump(wMenu); wMenu.Activate();
+        ClickAt(wMenu, menu.TranslatePoint(new Point(menu.Bounds.Width / 2, 14), wMenu)!.Value);
+        var menuOuvert = () => item.OwnerPopup is { IsOpen: true };
+        var m400 = SurvitA(wMenu, menuOuvert, 400); var m1500 = SurvitA(wMenu, menuOuvert, 1500);
+        ClickAt(wMenu, new Point(400, 250));
+        Check("overlay, menu : il survit à 400 ms et 1,5 s de désactivation ; le clic extérieur le ferme",
+            m400 && m1500 && !menuOuvert());
+        wMenu.Close();
+
+        // Échap ferme aussi les menus hors barre : menu contextuel et HDevMenuPopup ouvert par le code
+        var cible = new Border { Width = 200, Height = 100, Background = Avalonia.Media.Brushes.Transparent };
+        var wCtx = Hote(cible); wCtx.Activate();
+        var contexte = new HDevContextMenu(); contexte.Add("Copier"); contexte.Add("Coller");
+        var fermeturesCtx = 0; contexte.Closed += (_, _) => fermeturesCtx++;
+        bool CtxOuvert() => contexte.Items[0].OwnerPopup is { IsOpen: true };
+        contexte.Show(cible, new Point(10, 10)); Pump(wCtx); var ctxOuvert = CtxOuvert();
+        Touche(wCtx, PhysicalKey.Escape);
+        Check("menu contextuel : Échap le ferme", ctxOuvert && !CtxOuvert() && fermeturesCtx == 1);
+        contexte.Show(cible, new Point(10, 10)); Pump(wCtx);
+        var ctxSurvit = SurvitA(wCtx, CtxOuvert, 400); Touche(wCtx, PhysicalKey.Escape);
+        Check("menu contextuel : il survit à une désactivation de 400 ms, puis Échap le ferme", ctxSurvit && !CtxOuvert());
+
+        var feuille = new HDevMenuItem("Fichier A");
+        var parent = new HDevMenuItem("Récents") { Items = new System.Collections.ObjectModel.ObservableCollection<HDevMenuItem> { feuille } };
+        var libre = new HDevMenuPopup(); libre.SetItems(new[] { new HDevMenuItem("Ouvrir"), parent });
+        libre.ShowAt(cible); Pump(wCtx); var libreOuvert = libre.IsOpen;
+        Touche(wCtx, PhysicalKey.Escape);
+        Check("menu hors barre (HDevMenuPopup.ShowAt) : Échap le ferme", libreOuvert && !libre.IsOpen);
+        libre = new HDevMenuPopup(); libre.SetItems(new[] { new HDevMenuItem("Ouvrir"), parent });
+        libre.ShowAt(cible); Pump(wCtx);
+        wCtx.MouseMove(WindowCenter(wCtx, parent), RawInputModifiers.None); Pump(wCtx);
+        var sousOuvert = feuille.OwnerPopup is { IsOpen: true };
+        var libreSurvit = SurvitA(wCtx, () => libre.IsOpen && feuille.OwnerPopup is { IsOpen: true }, 400);
+        Touche(wCtx, PhysicalKey.Escape);
+        Check("menu hors barre avec sous-menu : il survit à 400 ms de désactivation ; Échap ferme toute la chaîne, comme dans la barre",
+            sousOuvert && libreSurvit && !libre.IsOpen && feuille.OwnerPopup is not { IsOpen: true });
+        wCtx.Close();
+    }
+
+    // ═══ SOCLE COMPOSITE (E2) : multiligne ═══
+    {
+        var memo = new EditeurNuE2 { Width = 200 }; var w = Hote(memo);
+        var hauteurMono = memo.Bounds.Height;
+        memo.IsMultiline = true; Pump(w);
+        var hauteurVide = memo.Bounds.Height;
+        memo.FocusEditor(); Tape(w, "un"); Touche(w, PhysicalKey.Enter); Tape(w, "deux");
+        Check($"multiligne : Entrée insère un saut de ligne, le champ part de trois lignes (lu {hauteurMono} puis {hauteurVide})",
+            memo.Text == "un\ndeux" && hauteurMono == 28 && hauteurVide == 84);
+        memo.Text = "1\n2\n3\n4\n5\n6\n7"; Pump(w); var haut = memo.Bounds.Height;
+        Colle(w, "\nhuit\nneuf"); var colle = memo.Text;
+        Check($"multiligne : la hauteur suit le texte, le collage garde ses lignes (lu {haut}, {colle.Replace("\n", "⏎")})",
+            haut > 84 && colle.Contains("\nhuit\nneuf") && colle.Split('\n').Length == 9);
+        memo.IsMultiline = false; Pump(w);
+        Check($"retour au monoligne : hauteur du gabarit (lu {memo.Bounds.Height})", memo.Bounds.Height == 28);
         w.Close();
     }
 
@@ -1044,6 +1405,9 @@ class TestApp : Application
         Styles.Add(new FluentTheme());
     }
 }
+
+/// <summary>Éditeur nu sur le socle, sans pièce ni valeur typée : ce que le socle seul fait (E2)</summary>
+sealed class EditeurNuE2 : HDevEditorBase { }
 
 // ─── Types des adaptateurs E0 (section « Éditeurs ») ───
 sealed record RefE0(int Id, string Nom);

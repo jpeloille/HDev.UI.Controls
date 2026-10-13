@@ -24,7 +24,8 @@ public class HDevMenuPopup : Popup
     /// </summary>
     internal HDevMenuPopup? ParentPopup { get; set; }
 
-    private TopLevel? _guardRoot;
+    /// <summary>Garde de fermeture commune à toute la suite (clic extérieur, désactivation débouncée)</summary>
+    private readonly HDevPopupDismissGuard _guard;
 
     /// <summary>true si la dernière fermeture vient d'un clic extérieur (garde)</summary>
     internal bool WasClosedByGuard { get; private set; }
@@ -37,6 +38,8 @@ public class HDevMenuPopup : Popup
         // Remplacé par un garde : clic extérieur + désactivation avec délai de grâce.
         IsLightDismissEnabled = false;
         Placement = PlacementMode.BottomEdgeAlignedLeft;
+        // Seul le clic extérieur arme l'anti-réouverture du bar-item, pas la désactivation
+        _guard = new HDevPopupDismissGuard(() => IsOpen, () => { WasClosedByGuard = _guard!.JustClosed; Close(); });
 
         Opened += (s, e) => { WasClosedByGuard = false; InstallDismissGuard(); };
 
@@ -99,54 +102,38 @@ public class HDevMenuPopup : Popup
         }
     }
 
+    private TopLevel? _keyRoot;
+
     private void InstallDismissGuard()
     {
-        _guardRoot = PlacementTarget != null ? TopLevel.GetTopLevel(PlacementTarget) : null;
-        if (_guardRoot == null) return;
+        if (PlacementTarget == null) return;
+        _guard.Install(PlacementTarget, this);
 
-        _guardRoot.AddHandler(PointerPressedEvent, OnRootPointerPressed,
-            Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
-        if (_guardRoot is Window w)
-            w.Deactivated += OnRootDeactivated;
+        // Échap ferme le menu, même hors de la barre (menu contextuel, ShowAt) : la garde ne le
+        // ferme plus à la désactivation d'une fenêtre à popups overlay. Le gestionnaire de la
+        // barre, posé plus tôt sur la même racine, passe d'abord et traite ses propres menus.
+        _keyRoot = TopLevel.GetTopLevel(PlacementTarget);
+        _keyRoot?.AddHandler(KeyDownEvent, OnRootKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
     }
 
     private void RemoveDismissGuard()
     {
-        if (_guardRoot == null) return;
-        _guardRoot.RemoveHandler(PointerPressedEvent, OnRootPointerPressed);
-        if (_guardRoot is Window w)
-            w.Deactivated -= OnRootDeactivated;
-        _guardRoot = null;
+        _guard.Remove();
+        _keyRoot?.RemoveHandler(KeyDownEvent, OnRootKeyDown);
+        _keyRoot = null;
     }
 
-    private void OnRootPointerPressed(object? sender, PointerPressedEventArgs e)
+    /// <summary>
+    /// Échap ferme toute la chaîne (le menu racine et ses sous-menus), comme Échap dans
+    /// <see cref="HDevMenuBar"/>
+    /// </summary>
+    private void OnRootKeyDown(object? sender, KeyEventArgs e)
     {
-        // En mode overlay (headless), le contenu des popups vit dans l'arbre de
-        // la fenêtre : ignorer les presses venant de l'intérieur d'un popup
-        if (e.Source is Visual v && IsInsidePopupHost(v)) return;
-
-        WasClosedByGuard = true;
-        Close();
-    }
-
-    internal static bool IsInsidePopupHost(Visual v)
-    {
-        foreach (var a in v.GetVisualAncestors())
-        {
-            if (a is Avalonia.Controls.Primitives.OverlayPopupHost) return true;
-        }
-        return false;
-    }
-
-    private void OnRootDeactivated(object? sender, EventArgs e)
-    {
-        // Certains bureaux (GNOME/XWayland) font rebondir l'activation de la
-        // fenêtre en permanence : ne fermer que si elle reste inactive 250 ms
-        Avalonia.Threading.DispatcherTimer.RunOnce(() =>
-        {
-            if (IsOpen && _guardRoot is Window { IsActive: false })
-                Close();
-        }, TimeSpan.FromMilliseconds(250));
+        if (e.Handled || e.Key != Key.Escape || !IsOpen) return;
+        var root = this;
+        while (root.ParentPopup is { IsOpen: true } parent) root = parent;
+        root.Close();
+        e.Handled = true;
     }
 
     /// <summary>

@@ -7,6 +7,8 @@ using Avalonia.Data;
 using Avalonia.Media;
 using HDev.UI.Controls.Theme;
 using System.ComponentModel;
+using System.Collections.Specialized;
+using Avalonia.Collections;
 
 namespace HDev.UI.Controls;
 
@@ -88,7 +90,7 @@ public static class HDevMaskEngine
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// <summary>
-/// Arguments de l'événement Validating (annulable, style DevExpress)
+/// Arguments de l'événement Validating (annulable)
 /// </summary>
 public class HDevValidatingEventArgs : CancelEventArgs
 {
@@ -111,6 +113,14 @@ public abstract class HDevEditorBase : Border
 {
     protected readonly TextBox InnerTextBox;
     private readonly Grid _layoutGrid;
+
+    /// <summary>Zone de droite : éléments propres à l'éditeur (calendrier, spin…), puis boutons</summary>
+    private readonly StackPanel _rightZone;
+
+    /// <summary>Les boutons d'éditeur (<see cref="Buttons"/>), au bout de la zone de droite</summary>
+    private readonly StackPanel _buttonZone;
+
+    private HDevEditorDropDown? _dropDown;
     private bool _isHovered;
     private bool _isFocusedState;
     private bool _suppressMask;
@@ -124,6 +134,9 @@ public abstract class HDevEditorBase : Border
     public static readonly StyledProperty<string?> MaskProperty =
         AvaloniaProperty.Register<HDevEditorBase, string?>(nameof(Mask));
 
+    public static readonly StyledProperty<bool> IsMultilineProperty =
+        AvaloniaProperty.Register<HDevEditorBase, bool>(nameof(IsMultiline));
+
     public string? Placeholder
     {
         get => GetValue(PlaceholderProperty);
@@ -134,6 +147,17 @@ public abstract class HDevEditorBase : Border
     {
         get => GetValue(IsReadOnlyProperty);
         set => SetValue(IsReadOnlyProperty, value);
+    }
+
+    /// <summary>
+    /// Multiligne : Entrée insère un saut de ligne, le texte s'enroule et défile. La hauteur
+    /// n'est fixée qu'en monoligne (<c>Size.EditorHeight</c>) ; en multiligne, le champ part de
+    /// trois lignes et suit la place que lui donne la mise en page.
+    /// </summary>
+    public bool IsMultiline
+    {
+        get => GetValue(IsMultilineProperty);
+        set => SetValue(IsMultilineProperty, value);
     }
 
     /// <summary>
@@ -160,13 +184,25 @@ public abstract class HDevEditorBase : Border
 
     public bool HasError => ErrorText != null;
 
-    /// <summary>Validation annulable, déclenchée à la perte de focus (style DevExpress)</summary>
+    /// <summary>Validation annulable, déclenchée à la perte de focus</summary>
     public event EventHandler<HDevValidatingEventArgs>? Validating;
 
     /// <summary>Déclenché quand le texte change</summary>
     public event EventHandler? TextChanged;
 
-    public string Text
+    /// <summary>
+    /// Texte affiché. Un éditeur dont la valeur est le texte (D3) le surcharge pour le porter
+    /// par sa StyledProperty liable (<see cref="HDevButtonEdit.TextProperty"/>) : il n'existe
+    /// qu'une propriété <c>Text</c> par éditeur. Le socle lit et écrit, lui, le champ interne.
+    /// </summary>
+    public virtual string Text
+    {
+        get => InnerText;
+        set => InnerText = value;
+    }
+
+    /// <summary>Le texte du champ interne, tel qu'il est affiché et saisi</summary>
+    private protected string InnerText
     {
         get => InnerTextBox.Text ?? "";
         set => InnerTextBox.Text = value;
@@ -201,6 +237,7 @@ public abstract class HDevEditorBase : Border
         // Masque : filtrer la saisie AVANT le TextBox (tunnel)
         InnerTextBox.AddHandler(TextInputEvent, OnInnerTextInput, RoutingStrategies.Tunnel);
         InnerTextBox.AddHandler(KeyDownEvent, OnInnerKeyDownForMask, RoutingStrategies.Tunnel);
+        InnerTextBox.AddHandler(TextBox.PastingFromClipboardEvent, OnInnerPasting);
 
         InnerTextBox.TextChanged += (s, e) =>
         {
@@ -223,6 +260,15 @@ public abstract class HDevEditorBase : Border
         };
         Grid.SetColumn(InnerTextBox, 0);
         _layoutGrid.Children.Add(InnerTextBox);
+        _rightZone = new StackPanel { Orientation = Orientation.Horizontal };
+        _buttonZone = new StackPanel { Orientation = Orientation.Horizontal };
+        _rightZone.Children.Add(_buttonZone);
+        Grid.SetColumn(_rightZone, 1);
+        _layoutGrid.Children.Add(_rightZone);
+        Buttons.CollectionChanged += OnButtonsChanged;
+
+        // Popup du socle : F4 et Alt+↓ ouvrent (bascule), Alt+↑ et Échap ferment
+        InnerTextBox.AddHandler(KeyDownEvent, OnInnerKeyDownForDropDown, RoutingStrategies.Tunnel);
 
         Child = _layoutGrid;
         UpdateVisualState();
@@ -235,6 +281,9 @@ public abstract class HDevEditorBase : Border
         IsReadOnlyProperty.Changed.AddClassHandler<HDevEditorBase>((x, _) =>
             x.InnerTextBox.IsReadOnly = x.IsReadOnly);
         IsEnabledProperty.Changed.AddClassHandler<HDevEditorBase>((x, _) => x.UpdateVisualState());
+        IsMultilineProperty.Changed.AddClassHandler<HDevEditorBase>((x, _) => x.ApplyLineMode());
+        IsDropDownOpenProperty.Changed.AddClassHandler<HDevEditorBase>((x, _) => x.OnIsDropDownOpenChanged());
+        DropDownContentProperty.Changed.AddClassHandler<HDevEditorBase>((x, _) => x.DropDown.Content = x.DropDownContent);
 
         // Encapsulation : les pièces internes d'un éditeur (calendrier, liste, grille d'un popup)
         // ne font pas sortir leurs événements de valeur ; seuls ceux de l'éditeur remontent
@@ -257,6 +306,7 @@ public abstract class HDevEditorBase : Border
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         HDevTheme.VariantChanged -= OnThemeVariantChanged;
+        _dropDown?.Close(HDevDropDownCloseReason.Canceled, force: true);
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -272,6 +322,7 @@ public abstract class HDevEditorBase : Border
         InnerTextBox.SelectionBrush = new SolidColorBrush(HDevTheme.Background.TextSelection);
         InnerTextBox.SelectionForegroundBrush = new SolidColorBrush(HDevTheme.Text.Primary);
         HDevInputChrome.Neutralize(InnerTextBox);
+        _dropDown?.RefreshTheme();
         UpdateVisualState();
     }
 
@@ -287,11 +338,247 @@ public abstract class HDevEditorBase : Border
         });
     }
 
-    /// <summary>Installe la zone de boutons à droite du texte (calendrier, spin...)</summary>
-    protected void SetRightElement(Control element)
+    /// <summary>Monoligne (hauteur fixe, texte centré) ou multiligne (hauteur libre, texte en haut)</summary>
+    private void ApplyLineMode()
     {
-        Grid.SetColumn(element, 1);
-        _layoutGrid.Children.Add(element);
+        var multiline = IsMultiline;
+        InnerTextBox.AcceptsReturn = multiline;
+        InnerTextBox.TextWrapping = multiline ? TextWrapping.Wrap : TextWrapping.NoWrap;
+        InnerTextBox.VerticalAlignment = multiline ? VerticalAlignment.Stretch : VerticalAlignment.Center;
+        InnerTextBox.VerticalContentAlignment = multiline ? VerticalAlignment.Top : VerticalAlignment.Center;
+        InnerTextBox.Padding = new Thickness(HDevTheme.Size.EditorTextInset, multiline ? 5 : 0);
+        MinHeight = multiline ? HDevTheme.Size.EditorHeight * 3 : HDevTheme.Size.EditorHeight;
+        MaxHeight = multiline ? double.PositiveInfinity : HDevTheme.Size.EditorHeight;
+
+        // Les éléments de droite restent sur la première ligne, à la hauteur d'un champ
+        _rightZone.VerticalAlignment = multiline ? VerticalAlignment.Top : VerticalAlignment.Stretch;
+        _rightZone.Height = multiline ? HDevTheme.Size.EditorHeight - 2 : double.NaN;
+    }
+
+    /// <summary>Ajoute un élément à la zone de droite du texte (calendrier, spin...), de gauche à droite</summary>
+    protected void SetRightElement(Control element) => _rightZone.Children.Insert(_rightZone.Children.Count - 1, element);
+
+    // ═══════════════════════════════════════════════════════════════
+    // POPUP DU SOCLE
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>Le popup du socle, créé à la première demande et rattaché à l'éditeur</summary>
+    internal HDevEditorDropDown DropDown
+    {
+        get
+        {
+            if (_dropDown == null)
+            {
+                _dropDown = new HDevEditorDropDown(this);
+                WireDropDown(_dropDown);
+                AttachPopup(_dropDown.Popup);
+            }
+            return _dropDown;
+        }
+    }
+
+    public static readonly StyledProperty<bool> IsDropDownOpenProperty =
+        AvaloniaProperty.Register<HDevEditorBase, bool>(nameof(IsDropDownOpen),
+            defaultBindingMode: BindingMode.TwoWay);
+
+    public static readonly StyledProperty<Control?> DropDownContentProperty =
+        AvaloniaProperty.Register<HDevEditorBase, Control?>(nameof(DropDownContent));
+
+    /// <summary>Popup ouvert ; liable dans les deux sens (F4, Alt+↓, bouton, code)</summary>
+    public bool IsDropDownOpen
+    {
+        get => GetValue(IsDropDownOpenProperty);
+        set => SetValue(IsDropDownOpenProperty, value);
+    }
+
+    /// <summary>
+    /// Contenu libre du popup, sur n'importe quel éditeur : il s'ouvre sous le champ (au-dessus
+    /// faute de place), se ferme au clic extérieur, à Échap, Alt+↑ ou F4
+    /// </summary>
+    public Control? DropDownContent
+    {
+        get => GetValue(DropDownContentProperty);
+        set => SetValue(DropDownContentProperty, value);
+    }
+
+    /// <summary>Avant l'ouverture du popup ; <c>Cancel</c> l'empêche</summary>
+    public event EventHandler<CancelEventArgs>? DropDownOpening;
+
+    public event EventHandler? DropDownOpened;
+
+    /// <summary>Avant la fermeture du popup ; <c>Cancel</c> le garde ouvert, <c>IsValueAccepted</c> dit si le choix vaut</summary>
+    public event EventHandler<HDevDropDownClosingEventArgs>? DropDownClosing;
+
+    public event EventHandler<HDevDropDownClosedEventArgs>? DropDownClosed;
+
+    /// <summary>Vrai si l'éditeur a un popup (sans le créer)</summary>
+    internal bool HasDropDown => _dropDown != null;
+
+    private void OnInnerKeyDownForDropDown(object? sender, KeyEventArgs e)
+    {
+        if (!e.Handled && ActiveDropDown?.HandleKey(e) == true)
+            e.Handled = true;
+    }
+
+    /// <summary>
+    /// Le popup que le clavier pilote : celui qui existe, ou celui qu'ouvrirait un bouton
+    /// déroulant. Sans l'un ni l'autre, F4 et Alt+↓ restent au champ.
+    /// </summary>
+    private HDevEditorDropDown? ActiveDropDown
+        => _dropDown ?? (Buttons.Any(b => b.Kind == HDevEditorButtonKind.DropDown) ? DropDown : null);
+
+    /// <summary>L'éditeur a un popup dès sa construction (calendrier de DateEdit…)</summary>
+    internal void UseDropDown() => _ = DropDown;
+
+    private bool _syncingDropDown;
+    private bool _closingIsValueAccepted;
+
+    /// <summary>Branche la pièce popup sur les propriétés et événements publics du socle</summary>
+    private void WireDropDown(HDevEditorDropDown dropDown)
+    {
+        dropDown.Opening = () =>
+        {
+            var args = new CancelEventArgs();
+            DropDownOpening?.Invoke(this, args);
+            return !args.Cancel;
+        };
+        dropDown.Opened = () =>
+        {
+            SyncIsDropDownOpen(true);
+            DropDownOpened?.Invoke(this, EventArgs.Empty);
+        };
+        dropDown.Closing = reason =>
+        {
+            var args = new HDevDropDownClosingEventArgs(reason);
+            DropDownClosing?.Invoke(this, args);
+            _closingIsValueAccepted = args.IsValueAccepted;
+            return !args.Cancel;
+        };
+        dropDown.Closed = reason =>
+        {
+            SyncIsDropDownOpen(false);
+            DropDownClosed?.Invoke(this, new HDevDropDownClosedEventArgs(reason, _closingIsValueAccepted));
+        };
+    }
+
+    private void SyncIsDropDownOpen(bool open)
+    {
+        _syncingDropDown = true;
+        try { SetCurrentValue(IsDropDownOpenProperty, open); }
+        finally { _syncingDropDown = false; }
+    }
+
+    private void OnIsDropDownOpenChanged()
+    {
+        if (_syncingDropDown) return;
+        var wanted = IsDropDownOpen;
+        // Ouverture annulée (DropDownOpening, lecture seule) ou fermeture refusée (DropDownClosing) :
+        // la propriété revient à l'état réel du popup
+        var done = wanted ? DropDown.Open() : _dropDown?.Close(HDevDropDownCloseReason.Canceled) ?? true;
+        if (!done || (_dropDown?.IsOpen ?? false) != wanted)
+            SyncIsDropDownOpen(_dropDown?.IsOpen ?? false);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // BOUTONS D'ÉDITEUR
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Boutons d'éditeur, à droite du champ, après les éléments propres à l'éditeur.
+    /// Un bouton <see cref="HDevEditorButtonKind.DropDown"/> bascule le popup ;
+    /// <see cref="HDevEditorButtonKind.Clear"/> vide la valeur, sauf si <see cref="HDevEditorButton.Click"/>
+    /// est marqué traité ; les autres types ne font que lever <see cref="HDevEditorButton.Click"/>,
+    /// routé : l'éditeur ou le formulaire l'écoute par <c>AddHandler(HDevEditorButton.ClickEvent, …)</c>.
+    /// </summary>
+    public AvaloniaList<HDevEditorButton> Buttons { get; } = new();
+
+    private void OnButtonsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.OldItems != null)
+            foreach (HDevEditorButton b in e.OldItems) { b.Owner = null; _buttonZone.Children.Remove(b); }
+        if (e.Action == NotifyCollectionChangedAction.Reset)
+        {
+            foreach (var b in _buttonZone.Children.OfType<HDevEditorButton>()) b.Owner = null;
+            _buttonZone.Children.Clear();
+        }
+        // Ordre de la collection, toujours
+        foreach (var b in Buttons)
+        {
+            b.Owner = this;
+            _buttonZone.Children.Remove(b);
+        }
+        _buttonZone.Children.AddRange(Buttons);
+    }
+
+    /// <summary>Après le Click routé d'un bouton : la commande, puis l'action par défaut si Click n'est pas traité</summary>
+    internal void OnEditorButtonClick(HDevEditorButton button, bool handled)
+    {
+        if (button.Command is { } command && command.CanExecute(button.CommandParameter))
+            command.Execute(button.CommandParameter);
+
+        if (handled) return;
+        switch (button.Kind)
+        {
+            case HDevEditorButtonKind.DropDown:
+                // Le bouton n'est pas focusable : sans le focus, Échap n'atteindrait pas le popup
+                FocusEditor();
+                DropDown.Toggle();
+                break;
+            case HDevEditorButtonKind.Clear when !IsReadOnly && IsEffectivelyEnabled:
+                ClearByUser();
+                FocusEditor();
+                break;
+        }
+    }
+
+    /// <summary>Le bouton Effacer : vider, comme si l'utilisateur effaçait tout le texte</summary>
+    private protected virtual void ClearByUser() => InnerText = "";
+
+    // ═══════════════════════════════════════════════════════════════
+    // ZONE DE VALEUR
+    // ═══════════════════════════════════════════════════════════════
+
+    private Control? _valuePresenter;
+
+    private protected bool HasValuePresenter => _valuePresenter != null;
+
+    /// <summary>
+    /// Remplace le champ texte par un présentateur fourni par l'éditeur (jetons, texte non
+    /// éditable). L'éditeur prend alors lui-même le focus et le clavier du popup ; un clic sur
+    /// la zone de valeur bascule le popup s'il y en a un. Null : retour au champ texte.
+    /// </summary>
+    protected void SetValuePresenter(Control? presenter)
+    {
+        if (_valuePresenter != null)
+            _layoutGrid.Children.Remove(_valuePresenter);
+
+        _valuePresenter = presenter;
+        InnerTextBox.IsVisible = presenter == null;
+        Focusable = presenter != null;
+        if (presenter != null)
+        {
+            Grid.SetColumn(presenter, 0);
+            _layoutGrid.Children.Insert(0, presenter);
+        }
+    }
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        if (_valuePresenter != null && !e.Handled && ActiveDropDown?.HandleKey(e) == true)
+            e.Handled = true;
+        base.OnKeyDown(e);
+    }
+
+    protected override void OnGotFocus(FocusChangedEventArgs e)
+    {
+        base.OnGotFocus(e);
+        if (_valuePresenter != null && ReferenceEquals(e.Source, this)) { _isFocusedState = true; UpdateVisualState(); }
+    }
+
+    protected override void OnLostFocus(FocusChangedEventArgs e)
+    {
+        base.OnLostFocus(e);
+        if (_valuePresenter != null && ReferenceEquals(e.Source, this)) { _isFocusedState = false; UpdateVisualState(); }
     }
 
     /// <summary>
@@ -305,7 +592,7 @@ public abstract class HDevEditorBase : Border
     }
 
     /// <summary>Convertit le texte courant en valeur typée (null si invalide) — pour Validating</summary>
-    protected virtual object? ConvertTextToValue() => Text;
+    protected virtual object? ConvertTextToValue() => InnerText;
 
     /// <summary>Appelé quand le texte interne change (avant TextChanged public)</summary>
     protected virtual void OnInnerTextChanged() { }
@@ -338,9 +625,47 @@ public abstract class HDevEditorBase : Border
         {
             _suppressMask = true;
             InnerTextBox.Text = newText;
-            InnerTextBox.CaretIndex = newCaret;
+            PlaceCaret(newCaret);
             _suppressMask = false;
         }
+    }
+
+    /// <summary>
+    /// Place le curseur et réduit la sélection à lui (constat E0 n° 7). Poser CaretIndex ne
+    /// suffit pas : quand le curseur est déjà à cette position, le TextBox ne lève pas de
+    /// changement et garde la sélection, qu'un Retour arrière effacerait en entier.
+    /// </summary>
+    private void PlaceCaret(int index)
+    {
+        InnerTextBox.CaretIndex = index;
+        InnerTextBox.SelectionStart = index;
+        InnerTextBox.SelectionEnd = index;
+    }
+
+    /// <summary>
+    /// Collage (constat E0 n° 6) : le texte du presse-papiers passe par le même chemin que
+    /// la frappe, masque et filtres de l'éditeur compris. Il entre en entier ou pas du tout,
+    /// comme une frappe en bloc ; en monoligne, seule sa première ligne compte.
+    /// </summary>
+    private async void OnInnerPasting(object? sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (IsReadOnly || TopLevel.GetTopLevel(this)?.Clipboard is not { } clipboard)
+            return;
+
+        string? text;
+        try { text = await Avalonia.Input.Platform.ClipboardExtensions.TryGetTextAsync(clipboard); }
+        catch (Exception) { return; }
+
+        if (!InnerTextBox.AcceptsReturn && text != null)
+        {
+            var end = text.IndexOfAny(new[] { '\r', '\n' });
+            if (end >= 0) text = text[..end];
+        }
+        if (string.IsNullOrEmpty(text))
+            return;
+
+        InnerTextBox.RaiseEvent(new TextInputEventArgs { RoutedEvent = TextInputEvent, Text = text });
     }
 
     /// <summary>
@@ -377,13 +702,13 @@ public abstract class HDevEditorBase : Border
         e.Handled = true;
         _suppressMask = true;
         InnerTextBox.Text = text[..Math.Min(cut, text.Length)];
-        InnerTextBox.CaretIndex = InnerTextBox.Text?.Length ?? 0;
+        PlaceCaret(InnerTextBox.Text?.Length ?? 0);
         _suppressMask = false;
     }
 
     /// <summary>Vrai si le texte remplit tous les emplacements requis du masque</summary>
     public bool IsMaskComplete
-        => string.IsNullOrEmpty(Mask) || HDevMaskEngine.IsComplete(Mask!, Text);
+        => string.IsNullOrEmpty(Mask) || HDevMaskEngine.IsComplete(Mask!, InnerText);
 
     // ═══════════════════════════════════════════════════════════════
     // VALIDATION
@@ -451,8 +776,14 @@ public abstract class HDevEditorBase : Border
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
-        if (!e.Handled)
-            InnerTextBox.Focus();
+        if (e.Handled) return;
+        FocusEditor();
+        // Valeur non éditable : un clic sur la zone de valeur bascule le popup
+        if (_valuePresenter != null && ActiveDropDown is { } dropDown && !_rightZone.IsPointerOver)
+        {
+            dropDown.Toggle();
+            e.Handled = true;
+        }
     }
 
     protected void UpdateVisualState()
@@ -467,7 +798,11 @@ public abstract class HDevEditorBase : Border
         UpdateVisualState();
     }
 
-    public void FocusEditor() => InnerTextBox.Focus();
+    public void FocusEditor()
+    {
+        if (_valuePresenter != null) Focus();
+        else InnerTextBox.Focus();
+    }
     public void SelectAll() => InnerTextBox.SelectAll();
 }
 
@@ -480,13 +815,15 @@ public abstract class HDevEditorBase : Border
 /// l'événement commun avec l'origine du changement, l'erreur de liaison et le texte
 /// resynchronisé. La StyledProperty est déclarée par l'éditeur concret, avec son
 /// accesseur : Avalonia déconseille un propriétaire générique (analyseur AVP1002), et le
-/// compilateur XAML lit la propriété sur la classe qui déclare <c>Value</c>.
+/// compilateur XAML lit la propriété sur la classe qui déclare <c>Value</c>. La propriété
+/// publique de valeur porte le nom D3 (<c>Value</c>, ou <c>Text</c> pour un éditeur de texte) :
+/// le socle n'en déclare pas, pour qu'il n'existe qu'un nom par valeur.
 /// <code>
 /// public static readonly StyledProperty&lt;DateTime?&gt; ValueProperty =
 ///     AvaloniaProperty.Register&lt;HDevDateEdit, DateTime?&gt;(nameof(Value),
 ///         defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
 /// protected override StyledProperty&lt;DateTime?&gt; ValuePropertyCore => ValueProperty;
-/// public override DateTime? Value { get => GetValue(ValueProperty); set => SetValueFromCode(value); }
+/// public DateTime? Value { get => GetValue(ValueProperty); set => SetValueFromCode(value); }
 /// </code>
 /// </summary>
 public abstract class HDevEditorBase<T> : HDevEditorBase, IHDevEditor
@@ -497,9 +834,6 @@ public abstract class HDevEditorBase<T> : HDevEditorBase, IHDevEditor
     /// <summary>La StyledProperty <c>Value</c> de l'éditeur concret</summary>
     protected abstract StyledProperty<T> ValuePropertyCore { get; }
 
-    /// <summary>Valeur typée ; l'éditeur concret la déclare avec <see cref="SetValueFromCode"/></summary>
-    public abstract T Value { get; set; }
-
     /// <summary>Texte affiché pour une valeur (culture courante)</summary>
     protected abstract string FormatValue(T value);
 
@@ -509,7 +843,7 @@ public abstract class HDevEditorBase<T> : HDevEditorBase, IHDevEditor
     public object? EditValue
     {
         get => GetValue(ValuePropertyCore);
-        set => Value = value is null ? default! : (T)value;
+        set => SetValueFromCode(value is null ? default! : (T)value);
     }
 
     public event EventHandler<HDevValueChangedEventArgs>? ValueChanged
@@ -567,7 +901,7 @@ public abstract class HDevEditorBase<T> : HDevEditorBase, IHDevEditor
     protected void ResyncText()
     {
         IsUpdatingText = true;
-        try { Text = FormatValue(GetValue(ValuePropertyCore)); }
+        try { InnerText = FormatValue(GetValue(ValuePropertyCore)); }
         finally { IsUpdatingText = false; }
         SetError(null);
     }
@@ -586,6 +920,14 @@ public abstract class HDevEditorBase<T> : HDevEditorBase, IHDevEditor
 
         RaiseEvent(new HDevValueChangedEventArgs(change.OldValue, change.NewValue,
             _userCommit ? HDevValueOrigin.User : HDevValueOrigin.Code));
+    }
+
+    private protected override void ClearByUser()
+    {
+        if (!HasValuePresenter)
+            base.ClearByUser();
+        else
+            CommitUserValue(default!);
     }
 
     protected override void UpdateDataValidation(AvaloniaProperty property, BindingValueType state, Exception? error)

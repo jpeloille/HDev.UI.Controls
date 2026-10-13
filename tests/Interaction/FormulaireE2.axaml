@@ -1,0 +1,24 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:h="using:HDev.UI.Controls"
+             xmlns:i="using:Interaction"
+             x:Class="Interaction.FormulaireE2"
+             x:DataType="i:FormulaireE2Vm"
+             x:CompileBindings="True">
+  <!-- Socle composite (E2) : boutons d'éditeur et popup à contenu libre, déclarés en XAML compilé -->
+  <Canvas x:Name="Formulaire">
+    <h:HDevButtonEdit x:Name="Chemin" Canvas.Left="20" Canvas.Top="20" Width="240" Text="{Binding Chemin}">
+      <h:HDevButtonEdit.Buttons>
+        <h:HDevEditorButton Kind="Clear" ToolTip.Tip="Effacer" IsVisible="{Binding EffacerVisible}" />
+        <h:HDevEditorButton Kind="Custom" Icon="Folder" ToolTip.Tip="Parcourir" Command="{Binding Parcourir}" />
+      </h:HDevButtonEdit.Buttons>
+    </h:HDevButtonEdit>
+    <h:HDevDropDownEdit x:Name="Equipage" Canvas.Left="20" Canvas.Top="80" Width="200"
+                              Value="{Binding Equipage}" Placeholder="Choisir un équipier">
+      <h:HDevDropDownEdit.DropDownContent>
+        <ListBox x:Name="Membres" ItemsSource="{Binding Membres}"
+                 SelectedItem="{Binding $parent[h:HDevDropDownEdit].DropDownValue}" />
+      </h:HDevDropDownEdit.DropDownContent>
+    </h:HDevDropDownEdit>
+  </Canvas>
+</UserControl>
