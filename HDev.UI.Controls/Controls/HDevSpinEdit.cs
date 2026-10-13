@@ -6,7 +6,7 @@ using System.Linq;
 namespace HDev.UI.Controls;
 
 /// <summary>
-/// Éditeur numérique avec boutons spin (équivalent SpinEdit) :
+/// Éditeur numérique avec boutons spin :
 /// Increment, MinValue/MaxValue, Decimals, molette + flèches, format culture
 /// </summary>
 public class HDevSpinEdit : HDevEditorBase

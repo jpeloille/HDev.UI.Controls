@@ -183,8 +183,9 @@ public class HDevRibbonSeparator : HDevRibbonItem
 {
 }
 
-// NOTE : HDevRibbonComboBox, HDevRibbonGallery et HDevRibbonToggleGroup (API
-// DevExpress) ont été retirés : déclarés mais jamais rendus par HDevRibbon,
-// ils donnaient une fausse impression de parité. À réintroduire avec leur
+// NOTE : HDevRibbonComboBox, HDevRibbonGallery et HDevRibbonToggleGroup ont
+// été retirés : déclarés mais jamais rendus par HDevRibbon,
+// ils donnaient une fausse impression de parité avec un ruban de bureautique
+// complet. À réintroduire avec leur
 // rendu réel (cf. context.md, lot « Ribbon avancé »).
 

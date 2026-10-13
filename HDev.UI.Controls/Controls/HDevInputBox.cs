@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace HDev.UI.Controls;
 
 /// <summary>
-/// Boîte de saisie modale (équivalent XtraInputBox) : libellé + HDevTextBox +
+/// Boîte de saisie modale : libellé + HDevTextBox +
 /// OK/Annuler. Retourne null si annulée.
 /// Usage : var url = await HDevInputBox.ShowAsync(owner, "Adresse du lien :",
 ///     "Insérer un lien", "https://");

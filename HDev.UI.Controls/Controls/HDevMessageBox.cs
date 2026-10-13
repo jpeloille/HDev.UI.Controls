@@ -44,7 +44,7 @@ public enum HDevDialogResult
 }
 
 /// <summary>
-/// Boîte de message modale (équivalent XtraMessageBox) :
+/// Boîte de message modale :
 /// icône, texte, boutons standards, résultat typé.
 /// Usage : var r = await HDevMessageBox.ShowAsync(owner, "Texte", "Titre",
 ///     HDevMessageBoxButtons.YesNo, HDevMessageBoxIcon.Question);

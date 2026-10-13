@@ -14,7 +14,7 @@ using System.Reflection;
 namespace HDev.UI.Controls;
 
 /// <summary>
-/// Éditeur de recherche dans un référentiel (équivalent LookUpEdit/GridLookUpEdit) :
+/// Éditeur de recherche dans un référentiel :
 /// le dropdown est un HDevDataGrid multi-colonnes ; la sélection d'une ligne pose
 /// EditValue (ValueMember) et affiche DisplayMember
 /// </summary>
@@ -175,10 +175,10 @@ public class HDevLookUpEdit : Control
             OpenDropDown();
     }
 
-    /// <summary>Ouvre le dropdown (API DevExpress)</summary>
+    /// <summary>Ouvre le dropdown par programme</summary>
     public void ShowPopup() => OpenDropDown();
 
-    /// <summary>Ferme le dropdown (API DevExpress)</summary>
+    /// <summary>Ferme le dropdown par programme</summary>
     public void ClosePopup() => CloseDropDown();
 
     private void OpenDropDown()

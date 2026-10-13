@@ -99,7 +99,7 @@ public class HDevToolbarSeparator : HDevToolbarItem
 }
 
 /// <summary>
-/// Barre d'outils horizontale (équivalent Bars simple) : boutons icône/texte,
+/// Barre d'outils horizontale simple : boutons icône/texte,
 /// toggles, séparateurs
 /// </summary>
 public class HDevToolbar : Control

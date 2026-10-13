@@ -9,7 +9,7 @@ using HDev.UI.Controls.Theme;
 namespace HDev.UI.Controls;
 
 /// <summary>
-/// Recherche à suggestions (équivalent SearchControl) : loupe + saisie +
+/// Recherche à suggestions : loupe + saisie +
 /// effacement, popup de suggestions fournies par l'application, Enter lance
 /// la recherche
 /// </summary>

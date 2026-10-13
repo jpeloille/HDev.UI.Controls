@@ -60,7 +60,7 @@ public class HDevStatusBarPanel
 }
 
 /// <summary>
-/// Barre de statut en bas de fenêtre (équivalent RibbonStatusBar simple) :
+/// Barre de statut en bas de fenêtre :
 /// panneaux de texte alignés à gauche/droite, séparateurs, panneaux cliquables
 /// </summary>
 public class HDevStatusBar : Control
