@@ -19,6 +19,7 @@ public sealed class FormulaireE3Vm : INotifyPropertyChanged
     private string? _recherche = "Gantt";
     private object? _priorite = "Normale";
     private object? _chefId = 2;
+    private IReadOnlyList<object> _destinataires = new object[] { "ops@aircal.nc" };
 
     public string? Nom { get => _nom; set => Set(ref _nom, value); }
     public decimal Quantite { get => _quantite; set => Set(ref _quantite, value); }
@@ -27,6 +28,7 @@ public sealed class FormulaireE3Vm : INotifyPropertyChanged
     public object? Priorite { get => _priorite; set => Set(ref _priorite, value); }
     public Equipier[] Equipiers { get; } = { new(1, "Awa Wamytan"), new(2, "Teiki Brothers"), new(3, "Lucie Martin") };
     public object? ChefId { get => _chefId; set => Set(ref _chefId, value); }
+    public IReadOnlyList<object> Destinataires { get => _destinataires; set => Set(ref _destinataires, value); }
     public string? Recherche { get => _recherche; set => Set(ref _recherche, value); }
 
     public event PropertyChangedEventHandler? PropertyChanged;

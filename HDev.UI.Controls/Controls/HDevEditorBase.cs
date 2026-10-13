@@ -603,6 +603,19 @@ public abstract class HDevEditorBase : Border
         }
     }
 
+    /// <summary>
+    /// Zone de valeur composée : le champ texte du socle est déplacé, en dernier, dans un panneau
+    /// fourni par l'éditeur (les jetons de TokenEdit, puis la saisie), qui prend sa place. Le
+    /// champ garde tout ce que le socle lui attache : focus, clavier du popup, masque, validation.
+    /// </summary>
+    private protected void HostTextBoxIn(Panel panel)
+    {
+        _layoutGrid.Children.Remove(InnerTextBox);
+        panel.Children.Add(InnerTextBox);
+        Grid.SetColumn(panel, 0);
+        _layoutGrid.Children.Insert(0, panel);
+    }
+
     protected override void OnKeyDown(KeyEventArgs e)
     {
         if (_valuePresenter != null && !e.Handled && ActiveDropDown?.HandleKey(e) == true)

@@ -15,6 +15,7 @@
     <h:HDevLookUpEdit x:Name="Chef" Width="200" ItemsSource="{Binding Equipiers}" Value="{Binding ChefId}"
                       DisplayMemberBinding="{Binding Nom, x:DataType=i:Equipier}"
                       SelectedValueBinding="{Binding Id, x:DataType=i:Equipier}" Placeholder="Chef de cabine" />
+    <h:HDevTokenEdit x:Name="Destinataires" Width="300" Value="{Binding Destinataires}" />
     <h:HDevSearchControl x:Name="Recherche" Width="200" Text="{Binding Recherche}" />
   </StackPanel>
 </UserControl>

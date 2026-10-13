@@ -1,33 +1,44 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Templates;
+using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Media;
 using HDev.UI.Controls.Theme;
-using System.Collections.ObjectModel;
 
 namespace HDev.UI.Controls;
 
 /// <summary>
-/// Champ à jetons (champs À/Cc d'un courriel) : chips avec ×,
-/// saisie inline, suggestions par callback, Enter/;/Tab valide,
-/// Backspace à vide retire le dernier jeton
+/// Champ à jetons (champs À/Cc d'un courriel), sur le socle des éditeurs : jetons avec ×, saisie
+/// en ligne, suggestions par fonction, Entrée, « ; » et Tab valident, Retour arrière à vide retire
+/// le dernier jeton.
+/// <para><see cref="Value"/> est la liste des jetons, liable dans les deux sens. Elle n'est jamais
+/// modifiée sur place : chaque ajout ou retrait la remplace par une nouvelle liste, précédé de
+/// <c>ValueChanging</c> (annulable) et suivi de <c>ValueChanged</c>.</para>
 /// </summary>
-public class HDevTokenEdit : Border
+public class HDevTokenEdit : HDevEditorBase<IReadOnlyList<object>>
 {
+    public static readonly StyledProperty<IReadOnlyList<object>> ValueProperty =
+        AvaloniaProperty.Register<HDevTokenEdit, IReadOnlyList<object>>(nameof(Value), Array.Empty<object>(),
+            defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true,
+            coerce: (_, v) => v ?? Array.Empty<object>());
+
     private readonly WrapPanel _panel;
-    private readonly TextBox _input;
-    private readonly Popup _popup;
     private readonly ListBox _listBox;
-    private readonly HDevPopupDismissGuard _dismissGuard;
-    private bool _isOpen;
-    private bool _isHovered;
-    private bool _isFocusedState;
+    private bool _openingFromQuery;
 
-    public ObservableCollection<object> Tokens { get; } = new();
+    protected override StyledProperty<IReadOnlyList<object>> ValuePropertyCore => ValueProperty;
 
-    /// <summary>Texte affiché pour un jeton (défaut : ToString)</summary>
+    /// <summary>Les jetons (jamais nul, vide par défaut) ; remplacée à chaque changement</summary>
+    public IReadOnlyList<object> Value
+    {
+        get => GetValue(ValueProperty);
+        set => SetValueFromCode(value);
+    }
+
+    /// <summary>Texte affiché pour un jeton (défaut : ToString) ; jamais appelé avec null</summary>
     public Func<object, string>? TokenText { get; set; }
 
     /// <summary>Suggestions pour la saisie en cours</summary>
@@ -38,184 +49,93 @@ public class HDevTokenEdit : Border
     /// </summary>
     public Func<string, object?>? TokenValidator { get; set; }
 
-    public string Placeholder
-    {
-        get => _input.PlaceholderText ?? "";
-        set => _input.PlaceholderText = value;
-    }
-
-    /// <summary>Déclenché quand la collection de jetons change</summary>
-    public event EventHandler? TokensChanged;
-
     static HDevTokenEdit()
     {
-        IsEnabledProperty.Changed.AddClassHandler<HDevTokenEdit>((x, _) => x.UpdateVisualState());
-
         // Le champ grandit avec ses lignes de jetons : centré dans une rangée plus haute
-        VerticalAlignmentProperty.OverrideDefaultValue<HDevTokenEdit>(Avalonia.Layout.VerticalAlignment.Center);
+        VerticalAlignmentProperty.OverrideDefaultValue<HDevTokenEdit>(VerticalAlignment.Center);
     }
 
     public HDevTokenEdit()
     {
-        CornerRadius = new CornerRadius(HDevTheme.Size.CornerRadiusSmall);
-        Padding = new Thickness(4, 2);
-        MinHeight = HDevTheme.Size.EditorHeight;
+        // Une ligne de jetons tient dans la hauteur du gabarit (28, constat E0 n° 8) ; au-delà, le champ grandit
+        MaxHeight = double.PositiveInfinity;
+        MinWidth = 0;
 
-        _panel = new WrapPanel { Orientation = Avalonia.Layout.Orientation.Horizontal };
+        _panel = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(3, 0, 0, 0) };
+        // 3 (panneau) + 1 (filet) + retrait = même retrait du texte que les autres champs
+        InnerTextBox.MinWidth = 90;
+        InnerTextBox.Padding = new Thickness(HDevTheme.Size.EditorTextInset - 4, 3);
+        HostTextBoxIn(_panel);
+        InnerTextBox.AddHandler(KeyDownEvent, OnInputKeyDown, RoutingStrategies.Tunnel);
 
-        _input = new TextBox
-        {
-            MinWidth = 90,
-            // 4 (Padding hôte) + 4 + filet = même retrait que les autres champs
-            Padding = new Thickness(HDevTheme.Size.EditorTextInset - 4, 3),
-            FontFamily = new FontFamily(HDevTheme.Typography.FontFamily),
-            FontSize = HDevTheme.Typography.FontSizeBody,
-            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-            SelectionBrush = new SolidColorBrush(HDevTheme.Background.TextSelection),
-            SelectionForegroundBrush = new SolidColorBrush(HDevTheme.Text.Primary)
-        };
-        HDevInputChrome.Neutralize(_input);
-        _input.AddHandler(KeyDownEvent, OnInputKeyDown, RoutingStrategies.Tunnel);
-        _input.TextChanged += (s, e) => UpdateSuggestions();
-        _input.GotFocus += (s, e) => { _isFocusedState = true; UpdateVisualState(); };
-        _input.LostFocus += (s, e) => { _isFocusedState = false; UpdateVisualState(); };
-        UpdateVisualState();
-
-        _panel.Children.Add(_input);
-        Child = _panel;
-
-        Tokens.CollectionChanged += (s, e) =>
-        {
-            RebuildChips();
-            TokensChanged?.Invoke(this, EventArgs.Empty);
-        };
-
-        // Popup de suggestions
         _listBox = new ListBox
         {
-            Background = new SolidColorBrush(HDevTheme.Background.Panel),
+            Background = Brushes.Transparent,
             BorderThickness = new Thickness(0),
-            Padding = new Thickness(2),
+            Padding = new Thickness(0),
             SelectionMode = SelectionMode.Single,
-            MaxHeight = 200
-        };
-        // Une ligne recyclée par la liste est reconstruite pour un contenu nul : le nul ne
-        // va jamais à TokenText (même défaut que APP-11)
-        _listBox.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<object?>((item, _) =>
-            new TextBlock
+            MaxHeight = 200,
+            // Une ligne recyclée par la liste est reconstruite pour un contenu nul : le nul ne
+            // va jamais à TokenText (même défaut que APP-11)
+            ItemTemplate = new FuncDataTemplate<object?>((item, _) => new TextBlock
             {
                 Text = item is null ? "" : GetTokenText(item),
                 Margin = new Thickness(6, 3),
                 FontSize = 13
-            });
-        _listBox.PointerReleased += (s, e) => CommitSuggestion();
-
-        var popupBorder = new Border
-        {
-            Background = new SolidColorBrush(HDevTheme.Background.Panel),
-            BorderBrush = new SolidColorBrush(HDevTheme.Border.Default),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(HDevTheme.Size.CornerRadiusSmall),
-            Child = _listBox,
-            BoxShadow = new BoxShadows(new BoxShadow
-            {
-                OffsetX = 0, OffsetY = 2, Blur = 8, Color = HDevTheme.Shadow.Color
             })
         };
+        _listBox.PointerReleased += (s, e) => CommitSuggestion();
 
-        _popup = new Popup
-        {
-            Child = popupBorder,
-            PlacementTarget = this,
-            Placement = PlacementMode.BottomEdgeAlignedLeft,
-            IsLightDismissEnabled = false // garde maison
-        };
-        HDevPopupPlacement.Apply(_popup, HDevPopupPlacement.Gap);
-        _dismissGuard = new HDevPopupDismissGuard(() => _isOpen, CloseSuggestions);
-        _popup.Opened += (s, e) => _dismissGuard.Install(this, _popup);
-        _popup.Closed += (s, e) => { _dismissGuard.Remove(); _isOpen = false; };
-        _panel.Children.Add(_popup);
+        DropDown.Content = _listBox;
+        CloseDropDownOnFocusLoss = true;
+        // F4 et Alt+↓ ouvrent les suggestions de la saisie, s'il y en a
+        DropDownOpening += (_, e) => { if (!_openingFromQuery) e.Cancel = !LoadSuggestions(InnerText); };
     }
 
     private string GetTokenText(object token) => TokenText?.Invoke(token) ?? token.ToString() ?? "";
 
-    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    /// <summary>Le champ texte porte la saisie en cours, pas la valeur : il se vide quand la valeur change</summary>
+    protected override string FormatValue(IReadOnlyList<object> value) => "";
+
+    protected override object? ConvertTextToValue() => Value;
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
-        base.OnAttachedToVisualTree(e);
-        HDevTheme.VariantChanged += OnThemeVariantChanged;
+        base.OnPropertyChanged(change);
+        if (change.Property == ValueProperty)
+            RebuildChips();
     }
 
-    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    protected override void RefreshThemeBrushes()
     {
-        HDevTheme.VariantChanged -= OnThemeVariantChanged;
-        base.OnDetachedFromVisualTree(e);
-    }
-
-    /// <summary>États communs des champs : fond de champ, filet, halo de focus</summary>
-    private void UpdateVisualState()
-        => HDevInputChrome.ApplyState(this, _input, IsEnabled, hasError: false, _isFocusedState, _isHovered);
-
-    protected override void OnPointerEntered(PointerEventArgs e)
-    {
-        base.OnPointerEntered(e);
-        _isHovered = true;
-        UpdateVisualState();
-    }
-
-    protected override void OnPointerExited(PointerEventArgs e)
-    {
-        base.OnPointerExited(e);
-        _isHovered = false;
-        UpdateVisualState();
-    }
-
-    private void OnThemeVariantChanged(object? sender, EventArgs e)
-    {
-        _input.SelectionBrush = new SolidColorBrush(HDevTheme.Background.TextSelection);
-        _input.SelectionForegroundBrush = new SolidColorBrush(HDevTheme.Text.Primary);
-        HDevInputChrome.Neutralize(_input);
-        UpdateVisualState();
-        RebuildChips(); // les chips portent des brushes construits
-
-        // Dropdown de suggestions
-        _listBox.Background = new SolidColorBrush(HDevTheme.Background.Panel);
-        if (_popup.Child is Border border)
-        {
-            border.Background = new SolidColorBrush(HDevTheme.Background.Panel);
-            border.BorderBrush = new SolidColorBrush(HDevTheme.Border.Default);
-            border.BoxShadow = new BoxShadows(new BoxShadow
-            {
-                OffsetX = 0, OffsetY = 2, Blur = 8,
-                Color = HDevTheme.Shadow.Color
-            });
-        }
-    }
-
-    protected override void OnPointerPressed(PointerPressedEventArgs e)
-    {
-        base.OnPointerPressed(e);
-        if (!e.Handled)
-            _input.Focus();
+        base.RefreshThemeBrushes();
+        RebuildChips(); // les jetons portent des brushes construits
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // CHIPS
+    // JETONS
     // ═══════════════════════════════════════════════════════════════
+
+    private void AddToken(object token) => CommitUserValue(Value.Append(token).ToArray());
+
+    private void RemoveToken(object token)
+    {
+        var list = Value.ToList();
+        var index = list.IndexOf(token);
+        if (index < 0) return;
+        list.RemoveAt(index);
+        CommitUserValue(list.ToArray());
+    }
 
     private void RebuildChips()
     {
-        // Retirer tout sauf la saisie et le popup
-        for (int i = _panel.Children.Count - 1; i >= 0; i--)
-        {
-            if (_panel.Children[i] is not TextBox && _panel.Children[i] is not Popup)
-                _panel.Children.RemoveAt(i);
-        }
+        // Tout sauf la saisie, en dernier
+        while (_panel.Children.Count > 1)
+            _panel.Children.RemoveAt(0);
 
         var insertAt = 0;
-        foreach (var token in Tokens)
-        {
+        foreach (var token in Value)
             _panel.Children.Insert(insertAt++, BuildChip(token));
-        }
     }
 
     private Control BuildChip(object token)
@@ -224,18 +144,14 @@ public class HDevTokenEdit : Border
         {
             Text = GetTokenText(token),
             FontSize = 12,
-            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
             Foreground = new SolidColorBrush(HDevTheme.Text.Primary)
         };
 
         var remove = new HDevEditorGlyphButton { Glyph = "✕", GlyphSize = 9, Width = 18, Height = 18 };
-        remove.Click += (s, e) => Tokens.Remove(token);
-
-        var content = new StackPanel
+        remove.Click += (s, e) =>
         {
-            Orientation = Avalonia.Layout.Orientation.Horizontal,
-            Spacing = 2,
-            Children = { label, remove }
+            if (!IsReadOnly) RemoveToken(token);
         };
 
         return new Border
@@ -246,7 +162,13 @@ public class HDevTokenEdit : Border
             CornerRadius = new CornerRadius(11),
             Padding = new Thickness(8, 1, 2, 1),
             Margin = new Thickness(2),
-            Child = content
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 2,
+                Children = { label, remove }
+            }
         };
     }
 
@@ -254,88 +176,85 @@ public class HDevTokenEdit : Border
     // SAISIE + SUGGESTIONS
     // ═══════════════════════════════════════════════════════════════
 
-    private void UpdateSuggestions()
+    protected override void OnInnerTextChanged()
     {
-        var query = _input.Text ?? "";
-        if (string.IsNullOrWhiteSpace(query) || SuggestionsProvider == null)
+        if (IsUpdatingText) return;
+
+        if (LoadSuggestions(InnerText))
         {
-            CloseSuggestions();
-            return;
+            _openingFromQuery = true;
+            try { DropDown.Open(); }
+            finally { _openingFromQuery = false; }
         }
-
-        var suggestions = SuggestionsProvider(query)
-            .Where(s => !Tokens.Contains(s))
-            .Take(10).ToList();
-
-        if (suggestions.Count == 0)
-        {
-            CloseSuggestions();
-            return;
-        }
-
-        _listBox.ItemsSource = suggestions;
-        _isOpen = true;
-        _popup.IsOpen = true;
+        else
+            DropDown.Close(HDevDropDownCloseReason.Canceled);
     }
 
-    private void CloseSuggestions()
+    /// <summary>Remplit la liste pour une saisie ; faux s'il n'y a aucune suggestion</summary>
+    private bool LoadSuggestions(string query)
     {
-        _isOpen = false;
-        _popup.IsOpen = false;
+        if (string.IsNullOrWhiteSpace(query) || SuggestionsProvider == null)
+            return false;
+
+        var suggestions = SuggestionsProvider(query)
+            .Where(s => !Value.Contains(s))
+            .Take(10).ToList();
+        if (suggestions.Count == 0)
+            return false;
+
+        _listBox.ItemsSource = suggestions;
+        return true;
     }
 
     private void CommitSuggestion()
     {
-        if (_listBox.SelectedItem == null) return;
-        Tokens.Add(_listBox.SelectedItem);
-        _input.Text = "";
-        CloseSuggestions();
-        _input.Focus();
+        if (_listBox.SelectedItem is not { } item) return;
+        DropDown.Close(HDevDropDownCloseReason.Accepted);
+        AddToken(item);
+        FocusEditor();
     }
 
     private void CommitFreeText()
     {
-        var text = (_input.Text ?? "").Trim().TrimEnd(';', ',');
+        var text = InnerText.Trim().TrimEnd(';', ',');
         if (text.Length == 0) return;
 
         var token = TokenValidator != null ? TokenValidator(text) : text;
-        if (token == null) return; // refusé par la validation
+        if (token == null) return; // refusé par la validation : la saisie reste
 
-        Tokens.Add(token);
-        _input.Text = "";
-        CloseSuggestions();
+        DropDown.Close(HDevDropDownCloseReason.Canceled);
+        AddToken(token);
     }
 
     private void OnInputKeyDown(object? sender, KeyEventArgs e)
     {
+        if (IsReadOnly) return;
+        var open = DropDown.IsOpen;
+        var hasText = !string.IsNullOrWhiteSpace(InnerText);
+
         switch (e.Key)
         {
             case Key.Enter:
-            case Key.Tab when !string.IsNullOrWhiteSpace(_input.Text):
+            case Key.Tab when hasText:
             case Key.OemSemicolon:
-                if (_isOpen && _listBox.SelectedItem != null)
+                if (open && _listBox.SelectedItem != null)
                     CommitSuggestion();
                 else
                     CommitFreeText();
-                e.Handled = e.Key != Key.Tab || !string.IsNullOrWhiteSpace(_input.Text);
+                e.Handled = e.Key != Key.Tab || hasText;
                 break;
 
-            case Key.Back when string.IsNullOrEmpty(_input.Text) && Tokens.Count > 0:
-                Tokens.RemoveAt(Tokens.Count - 1);
+            case Key.Back when InnerText.Length == 0 && Value.Count > 0:
+                RemoveToken(Value[^1]);
                 e.Handled = true;
                 break;
 
-            case Key.Escape when _isOpen:
-                CloseSuggestions();
-                e.Handled = true;
-                break;
-
-            case Key.Down when _isOpen:
+            case Key.Down when open && e.KeyModifiers == KeyModifiers.None:
                 _listBox.SelectedIndex = Math.Min(_listBox.ItemCount - 1, _listBox.SelectedIndex + 1);
                 e.Handled = true;
                 break;
 
-            case Key.Up when _isOpen:
+            case Key.Up when open && e.KeyModifiers == KeyModifiers.None:
                 _listBox.SelectedIndex = Math.Max(0, _listBox.SelectedIndex - 1);
                 e.Handled = true;
                 break;

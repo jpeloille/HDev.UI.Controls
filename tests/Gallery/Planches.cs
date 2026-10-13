@@ -407,7 +407,7 @@ static class Planches
 
         var tokens = new HDevTokenEdit { Width = 150, Placeholder = "Destinataires…" };
         if (state != 0)
-            tokens.Tokens.Add("ops@aircal.nc");
+            tokens.Value = new object[] { "ops@aircal.nc" };
         if (state == 5)
             tokens.IsEnabled = false;
         return tokens;

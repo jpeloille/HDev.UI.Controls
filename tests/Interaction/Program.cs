@@ -618,11 +618,6 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
                 return (T)f.GetValue(o)!;
         throw new InvalidOperationException($"champ {nom} introuvable sur {o.GetType().Name}");
     }
-    Control? EnfantPopup(object editeur)
-    {
-        var popup = Champ<Avalonia.Controls.Primitives.Popup>(editeur, "_popup");
-        return popup.IsOpen ? popup.Child as Control : null;
-    }
     Editeur AdTextBox(HDevTextBox e) => new()
     {
         Controle = e, PoserValeur = v => e.Text = (string?)v, LireValeur = () => e.Text, LireTexte = () => e.Text ?? "",
@@ -685,12 +680,12 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
             .Select(c => c?.GetVisualDescendants().OfType<TextBlock>().FirstOrDefault()?.Text ?? "").ToArray();
     }
     TextBox InterieurDe(HDevEditorBase e) => Champ<TextBox>(e, "InnerTextBox");
-    void ViderSaisieJeton(HDevTokenEdit e) => Champ<TextBox>(e, "_input").Text = "";
+    void ViderSaisieJeton(HDevTokenEdit e) => InterieurDe(e).Text = "";
     Editeur AdTokenEdit(HDevTokenEdit e) => new()
     {
-        Controle = e, LireValeur = () => e.Tokens.ToList(), LireTexte = () => Champ<TextBox>(e, "_input").Text ?? "",
-        SurValeurChangee = a => e.TokensChanged += (_, _) => a(), Focaliser = () => Champ<TextBox>(e, "_input").Focus(),
-        PopupOuvert = () => Champ<bool>(e, "_isOpen"), ContenuPopup = () => EnfantPopup(e)
+        Controle = e, LireValeur = () => e.Value.ToList(), LireTexte = () => InterieurDe(e).Text ?? "",
+        SurValeurChangee = a => e.ValueChanged += (_, _) => a(), Focaliser = () => e.FocusEditor(),
+        PopupOuvert = () => e.IsDropDownOpen, ContenuPopup = () => e.DropDown.IsOpen ? e.DropDown.Chrome : null
     };
     Editeur AdCalendrier(HDevMonthCalendar e) => new()
     {
@@ -1482,6 +1477,24 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         vm.ChefId = null; Pump(w);
         Check("LookUpEdit : poser SelectedItem pose la valeur ; valeur vide, l'invite est affichée",
             parLigne && lu.SelectedItem == null && Equals(presentateurLu.Content, "Chef de cabine"));
+
+        // ─── HDevTokenEdit ───
+        var tk = vue.FindControl<HDevTokenEdit>("Destinataires")!;
+        var tkAffiche = tk.Value.SequenceEqual(new object[] { "ops@aircal.nc" });
+        Check($"TokenEdit : un jeton tient dans la hauteur du gabarit (lu {tk.Bounds.Height}, constat E0 n° 8)", tk.Bounds.Height == 28);
+        var avantTk = vm.Destinataires;
+        tk.FocusEditor(); Tape(w, "cco@aircal.nc"); Touche(w, PhysicalKey.Enter);
+        var tkSaisie = vm.Destinataires.SequenceEqual(new object[] { "ops@aircal.nc", "cco@aircal.nc" }) && DernierUtilisateur(tk)
+            && ReferenceEquals(journal[^1].OldValue, avantTk) && !ReferenceEquals(journal[^1].NewValue, avantTk);
+        vm.Destinataires = new object[] { "rdov@aircal.nc" }; Pump(w);
+        Check("TokenEdit lié sans Mode : affiché, un jeton ajouté remonte comme une nouvelle liste (ancienne et nouvelle valeur distinctes), le ViewModel redescend",
+            tkAffiche && tkSaisie && tk.Value.SequenceEqual(new object[] { "rdov@aircal.nc" }) && journal[^1].Origin == HDevValueOrigin.Code);
+        EventHandler<HDevValueChangingEventArgs> refuseJeton = (_, e) => e.Cancel = true;
+        tk.ValueChanging += refuseJeton; tk.FocusEditor(); Touche(w, PhysicalKey.Backspace); tk.ValueChanging -= refuseJeton;
+        var jetonGarde = tk.Value.Count == 1;
+        Touche(w, PhysicalKey.Backspace);
+        Check("TokenEdit : ValueChanging annulé garde le jeton ; sinon Retour arrière le retire, jusqu'au ViewModel",
+            jetonGarde && tk.Value.Count == 0 && vm.Destinataires.Count == 0);
 
         // ─── HDevSearchControl ───
         var sc = vue.FindControl<HDevSearchControl>("Recherche")!;

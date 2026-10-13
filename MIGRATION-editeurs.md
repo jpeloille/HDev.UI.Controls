@@ -178,9 +178,10 @@ Elles valent pour tout éditeur, dès son passage au contrat de valeur. La conce
 | SearchControl `Text` | conservé : c'est la valeur, désormais StyledProperty liable dans les deux sens, avec `ValueChanged` commun et `ValueChanging` | **E3, fait** |
 | SearchControl `SuggestionsProvider`, `SuggestionText`, `SearchRequested`, `SuggestionChosen` | conservés | — |
 | SearchControl : liste de suggestions dans son propre popup, croix d'effacement interne | popup du socle (`IsDropDownOpen`, `DropDownOpening`…) ; bouton d'éditeur `Clear` dans `Buttons` | **E3, fait** |
-| TokenEdit `Tokens` | `Value` : la collection de jetons, liable | E3 |
-| TokenEdit `TokensChanged` | `ValueChanged` | E3 |
+| TokenEdit `Tokens` (`ObservableCollection<object>`, modifiée sur place) | `Value` (`IReadOnlyList<object>`, jamais nulle), liable dans les deux sens, remplacée par une nouvelle liste à chaque ajout ou retrait (QX-08 g) : `Tokens.Add(x)` s'écrit `Value = [..Value, x]` | **E3, fait** |
+| TokenEdit `TokensChanged` (`EventHandler`) | `ValueChanged` commun (ancienne et nouvelle liste), précédé de `ValueChanging` (annulable) | **E3, fait** |
 | TokenEdit `TokenText`, `TokenValidator`, `SuggestionsProvider`, `Placeholder` | conservés | — |
+| `HDevTokenEdit : Border` | `HDevTokenEdit : HDevEditorBase<IReadOnlyList<object>>` : la saisie est le champ texte du socle, à la suite des jetons ; popup du socle pour les suggestions | **E3, fait** |
 
 ### 2.8 Contrôles de choix et calendrier
 
@@ -296,6 +297,12 @@ Le Gantt, qui édite ses dates avec HDevDateEdit, n'est pas touché par le point
    - Le rendu dessiné du champ fermé est supprimé : un présentateur affiche le libellé ou l'invite. L'allure est gardée (fond de contrôle, filet et halo de focus quand la grille est ouverte) ; le chevron est un bouton d'éditeur, 2 px plus à gauche, et ne se retourne plus.
    - La grille passe dans le popup du socle, avec l'habillage d'avant : bordure fusionnée, coins du bas seuls, largeur `DropDownWidth` ou au moins 320 px.
    - Entrée ouvre la grille et, ouverte, la referme ; Suppr et Retour arrière vident la valeur, d'origine Utilisateur.
+
+14. **HDevTokenEdit passe sur le socle** (`HDevEditorBase<IReadOnlyList<object>>`), QX-08 g.
+   - `Tokens` disparaît : `Value` est la liste des jetons, jamais nulle, liable dans les deux sens. Elle n'est jamais modifiée sur place ; chaque ajout ou retrait, au clavier, par une suggestion ou par la croix d'un jeton, la remplace par une nouvelle liste, précédé de `ValueChanging` (annulable) et suivi de `ValueChanged`, dont l'ancienne et la nouvelle valeur sont deux listes distinctes. `TokensChanged` devient `ValueChanged`.
+   - Le code qui modifiait `Tokens` pose une nouvelle liste : `Value = [..Value, x]`, `Value = Value.Where(t => t != x).ToArray()`.
+   - La saisie est le champ texte du socle, à la suite des jetons : focus, état d'erreur, `Validate()`. Les suggestions passent dans le popup du socle ; F4 et Alt+↓ les ouvrent pour la saisie en cours ; le focus qui part ailleurs les ferme.
+   - **Hauteur du gabarit** (constat E0 n° 8) : 28 px pour une ligne, au lieu de 29 ; chaque ligne de jetons de plus ajoute sa hauteur. La planche « Champs » est 4 px plus courte : le champ à deux lignes perd ses 2 px de retrait vertical.
 
 **Corrections des applications** (`Plan-Apports.md`)
 - **APP-09.** La liste d'une ComboBox éditable à suggestion ne se rouvre plus après un choix. Une frappe rapide est complétée : la complétion se fait à chaque frappe, avant le champ, et une lettre qui remplace le suffixe proposé n'est plus prise pour un effacement.
