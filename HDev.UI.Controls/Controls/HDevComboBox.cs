@@ -6,6 +6,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
+using Avalonia.VisualTree;
 using HDev.UI.Controls.Theme;
 using System;
 using System.Collections;
@@ -332,7 +333,7 @@ public class HDevComboBox : Control
     // Mode Standard (éditable) : zone de saisie réelle + auto-complétion
     private TextBox? _editTextBox;
     private bool _syncingEditText;
-    private int _lastTypedLength;
+    private readonly Queue<bool> _editTextOrigins = new();
 
     private bool IsEditable => _properties.TextEditStyle == TextEditStyles.Standard;
 
@@ -606,7 +607,7 @@ public class HDevComboBox : Control
             VerticalOffset = -1
         };
 
-        _guard = new HDevPopupDismissGuard(() => _isDropDownOpen, CloseDropDown);
+        _guard = new HDevPopupDismissGuard(() => _isDropDownOpen, () => CloseDropDown());
         _popup.Opened += (s, e) => _guard.Install(this, _popup);
         _popup.Closed += OnPopupClosed;
     }
@@ -876,14 +877,26 @@ public class HDevComboBox : Control
         };
         HDevInputChrome.Neutralize(_editTextBox);
 
-        _editTextBox.TextChanged += (s, e) => OnEditTextChanged();
+        // TextChanged arrive au tour suivant du répartiteur : l'origine (code ou frappe) de
+        // chaque changement est relevée à TextChanging, qui est synchrone (APP-09)
+        _editTextBox.TextChanging += (s, e) => _editTextOrigins.Enqueue(_syncingEditText);
+        _editTextBox.TextChanged += (s, e) =>
+        {
+            var fromCode = _editTextOrigins.Count > 0 && _editTextOrigins.Dequeue();
+            if (!fromCode) OnEditTextChanged();
+        };
+        _editTextBox.AddHandler(TextInputEvent, OnEditTextInput, RoutingStrategies.Tunnel);
         _editTextBox.AddHandler(KeyDownEvent, OnEditTextBoxKeyDown, RoutingStrategies.Tunnel);
         _editTextBox.GotFocus += (s, e) => InvalidateVisual();
         _editTextBox.LostFocus += (s, e) =>
         {
-            // Ne pas commiter si le focus part vers le dropdown (clic sur un item)
-            if (!_isDropDownOpen)
+            // Le focus quitte la combo (pas vers sa liste, clic sur un item) : la saisie est
+            // validée et la liste se ferme, ouverte ou non (APP-10)
+            if (!IsInDropDown(e.NewFocusedElement))
+            {
                 CommitTypedText();
+                if (_isDropDownOpen) CloseDropDown(refocus: false);
+            }
             InvalidateVisual();
         };
 
@@ -905,31 +918,35 @@ public class HDevComboBox : Control
         {
             _syncingEditText = true;
             _editTextBox.Text = _text;
-            _lastTypedLength = _text.Length;
             _syncingEditText = false;
         }
     }
 
+    private AutoCompleteMode EffectiveAutoComplete => _properties.AutoComplete == AutoCompleteMode.Default
+        ? AutoCompleteMode.SuggestAppend
+        : _properties.AutoComplete;
+
+    /// <summary>
+    /// Changement du texte par l'utilisateur hors complétion (effacement, coupe, frappe sans
+    /// correspondance) : suit le texte et filtre les suggestions
+    /// </summary>
     private void OnEditTextChanged()
     {
-        if (_syncingEditText || _editTextBox == null) return;
+        if (_editTextBox == null) return;
 
         var typed = _editTextBox.Text ?? "";
-        var isDeletion = typed.Length < _lastTypedLength;
-        _lastTypedLength = typed.Length;
-
         _text = typed;
         TextChanged?.Invoke(this, EventArgs.Empty);
 
-        // Suggestions et complétion : seulement pendant une frappe de l'utilisateur. Un
-        // texte posé par code (SelectedIndex, EditValue, texte initial) n'ouvre rien —
-        // pas même sur une combo désactivée
+        // Suggestions : seulement pendant une frappe de l'utilisateur. Un texte posé par code
+        // (SelectedIndex, EditValue, texte initial) n'ouvre rien — pas même sur une combo désactivée
         if (!_editTextBox.IsFocused) return;
+        Suggest(typed);
+    }
 
-        var mode = _properties.AutoComplete == AutoCompleteMode.Default
-            ? AutoCompleteMode.SuggestAppend
-            : _properties.AutoComplete;
-
+    /// <summary>Suggest : ouvrir et filtrer la liste sur le préfixe saisi</summary>
+    private void Suggest(string typed)
+    {
         if (string.IsNullOrEmpty(typed))
         {
             if (_isDropDownOpen)
@@ -937,8 +954,7 @@ public class HDevComboBox : Control
             return;
         }
 
-        // Suggest : ouvrir et filtrer le dropdown sur le préfixe saisi
-        if (mode is AutoCompleteMode.Suggest or AutoCompleteMode.SuggestAppend
+        if (EffectiveAutoComplete is AutoCompleteMode.Suggest or AutoCompleteMode.SuggestAppend
             || _properties.ImmediatePopup)
         {
             if (!_isDropDownOpen && !_guard.JustClosed)
@@ -946,27 +962,47 @@ public class HDevComboBox : Control
             if (_isDropDownOpen)
                 RefreshDropDownItems(typed);
         }
-
-        // Append : compléter avec le premier item correspondant (pas sur effacement)
-        if (mode is AutoCompleteMode.Append or AutoCompleteMode.SuggestAppend && !isDeletion)
-        {
-            var index = FindItemByPrefix(typed);
-            if (index >= 0)
-            {
-                var full = GetItemText(_properties.Items[index]);
-                if (full.Length > typed.Length)
-                {
-                    _syncingEditText = true;
-                    _editTextBox.Text = full;
-                    _editTextBox.SelectionStart = typed.Length;
-                    _editTextBox.SelectionEnd = full.Length;
-                    _lastTypedLength = full.Length;
-                    _syncingEditText = false;
-                    _text = full;
-                }
-            }
-        }
     }
+
+    /// <summary>
+    /// Append : la frappe est complétée avec le premier item correspondant, le suffixe ajouté
+    /// restant sélectionné. Traitée avant le champ, frappe par frappe : la lettre suivante
+    /// remplace le suffixe et complète à nouveau, quelle que soit la vitesse de frappe (APP-09)
+    /// </summary>
+    private void OnEditTextInput(object? sender, TextInputEventArgs e)
+    {
+        if (_editTextBox == null || string.IsNullOrEmpty(e.Text) || _properties.ReadOnly
+            || EffectiveAutoComplete is not (AutoCompleteMode.Append or AutoCompleteMode.SuggestAppend))
+            return;
+
+        var text = _editTextBox.Text ?? "";
+        var start = Math.Min(_editTextBox.SelectionStart, _editTextBox.SelectionEnd);
+        var end = Math.Max(_editTextBox.SelectionStart, _editTextBox.SelectionEnd);
+        if (start == end) start = end = Math.Min(_editTextBox.CaretIndex, text.Length);
+        // Compléter seulement en bout de texte
+        if (end < text.Length) return;
+
+        var typed = text[..start] + e.Text;
+        var index = FindItemByPrefix(typed);
+        if (index < 0) return;
+        var full = GetItemText(_properties.Items[index]);
+        if (full.Length <= typed.Length) return;
+
+        e.Handled = true;
+        _syncingEditText = true;
+        _editTextBox.Text = full;
+        _editTextBox.SelectionStart = typed.Length;
+        _editTextBox.SelectionEnd = full.Length;
+        _syncingEditText = false;
+        _text = full;
+        TextChanged?.Invoke(this, EventArgs.Empty);
+        Suggest(typed);
+    }
+
+    /// <summary>Vrai si l'élément est dans la liste déroulante (qui vit en overlay)</summary>
+    private bool IsInDropDown(IInputElement? element)
+        => element is Visual v && _popup?.Child is Visual list
+           && (ReferenceEquals(v, list) || list.IsVisualAncestorOf(v));
 
     /// <summary>
     /// Alimente le dropdown : vue triée si Sorted, filtrée sur le préfixe en mode Suggest
@@ -1556,7 +1592,8 @@ public class HDevComboBox : Control
         PopupOpened?.Invoke(this, EventArgs.Empty);
     }
 
-    private void CloseDropDown()
+    /// <param name="refocus">Faux quand le focus quitte déjà la combo (il n'y revient pas)</param>
+    private void CloseDropDown(bool refocus = true)
     {
         if (_popup == null)
             return;
@@ -1572,7 +1609,8 @@ public class HDevComboBox : Control
         InvalidateVisual();
 
         // En mode éditable, rendre le focus à la zone de saisie, pas au contrôle
-        if (IsEditable)
+        if (!refocus) { }
+        else if (IsEditable)
             _editTextBox?.Focus();
         else
             Focus();

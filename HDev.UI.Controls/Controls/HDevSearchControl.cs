@@ -19,7 +19,6 @@ public class HDevSearchControl : HDevEditorBase
     private readonly ListBox _listBox;
     private readonly HDevPopupDismissGuard _dismissGuard;
     private bool _isOpen;
-    private bool _syncing;
 
     /// <summary>Fournit les suggestions pour un texte (null/vide = aucune)</summary>
     public Func<string, IEnumerable<object>>? SuggestionsProvider { get; set; }
@@ -57,10 +56,12 @@ public class HDevSearchControl : HDevEditorBase
             SelectionMode = SelectionMode.Single,
             MaxHeight = 240
         };
-        _listBox.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<object>((item, _) =>
+        // Une ligne recyclée par la liste est reconstruite pour un contenu nul : le nul ne
+        // va jamais à SuggestionText (APP-11)
+        _listBox.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<object?>((item, _) =>
             new TextBlock
             {
-                Text = SuggestionText?.Invoke(item) ?? item?.ToString() ?? "",
+                Text = item is null ? "" : SuggestionText?.Invoke(item) ?? item.ToString() ?? "",
                 Margin = new Thickness(6, 3),
                 FontSize = 13
             });
@@ -106,7 +107,8 @@ public class HDevSearchControl : HDevEditorBase
 
     private void OnQueryChanged()
     {
-        if (_syncing) return;
+        // Texte posé par le choix d'une suggestion : il ne rouvre pas la liste (constat E0 n° 3)
+        if (IsUpdatingText) return;
 
         var query = Text;
         if (string.IsNullOrWhiteSpace(query) || SuggestionsProvider == null)
@@ -145,9 +147,7 @@ public class HDevSearchControl : HDevEditorBase
         var item = _listBox.SelectedItem;
         var text = SuggestionText?.Invoke(item) ?? item.ToString() ?? "";
 
-        _syncing = true;
-        Text = text;
-        _syncing = false;
+        SetTextFromValue(text);
 
         CloseSuggestions();
         SuggestionChosen?.Invoke(this, item);

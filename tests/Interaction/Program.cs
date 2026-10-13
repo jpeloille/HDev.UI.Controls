@@ -661,6 +661,8 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
     Control? ComboItem(HDevComboBox e, int i) => Champ<ListBox>(e, "_listBox").ContainerFromIndex(i) as Control;
     void FocaliserSaisieCombo(HDevComboBox e) => Champ<TextBox>(e, "_editTextBox").Focus();
     void ToutSelectionnerCombo(HDevComboBox e) => Champ<TextBox>(e, "_editTextBox").SelectAll();
+    // Clic réel sur le chevron d'une combo éditable (le bouton déroulant, au bout à droite)
+    void ComboChevron(Window w, HDevComboBox e) => ClickAt(w, e.TranslatePoint(new Point(e.Bounds.Width - 12, e.Bounds.Height / 2), w)!.Value);
     Editeur AdLookUpEdit(HDevLookUpEdit e) => new()
     {
         Controle = e, PoserValeur = v => e.EditValue = v, LireValeur = () => e.EditValue,
@@ -676,6 +678,13 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         PopupOuvert = () => Champ<bool>(e, "_isOpen"), ContenuPopup = () => EnfantPopup(e)
     };
     int NbSuggestions(HDevSearchControl e) => Champ<ListBox>(e, "_listBox").ItemCount;
+    // Textes affichés par les lignes réalisées de la liste de suggestions, dans l'ordre
+    string[] ContenuSuggestions(HDevSearchControl e)
+    {
+        var liste = Champ<ListBox>(e, "_listBox");
+        return Enumerable.Range(0, liste.ItemCount).Select(i => liste.ContainerFromIndex(i))
+            .Select(c => c?.GetVisualDescendants().OfType<TextBlock>().FirstOrDefault()?.Text ?? "").ToArray();
+    }
     TextBox InterieurDe(HDevEditorBase e) => Champ<TextBox>(e, "InnerTextBox");
     void ViderSaisieJeton(HDevTokenEdit e) => Champ<TextBox>(e, "_input").Text = "";
     Editeur AdTokenEdit(HDevTokenEdit e) => new()
@@ -1380,6 +1389,78 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
         memo.IsMultiline = false; Pump(w);
         Check($"retour au monoligne : hauteur du gabarit (lu {memo.Bounds.Height})", memo.Bounds.Height == 28);
         w.Close();
+    }
+
+    // ═══ APPORTS DES APPLICATIONS (E3) : APP-09, APP-10, APP-11 (Plan-Apports.md) ═══
+    // Constats relevés dans les applications, gravés avant leur correctif : chacune de ces
+    // vérifications échouait sur le code d'avant E3.
+    Console.WriteLine("Apports des applications (E3) :");
+    {
+        var pays = new object[] { "Allemagne", "Espagne", "France", "Italie", "Japon", "Jordanie" };
+
+        // APP-09 : une combo éditable à suggestion (réglage par défaut) rouvrait sa liste après
+        // un choix fait dans la liste complète, ouverte par le chevron
+        {
+            var cb = new HDevComboBox { Width = 180 }; var ed = AdComboBox(cb); ComboItems(cb, pays); ComboEditable(cb);
+            var w = Hote(cb); FocaliserSaisieCombo(cb); Pump(w);
+            ComboChevron(w, cb); var ouverte = ed.PopupOuvert();
+            ClickAt(w, WindowCenter(w, ComboItem(cb, 2)!));
+            for (var i = 0; i < 3; i++) Pump(w);
+            Check("APP-09 : combo éditable, un choix dans la liste ouverte par le chevron la ferme pour de bon",
+                ouverte && Equals(ed.LireValeur(), "France") && ed.LireTexte() == "France" && !ed.PopupOuvert());
+            w.Close();
+        }
+        // APP-09, second cas : une frappe rapide, deux lettres sans pause, est complétée, et
+        // Entrée prend l'élément complété
+        {
+            var cb = new HDevComboBox { Width = 180 }; var ed = AdComboBox(cb); ComboItems(cb, pays); ComboEditable(cb);
+            var w = Hote(cb); FocaliserSaisieCombo(cb); Pump(w);
+            w.KeyTextInput("J"); w.KeyTextInput("a"); Pump(w);
+            var complete = ed.LireTexte();
+            Touche(w, PhysicalKey.Enter);
+            Check($"APP-09 : une frappe rapide (« Ja ») est complétée, Entrée prend l'élément (lu « {complete} », valeur {ed.LireValeur()})",
+                complete == "Japon" && Equals(ed.LireValeur(), "Japon") && !ed.PopupOuvert());
+            w.Close();
+        }
+        // APP-10 : au départ du focus, la saisie n'était pas validée quand la liste était ouverte
+        {
+            var cb = new HDevComboBox { Width = 180 }; var ed = AdComboBox(cb); ComboItems(cb, pays); ComboEditable(cb);
+            var autre = new TextBox { Width = 120 }; Canvas.SetTop(autre, 200);
+            var w = Hote(cb); ((Canvas)w.Content!).Children.Add(autre); Pump(w);
+            FocaliserSaisieCombo(cb); Pump(w); Tape(w, "Ita"); var proposee = ed.PopupOuvert();
+            autre.Focus(); Pump(w);
+            Check($"APP-10 : liste ouverte, le départ du focus valide la saisie et ferme la liste (valeur {ed.LireValeur()})",
+                proposee && Equals(ed.LireValeur(), "Italie") && !ed.PopupOuvert());
+            w.Close();
+        }
+        // APP-11 : SearchControl appelait SuggestionText avec un élément nul quand la liste
+        // recyclait ses lignes ; l'application plantait à la deuxième lettre
+        {
+            var sc = new HDevSearchControl { Width = 200 }; var ed = AdSearch(sc);
+            var nuls = 0;
+            sc.SuggestionsProvider = t => pays.Where(x => ((string)x).Contains(t, StringComparison.OrdinalIgnoreCase));
+            sc.SuggestionText = o => { if (o is null) { nuls++; return "?"; } return ((string)o).ToUpperInvariant(); };
+            var w = Hote(sc); ed.Focaliser(); Tape(w, "a"); Tape(w, "n");
+            var lignes = ContenuSuggestions(sc);
+            Check($"APP-11 : SuggestionText n'est jamais appelé avec un élément nul, les lignes recyclées montrent leur suggestion (lu {string.Join(", ", lignes)})",
+                nuls == 0 && ed.PopupOuvert() && lignes.SequenceEqual(new[] { "FRANCE", "JORDANIE" }));
+            // Constat E0 n° 3 : après le choix d'une suggestion (↓ puis Entrée), la liste restait ouverte
+            Touche(w, PhysicalKey.ArrowDown); Touche(w, PhysicalKey.Enter);
+            for (var i = 0; i < 3; i++) Pump(w);
+            Check("SearchControl : après le choix d'une suggestion, la liste se ferme (constat E0 n° 3)",
+                ed.LireTexte() == "FRANCE" && !ed.PopupOuvert());
+            w.Close();
+        }
+        // Même défaut que APP-11 sur les suggestions de TokenEdit (TokenText, sinon ToString d'un nul)
+        {
+            var tk = new HDevTokenEdit { Width = 260 }; var ed = AdTokenEdit(tk); var nuls = 0;
+            tk.SuggestionsProvider = t => pays.Where(x => ((string)x).Contains(t, StringComparison.OrdinalIgnoreCase));
+            tk.TokenText = o => { if (o is null) { nuls++; return "?"; } return (string)o; };
+            var w = Hote(tk); ed.Focaliser(); Pump(w); Tape(w, "a"); Tape(w, "n");
+            Check("TokenEdit : TokenText n'est jamais appelé avec un élément nul quand la liste recycle ses lignes",
+                nuls == 0 && ed.PopupOuvert());
+            w.Close();
+        }
     }
 
     System.Globalization.CultureInfo.CurrentCulture = cultureAvant;

@@ -208,6 +208,24 @@ public abstract class HDevEditorBase : Border
         set => InnerTextBox.Text = value;
     }
 
+    private readonly Queue<bool> _textOrigins = new();
+
+    /// <summary>
+    /// Vrai pendant que le socle réécrit le texte depuis la valeur (<see cref="SetTextFromValue"/>),
+    /// et pendant le <see cref="OnInnerTextChanged"/> et le <see cref="TextChanged"/> qui en
+    /// découlent, même levés plus tard : ce texte ne vient pas de l'utilisateur.
+    /// </summary>
+    protected bool IsUpdatingText { get; private set; }
+
+    /// <summary>Écrit le texte affiché pour la valeur, sans qu'il passe pour une saisie</summary>
+    private protected void SetTextFromValue(string text)
+    {
+        var outer = IsUpdatingText;
+        IsUpdatingText = true;
+        try { InnerText = text; }
+        finally { IsUpdatingText = outer; }
+    }
+
     protected HDevEditorBase()
     {
         CornerRadius = new CornerRadius(HDevTheme.Size.CornerRadiusSmall);
@@ -239,10 +257,21 @@ public abstract class HDevEditorBase : Border
         InnerTextBox.AddHandler(KeyDownEvent, OnInnerKeyDownForMask, RoutingStrategies.Tunnel);
         InnerTextBox.AddHandler(TextBox.PastingFromClipboardEvent, OnInnerPasting);
 
+        // Avalonia lève TextChanged au tour suivant du répartiteur (TextChanging, lui, est
+        // synchrone) : un drapeau posé autour d'une écriture du texte est déjà retombé quand
+        // TextChanged arrive. L'origine de chaque changement est donc relevée à TextChanging,
+        // puis rendue à son TextChanged, dans le même ordre (APP-09, constat E0 n° 3).
+        InnerTextBox.TextChanging += (s, e) => _textOrigins.Enqueue(IsUpdatingText);
         InnerTextBox.TextChanged += (s, e) =>
         {
-            OnInnerTextChanged();
-            TextChanged?.Invoke(this, EventArgs.Empty);
+            var outer = IsUpdatingText;
+            IsUpdatingText = _textOrigins.Count > 0 && _textOrigins.Dequeue();
+            try
+            {
+                OnInnerTextChanged();
+                TextChanged?.Invoke(this, EventArgs.Empty);
+            }
+            finally { IsUpdatingText = outer; }
         };
 
         InnerTextBox.GotFocus += (s, e) => { _isFocusedState = true; UpdateVisualState(); };
@@ -837,9 +866,6 @@ public abstract class HDevEditorBase<T> : HDevEditorBase, IHDevEditor
     /// <summary>Texte affiché pour une valeur (culture courante)</summary>
     protected abstract string FormatValue(T value);
 
-    /// <summary>Vrai pendant que le socle réécrit le texte depuis la valeur</summary>
-    protected bool IsUpdatingText { get; private set; }
-
     public object? EditValue
     {
         get => GetValue(ValuePropertyCore);
@@ -900,9 +926,7 @@ public abstract class HDevEditorBase<T> : HDevEditorBase, IHDevEditor
     /// <summary>Réaffiche la valeur courante et efface l'erreur de saisie</summary>
     protected void ResyncText()
     {
-        IsUpdatingText = true;
-        try { InnerText = FormatValue(GetValue(ValuePropertyCore)); }
-        finally { IsUpdatingText = false; }
+        SetTextFromValue(FormatValue(GetValue(ValuePropertyCore)));
         SetError(null);
     }
 

@@ -99,10 +99,12 @@ public class HDevTokenEdit : Border
             SelectionMode = SelectionMode.Single,
             MaxHeight = 200
         };
-        _listBox.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<object>((item, _) =>
+        // Une ligne recyclée par la liste est reconstruite pour un contenu nul : le nul ne
+        // va jamais à TokenText (même défaut que APP-11)
+        _listBox.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<object?>((item, _) =>
             new TextBlock
             {
-                Text = GetTokenText(item),
+                Text = item is null ? "" : GetTokenText(item),
                 Margin = new Thickness(6, 3),
                 FontSize = 13
             });
