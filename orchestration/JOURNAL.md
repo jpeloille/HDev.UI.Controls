@@ -154,3 +154,5 @@
 - FIN M-04 : 5 commits (9acb18d..b1f8a4a), banc 189/189 ×3, xUnit 422/422. Écarts à valider par Julien : HDevAccents.axaml non repris (ApplyTo publie l'accent) ; `Variant` quitte le catalogue même à variante égale ; teintes hors fiche (Cockpit DangerPressed #D35E58, lien Ubuntu clair #1965C1, ambre Indigo & Or #8A6203) ; ligne de context.md.
 - VERDICT verif-04 : FUSIONNABLE (8 contrôles OK). Remarques : nom `HDevThemeVariants` proche de `HDevThemeVariant` ; `HDevTheme.Theme` null au démarrage ; `Apply(Ubuntu26)` ignore les palettes de SetPalettes ; palettes de cd5e68b à écarter lors d'une future synchronisation hdev → suite.
 - Julien valide les écarts de M-04 : 1 oui, 2 oui, 3 oui, 4 ligne de context.md réécrite, 5 renommage proposé. L'orchestratrice renomme `HDevThemeVariants` en `HDevThemeVariantKeys`, complète MIGRATION-themes.md (Theme null au démarrage, Apply et SetPalettes, palettes de grille de hdev à écarter) ; xUnit 422, banc 189 ALL PASS. Fusion dans `suite` : 9c35aa1.
+
+- Reprise de l'orchestration par `hdev-ui-controls-49` [28aee0]. Aucune mission en cours. Lots S1 restants : E3, F0, F1, F2, F12 (reste), F15, G0, G1, I1 (attend Q4).

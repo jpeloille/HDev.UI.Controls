@@ -4,7 +4,7 @@ Mis à jour : 13/10/2026. Équipe d'agents active depuis la relance du 06/10.
 
 Tranchées : QX-01 (oui, commit 49bbeb6), QX-03 (oui, mission M-01), QX-02 (option (b), vérifiée sur le bureau réel le 13/10, M-01 fusionnée).
 
-**Orchestratrice** : `hdev-orchestration-agent-teams` [2c30b3], cheffe d'équipe (dossier `RiderProjects/HDev.UI.Controls`). Anciens noms : `orchestrate-hdev-conversations`, `hdev-ui-controls-e6`. Le nom suit le titre de la session : le vérifier avec `ListAgents` à chaque reprise.
+**Orchestratrice** : `hdev-ui-controls-49` [28aee0] depuis la reprise du 13/10, cheffe d'équipe, travaille dans l'atelier (`atelier/HDev.UI.Controls`, branche `suite`). Anciens noms : `hdev-orchestration-agent-teams` [2c30b3], `orchestrate-hdev-conversations`, `hdev-ui-controls-e6`. Sessions vivantes à la reprise : `hdev-ui-controls-e2` [32ff21] (IDE, sans mission), `igor-*` (hors périmètre). Le nom suit le titre de la session : le vérifier avec `ListAgents` à chaque reprise.
 
 ## Exécutantes
 
