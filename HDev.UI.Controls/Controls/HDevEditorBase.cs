@@ -105,7 +105,7 @@ public class HDevValidatingEventArgs : CancelEventArgs
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// <summary>
-/// Socle des éditeurs de saisie (équivalent BaseEdit/RepositoryItem) :
+/// Socle commun des éditeurs de saisie :
 /// TextBox interne stylé Yaru, masque de saisie, validation au blur,
 /// zone de boutons à droite fournie par l'éditeur dérivé
 /// </summary>

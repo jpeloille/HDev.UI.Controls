@@ -29,7 +29,7 @@ public class ScheduleRecurrence
 }
 
 /// <summary>
-/// Événement d'agenda (équivalent Appointment) : ponctuel ou récurrent.
+/// Événement d'agenda (rendez-vous) : ponctuel ou récurrent.
 /// Les occurrences d'un récurrent sont générées à l'affichage — l'événement
 /// maître reste unique dans la collection.
 /// </summary>

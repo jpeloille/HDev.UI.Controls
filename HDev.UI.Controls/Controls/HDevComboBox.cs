@@ -309,8 +309,8 @@ public class HDevQueryCloseUpEventArgs : CancelEventArgs
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// <summary>
-/// Liste déroulante style VS2022 : items, saisie libre optionnelle, boutons
-/// d'éditeur, texte d'affichage personnalisable
+/// Liste déroulante style VS2022 : items, saisie libre optionnelle, chevron de
+/// déroulement (événement ButtonClick), texte d'affichage personnalisable
 /// </summary>
 public class HDevComboBox : Control
 {
@@ -348,12 +348,12 @@ public class HDevComboBox : Control
     // ═══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Propriétés du ComboBox (équivalent à ComboBoxEdit.Properties)
+    /// Propriétés du ComboBox (items, style de saisie), regroupées dans un objet dédié
     /// </summary>
     public HDevComboBoxProperties Properties => _properties;
 
     /// <summary>
-    /// Valeur de l'éditeur (équivalent à EditValue)
+    /// Valeur de l'éditeur : l'item sélectionné ou, en saisie libre, le texte validé
     /// </summary>
     public object? EditValue
     {

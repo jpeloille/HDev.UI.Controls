@@ -35,7 +35,7 @@ public class ScheduleEventChangeEventArgs : System.ComponentModel.CancelEventArg
 }
 
 /// <summary>
-/// Agenda (équivalent SchedulerControl) : vues Jour / Semaine ouvrée /
+/// Agenda : vues Jour / Semaine ouvrée /
 /// Semaine / Mois, événements chevauchants côte à côte, récurrences,
 /// bandeau toute-la-journée, drag/resize avec événements annulables.
 /// </summary>
