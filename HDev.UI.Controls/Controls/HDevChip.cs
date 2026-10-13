@@ -200,7 +200,7 @@ public class HDevChip : HDevControlBase
             var badgeRect = new Rect(12 + text.Width + 6, (rect.Height - bh) / 2, bw, bh);
             var badgeColor = IsEnabled ? (_badgeColor ?? HDevTheme.Accent.Primary) : HDevTheme.Text.Disabled;
             context.DrawRectangle(new SolidColorBrush(badgeColor), null, badgeRect, bh / 2, bh / 2);
-            var badgeText = CreateText(_badge!, Colors.White, 10.5, FontWeight.SemiBold);
+            var badgeText = CreateText(_badge!, HDevTheme.Text.OnAccent, 10.5, FontWeight.SemiBold);
             context.DrawText(badgeText, Crisp.Snap(new Point(
                 badgeRect.Center.X - badgeText.Width / 2,
                 badgeRect.Center.Y - badgeText.Height / 2)));

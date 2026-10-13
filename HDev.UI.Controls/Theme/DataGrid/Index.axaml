@@ -6,6 +6,8 @@
       <ResourceDictionary.MergedDictionaries>
         <ResourceInclude Source="avares://HDev.UI.DataGrid/Themes/HDevDataGrid.axaml" />
         <ResourceInclude Source="avares://HDev.UI.Controls/Theme/DataGrid/YaruDataGrid.axaml" />
+        <!-- Accent Fluent par thème du catalogue HDevTheme -->
+        <ResourceInclude Source="avares://HDev.UI.Controls/Theme/HDevAccents.axaml" />
       </ResourceDictionary.MergedDictionaries>
     </ResourceDictionary>
   </Styles.Resources>

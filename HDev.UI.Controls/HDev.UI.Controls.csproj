@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <AvaloniaResource Include="Theme/DataGrid/**/*.axaml" />
+    <AvaloniaResource Include="Theme/**/*.axaml" />
   </ItemGroup>
 
   <ItemGroup>

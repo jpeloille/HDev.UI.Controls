@@ -233,7 +233,7 @@ public class HDevMonthCalendar : Control
                     context.DrawEllipse(new SolidColorBrush(HDevTheme.Background.ControlHover), null,
                         center, CellSize / 2 - 3, CellSize / 2 - 3);
 
-                var color = isSelected ? Colors.White
+                var color = isSelected ? HDevTheme.Text.OnAccent
                     : isDisabled ? HDevTheme.Text.Disabled
                     : isCurrentMonth ? HDevTheme.Text.Primary
                     : HDevTheme.Text.Secondary;

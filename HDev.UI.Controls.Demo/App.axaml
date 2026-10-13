@@ -2,16 +2,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="HDev.UI.Controls.Demo.App"
              RequestedThemeVariant="Light">
-    <Application.Resources>
-        <!-- Accent Ubuntu pour les contrôles Fluent natifs (TextBox, éditeurs de la grille...) -->
-        <Color x:Key="SystemAccentColor">#E95420</Color>
-        <Color x:Key="SystemAccentColorDark1">#DB4C1B</Color>
-        <Color x:Key="SystemAccentColorDark2">#C64614</Color>
-        <Color x:Key="SystemAccentColorDark3">#A83C11</Color>
-        <Color x:Key="SystemAccentColorLight1">#ED7748</Color>
-        <Color x:Key="SystemAccentColorLight2">#F19970</Color>
-        <Color x:Key="SystemAccentColorLight3">#F6BB98</Color>
-    </Application.Resources>
+    <!-- L'accent des contrôles Fluent natifs suit le thème HDev actif :
+         HDev.UI.Controls/Theme/HDevAccents.axaml, inclus par Index.axaml.
+         (Ne pas redéclarer SystemAccentColor ici : Application.Resources
+         primerait sur les dictionnaires par thème.) -->
 
     <Application.Styles>
         <FluentTheme />

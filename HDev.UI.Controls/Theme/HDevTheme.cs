@@ -12,7 +12,7 @@ public enum HDevThemeVariant
 /// <summary>
 /// Palette complète d'une variante (les deux instances : Light et Dark)
 /// </summary>
-public sealed class HDevPalette
+public sealed partial class HDevPalette
 {
     // Backgrounds
     public Color BackgroundWindow { get; init; }
@@ -242,8 +242,39 @@ public static class HDevTheme
     private static HDevPalette? _lightOverride;
     private static HDevPalette? _darkOverride;
 
+    // Thème du catalogue appliqué (null = mode historique Variant/SetPalettes).
+    private static HDevThemeDefinition? _theme;
+
     /// <summary>Palette active</summary>
     public static HDevPalette Current => _current;
+
+    /// <summary>
+    /// Thème du catalogue actif, ou null si la suite est pilotée par
+    /// <see cref="Variant"/> / <see cref="SetPalettes"/> (comportement historique)
+    /// </summary>
+    public static HDevThemeDefinition? Theme => _theme;
+
+    /// <summary>
+    /// Variante Avalonia à poser sur les fenêtres : celle du thème actif, sinon
+    /// Light/Dark selon <see cref="Variant"/>
+    /// </summary>
+    public static Avalonia.Styling.ThemeVariant AvaloniaVariant
+        => _theme?.AvaloniaVariant
+           ?? (IsDark ? Avalonia.Styling.ThemeVariant.Dark : Avalonia.Styling.ThemeVariant.Light);
+
+    /// <summary>
+    /// Applique un thème du catalogue (<see cref="HDevThemeDefinition.All"/>) :
+    /// palette, variante et skin Avalonia d'un seul geste, avec un seul
+    /// <see cref="VariantChanged"/> pour re-brosser la suite
+    /// </summary>
+    public static void Apply(HDevThemeDefinition theme)
+    {
+        ArgumentNullException.ThrowIfNull(theme);
+        _theme = theme;
+        _variant = theme.Variant;
+        _current = theme.Palette;
+        VariantChanged?.Invoke(null, EventArgs.Empty);
+    }
 
     /// <summary>Déclenché après un changement de variante (rebrush/relayout)</summary>
     public static event EventHandler? VariantChanged;
@@ -255,6 +286,7 @@ public static class HDevTheme
         set
         {
             if (_variant == value) return;
+            _theme = null; // retour au mode historique (palettes Yaru ou injectées)
             _variant = value;
             _current = Resolve(value);
             VariantChanged?.Invoke(null, EventArgs.Empty);
@@ -270,6 +302,7 @@ public static class HDevTheme
     /// </summary>
     public static void SetPalettes(HDevPalette? light = null, HDevPalette? dark = null)
     {
+        _theme = null;
         _lightOverride = light;
         _darkOverride = dark;
         _current = Resolve(_variant);

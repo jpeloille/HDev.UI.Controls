@@ -698,7 +698,7 @@ public class HDevScheduler : Control
 
                 // Numéro du jour (pastille accent = aujourd'hui)
                 var number = Text(date.Day.ToString(),
-                    isToday ? Colors.White : isCurrentMonth ? HDevTheme.Text.Primary : HDevTheme.Text.Secondary,
+                    isToday ? HDevTheme.Text.OnAccent : isCurrentMonth ? HDevTheme.Text.Primary : HDevTheme.Text.Secondary,
                     12, isToday ? FontWeight.SemiBold : FontWeight.Regular);
                 if (isToday)
                     context.DrawEllipse(new SolidColorBrush(HDevTheme.Accent.Primary), null,

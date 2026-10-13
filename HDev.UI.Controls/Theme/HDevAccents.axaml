@@ -1,0 +1,78 @@
+<!-- Accent des contrôles Fluent natifs embarqués (TextBox, éditeurs de la grille,
+     scrollbars, ListBox des combos…), par thème du catalogue HDevTheme.
+     Suit RequestedThemeVariant posé par HDevWindow. Light/Dark = Ubuntu 26. -->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:theme="using:HDev.UI.Controls.Theme">
+
+  <ResourceDictionary.ThemeDictionaries>
+
+    <!-- Ubuntu 26 clair -->
+    <ResourceDictionary x:Key="Light">
+      <Color x:Key="SystemAccentColor">#E95420</Color>
+      <Color x:Key="SystemAccentColorDark1">#DB4C1B</Color>
+      <Color x:Key="SystemAccentColorDark2">#C64614</Color>
+      <Color x:Key="SystemAccentColorDark3">#A83C11</Color>
+      <Color x:Key="SystemAccentColorLight1">#ED7748</Color>
+      <Color x:Key="SystemAccentColorLight2">#F19970</Color>
+      <Color x:Key="SystemAccentColorLight3">#F6BB98</Color>
+    </ResourceDictionary>
+
+    <!-- Ubuntu 26 sombre -->
+    <ResourceDictionary x:Key="Dark">
+      <Color x:Key="SystemAccentColor">#E95420</Color>
+      <Color x:Key="SystemAccentColorDark1">#DB4C1B</Color>
+      <Color x:Key="SystemAccentColorDark2">#C64614</Color>
+      <Color x:Key="SystemAccentColorDark3">#A83C11</Color>
+      <Color x:Key="SystemAccentColorLight1">#ED7748</Color>
+      <Color x:Key="SystemAccentColorLight2">#F19970</Color>
+      <Color x:Key="SystemAccentColorLight3">#F6BB98</Color>
+    </ResourceDictionary>
+
+    <!-- Ardoise -->
+    <ResourceDictionary x:Key="{x:Static theme:HDevThemeVariants.Ardoise}">
+      <Color x:Key="SystemAccentColor">#3355A8</Color>
+      <Color x:Key="SystemAccentColorDark1">#2C4A93</Color>
+      <Color x:Key="SystemAccentColorDark2">#24407F</Color>
+      <Color x:Key="SystemAccentColorDark3">#1B3163</Color>
+      <Color x:Key="SystemAccentColorLight1">#5573BB</Color>
+      <Color x:Key="SystemAccentColorLight2">#7E95CC</Color>
+      <Color x:Key="SystemAccentColorLight3">#A9B9DD</Color>
+    </ResourceDictionary>
+
+    <!-- Lagon -->
+    <ResourceDictionary x:Key="{x:Static theme:HDevThemeVariants.Lagon}">
+      <Color x:Key="SystemAccentColor">#0E7C80</Color>
+      <Color x:Key="SystemAccentColorDark1">#0B6D71</Color>
+      <Color x:Key="SystemAccentColorDark2">#095A5D</Color>
+      <Color x:Key="SystemAccentColorDark3">#064447</Color>
+      <Color x:Key="SystemAccentColorLight1">#3A9599</Color>
+      <Color x:Key="SystemAccentColorLight2">#6BB0B3</Color>
+      <Color x:Key="SystemAccentColorLight3">#9DCBCD</Color>
+    </ResourceDictionary>
+
+    <!-- Indigo & Or -->
+    <ResourceDictionary x:Key="{x:Static theme:HDevThemeVariants.IndigoOr}">
+      <Color x:Key="SystemAccentColor">#2B3A73</Color>
+      <Color x:Key="SystemAccentColorDark1">#25326A</Color>
+      <Color x:Key="SystemAccentColorDark2">#1C2752</Color>
+      <Color x:Key="SystemAccentColorDark3">#141C3B</Color>
+      <Color x:Key="SystemAccentColorLight1">#4A5890</Color>
+      <Color x:Key="SystemAccentColorLight2">#7480AE</Color>
+      <Color x:Key="SystemAccentColorLight3">#A2AACB</Color>
+    </ResourceDictionary>
+
+    <!-- Cockpit -->
+    <ResourceDictionary x:Key="{x:Static theme:HDevThemeVariants.Cockpit}">
+      <Color x:Key="SystemAccentColor">#F2A93B</Color>
+      <Color x:Key="SystemAccentColorDark1">#D9922A</Color>
+      <Color x:Key="SystemAccentColorDark2">#B97A1E</Color>
+      <Color x:Key="SystemAccentColorDark3">#8F5E16</Color>
+      <Color x:Key="SystemAccentColorLight1">#F5BA5E</Color>
+      <Color x:Key="SystemAccentColorLight2">#F8CB85</Color>
+      <Color x:Key="SystemAccentColorLight3">#FADCAD</Color>
+    </ResourceDictionary>
+
+  </ResourceDictionary.ThemeDictionaries>
+
+</ResourceDictionary>
