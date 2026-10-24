@@ -152,12 +152,12 @@ public class HDevRadioButton : HDevControlBase
         else if (IsHovered)
         {
             bgColor = HDevTheme.Background.ControlHover;
-            borderColor = HDevTheme.Border.Hover;
+            borderColor = HDevTheme.Border.InputHover;
         }
         else
         {
             bgColor = HDevTheme.Background.Control;
-            borderColor = HDevTheme.Border.Default;
+            borderColor = HDevTheme.Border.Input;
         }
         
         // Ombre subtile

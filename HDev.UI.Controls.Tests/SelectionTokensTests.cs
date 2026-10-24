@@ -5,6 +5,7 @@ namespace HDev.UI.Controls.Tests;
 
 // La sélection d'une collection est une teinte : le texte garde sa couleur normale dessus,
 // actif comme inactif, et la teinte se distingue du panneau.
+[Collection(nameof(ThemeCollection))]
 public class SelectionTokensTests
 {
     public static TheoryData<string> Names => new() { "Light", "Dark" };

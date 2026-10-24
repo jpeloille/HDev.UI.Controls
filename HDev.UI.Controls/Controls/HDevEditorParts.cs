@@ -75,7 +75,7 @@ internal static class HDevInputChrome
         {
             // Lecture seule : ni grisé comme un désactivé, ni halo — le fond PanelAlt le distingue d'un champ éditable
             bg = HDevTheme.Background.PanelAlt;
-            border = isFocused ? HDevTheme.Border.Focused : HDevTheme.Border.Default;
+            border = isFocused ? HDevTheme.Border.Focused : HDevTheme.Border.Input;
         }
         else if (isFocused)
         {
@@ -86,7 +86,7 @@ internal static class HDevInputChrome
         else
         {
             bg = HDevTheme.Background.Input;
-            border = isHovered ? HDevTheme.Border.Hover : HDevTheme.Border.Default;
+            border = isHovered ? HDevTheme.Border.InputHover : HDevTheme.Border.Input;
         }
 
         host.Background = new SolidColorBrush(bg);

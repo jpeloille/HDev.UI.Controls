@@ -139,7 +139,7 @@ public class HDevToggleSwitch : HDevControlBase
                         IsHovered ? HDevTheme.Background.ControlHover :
                         HDevTheme.Background.Control;
             thumbColor = IsHovered ? HDevTheme.Text.Secondary : HDevTheme.Text.Tertiary;
-            borderColor = IsHovered ? HDevTheme.Border.Hover : HDevTheme.Border.Default;
+            borderColor = IsHovered ? HDevTheme.Border.InputHover : HDevTheme.Border.Input;
         }
         
         // Track (piste)

@@ -4,6 +4,7 @@ using Xunit;
 namespace HDev.UI.Controls.Tests;
 
 // Huit teintes de données, lisibles (3:1) sur le panneau de leur variante.
+[Collection(nameof(ThemeCollection))]
 public class CategoricalPaletteTests
 {
     [Fact]

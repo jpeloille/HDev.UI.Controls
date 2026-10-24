@@ -1164,13 +1164,13 @@ public class HDevComboBox : Control
         else if (_isHovered)
         {
             bgColor = HDevTheme.Background.ControlHover;
-            borderColor = HDevTheme.Border.Default;
+            borderColor = HDevTheme.Border.InputHover;
             textColor = HDevTheme.Text.Primary;
         }
         else
         {
             bgColor = HDevTheme.Background.Control;
-            borderColor = HDevTheme.Border.Default;
+            borderColor = HDevTheme.Border.Input;
             textColor = HDevTheme.Text.Primary;
         }
 
@@ -1180,7 +1180,7 @@ public class HDevComboBox : Control
         {
             bgColor = HDevTheme.Background.Input;
             if (_isHovered && !_isDropDownOpen)
-                borderColor = HDevTheme.Border.Hover;
+                borderColor = HDevTheme.Border.InputHover;
         }
 
         // Focus (en mode éditable, c'est le TextBox interne qui porte le focus) :

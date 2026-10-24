@@ -386,13 +386,13 @@ public class HDevLookUpEdit : Control
         else if (_isHovered)
         {
             bgColor = HDevTheme.Background.Control;
-            borderColor = HDevTheme.Border.Hover;
+            borderColor = HDevTheme.Border.InputHover;
             textColor = HDevTheme.Text.Primary;
         }
         else
         {
             bgColor = HDevTheme.Background.Control;
-            borderColor = HDevTheme.Border.Default;
+            borderColor = HDevTheme.Border.Input;
             textColor = HDevTheme.Text.Primary;
         }
 

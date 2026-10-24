@@ -111,7 +111,7 @@ public class HDevTokenEdit : Border
         var popupBorder = new Border
         {
             Background = new SolidColorBrush(HDevTheme.Background.Panel),
-            BorderBrush = new SolidColorBrush(HDevTheme.Border.Default),
+            BorderBrush = new SolidColorBrush(HDevTheme.Border.Input),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(HDevTheme.Size.CornerRadiusSmall),
             Child = _listBox,

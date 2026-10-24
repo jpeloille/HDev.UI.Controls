@@ -104,6 +104,10 @@ public sealed record HDevPalette
     public Color? AccentInfoFill { get; init; }
     public Color? TextOnWarning { get; init; }
 
+    /// <summary>Filet des champs et des cases au repos : ≥ 3:1 sur le panneau (WCAG 1.4.11). Absent : dérivé de BorderDefault.</summary>
+    public Color? BorderInput { get; init; }
+    public Color? BorderInputHover { get; init; }
+
     /// <summary>
     /// Huit teintes de données (avatars, branches de carte mentale, séries…), chacune à 3:1
     /// minimum sur Background.Panel. Absente : la série Yaru de la variante, clair ou sombre,
@@ -195,6 +199,8 @@ public sealed record HDevPalette
         ShadowColorStrong = Color.Parse("#33000000"),
 
         // Orange assombri sous le texte blanc : 4,9 / 5,8 / 6,4:1 (#E95420 n'en fait que 3,65)
+        BorderInput = Color.Parse("#949390"),
+        BorderInputHover = Color.Parse("#77767B"),
         AccentFill = Color.Parse("#C64614"),
         AccentFillHover = Color.Parse("#B53C12"),
         AccentFillPressed = Color.Parse("#A93811"),
@@ -277,6 +283,8 @@ public sealed record HDevPalette
         ShadowColorStrong = Color.Parse("#66000000"),
 
         // Le survol éclaircit en sombre, sans repasser sous 4,5:1 (4,9 / 4,7 / 5,8:1)
+        BorderInput = Color.Parse("#7A7A7A"),
+        BorderInputHover = Color.Parse("#9A9A9A"),
         AccentFill = Color.Parse("#C64614"),
         AccentFillHover = Color.Parse("#CD4414"),
         AccentFillPressed = Color.Parse("#B53C12"),
@@ -393,6 +401,10 @@ public static class HDevTheme
         public static Color Strong => _current.BorderStrong;
         public static Color FocusOuter => _current.BorderFocusOuter;
         public static Color FocusInner => _current.BorderFocusInner;
+
+        /// <summary>Filet d'un champ ou d'une case au repos (≥ 3:1 sur le panneau)</summary>
+        public static Color Input => Derived.BorderInput;
+        public static Color InputHover => Derived.BorderInputHover;
     }
 
     public static class Text
@@ -742,7 +754,7 @@ public static class HDevTheme
     private sealed record DerivedTokens(
         Color AccentFill, Color AccentFillHover, Color AccentFillPressed, Color AccentForeground,
         Color AccentInfo, Color AccentSuccessFill, Color AccentInfoFill,
-        Color TextOnWarning, Color TextSelection);
+        Color TextOnWarning, Color TextSelection, Color BorderInput, Color BorderInputHover);
 
     // Une entrée par instance de palette, calculée à la première lecture
     private static readonly ConditionalWeakTable<HDevPalette, DerivedTokens> DerivedCache = new();
@@ -760,6 +772,7 @@ public static class HDevTheme
         var fill = p.AccentFill ?? EnsureContrast(p.AccentPrimary, onAccent);
         var info = p.AccentInfo ?? p.TextLink;
         var isDark = RelativeLuminance(p.BackgroundPanel) < 0.2;
+        var borderInput = p.BorderInput ?? EnsureContrast(p.BorderDefault, p.BackgroundPanel, 3);
 
         return new DerivedTokens(
             AccentFill: fill,
@@ -772,7 +785,9 @@ public static class HDevTheme
             AccentInfoFill: p.AccentInfoFill ?? EnsureContrast(info, onAccent),
             TextOnWarning: p.TextOnWarning ?? OnColor(p.AccentWarning),
             TextSelection: p.BackgroundTextSelection
-                ?? Lerp(p.BackgroundPanel, p.AccentPrimary, isDark ? 0.40 : 0.30));
+                ?? Lerp(p.BackgroundPanel, p.AccentPrimary, isDark ? 0.40 : 0.30),
+            BorderInput: borderInput,
+            BorderInputHover: p.BorderInputHover ?? EnsureContrast(Lerp(borderInput, p.TextPrimary, 0.3), p.BackgroundPanel, 3));
     }
 
     private static Color Darken(Color color, double amount)
