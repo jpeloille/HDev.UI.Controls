@@ -28,18 +28,6 @@ public enum AvatarStatus { None, Online, Away, Busy, Offline }
 /// </summary>
 public class HDevAvatar : Control
 {
-    // Palette de fonds (teintes soutenues, texte blanc lisible dessus)
-    private static readonly Color[] Palette =
-    {
-        Color.Parse("#E95420"), // orange Ubuntu
-        Color.Parse("#0073E5"),
-        Color.Parse("#2C9E4B"),
-        Color.Parse("#9141AC"),
-        Color.Parse("#C64600"),
-        Color.Parse("#00847E"),
-        Color.Parse("#B5104B"),
-        Color.Parse("#5B5EA6"),
-    };
 
     private string _name = "";
     private string? _initials;
@@ -127,12 +115,12 @@ public class HDevAvatar : Control
         get
         {
             if (_background.HasValue) return _background.Value;
-            if (string.IsNullOrEmpty(_name)) return Palette[0];
+            if (string.IsNullOrEmpty(_name)) return HDevTheme.Categorical(0);
             // Hash déterministe (pas string.GetHashCode : randomisé par process)
             uint h = 2166136261;
             foreach (var c in _name)
                 h = (h ^ c) * 16777619;
-            return Palette[(int)(h % (uint)Palette.Length)];
+            return HDevTheme.Categorical((int)(h % (uint)HDevTheme.CategoricalCount));
         }
     }
 
@@ -160,7 +148,7 @@ public class HDevAvatar : Control
             var initials = new FormattedText(EffectiveInitials,
                 CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
                 new Typeface(HDevTheme.Typography.FontFamily, FontStyle.Normal, FontWeight.SemiBold),
-                d * 0.4, new SolidColorBrush(Colors.White));
+                d * 0.4, new SolidColorBrush(HDevTheme.OnColor(EffectiveBackground)));
             context.DrawText(initials, Crisp.Snap(new Point(
                 center.X - initials.Width / 2, center.Y - initials.Height / 2)));
         }

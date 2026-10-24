@@ -100,9 +100,30 @@ public sealed record HDevPalette
     public Color? AccentSuccessFill { get; init; }
     public Color? AccentInfoFill { get; init; }
     public Color? TextOnWarning { get; init; }
+
+    /// <summary>
+    /// Huit teintes de données (avatars, branches de carte mentale, séries…), chacune à 3:1
+    /// minimum sur Background.Panel. Absente : la série Yaru de la variante, clair ou sombre,
+    /// est choisie selon la luminance du fond.
+    /// </summary>
+    public Color[]? Categorical { get; init; }
     public Color? BackgroundTextSelection { get; init; }
 
     /// <summary>Yaru / libadwaita clair (palette d'origine)</summary>
+    /// <summary>Teintes de données Yaru sur fond clair (3:1 minimum sur blanc)</summary>
+    internal static readonly Color[] CategoricalLight =
+    {
+        Color.Parse("#E95420"), Color.Parse("#1C71D8"), Color.Parse("#26A269"), Color.Parse("#9141AC"),
+        Color.Parse("#C01C28"), Color.Parse("#00847E"), Color.Parse("#B5835A"), Color.Parse("#77767B"),
+    };
+
+    /// <summary>Teintes de données Yaru sur fond sombre (3:1 minimum sur #303030)</summary>
+    internal static readonly Color[] CategoricalDark =
+    {
+        Color.Parse("#F2704B"), Color.Parse("#62A0EA"), Color.Parse("#33D17A"), Color.Parse("#C061CB"),
+        Color.Parse("#F66151"), Color.Parse("#4CC9C0"), Color.Parse("#E5A50A"), Color.Parse("#9A99A0"),
+    };
+
     public static readonly HDevPalette Light = new()
     {
         BackgroundWindow = Color.Parse("#FAFAFA"),
@@ -560,6 +581,18 @@ public static class HDevTheme
 
     public static Pen ToPen(Color color, double thickness = 1)
         => new(new SolidColorBrush(color), thickness);
+
+    /// <summary>Teinte de données n° <paramref name="index"/> (cyclique), lisible sur Background.Panel</summary>
+    public static Color Categorical(int index)
+    {
+        var series = _current.Categorical
+            ?? (RelativeLuminance(_current.BackgroundPanel) > 0.5 ? HDevPalette.CategoricalLight : HDevPalette.CategoricalDark);
+        return series[((index % series.Length) + series.Length) % series.Length];
+    }
+
+    /// <summary>Nombre de teintes de la série active</summary>
+    public static int CategoricalCount
+        => (_current.Categorical ?? HDevPalette.CategoricalLight).Length;
 
     /// <summary>
     /// Fond d'un élément sélectionné dans une collection : teinte (le texte garde sa couleur),

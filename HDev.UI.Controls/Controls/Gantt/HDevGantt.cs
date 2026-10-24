@@ -1910,8 +1910,9 @@ public class HDevGantt : Control
             DateTime.Now.TimeOfDay.TotalDays;
         if (x < TimelineX || x > TimelineX + TimelineWidth) return;
 
+        // Bleu pointillé : ne se confond plus avec le rouge du chemin critique
         context.DrawLine(
-            new Pen(new SolidColorBrush(HDevTheme.Accent.Error), 1.5),
+            new Pen(new SolidColorBrush(HDevTheme.Accent.InfoFill), 1.5, new DashStyle(new double[] { 4, 3 }, 0)),
             new Point(x, HeaderHeight), new Point(x, RowsViewport.Bottom));
     }
 

@@ -68,13 +68,6 @@ public class HDevMindMap : Control
     private readonly List<MindMapNode> _redo = new();
     private const int UndoLimit = 100;
 
-    // Palette de couleurs des branches de niveau 1
-    private static readonly Color[] BranchPalette =
-    {
-        Color.Parse("#E95420"), Color.Parse("#1C71D8"), Color.Parse("#26A269"),
-        Color.Parse("#A855A0"), Color.Parse("#E5A50A"), Color.Parse("#C01C28"),
-        Color.Parse("#0AA1A5"), Color.Parse("#865E3C")
-    };
 
     /// <summary>Déclenché quand la sélection change</summary>
     public event EventHandler? SelectedNodeChanged;
@@ -443,13 +436,14 @@ public class HDevMindMap : Control
             current = current.Parent;
 
         if (current.Parent == null)
-            return HDevTheme.Accent.Primary; // racine
+            return HDevTheme.Accent.Fill; // racine
 
         if (current.BranchColor is { } explicitColor)
             return explicitColor;
 
         var index = current.Parent.Children.IndexOf(current);
-        return BranchPalette[Math.Max(0, index) % BranchPalette.Length];
+        // La teinte 0 de la série est celle de l'accent, donc de la racine : les branches commencent à 1
+        return HDevTheme.Categorical(Math.Max(0, index) + 1);
     }
 
     protected override Size MeasureOverride(Size availableSize)
@@ -963,8 +957,8 @@ public class HDevMindMap : Control
             var rootText = new FormattedText(node.Text, CultureInfo.CurrentCulture,
                 FlowDirection.LeftToRight,
                 new Typeface(HDevTheme.Typography.FontFamily, weight: FontWeight.SemiBold),
-                16 * _zoom, new SolidColorBrush(Colors.White));
-            context.DrawRectangle(new SolidColorBrush(HDevTheme.Accent.Primary), null,
+                16 * _zoom, new SolidColorBrush(HDevTheme.Text.OnAccent));
+            context.DrawRectangle(new SolidColorBrush(HDevTheme.Accent.Fill), null,
                 screen.Deflate(1), radius, radius);
             context.DrawText(rootText, Crisp.Snap(new Point(
                 screen.X + NodePaddingX * _zoom, screen.Y + NodePaddingY * _zoom)));
@@ -981,7 +975,7 @@ public class HDevMindMap : Control
                 var badge = new FormattedText(node.DescendantCount.ToString(),
                     CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
                     new Typeface(HDevTheme.Typography.FontFamily),
-                    Math.Max(8, 10 * _zoom), new SolidColorBrush(Colors.White));
+                    Math.Max(HDevTheme.Typography.FontSizeMicro, 10 * _zoom), new SolidColorBrush(HDevTheme.OnColor(color)));
                 r = Math.Max(r, badge.Width / 2 + 5);
                 context.DrawEllipse(new SolidColorBrush(color), null, center, r, r);
                 context.DrawText(badge, Crisp.Snap(new Point(

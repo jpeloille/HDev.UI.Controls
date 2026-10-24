@@ -632,8 +632,8 @@ public class HDevRoster : Control
 
         var label = CreateText(
             block.Label,
-            block.Color is null ? HDevTheme.Text.Primary : HDevTheme.Text.OnAccent,
-            9);
+            block.Color is not { } blockColor ? HDevTheme.Text.Primary : HDevTheme.OnColor(blockColor),
+            HDevTheme.Typography.FontSizeMicro);
         if (label.Width + 4 > rect.Width) return;
 
         context.DrawText(label, Crisp.Snap(new Point(
