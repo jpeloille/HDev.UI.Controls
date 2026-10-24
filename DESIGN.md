@@ -86,9 +86,10 @@ Pied de dialogue (convention GNOME) : Annuler en `Outline` à gauche, l'action e
 `HDevIconButton` : bouton carré à icône, mêmes variantes ; nommer l'action par une info-bulle.
 
 ## 4. Glyphes
-`HDevIcon` : jeu vectoriel unique (26 glyphes : chevrons, Close, Check, Search, Plus, Minus, More,
+`HDevIcon` : jeu vectoriel unique (33 glyphes : chevrons, Close, Check, Search, Plus, Minus, More,
 Info, Warning, Error, Question, Trash, Pencil, Link, Indent, Outdent, Recurrence, Image, Pin,
-ArrowUp/Down, Calendar), trait 1,2 px, teinté par le contrôle. **Pas d'emoji ni de caractère Unicode
+ArrowUp/Down, Calendar, et pour le rail de navigation Home, Bank, Card, Transfer, Document, People,
+Settings), trait 1,2 px, teinté par le contrôle. **Pas d'emoji ni de caractère Unicode
 comme icône** dans la bibliothèque. Emplacements : `HDevIconView`, `HDevIconButton.Icon`, et
 `VectorIcon` sur les éléments de menu, barre d'outils, ruban, rail, onglets et chips.
 

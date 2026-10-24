@@ -37,7 +37,16 @@ public enum HDevIcon
     Image,
     Pin,
     ArrowUp,
-    ArrowDown
+    ArrowDown,
+
+    // Navigation d'application (rail HDevNavBar) — premier consommateur : Ovidie
+    Home,
+    Bank,
+    Card,
+    Transfer,
+    Document,
+    People,
+    Settings
 }
 
 public static class HDevIcons
@@ -75,6 +84,13 @@ public static class HDevIcons
         [HDevIcon.Pin] = new("M8 14 C8 14 3.5 9.6 3.5 6.5 A4.5 4.5 0 0 1 12.5 6.5 C12.5 9.6 8 14 8 14 Z M9.5 6.5 A1.5 1.5 0 1 1 6.5 6.5 A1.5 1.5 0 1 1 9.5 6.5"),
         [HDevIcon.ArrowUp] = new("M8 13 V3 M4 7 L8 3 L12 7"),
         [HDevIcon.ArrowDown] = new("M8 3 V13 M4 9 L8 13 L12 9"),
+        [HDevIcon.Home] = new("M2.5 7.5 L8 3 L13.5 7.5 M4 6.4 V13 H12 V6.4 M6.6 13 V9.6 H9.4 V13"),
+        [HDevIcon.Bank] = new("M2 6 L8 2.8 L14 6 Z M3.6 6.6 V11.2 M6.5 6.6 V11.2 M9.5 6.6 V11.2 M12.4 6.6 V11.2 M2 13.2 H14"),
+        [HDevIcon.Card] = new("M2 3.8 H14 V12.2 H2 Z M2 6.4 H14 M4 10 H7"),
+        [HDevIcon.Transfer] = new("M3 5.5 H12.5 M10 3 L12.5 5.5 L10 8 M13 10.5 H3.5 M6 8 L3.5 10.5 L6 13"),
+        [HDevIcon.Document] = new("M4 2.5 H9.5 L12 5 V13.5 H4 Z M9.5 2.5 V5 H12 M6 8.5 H10 M6 11 H9"),
+        [HDevIcon.People] = new("M8.5 5.5 A2.5 2.5 0 1 1 3.5 5.5 A2.5 2.5 0 1 1 8.5 5.5 M1.5 13.5 C1.5 10.8 3.5 9.5 6 9.5 C8.5 9.5 10.5 10.8 10.5 13.5 M10.4 3.2 A2.3 2.3 0 0 1 10.4 7.8 M12 9.8 C13.5 10.3 14.5 11.6 14.5 13.5"),
+        [HDevIcon.Settings] = new("M10.2 8 A2.2 2.2 0 1 1 5.8 8 A2.2 2.2 0 1 1 10.2 8 M8 1.8 V3.6 M8 12.4 V14.2 M1.8 8 H3.6 M12.4 8 H14.2 M3.6 3.6 L4.9 4.9 M11.1 11.1 L12.4 12.4 M3.6 12.4 L4.9 11.1 M11.1 4.9 L12.4 3.6"),
     });
 
     private static Dictionary<HDevIcon, Lazy<(Geometry, (double, double, double)[])>> Build(Dictionary<HDevIcon, Shape> shapes)
