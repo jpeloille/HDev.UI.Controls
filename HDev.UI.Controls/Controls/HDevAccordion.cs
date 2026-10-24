@@ -121,6 +121,7 @@ public class HDevAccordion : Control
 
     public HDevAccordion()
     {
+        HDevTheme.Track(this);
         ClipToBounds = true;
         Sections.CollectionChanged += (s, e) =>
         {

@@ -103,6 +103,7 @@ public class HDevNavBar : Control
 
     public HDevNavBar()
     {
+        HDevTheme.Track(this);
         Width = WideWidth;
         ClipToBounds = true;
 

@@ -75,6 +75,7 @@ public class HDevStatusBar : Control
 
     public HDevStatusBar()
     {
+        HDevTheme.Track(this);
         Height = BarHeight;
         ClipToBounds = true;
 

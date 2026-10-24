@@ -67,6 +67,7 @@ public class HDevMonthCalendar : Control
 
     public HDevMonthCalendar()
     {
+        HDevTheme.Track(this);
         Width = 7 * CellSize + 12;
         Height = HeaderHeight + WeekDayHeight + 6 * CellSize + 8;
     }

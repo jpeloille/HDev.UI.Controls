@@ -66,13 +66,7 @@ public class HDevMenuPopup : Popup
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(HDevTheme.Size.CornerRadiusMedium),
             Padding = new Thickness(6),
-            BoxShadow = new BoxShadows(new BoxShadow
-            {
-                OffsetX = 0,
-                OffsetY = 4,
-                Blur = 16,
-                Color = Color.FromArgb(40, 0, 0, 0)
-            }),
+            BoxShadow = HDevTheme.PopoverShadow,
             Child = _itemsPanel
         };
         

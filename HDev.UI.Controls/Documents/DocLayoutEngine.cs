@@ -73,6 +73,27 @@ public class DocLayoutResult
 /// </summary>
 public class DocLayoutEngine
 {
+    [ThreadStatic] private static HDevPalette? _palette;
+
+    /// <summary>Palette de rendu : celle du thème actif, ou celle imposée par <see cref="UsePalette"/></summary>
+    private static HDevPalette Pal => _palette ?? HDevTheme.Current;
+
+    /// <summary>
+    /// Impose une palette le temps d'un layout ou d'un rendu (surface « papier » claire d'un
+    /// HtmlView en mode sombre). <c>null</c> : le thème actif.
+    /// </summary>
+    internal static IDisposable UsePalette(HDevPalette? palette)
+    {
+        var previous = _palette;
+        _palette = palette;
+        return new Scope(() => _palette = previous);
+    }
+
+    private sealed class Scope(Action onDispose) : IDisposable
+    {
+        public void Dispose() => onDispose();
+    }
+
     private const double ParagraphSpacing = 8;
     private const double ListIndent = 26;
     private const double QuoteIndent = 14;
@@ -169,7 +190,7 @@ public class DocLayoutEngine
             text,
             new Typeface(_fontFamily, weight: weight),
             fontSize,
-            new SolidColorBrush(_baseStyle.Foreground ?? HDevTheme.Text.Primary),
+            new SolidColorBrush(_baseStyle.Foreground ?? Pal.TextPrimary),
             paragraph.Alignment,
             TextWrapping.Wrap,
             maxWidth: width,
@@ -269,7 +290,7 @@ public class DocLayoutEngine
             var marker = list.Ordered ? $"{i + 1}." : "•";
             var markerLayout = new TextLayout(marker,
                 new Typeface(_fontFamily), _baseStyle.FontSize ?? 14,
-                new SolidColorBrush(HDevTheme.Text.Secondary));
+                new SolidColorBrush(Pal.TextSecondary));
 
             _result.Boxes.Add(new DocTextBox
             {
@@ -288,13 +309,13 @@ public class DocLayoutEngine
             code.Text,
             new Typeface(_monoFamily),
             (_baseStyle.FontSize ?? 14) - 1,
-            new SolidColorBrush(HDevTheme.Text.Primary),
+            new SolidColorBrush(Pal.TextPrimary),
             maxWidth: width - 16,
             textWrapping: TextWrapping.Wrap);
 
         _result.Boxes.Add(new DocFillBox
         {
-            Color = HDevTheme.Background.Toolbar,
+            Color = Pal.BackgroundToolbar,
             Bounds = new Rect(x, y, width, layout.Height + 12)
         });
         _result.Boxes.Add(new DocTextBox
@@ -340,7 +361,7 @@ public class DocLayoutEngine
                 if (!isHeader) continue;
                 _result.Boxes.Insert(cellStartIndex, new DocFillBox
                 {
-                    Color = HDevTheme.Background.Toolbar,
+                    Color = Pal.BackgroundToolbar,
                     Bounds = new Rect(cx, rowY, cw, rowHeight)
                 });
                 inserted++;
@@ -398,9 +419,12 @@ public class DocLayoutEngine
             if (style.Strikethrough == true)
                 decorations.Add(new TextDecoration { Location = TextDecorationLocation.Strikethrough });
 
+            // Lien en Text.Link (≥ 4,5:1) et non en accent ; texte surligné (<mark>) lisible sur son fond
             var foreground = isLink
-                ? HDevTheme.Accent.Primary
-                : style.Foreground ?? HDevTheme.Text.Primary;
+                ? Pal.TextLink
+                : style.Foreground ?? (style.Background is { } highlight
+                    ? HDevTheme.OnColor(highlight)
+                    : Pal.TextPrimary);
 
             var typeface = new Typeface(
                 style.IsCode == true ? _monoFamily : style.FontFamily ?? _fontFamily,
@@ -476,24 +500,24 @@ public class DocLayoutEngine
 
                 case DocImageBox placeholder:
                     context.DrawRectangle(
-                        new SolidColorBrush(HDevTheme.Background.Toolbar),
-                        new Pen(new SolidColorBrush(HDevTheme.Border.Default), 1),
+                        new SolidColorBrush(Pal.BackgroundToolbar),
+                        new Pen(new SolidColorBrush(Pal.BorderDefault), 1),
                         bounds, 4, 4);
                     var alt = new TextLayout(
                         string.IsNullOrEmpty(placeholder.Source.Alt) ? "[image]" : $"[image : {placeholder.Source.Alt}]",
                         new Typeface(HDevTheme.Typography.FontFamily), 12,
-                        new SolidColorBrush(HDevTheme.Text.Secondary),
+                        new SolidColorBrush(Pal.TextSecondary),
                         maxWidth: Math.Max(20, bounds.Width - 12));
                     alt.Draw(context, new Point(bounds.X + 6, bounds.Center.Y - alt.Height / 2));
                     break;
 
                 case DocRuleBox:
                 case DocGridLineBox:
-                    context.FillRectangle(new SolidColorBrush(HDevTheme.Border.Subtle), bounds);
+                    context.FillRectangle(new SolidColorBrush(Pal.BorderSubtle), bounds);
                     break;
 
                 case DocQuoteBarBox:
-                    context.FillRectangle(new SolidColorBrush(HDevTheme.Border.Default), bounds, 1.5f);
+                    context.FillRectangle(new SolidColorBrush(Pal.BorderDefault), bounds, 1.5f);
                     break;
             }
         }

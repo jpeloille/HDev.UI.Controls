@@ -380,6 +380,7 @@ public class HDevGantt : Control
 
     public HDevGantt()
     {
+        HDevTheme.Track(this);
         ClipToBounds = true;
 
         _vScroll = new ScrollBar

@@ -115,10 +115,7 @@ public class HDevTokenEdit : Border
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(HDevTheme.Size.CornerRadiusSmall),
             Child = _listBox,
-            BoxShadow = new BoxShadows(new BoxShadow
-            {
-                OffsetX = 0, OffsetY = 2, Blur = 8, Color = HDevTheme.Shadow.Color
-            })
+            BoxShadow = HDevTheme.PopoverShadow
         };
 
         _popup = new Popup
@@ -181,11 +178,7 @@ public class HDevTokenEdit : Border
         {
             border.Background = new SolidColorBrush(HDevTheme.Background.Panel);
             border.BorderBrush = new SolidColorBrush(HDevTheme.Border.Default);
-            border.BoxShadow = new BoxShadows(new BoxShadow
-            {
-                OffsetX = 0, OffsetY = 2, Blur = 8,
-                Color = HDevTheme.Shadow.Color
-            });
+            border.BoxShadow = HDevTheme.PopoverShadow;
         }
     }
 

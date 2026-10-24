@@ -102,6 +102,7 @@ public abstract class HDevControlBase : Control
 
     protected HDevControlBase()
     {
+        HDevTheme.Track(this);
         ClipToBounds = false;
     }
     

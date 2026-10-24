@@ -29,6 +29,21 @@ public class HDevHtmlView : Control
 
     private bool HasSelection => _selAnchor.HasValue && _selCaret.HasValue && _selAnchor != _selCaret;
 
+    private bool _paperInDarkMode = true;
+
+    /// <summary>
+    /// En mode sombre, rend le contenu sur une surface « papier » claire (palette Yaru claire).
+    /// Par défaut : un mail aux couleurs inline (texte foncé, fonds clairs) reste lisible, alors
+    /// qu'il serait illisible sur le fond sombre. <c>false</c> : le contenu suit le thème.
+    /// </summary>
+    public bool PaperInDarkMode
+    {
+        get => _paperInDarkMode;
+        set { _paperInDarkMode = value; _layoutWidth = -1; InvalidateMeasure(); InvalidateVisual(); }
+    }
+
+    private HDevPalette? Paper => _paperInDarkMode && HDevTheme.IsDark ? HDevPalette.Light : null;
+
     /// <summary>Résout les images distantes (URL → octets) ; null = placeholder.
     /// Le contrôle ne fait JAMAIS de réseau lui-même.</summary>
     public Func<string, byte[]?>? ImageResolver { get; set; }
@@ -145,7 +160,8 @@ public class HDevHtmlView : Control
     {
         if (_layout != null && Math.Abs(width - _layoutWidth) < 0.5) return;
         _layoutWidth = width;
-        _layout = DocLayoutEngine.Layout(_document, width);
+        using (DocLayoutEngine.UsePalette(Paper))
+            _layout = DocLayoutEngine.Layout(_document, width);
     }
 
     protected override Size MeasureOverride(Size availableSize)
@@ -367,7 +383,7 @@ public class HDevHtmlView : Control
     public override void Render(DrawingContext context)
     {
         var bounds = new Rect(Bounds.Size);
-        context.FillRectangle(new SolidColorBrush(HDevTheme.Background.Panel), bounds);
+        context.FillRectangle(new SolidColorBrush(Paper?.BackgroundPanel ?? HDevTheme.Background.Panel), bounds);
 
         if (_layout == null) return;
 
@@ -395,6 +411,7 @@ public class HDevHtmlView : Control
             }
         }
 
-        DocLayoutEngine.Render(context, _layout, bounds, new Vector(8, 8));
+        using (DocLayoutEngine.UsePalette(Paper))
+            DocLayoutEngine.Render(context, _layout, bounds, new Vector(8, 8));
     }
 }

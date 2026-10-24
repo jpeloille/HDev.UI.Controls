@@ -951,6 +951,29 @@ Console.WriteLine("Éditeurs (caractérisation E0) :");
     System.Globalization.CultureInfo.CurrentUICulture = cultureUiAvant;
 }
 
+// ═════════════════════════════════════════════════════════════════
+// HtmlView en mode sombre — surface « papier » claire pour les mails
+// ═════════════════════════════════════════════════════════════════
+Console.WriteLine("HtmlView sombre :");
+HDev.UI.Controls.Theme.HDevTheme.Variant = HDev.UI.Controls.Theme.HDevThemeVariant.Dark;
+var paperView = new HDevHtmlView { Html = "<p style=\"color:#202020\">Bonjour</p>" };
+var paperWindow = new Window { Width = 300, Height = 120, Content = paperView };
+paperWindow.Show();
+Pump(paperWindow);
+byte CornerLuma(global::Avalonia.Media.Imaging.WriteableBitmap f)
+{
+    using var fb = f.Lock();
+    var px = new byte[4];
+    System.Runtime.InteropServices.Marshal.Copy(fb.Address + (fb.RowBytes * (fb.Size.Height - 4)) + 4 * (fb.Size.Width - 4), px, 0, 4);
+    return px[1];
+}
+Check("par défaut, un HtmlView sombre est rendu sur papier clair", CornerLuma(paperWindow.CaptureRenderedFrame()!) > 200);
+paperView.PaperInDarkMode = false;
+Pump(paperWindow);
+Check("PaperInDarkMode=false : le contenu suit le thème sombre", CornerLuma(paperWindow.CaptureRenderedFrame()!) < 100);
+HDev.UI.Controls.Theme.HDevTheme.Variant = HDev.UI.Controls.Theme.HDevThemeVariant.Light;
+paperWindow.Close();
+
 Console.WriteLine(failed == 0 ? "Interaction HDev.UI.Controls : ALL PASS" : $"Interaction HDev.UI.Controls : {failed} FAILED");
 return failed == 0 ? 0 : 1;
 

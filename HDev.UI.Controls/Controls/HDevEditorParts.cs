@@ -139,6 +139,7 @@ public class HDevEditorGlyphButton : Control
 
     public HDevEditorGlyphButton()
     {
+        HDevTheme.Track(this);
         Width = 26;
         Cursor = new Cursor(StandardCursorType.Hand);
     }

@@ -124,6 +124,7 @@ public class HDevTabControl : Control
 
     public HDevTabControl()
     {
+        HDevTheme.Track(this);
         ClipToBounds = true;
 
         Items.CollectionChanged += (s, e) =>

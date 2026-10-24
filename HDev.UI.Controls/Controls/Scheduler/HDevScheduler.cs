@@ -131,6 +131,7 @@ public class HDevScheduler : Control
 
     public HDevScheduler()
     {
+        HDevTheme.Track(this);
         ClipToBounds = true;
 
         Events.CollectionChanged += (s, e) => InvalidateVisual();

@@ -260,11 +260,7 @@ public abstract class HDevEditorBase : Border
     {
         border.Background = new SolidColorBrush(HDevTheme.Background.Panel);
         border.BorderBrush = new SolidColorBrush(HDevTheme.Border.Default);
-        border.BoxShadow = new BoxShadows(new BoxShadow
-        {
-            OffsetX = 0, OffsetY = 2, Blur = 8,
-            Color = HDevTheme.Shadow.Color
-        });
+        border.BoxShadow = HDevTheme.PopoverShadow;
     }
 
     /// <summary>Installe la zone de boutons à droite du texte (calendrier, spin...)</summary>

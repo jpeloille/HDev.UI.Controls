@@ -80,6 +80,7 @@ public class HDevRoster : Control
 
     public HDevRoster()
     {
+        HDevTheme.Track(this);
         ClipToBounds = true;
 
         _vScroll = new ScrollBar

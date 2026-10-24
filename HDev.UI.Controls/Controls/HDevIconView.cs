@@ -48,6 +48,11 @@ public class HDevIconView : Control
         HorizontalAlignmentProperty.OverrideDefaultValue<HDevIconView>(Avalonia.Layout.HorizontalAlignment.Left);
     }
 
+    public HDevIconView()
+    {
+        HDevTheme.Track(this);
+    }
+
     protected override Size MeasureOverride(Size availableSize) => new(IconSize, IconSize);
 
     public override void Render(DrawingContext context)

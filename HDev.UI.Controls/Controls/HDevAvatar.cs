@@ -42,6 +42,11 @@ public class HDevAvatar : Control
         VerticalAlignmentProperty.OverrideDefaultValue<HDevAvatar>(Avalonia.Layout.VerticalAlignment.Center);
     }
 
+    public HDevAvatar()
+    {
+        HDevTheme.Track(this);
+    }
+
     /// <summary>
     /// Nom complet : source des initiales et de la couleur stable.
     /// (Pas « Name » : ce serait masquer StyledElement.Name, le nom d'élément

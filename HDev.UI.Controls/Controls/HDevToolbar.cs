@@ -124,6 +124,7 @@ public class HDevToolbar : Control
 
     public HDevToolbar()
     {
+        HDevTheme.Track(this);
         Height = BarHeight;
         ClipToBounds = true;
 

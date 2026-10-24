@@ -112,6 +112,7 @@ public class HDevRibbon : Control
     
     public HDevRibbon()
     {
+        HDevTheme.Track(this);
         ClipToBounds = true;
         Tabs.CollectionChanged += (s, e) => InvalidateVisual();
     }

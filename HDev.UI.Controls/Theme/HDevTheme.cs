@@ -1,7 +1,10 @@
 using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Media;
+using Avalonia.Styling;
 
 namespace HDev.UI.Controls.Theme;
 
@@ -466,6 +469,17 @@ public static class HDevTheme
         public static Color Text => _current.DisabledText;
     }
 
+    /// <summary>
+    /// Élévation unique des popovers (menus, menus contextuels, listes déroulantes, jetons,
+    /// recherche) : rayon <see cref="Size.CornerRadiusMedium"/>, filet <see cref="Border.Subtle"/>
+    /// et cette ombre, renforcée en mode sombre où une ombre claire ne se voit pas.
+    /// </summary>
+    public static BoxShadows PopoverShadow => new(new BoxShadow
+    {
+        OffsetX = 0, OffsetY = 2, Blur = 8,
+        Color = IsDark ? Shadow.ColorStrong : Shadow.Color
+    });
+
     public static class Shadow
     {
         public static Color Color => _current.ShadowColor;
@@ -800,6 +814,17 @@ public static class HDevTheme
     {
         Publish(application.Resources);
         VariantChanged += (_, _) => Publish(application.Resources);
+
+        // Info-bulle aux couleurs de la palette (pinceaux publiés ci-dessous, donc suivis à chaque bascule)
+        var tip = new Avalonia.Styling.Style(x => x.OfType<ToolTip>());
+        tip.Setters.Add(new Setter(TemplatedControl.BackgroundProperty, new DynamicResourceExtension("HDevBackgroundPanelBrush")));
+        tip.Setters.Add(new Setter(TemplatedControl.ForegroundProperty, new DynamicResourceExtension("HDevTextPrimaryBrush")));
+        tip.Setters.Add(new Setter(TemplatedControl.BorderBrushProperty, new DynamicResourceExtension("HDevBorderSubtleBrush")));
+        tip.Setters.Add(new Setter(TemplatedControl.BorderThicknessProperty, new Thickness(1)));
+        tip.Setters.Add(new Setter(TemplatedControl.CornerRadiusProperty, new CornerRadius(Size.CornerRadiusMedium)));
+        tip.Setters.Add(new Setter(TemplatedControl.PaddingProperty, new Thickness(Size.SpacingS, Size.SpacingXS + 1)));
+        tip.Setters.Add(new Setter(TemplatedControl.FontSizeProperty, Typography.FontSizeCaption));
+        application.Styles.Add(tip);
     }
 
     private static void Publish(IResourceDictionary resources)

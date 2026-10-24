@@ -122,17 +122,13 @@ public static class HDevToast
             Width = ToastWidth,
             MinHeight = 64,
             Background = new SolidColorBrush(HDevTheme.Background.Panel),
-            BorderBrush = new SolidColorBrush(HDevTheme.Border.Default),
+            BorderBrush = new SolidColorBrush(HDevTheme.Border.Subtle),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(HDevTheme.Size.CornerRadiusMedium),
             Padding = new Thickness(12, 10),
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Bottom,
-            BoxShadow = new BoxShadows(new BoxShadow
-            {
-                OffsetX = 0, OffsetY = 4, Blur = 16,
-                Color = HDevTheme.Shadow.ColorStrong
-            }),
+            BoxShadow = HDevTheme.PopoverShadow,
             Child = row,
             Cursor = clickable ? new Cursor(StandardCursorType.Hand) : Cursor.Default,
             Tag = closeButton

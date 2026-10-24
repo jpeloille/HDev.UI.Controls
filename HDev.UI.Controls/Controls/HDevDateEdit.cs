@@ -79,11 +79,7 @@ public class HDevDateEdit : HDevEditorBase
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(HDevTheme.Size.CornerRadiusMedium),
             Padding = new Thickness(4),
-            BoxShadow = new BoxShadows(new BoxShadow
-            {
-                OffsetX = 0, OffsetY = 2, Blur = 8,
-                Color = HDevTheme.Shadow.Color
-            })
+            BoxShadow = HDevTheme.PopoverShadow
         };
 
         _popup = new Popup

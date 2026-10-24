@@ -133,6 +133,7 @@ public class HDevMenuItem : Control
     
     public HDevMenuItem()
     {
+        HDevTheme.Track(this);
         ClipToBounds = false;
     }
     

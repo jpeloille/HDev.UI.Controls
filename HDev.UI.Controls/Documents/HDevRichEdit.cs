@@ -576,7 +576,7 @@ public class HDevRichEdit : Control
     public override void Render(DrawingContext context)
     {
         var bounds = new Rect(Bounds.Size);
-        context.FillRectangle(new SolidColorBrush(HDevTheme.Background.Control), bounds);
+        context.FillRectangle(new SolidColorBrush(HDevTheme.Background.Input), bounds);
 
         if (_layout == null) return;
 

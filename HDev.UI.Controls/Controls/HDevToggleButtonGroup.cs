@@ -114,6 +114,7 @@ public class HDevToggleButtonGroup : Control
 
     public HDevToggleButtonGroup()
     {
+        HDevTheme.Track(this);
         Items.CollectionChanged += (s, e) =>
         {
             foreach (var item in Items)

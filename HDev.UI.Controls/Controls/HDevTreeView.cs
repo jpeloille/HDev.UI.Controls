@@ -150,6 +150,7 @@ public class HDevTreeView : Control
 
     public HDevTreeView()
     {
+        HDevTheme.Track(this);
         ClipToBounds = true;
 
         Nodes.CollectionChanged += (s, e) =>

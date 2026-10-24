@@ -185,6 +185,7 @@ public class HDevListView : Control
 
     public HDevListView()
     {
+        HDevTheme.Track(this);
         ClipToBounds = true;
 
         _scrollBar = new ScrollBar
