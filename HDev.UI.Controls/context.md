@@ -10,7 +10,7 @@ Créer une **bibliothèque de contrôles Avalonia UI professionnels** avec le st
 
 - **Palette de couleurs** : Gris/blanc subtil, sobre et professionnel
 - **Accents** : Orange Ubuntu (#E95420) pour les éléments interactifs et focus
-- **Typographie** : **Inter embarquée** (`fonts:Inter#Inter`, nécessite `.WithInterFont()` dans l'app hôte), 14px body, 16px subtitle, 19px title. Décision du 14/07/2026 : les fontes Ubuntu du système sont devenues variables et rasterisent sales dans Skia (pas de hinting FreeType) ; Inter rend net et identique sur toute machine (A/B validé). Fallback Ubuntu Sans. Rendu subpixel LCD actif au niveau HDevWindow (sûr depuis OverlayPopups=true : surface fenêtre opaque) + origines de texte snappées au pixel (Crisp.Snap) partout. **Snapping au PIXEL PHYSIQUE (14/07/2026)** : `Crisp.Snap` arrondit désormais dans l'espace device (`round(p*scale)/scale`), pas en unités logiques — indispensable dès que le scaling est fractionnaire (125/150/175 %, typique Wayland) où 1 unité logique ≠ 1 pixel (sinon glyphes flous). Le `RenderScaling` (uniforme par fenêtre) est figé une fois en tête de chaque `Render` via `Crisp.BeginFrame(this)` (récupéré proprement par `visual.GetVisualRoot()?.RenderScaling`, API publique Avalonia 11.2.1) ; les ~57 sites d'appel `Crisp.Snap(...)` restent inchangés. Fallback 1.0 si non attaché = ancien comportement, sans régression. **Point à re-auditer à la migration Avalonia 12** (le contrat GetVisualRoot/IRenderRoot.RenderScaling peut bouger).
+- **Typographie** : **Inter embarquée** (`fonts:Inter#Inter`, nécessite `.WithInterFont()` dans l'app hôte), 14px body, 16px subtitle, 19px title. Décision du 14/07/2026 : les fontes Ubuntu du système sont devenues variables et rasterisent sales dans Skia (pas de hinting FreeType) ; Inter rend net et identique sur toute machine (A/B validé). Fallback Ubuntu Sans. Rendu subpixel LCD actif au niveau HDevWindow (sûr depuis OverlayPopups=true : surface fenêtre opaque) + origines de texte snappées au pixel (Crisp.Snap) partout. **Snapping au PIXEL PHYSIQUE (14/07/2026)** : `Crisp.Snap` arrondit désormais dans l'espace device (`round(p*scale)/scale`), pas en unités logiques — indispensable dès que le scaling est fractionnaire (125/150/175 %, typique Wayland) où 1 unité logique ≠ 1 pixel (sinon glyphes flous). Le `RenderScaling` (uniforme par fenêtre) est figé une fois en tête de chaque `Render` via `Crisp.BeginFrame(this)` (récupéré proprement par `visual.GetVisualRoot()?.RenderScaling`, API publique Avalonia ; migration 12.1.3 faite, contrat re-audité) ; les ~57 sites d'appel `Crisp.Snap(...)` restent inchangés. Fallback 1.0 si non attaché = ancien comportement, sans régression. **Point à re-auditer à la migration Avalonia 12** (le contrat GetVisualRoot/IRenderRoot.RenderScaling peut bouger).
 - **Bordures** : Fines (1px), couleurs subtiles (#E0E0E0, #CCCCCC)
 - **Champs de saisie (28/09/2026, réf. formulaire Thunderbird)** : fond blanc `Background.Input` (= Panel) pour TextBox, éditeurs, TokenEdit, ComboBox éditable ; gris `Background.Control` réservé aux boutons et listes déroulantes non éditables (ComboBox, LookUpEdit). Hauteur unique `Size.EditorHeight` = 28, retrait texte `EditorTextInset` = 8 (+ filet 1 px), filet toujours 1 px : focus/erreur = couleur + halo BoxShadow 2 px, jamais d'épaisseur 1,5 (décalait le texte d'un demi-pixel). Chrome Fluent du TextBox interne neutralisé par ressources (`HDevInputChrome.Neutralize`) ; pas de `ClipToBounds` sur l'hôte (couperait le halo). Glyphes au trait 1,2 px (`HDevEditorIcon` : chevrons, calendrier), plus d'emoji ni de triangle plein.
 - **États visuels** : Hover, pressed, focused, disabled — tous cohérents
@@ -27,7 +27,7 @@ Créer une **bibliothèque de contrôles Avalonia UI professionnels** avec le st
 
 - **Aucune dépendance vendor** : Pas de DevExpress, Telerik, etc.
 - **Souveraineté technologique** : Code source maîtrisé à 100%
-- **Dépendances** : Avalonia UI 11.2.1 + projet frère `HDev.UI.DataGrid` (datagrid maison, ../HDev.UI.DataGrid)
+- **Dépendances** : .NET 10 / C# 14, Avalonia UI 12.1.3 + projet frère `HDev.UI.DataGrid` (datagrid maison, ../HDev.UI.DataGrid)
 
 ### 4. État des contrôles (audit du 10/07/2026)
 
@@ -44,7 +44,7 @@ Légende : ✅ complet · 🟡 fonctionnel (trous ciblés) · 🟠 façade (API 
 | HDevBadge | Badge | ✅ | Info = Primary (même couleur) |
 | HDevTextBox | TextEdit | 🟡 | **ni masque, ni validation** (HasError = flag externe). Multiline OK (`IsMultiline`, lot 1) |
 | HDevCard | GroupControl | ✅ | `Elevation` appliquée + `Title`/`HasBorder` réactifs (lot 1) |
-| HDevWindow | XtraForm | 🟡 | chrome custom = chemin secondaire (natif par défaut, cf. X11) ; Light forcé, pas de dark ; champs restore morts |
+| HDevWindow | XtraForm | 🟡 | chrome custom = chemin secondaire (natif par défaut, cf. X11) ; suit la bascule clair/sombre (barre de titre, surfaces, zone de contenu) ; champs restore morts |
 | HDevMenuBar / HDevMenuItem / HDevContextMenu | BarManager, PopupMenu | ✅ | raccourcis RÉELS (HDevShortcutManager, 14/07), Alt+lettre ouvre les menus, navigation ↑↓/Enter/←→/Échap (sous-menus compris), `IsEnabled` bloque le clic |
 | HDevRibbon | RibbonControl | 🟡 | rendu = boutons + séparateurs + dialog launcher (lot 1). Classes inertes (ComboBox/Gallery/ToggleGroup) retirées ; `AccentColor`/`IsContextual` toujours non exploités ; pas de backstage/QAT |
 | HDevComboBox | ComboBoxEdit | ✅ | éditable (lot 2) : `TextEditStyle` Standard/DisableTextEditor/HideTextEditor, `AutoComplete` Suggest/Append/SuggestAppend, `ImmediatePopup`, `SelectAll`, texte libre accepté. `DrawItem` (owner-draw) toujours absent |
@@ -117,7 +117,7 @@ Note : le README de HDev.UI.DataGrid est marketing (tout ✅), se fier au code /
        - **Restes app** : colonnes de table figées (nom/début/fin/%), pas d'impression paginée (seul `ExportPng`), `Tag` non sérialisé (utiliser `Id`), pas de binding MVVM (graphe construit impérativement). **→ voir la section « HDevGantt → outil pro : feuille de route HDev.UI.Controls » (P0-P3) et `UGantt-charte.md`.**
      - **Charts Ovidie : LiveCharts2** (MIT, Avalonia natif, forkable) avec habillage HDevTheme — pas de développement maison.
 
-**Tests unitaires du socle (14/07/2026)** : `HDev.UI.Controls.Tests` (HDevMaskEngine + moteurs Gantt/Document/Scheduler/MindMap/Dock + sérialisation Gantt + GanttHistory, 206 tests) et `HDev.UI.DataGrid/tests` (GridFilter/GridDataSource/PropertyAccessor/FormatValue, 61 tests) — `dotnet test` sur chaque projet. À maintenir : toute évolution d'un moteur pur passe par là.
+**Tests unitaires du socle (14/07/2026)** : `HDev.UI.Controls.Tests` (HDevMaskEngine + moteurs Gantt/Document/Scheduler/MindMap/Dock/Roster + sérialisation Gantt + GanttHistory + contraste/échelles/icônes du thème, 427 tests au 24/10/2026) et `HDev.UI.DataGrid/tests` (GridFilter/GridDataSource/PropertyAccessor/FormatValue, 61 tests) — `dotnet test` sur chaque projet. À maintenir : toute évolution d'un moteur pur passe par là.
 
 ## HDevMindMap — carte mentale de brainstorming ✅ fait le 14/07/2026 (validé)
 
@@ -221,33 +221,26 @@ interop) vit dans `UGantt.Core`.
 
 ## Palette de couleurs Yaru (claire)
 
+Source unique : `Theme/HDevTheme.cs` (`HDevPalette.Light` / `Dark`, injectables par l'app hôte).
+La charte complète — jetons, échelles, états, focus, glyphes, règles de contraste — est dans
+**`DESIGN.md`** (racine du dépôt). Valeurs de la variante claire, pour mémoire :
+
 ```csharp
-// Backgrounds
-Window      = #FFFFFF
-Panel       = #FFFFFF  
-Toolbar     = #F3F3F3
-Control     = #FFFFFF
-ControlHover = #E8E8E8
-ControlPressed = #DADADA
+// Fonds
+Window = #FAFAFA   Panel = #FFFFFF   PanelAlt = #F6F5F4   Control = #EDEDEC
+Selection = #FBDDD2 (teinte)   SelectionInactive = #D9D7D4
 
-// Text
-Primary     = #1E1E1E
-Secondary   = #6A6A6A
-Disabled    = #A0A0A0
-Inverse     = #FFFFFF
+// Texte
+Primary = #333333   Secondary = #5E5C64   Tertiary = #706F74   Disabled = #9A9996
+OnAccent = #FFFFFF   Link = #1C71D8
 
-// Borders
-Default     = #CCCCCC
-Subtle      = #E0E0E0
-Focus       = #0078D4
+// Filets
+Default = #D0CCC8   Input = #949390 (≥ 3:1)   Focused/FocusOuter = #E95420
 
-// Accents
-Primary     = #0078D4
-PrimaryHover = #106EBE
-Success     = #107C10
-Warning     = #CA5010
-Error       = #D13438
-Info        = #0078D4
+// Accent : l'orange pur est réservé aux indicateurs sans texte (focus, coches, progression)
+Accent.Primary = #E95420   Accent.Fill = #C64614 (sous tout texte, ≥ 4,5:1)
+Success = #26A269 (fond de texte : #1E8254)   Warning = #E5A50A (texte : #333333)
+Danger = #C01C28   Info fill = #1C71D8
 ```
 
 ## Applications cibles

@@ -97,17 +97,18 @@ Un projet tiers qui consomme HDev.UI.Controls **doit** :
    ```
 3. **App.axaml** : `<FluentTheme />` + `StyleInclude avares://HDev.UI.Controls/Theme/DataGrid/Index.axaml`
    + les `SystemAccentColor` Ubuntu (#E95420…).
-4. **Versions** : `net8.0`, Avalonia **11.2.1** partout (+ `Avalonia.Desktop`,
+4. **Versions** : `net10.0` (C# 14), Avalonia **12.1.3** partout (+ `Avalonia.Desktop`,
    `Avalonia.Themes.Fluent`, `Avalonia.Fonts.Inter`).
 
 ## 6. Le préalable qui conditionne tout
 
-**Aujourd'hui, HDevGantt ne sait pas *fabriquer* un plan** : ni créer, ni supprimer, ni
+**Jusqu'au lot L1, HDevGantt ne savait pas *fabriquer* un plan** : ni créer, ni supprimer, ni
 indenter une tâche depuis l'UI. Durée, contraintes, EVM sont des raffinements sur un plan
 qu'on ne peut pas encore bâtir.
 
-→ **P0 #1 = édition structurelle de la table** (HDev.UI.Controls). C'est le premier chantier
-quoi qu'il arrive : il débloque l'existence même d'UGantt.
+→ **P0 #1 = édition structurelle de la table** (HDev.UI.Controls) — ✅ **fait (lot L1, 14/07/2026)** :
+HDevGantt sait désormais fabriquer un plan (insérer, supprimer, indenter, réordonner). Ce préalable
+est levé ; la suite de la feuille de route (L2…) peut partir.
 
 La feuille de route HDev.UI.Controls (P0 → P3) vit dans `HDev.UI.Controls/context.md`.
 
