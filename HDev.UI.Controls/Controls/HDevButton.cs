@@ -13,7 +13,7 @@ public enum ButtonVariant
 {
     Primary,        // Fond accent (Accent.Fill), texte blanc
     Secondary,      // Fond gris (Background.Control), bordure grise
-    Ghost,          // Transparent, bordure au hover
+    Ghost,          // Transparent, sans filet, fond léger au survol
     Danger,         // Rouge pour actions destructives
     Outline,        // Fond panneau, bordure grise, texte primaire (« Annuler »)
     OutlineAccent   // Fond panneau, bordure et texte accent (action secondaire)
@@ -201,10 +201,11 @@ public class HDevButton : HDevControlBase
     {
         if (!IsEnabled)
             return (Colors.Transparent, Colors.Transparent, HDevTheme.Disabled.Text);
+        // Sans filet à tous les états, et un cran plus clair que Secondary au survol et à la pression
         if (IsPressed)
-            return (HDevTheme.Background.ControlPressed, HDevTheme.Border.Pressed, HDevTheme.Text.Primary);
+            return (HDevTheme.Background.ControlHover, Colors.Transparent, HDevTheme.Text.Primary);
         if (IsHovered)
-            return (HDevTheme.Background.ControlHover, HDevTheme.Border.Hover, HDevTheme.Text.Primary);
+            return (HDevTheme.Background.Control, Colors.Transparent, HDevTheme.Text.Primary);
         return (Colors.Transparent, Colors.Transparent, HDevTheme.Text.Primary);
     }
     
@@ -225,10 +226,11 @@ public class HDevButton : HDevControlBase
         // distingue Outline de Secondary, dont le fond est gris dans les palettes
         if (!IsEnabled)
             return (HDevTheme.Background.Panel, HDevTheme.Disabled.Border, HDevTheme.Disabled.Text);
+        // Le fond reste clair (PanelAlt puis Control) : c'est le filet qui se renforce, pas le gris de Secondary
         if (IsPressed)
-            return (HDevTheme.Background.ControlPressed, HDevTheme.Border.Pressed, HDevTheme.Text.Primary);
+            return (HDevTheme.Background.Control, HDevTheme.Border.Strong, HDevTheme.Text.Primary);
         if (IsHovered)
-            return (HDevTheme.Background.ControlHover, HDevTheme.Border.Hover, HDevTheme.Text.Primary);
+            return (HDevTheme.Background.PanelAlt, HDevTheme.Border.Strong, HDevTheme.Text.Primary);
         return (HDevTheme.Background.Panel, HDevTheme.Border.Default, HDevTheme.Text.Primary);
     }
 
