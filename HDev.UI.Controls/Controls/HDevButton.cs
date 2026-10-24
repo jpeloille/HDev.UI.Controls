@@ -94,6 +94,8 @@ public class HDevButton : HDevControlBase
     
     static HDevButton()
     {
+        // Hauteur intrinsèque : ne s'étire pas dans une rangée plus haute
+        VerticalAlignmentProperty.OverrideDefaultValue<HDevButton>(Avalonia.Layout.VerticalAlignment.Center);
         AffectsRender<HDevButton>(TextProperty, VariantProperty, SizeProperty, TextWeightProperty);
         AffectsMeasure<HDevButton>(TextProperty, SizeProperty, TextWeightProperty);
     }

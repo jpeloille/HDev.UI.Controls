@@ -92,6 +92,7 @@ public class HDevRadioButton : HDevControlBase
     
     static HDevRadioButton()
     {
+        VerticalAlignmentProperty.OverrideDefaultValue<HDevRadioButton>(Avalonia.Layout.VerticalAlignment.Center);
         AffectsRender<HDevRadioButton>(IsCheckedProperty, LabelProperty);
         AffectsMeasure<HDevRadioButton>(LabelProperty);
     }

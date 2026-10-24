@@ -220,6 +220,7 @@ public abstract class HDevEditorBase : Border
 
     static HDevEditorBase()
     {
+        VerticalAlignmentProperty.OverrideDefaultValue<HDevEditorBase>(Avalonia.Layout.VerticalAlignment.Center);
         PlaceholderProperty.Changed.AddClassHandler<HDevEditorBase>((x, _) =>
             x.InnerTextBox.PlaceholderText = x.Placeholder);
         IsReadOnlyProperty.Changed.AddClassHandler<HDevEditorBase>((x, _) =>

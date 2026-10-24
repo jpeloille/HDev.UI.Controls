@@ -238,7 +238,7 @@ public class HDevNavBar : Control
                 var badgeWidth = Math.Max(15, badge.Width + 8);
                 var badgeRect = new Rect(
                     bounds.Width / 2 + 6, rect.Y + 5, badgeWidth, 14);
-                context.DrawRectangle(new SolidColorBrush(HDevTheme.Accent.Error), null,
+                context.DrawRectangle(new SolidColorBrush(HDevTheme.Danger.Default), null,
                     badgeRect, 7, 7);
                 context.DrawText(badge, Crisp.Snap(new Point(
                     badgeRect.Center.X - badge.Width / 2, badgeRect.Center.Y - badge.Height / 2)));

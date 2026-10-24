@@ -78,6 +78,7 @@ public class HDevBadge : HDevControlBase
     
     static HDevBadge()
     {
+        VerticalAlignmentProperty.OverrideDefaultValue<HDevBadge>(Avalonia.Layout.VerticalAlignment.Center);
         AffectsRender<HDevBadge>(TextProperty, VariantProperty, SizeProperty, IsOutlinedProperty, IsPillProperty);
         AffectsMeasure<HDevBadge>(TextProperty, SizeProperty);
     }

@@ -15,6 +15,11 @@ public class HDevChip : HDevControlBase
     private const double ChipHeight = 26;
     private const double CloseSize = 16;
 
+    static HDevChip()
+    {
+        VerticalAlignmentProperty.OverrideDefaultValue<HDevChip>(Avalonia.Layout.VerticalAlignment.Center);
+    }
+
     private string _text = "";
     private string? _icon;
     private bool _isCheckable;

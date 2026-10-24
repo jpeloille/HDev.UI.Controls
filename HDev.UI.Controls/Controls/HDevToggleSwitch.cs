@@ -75,6 +75,7 @@ public class HDevToggleSwitch : HDevControlBase
     
     static HDevToggleSwitch()
     {
+        VerticalAlignmentProperty.OverrideDefaultValue<HDevToggleSwitch>(Avalonia.Layout.VerticalAlignment.Center);
         AffectsRender<HDevToggleSwitch>(IsOnProperty, OnLabelProperty, OffLabelProperty, ShowLabelsProperty);
         AffectsMeasure<HDevToggleSwitch>(ShowLabelsProperty, OnLabelProperty, OffLabelProperty);
     }

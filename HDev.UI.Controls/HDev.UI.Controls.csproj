@@ -8,8 +8,8 @@
     <!-- NuGet Package Info -->
     <PackageId>HDev.UI.Controls</PackageId>
     <Version>1.0.0</Version>
-    <Description>Professional VS2022-style controls for Avalonia UI</Description>
-    <PackageTags>avalonia;controls;ui;professional;vs2022</PackageTags>
+    <Description>Ubuntu / Yaru style controls for Avalonia UI</Description>
+    <PackageTags>avalonia;controls;ui;yaru;ubuntu</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Datagrid de référence : source de vérité unique, HDev.UI.Controls n'ajoute que le skin VS2022 -->
+    <!-- Datagrid de référence : source de vérité unique, HDev.UI.Controls n'ajoute que le skin Yaru -->
     <ProjectReference Include="..\..\HDev.UI.DataGrid\src\HDev.UI.DataGrid.csproj" />
   </ItemGroup>
 

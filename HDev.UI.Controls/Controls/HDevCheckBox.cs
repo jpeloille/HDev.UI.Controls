@@ -79,6 +79,7 @@ public class HDevCheckBox : HDevControlBase
     
     static HDevCheckBox()
     {
+        VerticalAlignmentProperty.OverrideDefaultValue<HDevCheckBox>(Avalonia.Layout.VerticalAlignment.Center);
         AffectsRender<HDevCheckBox>(IsCheckedProperty, LabelProperty, IsThreeStateProperty);
         AffectsMeasure<HDevCheckBox>(LabelProperty);
     }
