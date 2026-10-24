@@ -121,9 +121,9 @@ public class HDevToggleSwitch : HDevControlBase
         
         if (!IsEnabled)
         {
-            trackColor = HDevTheme.Background.ControlDisabled;
-            thumbColor = HDevTheme.Border.Disabled;
-            borderColor = HDevTheme.Border.Disabled;
+            trackColor = HDevTheme.Disabled.Background;
+            thumbColor = HDevTheme.Disabled.Text;   // pouce lisible : il porte l'état on/off
+            borderColor = HDevTheme.Disabled.Border;
         }
         else if (IsOn)
         {
@@ -217,7 +217,7 @@ public class HDevToggleSwitch : HDevControlBase
         if (ShowLabels)
         {
             var label = IsOn ? OnLabel : OffLabel;
-            var textColor = IsEnabled ? HDevTheme.Text.Primary : HDevTheme.Text.Disabled;
+            var textColor = IsEnabled ? HDevTheme.Text.Primary : HDevTheme.Disabled.Text;
             var labelText = CreateText(label, textColor, HDevTheme.Typography.FontSizeBody);
             var labelX = trackRect.Right + 10;
             var labelY = (bounds.Height - labelText.Height) / 2;

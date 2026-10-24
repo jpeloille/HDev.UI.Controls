@@ -1629,8 +1629,7 @@ public class HDevGantt : Control
 
             if (ReferenceEquals(task, _selectedTask))
             {
-                context.FillRectangle(new SolidColorBrush(
-                    HDevTheme.WithOpacity(HDevTheme.Accent.Primary, 26)), rowRect);
+                context.FillRectangle(new SolidColorBrush(HDevTheme.SelectionFill(IsFocused)), rowRect);
             }
             else if (ReferenceEquals(task, _hoveredTask))
             {

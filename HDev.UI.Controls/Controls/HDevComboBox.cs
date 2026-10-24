@@ -1155,9 +1155,9 @@ public class HDevComboBox : Control
 
         if (!IsEnabled)
         {
-            bgColor = HDevTheme.Background.ControlDisabled;
+            bgColor = HDevTheme.Disabled.Background;
             borderColor = HDevTheme.Border.Subtle;
-            textColor = HDevTheme.Text.Disabled;
+            textColor = HDevTheme.Disabled.Text;
         }
         else if (_isDropDownOpen)
         {
@@ -1199,13 +1199,14 @@ public class HDevComboBox : Control
         if (isFocused)
         {
             borderColor = HDevTheme.Border.Focused;
-            HDevInputChrome.DrawHalo(context, bounds, cornerRadius, HDevInputChrome.FocusHalo);
+            if (!_properties.ReadOnly)
+                HDevInputChrome.DrawHalo(context, bounds, cornerRadius, HDevInputChrome.FocusHalo);
         }
 
-        // ReadOnly
-        if (_properties.ReadOnly)
+        // Lecture seule : fond PanelAlt (plus grisé comme un désactivé), sans halo
+        if (_properties.ReadOnly && IsEnabled)
         {
-            bgColor = HDevTheme.Background.ControlDisabled;
+            bgColor = HDevTheme.Background.PanelAlt;
         }
 
         // Fond
@@ -1289,7 +1290,7 @@ public class HDevComboBox : Control
             HDevEditorGlyphButton.DrawIcon(context,
                 _isDropDownOpen ? HDevEditorIcon.ChevronUp : HDevEditorIcon.ChevronDown,
                 new Point(bounds.Width - arrowWidth / 2.0, bounds.Height / 2),
-                IsEnabled ? HDevTheme.Text.Secondary : HDevTheme.Text.Disabled);
+                IsEnabled ? HDevTheme.Text.Secondary : HDevTheme.Disabled.Text);
         }
     }
 

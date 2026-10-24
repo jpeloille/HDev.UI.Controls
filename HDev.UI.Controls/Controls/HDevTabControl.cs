@@ -109,6 +109,7 @@ public class HDevTabControl : Control
 
     static HDevTabControl()
     {
+        HDevDisabled.Dim<HDevTabControl>();
         FocusableProperty.OverrideDefaultValue<HDevTabControl>(true);
     }
 

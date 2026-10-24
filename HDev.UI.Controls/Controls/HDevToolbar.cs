@@ -294,10 +294,9 @@ public class HDevToolbar : Control
         }
         else if (btn.IsChecked)
         {
-            context.FillRectangle(new SolidColorBrush(
-                HDevTheme.WithOpacity(HDevTheme.Accent.Primary, 30)), rect, (float)radius);
+            context.FillRectangle(new SolidColorBrush(HDevTheme.SelectionFill()), rect, (float)radius);
             context.DrawRectangle(null,
-                new Pen(new SolidColorBrush(HDevTheme.WithOpacity(HDevTheme.Accent.Primary, 90)), 1),
+                new Pen(new SolidColorBrush(HDevTheme.SelectionBorder), 1),
                 rect.Deflate(0.5), radius, radius);
         }
         else if (btn.IsHovered && btn.IsEnabled)
@@ -305,7 +304,7 @@ public class HDevToolbar : Control
             context.FillRectangle(new SolidColorBrush(HDevTheme.Background.ControlHover), rect, (float)radius);
         }
 
-        var textColor = btn.IsEnabled ? HDevTheme.Text.Primary : HDevTheme.Text.Disabled;
+        var textColor = btn.IsEnabled ? HDevTheme.Text.Primary : HDevTheme.Disabled.Text;
         double contentX = rect.X + (string.IsNullOrEmpty(btn.Label) ? 0 : 8);
 
         if (!string.IsNullOrEmpty(btn.Icon))

@@ -428,14 +428,16 @@ public class HDevTreeView : Control
             if (ReferenceEquals(node, _dropTargetNode))
             {
                 context.DrawRectangle(
-                    new SolidColorBrush(HDevTheme.WithOpacity(HDevTheme.Accent.Primary, 24)),
+                    new SolidColorBrush(HDevTheme.Background.Selection),
                     new Pen(new SolidColorBrush(HDevTheme.Accent.Primary), 1.5),
                     rowRect.Deflate(new Thickness(2, 1)), 4, 4);
             }
             else if (isSelected)
             {
-                context.FillRectangle(new SolidColorBrush(
-                    HDevTheme.WithOpacity(HDevTheme.Accent.Primary, 30)), rowRect.Deflate(new Thickness(2, 1)), 4);
+                var row = rowRect.Deflate(new Thickness(2, 1));
+                context.FillRectangle(new SolidColorBrush(HDevTheme.SelectionFill(IsFocused)), row, 4);
+                context.FillRectangle(new SolidColorBrush(HDevTheme.Accent.Primary),
+                    new Rect(row.X, row.Y + 4, 3, Math.Max(0, row.Height - 8)), 1.5f);
             }
             else if (isHovered)
             {

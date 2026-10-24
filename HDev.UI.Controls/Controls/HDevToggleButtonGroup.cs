@@ -105,6 +105,7 @@ public class HDevToggleButtonGroup : Control
 
     static HDevToggleButtonGroup()
     {
+        HDevDisabled.Dim<HDevToggleButtonGroup>();
         FocusableProperty.OverrideDefaultValue<HDevToggleButtonGroup>(true);
 
         // Hauteur fixe : centré dans une rangée plus haute plutôt que collé en haut
@@ -357,7 +358,7 @@ public class HDevToggleButtonGroup : Control
                         new Point(rect.Right - 0.5, rect.Bottom - 6));
                 }
 
-                var textColor = !item.IsEnabled ? HDevTheme.Text.Disabled
+                var textColor = !item.IsEnabled ? HDevTheme.Disabled.Text
                     : isSelected ? HDevTheme.Text.OnAccent
                     : HDevTheme.Text.Primary;
                 var text = CreateText(DisplayText(item), textColor,

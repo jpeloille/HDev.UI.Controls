@@ -189,7 +189,7 @@ public class HDevButton : HDevControlBase
     private (Color, Color, Color) ResolveSecondaryColors()
     {
         if (!IsEnabled)
-            return (HDevTheme.Background.ControlDisabled, HDevTheme.Border.Disabled, HDevTheme.Text.Disabled);
+            return (HDevTheme.Disabled.Background, HDevTheme.Disabled.Border, HDevTheme.Disabled.Text);
         if (IsPressed)
             return (HDevTheme.Background.ControlPressed, HDevTheme.Border.Pressed, HDevTheme.Text.Primary);
         if (IsHovered)
@@ -200,7 +200,7 @@ public class HDevButton : HDevControlBase
     private (Color, Color, Color) ResolveGhostColors()
     {
         if (!IsEnabled)
-            return (Colors.Transparent, Colors.Transparent, HDevTheme.Text.Disabled);
+            return (Colors.Transparent, Colors.Transparent, HDevTheme.Disabled.Text);
         if (IsPressed)
             return (HDevTheme.Background.ControlPressed, HDevTheme.Border.Pressed, HDevTheme.Text.Primary);
         if (IsHovered)
@@ -224,7 +224,7 @@ public class HDevButton : HDevControlBase
         // Fond panneau (blanc en clair) et non Background.Control : c'est ce qui
         // distingue Outline de Secondary, dont le fond est gris dans les palettes
         if (!IsEnabled)
-            return (HDevTheme.Background.Panel, HDevTheme.Border.Disabled, HDevTheme.Text.Disabled);
+            return (HDevTheme.Background.Panel, HDevTheme.Disabled.Border, HDevTheme.Disabled.Text);
         if (IsPressed)
             return (HDevTheme.Background.ControlPressed, HDevTheme.Border.Pressed, HDevTheme.Text.Primary);
         if (IsHovered)
@@ -236,7 +236,7 @@ public class HDevButton : HDevControlBase
     {
         var panel = HDevTheme.Background.Panel;
         if (!IsEnabled)
-            return (panel, HDevTheme.Border.Disabled, HDevTheme.Text.Disabled);
+            return (panel, HDevTheme.Disabled.Border, HDevTheme.Disabled.Text);
 
         var (background, border) = IsPressed
             ? (HDevTheme.Lerp(panel, HDevTheme.Accent.Primary, 0.16), HDevTheme.Accent.PrimaryPressed)

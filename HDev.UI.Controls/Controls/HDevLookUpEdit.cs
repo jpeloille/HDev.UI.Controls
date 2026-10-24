@@ -381,9 +381,9 @@ public class HDevLookUpEdit : Control
 
         if (!IsEnabled)
         {
-            bgColor = HDevTheme.Background.ControlDisabled;
-            borderColor = HDevTheme.Border.Disabled;
-            textColor = HDevTheme.Text.Disabled;
+            bgColor = HDevTheme.Disabled.Background;
+            borderColor = HDevTheme.Disabled.Border;
+            textColor = HDevTheme.Disabled.Text;
         }
         else if (_isDropDownOpen || IsFocused)
         {
@@ -434,6 +434,6 @@ public class HDevLookUpEdit : Control
         HDevEditorGlyphButton.DrawIcon(context,
             _isDropDownOpen ? HDevEditorIcon.ChevronUp : HDevEditorIcon.ChevronDown,
             new Point(bounds.Width - 12, bounds.Height / 2),
-            IsEnabled ? HDevTheme.Text.Secondary : HDevTheme.Text.Disabled);
+            IsEnabled ? HDevTheme.Text.Secondary : HDevTheme.Disabled.Text);
     }
 }

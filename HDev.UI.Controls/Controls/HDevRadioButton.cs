@@ -134,8 +134,8 @@ public class HDevRadioButton : HDevControlBase
         
         if (!IsEnabled)
         {
-            bgColor = HDevTheme.Background.ControlDisabled;
-            borderColor = HDevTheme.Border.Disabled;
+            bgColor = HDevTheme.Disabled.Background;
+            borderColor = HDevTheme.Disabled.Border;
         }
         else if (IsChecked)
         {
@@ -191,7 +191,7 @@ public class HDevRadioButton : HDevControlBase
         if (IsChecked)
         {
             var dotRadius = 4.0;
-            var dotColor = IsEnabled ? HDevTheme.Text.OnAccent : HDevTheme.Text.Disabled;
+            var dotColor = IsEnabled ? HDevTheme.Text.OnAccent : HDevTheme.Disabled.Text;
             context.DrawEllipse(
                 new SolidColorBrush(dotColor),
                 null,
@@ -229,7 +229,7 @@ public class HDevRadioButton : HDevControlBase
         // Label
         if (!string.IsNullOrEmpty(Label))
         {
-            var textColor = IsEnabled ? HDevTheme.Text.Primary : HDevTheme.Text.Disabled;
+            var textColor = IsEnabled ? HDevTheme.Text.Primary : HDevTheme.Disabled.Text;
             var labelText = CreateText(Label, textColor, HDevTheme.Typography.FontSizeBody);
             var labelX = center.X + radius + 8;
             var labelY = (bounds.Height - labelText.Height) / 2;

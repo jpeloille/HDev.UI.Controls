@@ -218,7 +218,7 @@ public class HDevSlider : HDevControlBase
         
         // Track (fond)
         context.DrawRectangle(
-            new SolidColorBrush(HDevTheme.Background.ControlDisabled),
+            new SolidColorBrush(HDevTheme.Disabled.Background),
             null,
             trackRect,
             trackRadius, trackRadius);
@@ -228,7 +228,7 @@ public class HDevSlider : HDevControlBase
         var filledWidth = trackRect.Width * progress;
         var filledRect = new Rect(trackRect.X, trackRect.Y, filledWidth, trackRect.Height);
         
-        var fillColor = !IsEnabled ? HDevTheme.Border.Disabled :
+        var fillColor = !IsEnabled ? HDevTheme.Disabled.Border :
                         (_isDragging ? HDevTheme.Accent.PrimaryPressed : HDevTheme.Accent.Primary);
         
         context.DrawRectangle(
@@ -272,7 +272,7 @@ public class HDevSlider : HDevControlBase
         }
         
         // Thumb
-        var thumbColor = !IsEnabled ? HDevTheme.Background.ControlDisabled : Colors.White;
+        var thumbColor = !IsEnabled ? HDevTheme.Disabled.Background : Colors.White;
         context.DrawEllipse(
             new SolidColorBrush(thumbColor),
             null,
@@ -280,7 +280,7 @@ public class HDevSlider : HDevControlBase
             thumbRadius, thumbRadius);
         
         // Bordure du thumb
-        var thumbBorderColor = !IsEnabled ? HDevTheme.Border.Disabled :
+        var thumbBorderColor = !IsEnabled ? HDevTheme.Disabled.Border :
                               (_isDragging ? HDevTheme.Accent.PrimaryPressed :
                                IsHovered ? HDevTheme.Accent.PrimaryHover : HDevTheme.Accent.Primary);
         var thumbBorderPen = new Pen(new SolidColorBrush(thumbBorderColor), 2);

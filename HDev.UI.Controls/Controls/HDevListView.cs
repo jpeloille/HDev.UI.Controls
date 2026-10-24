@@ -636,7 +636,11 @@ public class HDevListView : Control
         var rowRect = new Rect(0, y, width, _rowHeight);
 
         if (isSelected)
-            context.FillRectangle(new SolidColorBrush(HDevTheme.WithOpacity(HDevTheme.Accent.Primary, 28)), rowRect);
+        {
+            context.FillRectangle(new SolidColorBrush(HDevTheme.SelectionFill(IsFocused)), rowRect);
+            context.FillRectangle(new SolidColorBrush(HDevTheme.Accent.Primary),
+                new Rect(0, y + 4, 3, _rowHeight - 8));
+        }
         else if (isHovered)
             context.FillRectangle(new SolidColorBrush(HDevTheme.Background.ControlHover), rowRect);
 

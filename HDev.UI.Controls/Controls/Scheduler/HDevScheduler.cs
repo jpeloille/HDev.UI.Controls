@@ -497,7 +497,7 @@ public class HDevScheduler : Control
             var isToday = date == DateTime.Today;
 
             if (isToday)
-                context.FillRectangle(new SolidColorBrush(HDevTheme.WithOpacity(HDevTheme.Accent.Primary, 18)),
+                context.FillRectangle(new SolidColorBrush(HDevTheme.Background.Selection),
                     new Rect(x, 0, colWidth, DayHeaderHeight));
 
             var header = Text(date.ToString("ddd dd/MM", CultureInfo.CurrentCulture),
@@ -696,12 +696,12 @@ public class HDevScheduler : Control
 
                 context.DrawRectangle(null, linePen, cell);
 
-                // Numéro du jour (pastille accent = aujourd'hui)
+                // Numéro du jour (anneau accent = aujourd'hui, comme HDevMonthCalendar)
                 var number = Text(date.Day.ToString(),
-                    isToday ? HDevTheme.Text.OnAccent : isCurrentMonth ? HDevTheme.Text.Primary : HDevTheme.Text.Secondary,
+                    isCurrentMonth ? HDevTheme.Text.Primary : HDevTheme.Text.Secondary,
                     12, isToday ? FontWeight.SemiBold : FontWeight.Regular);
                 if (isToday)
-                    context.DrawEllipse(new SolidColorBrush(HDevTheme.Accent.Fill), null,
+                    context.DrawEllipse(null, new Pen(new SolidColorBrush(HDevTheme.Accent.Primary), 1.4),
                         new Point(cell.Right - 14, cell.Y + 12), 10, 10);
                 context.DrawText(number, Crisp.Snap(new Point(
                     cell.Right - 14 - number.Width / 2, cell.Y + 12 - number.Height / 2)));

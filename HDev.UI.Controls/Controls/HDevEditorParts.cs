@@ -41,8 +41,8 @@ internal static class HDevInputChrome
         tb.Resources["TextControlPlaceholderForegroundPointerOver"] = placeholder;
         tb.Resources["TextControlPlaceholderForegroundFocused"] = placeholder;
         tb.Resources["TextControlPlaceholderForegroundDisabled"] =
-            new SolidColorBrush(HDevTheme.Text.Disabled);
-        tb.Resources["TextControlForegroundDisabled"] = new SolidColorBrush(HDevTheme.Text.Disabled);
+            new SolidColorBrush(HDevTheme.Disabled.Text);
+        tb.Resources["TextControlForegroundDisabled"] = new SolidColorBrush(HDevTheme.Disabled.Text);
 
         tb.BorderThickness = new Thickness(0);
         tb.Background = Brushes.Transparent;
@@ -55,21 +55,27 @@ internal static class HDevInputChrome
     /// l'épaisseur (1 → 1,5 décalait le texte d'un demi-pixel et le floutait)
     /// </summary>
     public static void ApplyState(Avalonia.Controls.Border host, TextBox inner,
-        bool isEnabled, bool hasError, bool isFocused, bool isHovered)
+        bool isEnabled, bool hasError, bool isFocused, bool isHovered, bool isReadOnly = false)
     {
         Color bg, border;
         Color? halo = null;
 
         if (!isEnabled)
         {
-            bg = HDevTheme.Background.ControlDisabled;
-            border = HDevTheme.Border.Disabled;
+            bg = HDevTheme.Disabled.Background;
+            border = HDevTheme.Disabled.Border;
         }
         else if (hasError)
         {
             bg = HDevTheme.Background.Error;
             border = HDevTheme.Accent.Error;
             halo = ErrorHalo;
+        }
+        else if (isReadOnly)
+        {
+            // Lecture seule : ni grisé comme un désactivé, ni halo — le fond PanelAlt le distingue d'un champ éditable
+            bg = HDevTheme.Background.PanelAlt;
+            border = isFocused ? HDevTheme.Border.Focused : HDevTheme.Border.Default;
         }
         else if (isFocused)
         {
@@ -90,7 +96,7 @@ internal static class HDevInputChrome
             ? new BoxShadows(new BoxShadow { Blur = 0, Spread = 2, Color = h })
             : new BoxShadows();
 
-        inner.Foreground = new SolidColorBrush(isEnabled ? HDevTheme.Text.Primary : HDevTheme.Text.Disabled);
+        inner.Foreground = new SolidColorBrush(isEnabled ? HDevTheme.Text.Primary : HDevTheme.Disabled.Text);
     }
 
     /// <summary>Halo de 2 px des champs au focus et en erreur (BoxShadow ou dessin)</summary>
@@ -191,7 +197,7 @@ public class HDevEditorGlyphButton : Control
                 bounds.Deflate(new Thickness(2, 3)), 4);
         }
 
-        var color = IsEffectivelyEnabled ? HDevTheme.Text.Secondary : HDevTheme.Text.Disabled;
+        var color = IsEffectivelyEnabled ? HDevTheme.Text.Secondary : HDevTheme.Disabled.Text;
 
         if (Icon != HDevEditorIcon.None)
         {
@@ -337,7 +343,7 @@ public class HDevSpinButtons : Control
                 _pressed ? HDevTheme.Background.ControlPressed : HDevTheme.Background.ControlHover), downRect, 3);
 
         var pen = new Pen(new SolidColorBrush(
-            IsEffectivelyEnabled ? HDevTheme.Text.Secondary : HDevTheme.Text.Disabled), 1.2);
+            IsEffectivelyEnabled ? HDevTheme.Text.Secondary : HDevTheme.Disabled.Text), 1.2);
         var cx = bounds.Width / 2;
 
         // ▲

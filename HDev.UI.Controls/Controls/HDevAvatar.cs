@@ -175,7 +175,7 @@ public class HDevAvatar : Control
                 AvatarStatus.Online => HDevTheme.Accent.Success,
                 AvatarStatus.Away => HDevTheme.Accent.Warning,
                 AvatarStatus.Busy => HDevTheme.Accent.Error,
-                _ => HDevTheme.Text.Disabled,
+                _ => HDevTheme.Disabled.Text,
             };
             context.DrawEllipse(new SolidColorBrush(dotColor),
                 new Pen(new SolidColorBrush(HDevTheme.Background.Panel), 2),

@@ -115,6 +115,7 @@ public class HDevAccordion : Control
 
     static HDevAccordion()
     {
+        HDevDisabled.Dim<HDevAccordion>();
         FocusableProperty.OverrideDefaultValue<HDevAccordion>(true);
     }
 

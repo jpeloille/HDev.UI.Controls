@@ -80,6 +80,7 @@ public class HDevProgressBar : HDevControlBase
     
     static HDevProgressBar()
     {
+        HDevDisabled.Dim<HDevProgressBar>();
         AffectsRender<HDevProgressBar>(ValueProperty, MinimumProperty, MaximumProperty, 
             IsIndeterminateProperty, ShowValueProperty, VariantProperty);
     }
@@ -167,7 +168,7 @@ public class HDevProgressBar : HDevControlBase
         };
         
         // Track (fond)
-        var trackColor = HDevTheme.Background.ControlDisabled;
+        var trackColor = HDevTheme.Disabled.Background;
         context.DrawRectangle(
             new SolidColorBrush(trackColor),
             null,

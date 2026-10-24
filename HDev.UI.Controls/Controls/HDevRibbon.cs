@@ -458,16 +458,18 @@ public class HDevRibbon : Control
             
             // Fond de l'onglet : pilule arrondie façon view-switcher GNOME
             var pillRect = new Rect(tabX, 4, tabWidth, TabRowHeight - 8);
+            // Même pilule neutre que HDevTabControl et le Dock
             if (isSelected)
             {
                 context.DrawRectangle(
-                    new SolidColorBrush(HDevTheme.Background.ControlHover), null,
-                    pillRect, 6, 6);
+                    new SolidColorBrush(HDevTheme.Background.Panel),
+                    new Pen(new SolidColorBrush(HDevTheme.Border.Default), 1),
+                    pillRect.Deflate(0.5), 6, 6);
             }
             else if (isHovered)
             {
                 context.DrawRectangle(
-                    new SolidColorBrush(HDevTheme.Background.Control), null,
+                    new SolidColorBrush(HDevTheme.Background.ControlHover), null,
                     pillRect, 6, 6);
             }
             
@@ -664,13 +666,14 @@ public class HDevRibbon : Control
 
         if (isPressed || btn.IsChecked)
         {
+            // Bascule cochée : famille « sélection » ; enfoncée seule : neutre
             context.FillRectangle(
-                new SolidColorBrush(HDevTheme.Background.ControlPressed),
+                new SolidColorBrush(btn.IsChecked ? HDevTheme.SelectionFill() : HDevTheme.Background.ControlPressed),
                 btnRect, radius);
 
             if (btn.IsChecked)
             {
-                var checkedPen = new Pen(new SolidColorBrush(HDevTheme.Accent.Primary), 1);
+                var checkedPen = new Pen(new SolidColorBrush(HDevTheme.SelectionBorder), 1);
                 context.DrawRectangle(null, checkedPen, btnRect.Deflate(0.5), radius, radius);
             }
         }
@@ -686,7 +689,7 @@ public class HDevRibbon : Control
     {
         RenderButtonBackground(context, btn, btnRect, 6);
 
-        var textColor = btn.IsEnabled ? HDevTheme.Text.Primary : HDevTheme.Text.Disabled;
+        var textColor = btn.IsEnabled ? HDevTheme.Text.Primary : HDevTheme.Disabled.Text;
         var x = btnRect.X;
         var y = btnRect.Y;
 
@@ -716,7 +719,7 @@ public class HDevRibbon : Control
     {
         RenderButtonBackground(context, btn, btnRect, 4);
 
-        var textColor = btn.IsEnabled ? HDevTheme.Text.Primary : HDevTheme.Text.Disabled;
+        var textColor = btn.IsEnabled ? HDevTheme.Text.Primary : HDevTheme.Disabled.Text;
         var x = btnRect.X;
         var y = btnRect.Y;
 

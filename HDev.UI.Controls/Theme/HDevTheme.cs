@@ -115,7 +115,7 @@ public sealed record HDevPalette
         BackgroundControlPressed = Color.Parse("#D4D4D2"),
         BackgroundControlDisabled = Color.Parse("#F4F4F3"),
         BackgroundControlFocused = Color.Parse("#FFFFFF"),
-        BackgroundSelection = Color.Parse("#E95420"),
+        BackgroundSelection = Color.Parse("#FBDDD2"),
         BackgroundSelectionInactive = Color.Parse("#D9D7D4"),
         BackgroundSuccess = Color.Parse("#DDF2E4"),
         BackgroundWarning = Color.Parse("#F9F0DC"),
@@ -197,7 +197,7 @@ public sealed record HDevPalette
         BackgroundControlPressed = Color.Parse("#525252"),
         BackgroundControlDisabled = Color.Parse("#333333"),
         BackgroundControlFocused = Color.Parse("#3A3A3A"),
-        BackgroundSelection = Color.Parse("#E95420"),
+        BackgroundSelection = Color.Parse("#683B2B"),
         BackgroundSelectionInactive = Color.Parse("#4A4A4A"),
         BackgroundSuccess = Color.Parse("#26402F"),
         BackgroundWarning = Color.Parse("#453B1E"),
@@ -333,7 +333,8 @@ public static class HDevTheme
         public static Color Control => _current.BackgroundControl;
         public static Color ControlHover => _current.BackgroundControlHover;
         public static Color ControlPressed => _current.BackgroundControlPressed;
-        public static Color ControlDisabled => _current.BackgroundControlDisabled;
+        [Obsolete("Utiliser HDevTheme.Disabled.Background (un seul jeu de jetons « désactivé »)")]
+        public static Color ControlDisabled => _current.DisabledBackground;
         public static Color ControlFocused => _current.BackgroundControlFocused;
         public static Color Selection => _current.BackgroundSelection;
         public static Color SelectionInactive => _current.BackgroundSelectionInactive;
@@ -362,7 +363,8 @@ public static class HDevTheme
         public static Color Hover => _current.BorderHover;
         public static Color Pressed => _current.BorderPressed;
         public static Color Focused => _current.BorderFocused;
-        public static Color Disabled => _current.BorderDisabled;
+        [Obsolete("Utiliser HDevTheme.Disabled.Border")]
+        public static Color Disabled => _current.DisabledBorder;
         public static Color Subtle => _current.BorderSubtle;
         public static Color Strong => _current.BorderStrong;
         public static Color FocusOuter => _current.BorderFocusOuter;
@@ -374,7 +376,8 @@ public static class HDevTheme
         public static Color Primary => _current.TextPrimary;
         public static Color Secondary => _current.TextSecondary;
         public static Color Tertiary => _current.TextTertiary;
-        public static Color Disabled => _current.TextDisabled;
+        [Obsolete("Utiliser HDevTheme.Disabled.Text")]
+        public static Color Disabled => _current.DisabledText;
         public static Color Placeholder => _current.TextPlaceholder;
         public static Color OnAccent => _current.TextOnAccent;
         public static Color Link => _current.TextLink;
@@ -541,6 +544,16 @@ public static class HDevTheme
 
     public static Pen ToPen(Color color, double thickness = 1)
         => new(new SolidColorBrush(color), thickness);
+
+    /// <summary>
+    /// Fond d'un élément sélectionné dans une collection : teinte (le texte garde sa couleur),
+    /// grise quand le contrôle n'a plus le focus. Unique famille de sélection de la suite.
+    /// </summary>
+    public static Color SelectionFill(bool active = true)
+        => active ? Background.Selection : Background.SelectionInactive;
+
+    /// <summary>Filet d'un élément coché (chip, jeton, bascule) : teinte de sélection renforcée vers l'accent</summary>
+    public static Color SelectionBorder => Lerp(Background.Selection, Accent.Primary, 0.55);
 
     public static Color WithOpacity(Color color, byte opacity)
         => Color.FromArgb(opacity, color.R, color.G, color.B);

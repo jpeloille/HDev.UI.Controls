@@ -168,15 +168,16 @@ public class HDevChip : HDevControlBase
         Color background, border, textColor;
         if (!IsEnabled)
         {
-            background = HDevTheme.Background.ControlDisabled;
-            border = HDevTheme.Border.Disabled;
-            textColor = HDevTheme.Text.Disabled;
+            background = HDevTheme.Disabled.Background;
+            border = HDevTheme.Disabled.Border;
+            textColor = HDevTheme.Disabled.Text;
         }
         else if (_isCheckable && _isChecked)
         {
-            background = HDevTheme.WithOpacity(HDevTheme.Accent.Primary,
-                (byte)(IsPressed ? 55 : IsHovered ? 42 : 30));
-            border = HDevTheme.WithOpacity(HDevTheme.Accent.Primary, 90);
+            background = IsPressed ? HDevTheme.Lerp(HDevTheme.Background.Selection, HDevTheme.Accent.Primary, 0.25)
+                : IsHovered ? HDevTheme.Lerp(HDevTheme.Background.Selection, HDevTheme.Accent.Primary, 0.12)
+                : HDevTheme.SelectionFill();
+            border = HDevTheme.SelectionBorder;
             textColor = HDevTheme.Text.Primary;
         }
         else
@@ -203,7 +204,7 @@ public class HDevChip : HDevControlBase
             var bw = BadgeWidth();
             const double bh = 16;
             var badgeRect = new Rect(12 + text.Width + 6, (rect.Height - bh) / 2, bw, bh);
-            var badgeColor = IsEnabled ? (_badgeColor ?? HDevTheme.Accent.Fill) : HDevTheme.Text.Disabled;
+            var badgeColor = IsEnabled ? (_badgeColor ?? HDevTheme.Accent.Fill) : HDevTheme.Disabled.Text;
             context.DrawRectangle(new SolidColorBrush(badgeColor), null, badgeRect, bh / 2, bh / 2);
             // Couleur de badge libre (BadgeColor) : le chiffre prend le texte le plus lisible
             var badgeText = CreateText(_badge!, HDevTheme.OnColor(badgeColor), 10.5, FontWeight.SemiBold);

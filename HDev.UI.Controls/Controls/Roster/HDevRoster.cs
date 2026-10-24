@@ -452,7 +452,7 @@ public class HDevRoster : Control
         if (index < first || index > last) return;
 
         context.FillRectangle(
-            new SolidColorBrush(HDevTheme.Background.Selection, 0.28),
+            new SolidColorBrush(HDevTheme.Background.ControlHover),
             new Rect(TimelineX, LaneY(index), TimelineWidth, RowHeight));
     }
 

@@ -119,12 +119,14 @@ public class HDevMessageBox : HDevWindow
             Spacing = 8
         };
 
-        foreach (var (label, result, isDefault) in GetButtonDefs(buttons))
+        // Convention GNOME : les actions secondaires (Outline) à gauche, l'action par défaut (Primary) à droite
+        var defs = GetButtonDefs(buttons).ToList();
+        foreach (var (label, result, isDefault) in defs.Where(d => !d.Item3).Concat(defs.Where(d => d.Item3)))
         {
             var button = new HDevButton
             {
                 Text = label,
-                Variant = isDefault ? ButtonVariant.Primary : ButtonVariant.Secondary,
+                Variant = isDefault ? ButtonVariant.Primary : ButtonVariant.Outline,
                 MinWidth = 90
             };
             var capturedResult = result;

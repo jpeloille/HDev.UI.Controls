@@ -127,8 +127,8 @@ public class HDevCheckBox : HDevControlBase
         
         if (!IsEnabled)
         {
-            bgColor = HDevTheme.Background.ControlDisabled;
-            borderColor = HDevTheme.Border.Disabled;
+            bgColor = HDevTheme.Disabled.Background;
+            borderColor = HDevTheme.Disabled.Border;
         }
         else if (isChecked || isIndeterminate)
         {
@@ -167,7 +167,7 @@ public class HDevCheckBox : HDevControlBase
         // Coche ou tiret
         if (isChecked || isIndeterminate)
         {
-            var markColor = IsEnabled ? HDevTheme.Text.OnAccent : HDevTheme.Text.Disabled;
+            var markColor = IsEnabled ? HDevTheme.Text.OnAccent : HDevTheme.Disabled.Text;
             var markPen = new Pen(new SolidColorBrush(markColor), 2.0)
             {
                 LineCap = PenLineCap.Round,
@@ -205,7 +205,7 @@ public class HDevCheckBox : HDevControlBase
         // Label
         if (!string.IsNullOrEmpty(Label))
         {
-            var textColor = IsEnabled ? HDevTheme.Text.Primary : HDevTheme.Text.Disabled;
+            var textColor = IsEnabled ? HDevTheme.Text.Primary : HDevTheme.Disabled.Text;
             var labelText = CreateText(Label, textColor, HDevTheme.Typography.FontSizeBody);
             var labelX = boxRect.Right + 8;
             var labelY = (bounds.Height - labelText.Height) / 2;

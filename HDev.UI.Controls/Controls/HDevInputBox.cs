@@ -32,7 +32,7 @@ public class HDevInputBox : HDevWindow
         _input = new HDevTextBox { Text = initialValue };
 
         var ok = new HDevButton { Text = "OK", Variant = ButtonVariant.Primary, Width = 96 };
-        var cancel = new HDevButton { Text = "Annuler", Variant = ButtonVariant.Secondary, Width = 96 };
+        var cancel = new HDevButton { Text = "Annuler", Variant = ButtonVariant.Outline, Width = 96 };
         ok.Click += (s, e) => { _result = _input.Text ?? ""; Close(); };
         cancel.Click += (s, e) => Close();
 
@@ -41,7 +41,7 @@ public class HDevInputBox : HDevWindow
             Orientation = Orientation.Horizontal,
             HorizontalAlignment = HorizontalAlignment.Right,
             Spacing = 8,
-            Children = { ok, cancel }
+            Children = { cancel, ok }   // convention GNOME : Annuler à gauche, l'action à droite
         };
 
         Content = new StackPanel

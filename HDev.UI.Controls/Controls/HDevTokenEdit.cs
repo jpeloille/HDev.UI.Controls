@@ -238,8 +238,8 @@ public class HDevTokenEdit : Border
 
         return new Border
         {
-            Background = new SolidColorBrush(HDevTheme.WithOpacity(HDevTheme.Accent.Primary, 30)),
-            BorderBrush = new SolidColorBrush(HDevTheme.WithOpacity(HDevTheme.Accent.Primary, 90)),
+            Background = new SolidColorBrush(HDevTheme.SelectionFill()),
+            BorderBrush = new SolidColorBrush(HDevTheme.SelectionBorder),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(11),
             Padding = new Thickness(8, 1, 2, 1),

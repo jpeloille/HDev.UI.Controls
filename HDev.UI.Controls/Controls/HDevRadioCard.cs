@@ -151,8 +151,8 @@ public class HDevRadioCard : HDevControlBase
             // Désactivée, la carte choisie le reste visiblement : filet 2 px atténué
             fill = IsChecked ? HDevTheme.Lerp(panel, HDevTheme.Accent.Primary, 0.03) : panel;
             stroke = IsChecked
-                ? HDevTheme.Lerp(HDevTheme.Border.Disabled, HDevTheme.Accent.Primary, 0.4)
-                : HDevTheme.Border.Disabled;
+                ? HDevTheme.Lerp(HDevTheme.Disabled.Border, HDevTheme.Accent.Primary, 0.4)
+                : HDevTheme.Disabled.Border;
             thickness = IsChecked ? 2.0 : 1.0;
         }
         else if (IsChecked)
@@ -189,7 +189,7 @@ public class HDevRadioCard : HDevControlBase
 
         var maxWidth = Math.Max(0, bounds.Width - 2 * PaddingH);
 
-        var title = CreateText(Title, IsEnabled ? HDevTheme.Text.Primary : HDevTheme.Text.Disabled,
+        var title = CreateText(Title, IsEnabled ? HDevTheme.Text.Primary : HDevTheme.Disabled.Text,
             TitleSize, FontWeight.SemiBold);
         title.MaxTextWidth = maxWidth;
         title.Trimming = TextTrimming.CharacterEllipsis;
@@ -198,7 +198,7 @@ public class HDevRadioCard : HDevControlBase
 
         if (!string.IsNullOrEmpty(Subtitle))
         {
-            var subtitle = CreateText(Subtitle, IsEnabled ? HDevTheme.Text.Secondary : HDevTheme.Text.Disabled,
+            var subtitle = CreateText(Subtitle, IsEnabled ? HDevTheme.Text.Secondary : HDevTheme.Disabled.Text,
                 SubtitleSize);
             subtitle.MaxTextWidth = maxWidth;
             subtitle.Trimming = TextTrimming.CharacterEllipsis;

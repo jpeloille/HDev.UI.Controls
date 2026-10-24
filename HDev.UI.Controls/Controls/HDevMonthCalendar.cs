@@ -234,7 +234,7 @@ public class HDevMonthCalendar : Control
                         center, CellSize / 2 - 3, CellSize / 2 - 3);
 
                 var color = isSelected ? HDevTheme.Text.OnAccent
-                    : isDisabled ? HDevTheme.Text.Disabled
+                    : isDisabled ? HDevTheme.Disabled.Text
                     : isCurrentMonth ? HDevTheme.Text.Primary
                     : HDevTheme.Text.Secondary;
 

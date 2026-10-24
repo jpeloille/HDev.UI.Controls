@@ -88,6 +88,7 @@ public class HDevNavBar : Control
 
     static HDevNavBar()
     {
+        HDevDisabled.Dim<HDevNavBar>();
         FocusableProperty.OverrideDefaultValue<HDevNavBar>(true);
     }
 
@@ -195,8 +196,7 @@ public class HDevNavBar : Control
             var rect = new Rect(0, i * ItemHeight, bounds.Width, ItemHeight);
             var isSelected = i == _selectedIndex;
             var isHovered = i == _hoveredIndex;
-            var selectedBackground = HDevTheme.Composite(
-                HDevTheme.WithOpacity(HDevTheme.Accent.Primary, 26), HDevTheme.Background.Toolbar);
+            var selectedBackground = HDevTheme.SelectionFill();
 
             if (isSelected)
             {

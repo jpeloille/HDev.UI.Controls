@@ -347,7 +347,7 @@ public class HDevMenuItem : Control
         }
         
         // Header
-        var textColor = IsEnabled ? HDevTheme.Text.Primary : HDevTheme.Text.Disabled;
+        var textColor = IsEnabled ? HDevTheme.Text.Primary : HDevTheme.Disabled.Text;
         var headerText = CreateFormattedText(Header, textColor);
         context.DrawText(headerText, Crisp.Snap(new Point(x, centerY - headerText.Height / 2)));
         
