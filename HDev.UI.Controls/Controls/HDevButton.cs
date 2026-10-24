@@ -111,7 +111,7 @@ public class HDevButton : HDevControlBase
     private protected (double Height, double FontSize, double PaddingH) Metrics => Size switch
     {
         ButtonSize.Small => (HDevTheme.Size.ControlHeightSmall, HDevTheme.Typography.FontSizeCaption, 10.0),
-        ButtonSize.Large => (HDevTheme.Size.ControlHeightLarge, 15.0, 20.0),
+        ButtonSize.Large => (HDevTheme.Size.ControlHeightLarge, HDevTheme.Typography.FontSizeSubtitle, 20.0),
         _ => (HDevTheme.Size.ControlHeightMedium, HDevTheme.Typography.FontSizeBody, 16.0)
     };
 

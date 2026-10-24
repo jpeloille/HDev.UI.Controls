@@ -14,7 +14,7 @@ namespace HDev.UI.Controls;
 /// </summary>
 public class HDevRibbon : Control
 {
-    private const double TabRowHeight = 28;
+    private const double TabRowHeight = HDevTheme.Size.TabHeight;
     private const double ContentHeight = 90;
     private const double GroupLabelHeight = 18;
     

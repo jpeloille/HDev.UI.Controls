@@ -548,7 +548,7 @@ public class HDevScheduler : Control
                         new Point(TimeGutterWidth, y + HourHeight / 2),
                         new Point(ContentWidth, y + HourHeight / 2));
 
-                var label = Text($"{h:00}:00", HDevTheme.Text.Secondary, 10);
+                var label = Text($"{h:00}:00", HDevTheme.Text.Secondary, HDevTheme.Typography.FontSizeMicro);
                 context.DrawText(label, Crisp.Snap(new Point(
                     TimeGutterWidth - label.Width - 6, y + 2)));
             }
@@ -721,7 +721,7 @@ public class HDevScheduler : Control
                 {
                     if (i == maxChips - 1 && dayOccurrences.Count > maxChips)
                     {
-                        var more = Text($"+ {dayOccurrences.Count - i} autres", HDevTheme.Text.Secondary, 10);
+                        var more = Text($"+ {dayOccurrences.Count - i} autres", HDevTheme.Text.Secondary, HDevTheme.Typography.FontSizeMicro);
                         context.DrawText(more, Crisp.Snap(new Point(cell.X + 6, y)));
                         break;
                     }

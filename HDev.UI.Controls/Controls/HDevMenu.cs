@@ -64,7 +64,7 @@ public class HDevMenuPopup : Popup
             Background = new SolidColorBrush(HDevTheme.Background.Panel),
             BorderBrush = new SolidColorBrush(HDevTheme.Border.Subtle),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(HDevTheme.Size.CornerRadiusLarge),
+            CornerRadius = new CornerRadius(HDevTheme.Size.CornerRadiusMedium),
             Padding = new Thickness(6),
             BoxShadow = new BoxShadows(new BoxShadow
             {
@@ -280,7 +280,7 @@ public class HDevMenuBar : Panel
 
     public HDevMenuBar()
     {
-        Height = 34;
+        Height = HDevTheme.Size.BarHeight;
         ClipToBounds = false;
         Background = new SolidColorBrush(HDevTheme.Background.Toolbar);
         // Fond re-brossé à chaque bascule (posé une fois, il restait clair sous des

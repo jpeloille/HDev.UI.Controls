@@ -269,7 +269,7 @@ internal sealed class DockTabStrip : Control
 {
     public const double StripHeight = 32;
     public const double SplitterThickness = 6;
-    private const double TabHeight = 24;
+    private const double TabHeight = HDevTheme.Size.TabHeightCompact;
     private const double CloseSize = 14;
 
     private readonly DockTabGroup _group;

@@ -65,7 +65,7 @@ public class HDevStatusBarPanel
 /// </summary>
 public class HDevStatusBar : Control
 {
-    private const double BarHeight = 26;
+    private const double BarHeight = HDevTheme.Size.StatusBarHeight;
     private const double PanelPaddingX = 10;
 
     private HDevStatusBarPanel? _hoveredPanel;

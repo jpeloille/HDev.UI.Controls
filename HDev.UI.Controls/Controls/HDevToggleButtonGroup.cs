@@ -70,7 +70,7 @@ public class HDevToggleButtonItem
 /// </summary>
 public class HDevToggleButtonGroup : Control
 {
-    private const double GroupHeight = 30;
+    private const double GroupHeight = HDevTheme.Size.RowHeight;
 
     private HDevToggleButtonItem? _hoveredItem;
     private HDevToggleButtonItem? _pressedItem;

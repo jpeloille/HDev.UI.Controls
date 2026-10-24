@@ -1564,7 +1564,7 @@ public class HDevGantt : Control
             {
                 var tx = TimelineX + tick.X;
                 context.DrawLine(tickPen, new Point(tx, 24), new Point(tx, HeaderHeight));
-                var text = CreateText(tick.Label, HDevTheme.Text.Secondary, 10);
+                var text = CreateText(tick.Label, HDevTheme.Text.Secondary, HDevTheme.Typography.FontSizeMicro);
                 context.DrawText(text, Crisp.Snap(new Point(tx + 3, 26)));
             }
         }

@@ -104,7 +104,7 @@ public class HDevToolbarSeparator : HDevToolbarItem
 /// </summary>
 public class HDevToolbar : Control
 {
-    private const double BarHeight = 34;
+    private const double BarHeight = HDevTheme.Size.BarHeight;
     private const double ButtonHeight = 26;
     private const double IconOnlyWidth = 28;
 

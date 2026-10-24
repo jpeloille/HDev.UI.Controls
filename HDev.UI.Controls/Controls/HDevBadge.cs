@@ -97,7 +97,7 @@ public class HDevBadge : HDevControlBase
     {
         var (fontSize, paddingH, paddingV) = Size switch
         {
-            BadgeSize.Small => (10.0, 6.0, 2.0),
+            BadgeSize.Small => (HDevTheme.Typography.FontSizeMicro, 6.0, 2.0),
             BadgeSize.Large => (13.0, 12.0, 5.0),
             _ => (11.0, 8.0, 3.0)
         };
@@ -117,7 +117,7 @@ public class HDevBadge : HDevControlBase
         
         var (fontSize, _, _) = Size switch
         {
-            BadgeSize.Small => (10.0, 6.0, 2.0),
+            BadgeSize.Small => (HDevTheme.Typography.FontSizeMicro, 6.0, 2.0),
             BadgeSize.Large => (13.0, 12.0, 5.0),
             _ => (11.0, 8.0, 3.0)
         };

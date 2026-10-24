@@ -12,7 +12,7 @@ namespace HDev.UI.Controls;
 /// </summary>
 public class HDevChip : HDevControlBase
 {
-    private const double ChipHeight = 26;
+    private const double ChipHeight = HDevTheme.Size.RowHeight;
     private const double CloseSize = 16;
 
     static HDevChip()
@@ -101,7 +101,7 @@ public class HDevChip : HDevControlBase
 
     protected override Size MeasureOverride(Size availableSize)
     {
-        var text = CreateText(DisplayText, HDevTheme.Text.Primary, 12.5);
+        var text = CreateText(DisplayText, HDevTheme.Text.Primary, HDevTheme.Typography.FontSizeCaption);
         var width = 12 + text.Width + 12 + (_canClose ? CloseSize + 2 : 0)
                     + (string.IsNullOrEmpty(_badge) ? 0 : BadgeWidth() + 2);
         return new Size(width, ChipHeight);
@@ -109,7 +109,7 @@ public class HDevChip : HDevControlBase
 
     private double BadgeWidth()
     {
-        var t = CreateText(_badge!, HDevTheme.Text.OnAccent, 10.5, FontWeight.SemiBold);
+        var t = CreateText(_badge!, HDevTheme.Text.OnAccent, HDevTheme.Typography.FontSizeMicro, FontWeight.SemiBold);
         return Math.Max(16, t.Width + 9);
     }
 
@@ -195,7 +195,7 @@ public class HDevChip : HDevControlBase
         if (IsFocusVisible && IsEnabled)
             DrawFocusRing(context, rect, radius);
 
-        var text = CreateText(DisplayText, textColor, 12.5);
+        var text = CreateText(DisplayText, textColor, HDevTheme.Typography.FontSizeCaption);
         context.DrawText(text, Crisp.Snap(new Point(12, (rect.Height - text.Height) / 2)));
 
         // Badge compteur après le texte
@@ -207,7 +207,7 @@ public class HDevChip : HDevControlBase
             var badgeColor = IsEnabled ? (_badgeColor ?? HDevTheme.Accent.Fill) : HDevTheme.Disabled.Text;
             context.DrawRectangle(new SolidColorBrush(badgeColor), null, badgeRect, bh / 2, bh / 2);
             // Couleur de badge libre (BadgeColor) : le chiffre prend le texte le plus lisible
-            var badgeText = CreateText(_badge!, HDevTheme.OnColor(badgeColor), 10.5, FontWeight.SemiBold);
+            var badgeText = CreateText(_badge!, HDevTheme.OnColor(badgeColor), HDevTheme.Typography.FontSizeMicro, FontWeight.SemiBold);
             context.DrawText(badgeText, Crisp.Snap(new Point(
                 badgeRect.Center.X - badgeText.Width / 2,
                 badgeRect.Center.Y - badgeText.Height / 2)));

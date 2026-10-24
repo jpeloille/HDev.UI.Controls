@@ -202,7 +202,7 @@ public class HDevMonthCalendar : Control
         {
             var name = GridStart.AddDays(d).ToString("ddd", CultureInfo.CurrentCulture);
             if (name.Length > 2) name = name[..2];
-            var label = Text(name, HDevTheme.Text.Secondary, 10);
+            var label = Text(name, HDevTheme.Text.Secondary, HDevTheme.Typography.FontSizeMicro);
             var cell = CellRect(0, d);
             context.DrawText(label, Crisp.Snap(new Point(
                 cell.X + (CellSize - label.Width) / 2, HeaderHeight + 4)));

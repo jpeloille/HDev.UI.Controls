@@ -479,11 +479,26 @@ public static class HDevTheme
         public const double CornerRadiusSmall = 6;
         public const double CornerRadiusMedium = 8;
         public const double CornerRadiusLarge = 12;
+        public const double CornerRadiusXS = 3;    // barres, cases à cocher
+        public const double CornerRadiusRow = 4;   // survols et lignes de collection
 
         // Épaisseurs de bordure
         public const double BorderThin = 1;
         public const double BorderMedium = 1.5;
         public const double BorderThick = 2;
+
+        // Traits : trois valeurs (filet, glyphe, emphase)
+        public const double StrokeHairline = 1;
+        public const double StrokeGlyph = 1.2;
+        public const double StrokeEmphasis = 2;
+
+        // Hauteurs des éléments récurrents
+        public const double RowHeight = 28;          // ligne d'arbre, de liste dense, chip, segment
+        public const double MenuItemHeight = 32;
+        public const double BarHeight = 34;          // barre d'outils, barre de menu
+        public const double StatusBarHeight = 26;
+        public const double TabHeight = 28;
+        public const double TabHeightCompact = 24;   // onglets du Dock
 
         // Anneau de focus clavier (couleur : Border.FocusOuter pleine, ≥ 3:1)
         public const double FocusRingWidth = 2;
@@ -522,6 +537,7 @@ public static class HDevTheme
         public static readonly string FontFamily =
             "fonts:Inter#Inter, Inter, Ubuntu Sans, Ubuntu, Segoe UI, sans-serif";
 
+        public const double FontSizeMicro = 11;    // plancher : badges, graduations, légendes denses (jamais en dessous)
         public const double FontSizeCaption = 12;
         public const double FontSizeDense = 13;    // texte secondaire des listes et cartes
         public const double FontSizeBody = 14;     // Ubuntu Sans 11 pt ≈ 14,7 px à 96 dpi

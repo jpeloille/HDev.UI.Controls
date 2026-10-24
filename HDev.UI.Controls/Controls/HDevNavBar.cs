@@ -234,7 +234,7 @@ public class HDevNavBar : Control
             // Badge
             if (!string.IsNullOrEmpty(item.Badge))
             {
-                var badge = Text(item.Badge, HDevTheme.Text.OnAccent, 9, FontWeight.SemiBold);
+                var badge = Text(item.Badge, HDevTheme.Text.OnAccent, HDevTheme.Typography.FontSizeMicro, FontWeight.SemiBold);
                 var badgeWidth = Math.Max(15, badge.Width + 8);
                 var badgeRect = new Rect(
                     bounds.Width / 2 + 6, rect.Y + 5, badgeWidth, 14);

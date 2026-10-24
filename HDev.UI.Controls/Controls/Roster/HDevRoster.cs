@@ -523,7 +523,7 @@ public class HDevRoster : Control
     {
         if (band.Label is { Length: > 0 })
         {
-            var label = CreateText(band.Label, HDevTheme.Text.Primary, 10);
+            var label = CreateText(band.Label, HDevTheme.Text.Primary, HDevTheme.Typography.FontSizeMicro);
 
             if (label.Width + 6 <= rect.Width)
             {
@@ -532,11 +532,11 @@ public class HDevRoster : Control
         }
 
         var start = band.StartLabel is { Length: > 0 }
-            ? CreateText(band.StartLabel, HDevTheme.Text.Secondary, 9)
+            ? CreateText(band.StartLabel, HDevTheme.Text.Secondary, HDevTheme.Typography.FontSizeMicro)
             : null;
 
         var end = band.EndLabel is { Length: > 0 }
-            ? CreateText(band.EndLabel, HDevTheme.Text.Secondary, 9)
+            ? CreateText(band.EndLabel, HDevTheme.Text.Secondary, HDevTheme.Typography.FontSizeMicro)
             : null;
 
         // Les deux heures se chevauchaient dès que la bande devenait étroite (« 09:0017:00 »).
@@ -693,7 +693,7 @@ public class HDevRoster : Control
 
             if (lane.SubLabel is { Length: > 0 })
             {
-                var sub = CreateText(lane.SubLabel, HDevTheme.Text.Secondary, 9);
+                var sub = CreateText(lane.SubLabel, HDevTheme.Text.Secondary, HDevTheme.Typography.FontSizeMicro);
                 context.DrawText(sub, Crisp.Snap(new Point(GutterPadding, y + 4 + label.Height)));
             }
         }
@@ -1061,7 +1061,7 @@ public class HDevRoster : Control
             new Pen(new SolidColorBrush(accent), 2, new DashStyle(DashStyle.Dash.Dashes, 0)),
             rect);
 
-        var label = CreateText(_dragStart.ToString("dd/MM HH:mm"), HDevTheme.Text.Primary, 10);
+        var label = CreateText(_dragStart.ToString("dd/MM HH:mm"), HDevTheme.Text.Primary, HDevTheme.Typography.FontSizeMicro);
         context.DrawText(label, Crisp.Snap(new Point(rect.Left, rect.Bottom + 2)));
     }
 

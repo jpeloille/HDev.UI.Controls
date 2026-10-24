@@ -69,7 +69,7 @@ public class HDevTabClosingEventArgs : System.ComponentModel.CancelEventArgs
 public class HDevTabControl : Control
 {
     private const double StripHeight = 38;
-    private const double TabHeight = 28;
+    private const double TabHeight = HDevTheme.Size.TabHeight;
     private const double CloseSize = 16;
 
     private int _selectedIndex = -1;

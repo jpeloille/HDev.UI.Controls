@@ -702,7 +702,7 @@ public class HDevListView : Control
         // Badge (sous le trailing)
         if (!showActions && !string.IsNullOrEmpty(content.Badge))
         {
-            var badge = Text(content.Badge, HDevTheme.Text.OnAccent, 10, FontWeight.SemiBold);
+            var badge = Text(content.Badge, HDevTheme.Text.OnAccent, HDevTheme.Typography.FontSizeMicro, FontWeight.SemiBold);
             var badgeWidth = Math.Max(16, badge.Width + 10);
             var badgeRect = new Rect(width - badgeWidth - 10, y + _rowHeight - 22, badgeWidth, 15);
             context.DrawRectangle(new SolidColorBrush(HDevTheme.Accent.Fill), null, badgeRect, 7.5, 7.5);

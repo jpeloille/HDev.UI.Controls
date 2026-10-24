@@ -92,7 +92,7 @@ public class HDevTreeNode
 /// </summary>
 public class HDevTreeView : Control
 {
-    private const double RowHeight = 26;
+    private const double RowHeight = HDevTheme.Size.RowHeight;
     private const double IndentWidth = 18;
 
     private HDevTreeNode? _selectedNode;
