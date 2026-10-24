@@ -1115,8 +1115,8 @@ public class HDevGantt : Control
         // Édition structurelle (L1) — en tête : c'est le geste le plus courant
         if (!IsReadOnly && _project != null)
         {
-            menu.Add("Nouvelle tâche", "➕", "Ins", () => InsertTask(task));
-            menu.Add("Supprimer la tâche", "🗑", "Suppr", () => DeleteTask(task));
+            menu.Add("Nouvelle tâche", HDevIcon.Plus, "Ins", () => InsertTask(task));
+            menu.Add("Supprimer la tâche", HDevIcon.Trash, "Suppr", () => DeleteTask(task));
             hasItems = true;
 
             if (_project.CanIndent(task) || _project.CanOutdent(task) ||
@@ -1124,13 +1124,13 @@ public class HDevGantt : Control
             {
                 BeginSection();
                 if (_project.CanIndent(task))
-                    menu.Add("Indenter", "➡", "Alt+Maj+→", () => IndentTask(task));
+                    menu.Add("Indenter", HDevIcon.Indent, "Alt+Maj+→", () => IndentTask(task));
                 if (_project.CanOutdent(task))
-                    menu.Add("Désindenter", "⬅", "Alt+Maj+←", () => OutdentTask(task));
+                    menu.Add("Désindenter", HDevIcon.Outdent, "Alt+Maj+←", () => OutdentTask(task));
                 if (_project.CanMoveUp(task))
-                    menu.Add("Monter", "⬆", "Alt+↑", () => MoveTaskUp(task));
+                    menu.Add("Monter", HDevIcon.ArrowUp, "Alt+↑", () => MoveTaskUp(task));
                 if (_project.CanMoveDown(task))
-                    menu.Add("Descendre", "⬇", "Alt+↓", () => MoveTaskDown(task));
+                    menu.Add("Descendre", HDevIcon.ArrowDown, "Alt+↓", () => MoveTaskDown(task));
             }
         }
 
@@ -1140,7 +1140,7 @@ public class HDevGantt : Control
             foreach (var dep in task.Predecessors.ToList())
             {
                 var captured = dep;
-                menu.Add($"Supprimer le lien « {captured.Predecessor.Name} » →", "🔗", null, () =>
+                menu.Add($"Supprimer le lien « {captured.Predecessor.Name} » →", HDevIcon.Link, null, () =>
                 {
                     var args = new GanttLinkEventArgs(captured.Predecessor, task);
                     LinkRemoving?.Invoke(this, args);

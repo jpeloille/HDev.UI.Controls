@@ -208,10 +208,10 @@ public abstract class HDevEditorBase : Border
 
         _layoutGrid = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
             ClipToBounds = true
         };
-        Grid.SetColumn(InnerTextBox, 0);
+        Grid.SetColumn(InnerTextBox, 1);
         _layoutGrid.Children.Add(InnerTextBox);
 
         Child = _layoutGrid;
@@ -268,9 +268,16 @@ public abstract class HDevEditorBase : Border
     }
 
     /// <summary>Installe la zone de boutons à droite du texte (calendrier, spin...)</summary>
+    /// <summary>Élément avant le texte (icône de recherche…)</summary>
+    protected void SetLeftElement(Control element)
+    {
+        Grid.SetColumn(element, 0);
+        _layoutGrid.Children.Add(element);
+    }
+
     protected void SetRightElement(Control element)
     {
-        Grid.SetColumn(element, 1);
+        Grid.SetColumn(element, 2);
         _layoutGrid.Children.Add(element);
     }
 
@@ -280,7 +287,7 @@ public abstract class HDevEditorBase : Border
     /// </summary>
     protected void AttachPopup(Avalonia.Controls.Primitives.Popup popup)
     {
-        Grid.SetColumn(popup, 0);
+        Grid.SetColumn(popup, 1);
         _layoutGrid.Children.Add(popup);
     }
 

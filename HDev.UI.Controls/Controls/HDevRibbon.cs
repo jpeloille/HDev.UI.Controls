@@ -694,7 +694,11 @@ public class HDevRibbon : Control
         var y = btnRect.Y;
 
         // Icône (grande, centrée en haut)
-        if (!string.IsNullOrEmpty(btn.Icon))
+        if (btn.VectorIcon != HDevIcon.None)
+        {
+            HDevIcons.Draw(context, btn.VectorIcon, new Point(x + 25, y + 19), HDevTheme.Size.IconLarge + 4, textColor);
+        }
+        else if (!string.IsNullOrEmpty(btn.Icon))
         {
             var iconText = CreateFormattedText(btn.Icon, textColor, 22);
             context.DrawText(iconText, Crisp.Snap(new Point(
@@ -724,7 +728,11 @@ public class HDevRibbon : Control
         var y = btnRect.Y;
 
         // Icône
-        if (!string.IsNullOrEmpty(btn.Icon))
+        if (btn.VectorIcon != HDevIcon.None)
+        {
+            HDevIcons.Draw(context, btn.VectorIcon, new Point(x + 11, y + 10), HDevTheme.Size.IconMedium, textColor);
+        }
+        else if (!string.IsNullOrEmpty(btn.Icon))
         {
             var iconText = CreateFormattedText(btn.Icon, textColor, 12);
             context.DrawText(iconText, Crisp.Snap(new Point(x + 4, y + (20 - iconText.Height) / 2)));

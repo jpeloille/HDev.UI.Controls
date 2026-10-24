@@ -14,10 +14,10 @@ namespace HDev.UI.Controls;
 /// </summary>
 public class HDevIconButton : HDevButton
 {
-    public static readonly StyledProperty<HDevEditorIcon> IconProperty =
-        AvaloniaProperty.Register<HDevIconButton, HDevEditorIcon>(nameof(Icon), HDevEditorIcon.None);
+    public static readonly StyledProperty<HDevIcon> IconProperty =
+        AvaloniaProperty.Register<HDevIconButton, HDevIcon>(nameof(Icon), HDevIcon.None);
 
-    public HDevEditorIcon Icon
+    public HDevIcon Icon
     {
         get => GetValue(IconProperty);
         set => SetValue(IconProperty, value);
@@ -39,12 +39,12 @@ public class HDevIconButton : HDevButton
 
     private double Side => Metrics.Height;
 
-    /// <summary>Glyphe de 8 px en Small, agrandi en Medium et Large avec son trait</summary>
-    private double GlyphScale => Size switch
+    /// <summary>Glyphe de 12, 16 ou 20 px selon la taille (jetons Icon*)</summary>
+    private double GlyphSize => Size switch
     {
-        ButtonSize.Small => 1.0,
-        ButtonSize.Large => 1.5,
-        _ => 1.25
+        ButtonSize.Small => HDevTheme.Size.IconSmall,
+        ButtonSize.Large => HDevTheme.Size.IconLarge,
+        _ => HDevTheme.Size.IconMedium
     };
 
     protected override Size MeasureOverride(Size availableSize) => new(Side, Side);
@@ -64,6 +64,6 @@ public class HDevIconButton : HDevButton
             DrawFocusRing(context, rect, radius);
 
         var offset = IsPressed ? new Vector(0, 0.5) : default;
-        HDevEditorGlyphButton.DrawIcon(context, Icon, rect.Center + offset, foreground, GlyphScale);
+        HDevIcons.Draw(context, Icon, rect.Center + offset, GlyphSize, foreground);
     }
 }

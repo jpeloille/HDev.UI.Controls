@@ -83,6 +83,18 @@ public class HDevRibbonGroup
         return this;
     }
     
+    public HDevRibbonGroup AddLargeButton(string label, HDevIcon icon, Action? onClick = null)
+    {
+        Items.Add(new HDevRibbonButton { Label = label, VectorIcon = icon, IsLarge = true, OnClick = onClick });
+        return this;
+    }
+
+    public HDevRibbonGroup AddSmallButton(string label, HDevIcon icon, Action? onClick = null)
+    {
+        Items.Add(new HDevRibbonButton { Label = label, VectorIcon = icon, IsLarge = false, OnClick = onClick });
+        return this;
+    }
+
     public HDevRibbonGroup AddSmallButton(string label, string? icon = null, Action? onClick = null)
     {
         Items.Add(new HDevRibbonButton
@@ -139,6 +151,9 @@ public class HDevRibbonButton : HDevRibbonItem
 {
     public string Label { get; set; } = "";
     public string? Icon { get; set; }
+
+    /// <summary>Icône vectorielle (prioritaire sur <see cref="Icon"/>)</summary>
+    public HDevIcon VectorIcon { get; set; }
     public string? Tooltip { get; set; }
 
     /// <summary>Accélérateur clavier réel (« Ctrl+P »...), enregistré par HDevRibbon</summary>

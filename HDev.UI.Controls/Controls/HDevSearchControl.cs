@@ -38,9 +38,15 @@ public class HDevSearchControl : HDevEditorBase
         Placeholder = "Rechercher…";
         MinWidth = 180;
 
-        // Loupe à gauche (dans la zone droite inversée : on garde simple —
-        // loupe en préfixe via bouton inactif, croix d'effacement à droite)
-        var clear = new HDevEditorGlyphButton { Glyph = "✕", GlyphSize = 11 };
+        // Loupe en préfixe, croix d'effacement à droite
+        SetLeftElement(new HDevIconView
+        {
+            Icon = HDevIcon.Search,
+            IconSize = HDevTheme.Size.IconMedium,
+            Margin = new Thickness(HDevTheme.Size.EditorTextInset, 0, 0, 0),
+            IsHitTestVisible = false
+        });
+        var clear = new HDevEditorGlyphButton { Icon = HDevIcon.Close, IconSize = HDevTheme.Size.IconSmall };
         clear.Click += (s, e) =>
         {
             Text = "";

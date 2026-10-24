@@ -143,13 +143,13 @@ public class HDevMessageBox : HDevWindow
 
     private static Control BuildIcon(HDevMessageBoxIcon icon)
     {
-        (string glyph, Color color) = icon switch
+        (HDevIcon glyph, Color color) = icon switch
         {
-            HDevMessageBoxIcon.Information => ("ℹ", HDevTheme.Accent.Primary),
-            HDevMessageBoxIcon.Warning => ("!", HDevTheme.Accent.Warning),
-            HDevMessageBoxIcon.Error => ("✕", HDevTheme.Accent.Error),
-            HDevMessageBoxIcon.Question => ("?", HDevTheme.Accent.Primary),
-            _ => ("", HDevTheme.Accent.Primary)
+            HDevMessageBoxIcon.Information => (HDevIcon.Info, HDevTheme.Accent.Primary),
+            HDevMessageBoxIcon.Warning => (HDevIcon.Warning, HDevTheme.Accent.Warning),
+            HDevMessageBoxIcon.Error => (HDevIcon.Error, HDevTheme.Accent.Error),
+            HDevMessageBoxIcon.Question => (HDevIcon.Question, HDevTheme.Accent.Primary),
+            _ => (HDevIcon.None, HDevTheme.Accent.Primary)
         };
 
         return new Border
@@ -159,12 +159,11 @@ public class HDevMessageBox : HDevWindow
             CornerRadius = new CornerRadius(20),
             Background = new SolidColorBrush(HDevTheme.WithOpacity(color, 30)),
             VerticalAlignment = VerticalAlignment.Top,
-            Child = new TextBlock
+            Child = new HDevIconView
             {
-                Text = glyph,
-                FontSize = 20,
-                FontWeight = FontWeight.Bold,
-                Foreground = new SolidColorBrush(color),
+                Icon = glyph,
+                IconSize = HDevTheme.Size.IconLarge + 4,
+                Color = HDevTheme.EnsureContrast(color, HDevTheme.Background.Window, 3),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             }

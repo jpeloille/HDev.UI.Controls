@@ -26,6 +26,16 @@ public class HDevMenuItem : Control
     public static readonly StyledProperty<string> HeaderProperty =
         AvaloniaProperty.Register<HDevMenuItem, string>(nameof(Header), "");
     
+    /// <summary>Icône vectorielle (prioritaire sur <see cref="Icon"/>, qui reste le texte/emoji d'origine)</summary>
+    public static readonly StyledProperty<HDevIcon> VectorIconProperty =
+        AvaloniaProperty.Register<HDevMenuItem, HDevIcon>(nameof(VectorIcon));
+
+    public HDevIcon VectorIcon
+    {
+        get => GetValue(VectorIconProperty);
+        set => SetValue(VectorIconProperty, value);
+    }
+
     public static readonly StyledProperty<string?> IconProperty =
         AvaloniaProperty.Register<HDevMenuItem, string?>(nameof(Icon));
     
@@ -116,7 +126,7 @@ public class HDevMenuItem : Control
     
     static HDevMenuItem()
     {
-        AffectsRender<HDevMenuItem>(HeaderProperty, IconProperty, ShortcutProperty, 
+        AffectsRender<HDevMenuItem>(HeaderProperty, IconProperty, VectorIconProperty, ShortcutProperty, 
             IsSeparatorProperty, IsCheckedProperty, IsCheckableProperty);
         AffectsMeasure<HDevMenuItem>(HeaderProperty, IconProperty, ShortcutProperty, IsSeparatorProperty);
     }
@@ -136,6 +146,12 @@ public class HDevMenuItem : Control
             Click += (s, e) => onClick();
     }
     
+    public HDevMenuItem(string header, HDevIcon icon, string? shortcut = null, Action? onClick = null)
+        : this(header, (string?)null, shortcut, onClick)
+    {
+        VectorIcon = icon;
+    }
+
     public static HDevMenuItem Separator() => new() { IsSeparator = true };
     
     // ═══════════════════════════════════════════════════════════════
@@ -334,6 +350,12 @@ public class HDevMenuItem : Control
                     new Point(x + 12, centerY - 4));
             }
             x += 20;
+        }
+        else if (VectorIcon != HDevIcon.None)
+        {
+            HDevIcons.Draw(context, VectorIcon, new Point(x + 8, centerY), HDevTheme.Size.IconMedium,
+                IsEnabled ? HDevTheme.Text.Secondary : HDevTheme.Disabled.Text);
+            x += 24;
         }
         else if (!string.IsNullOrEmpty(Icon))
         {

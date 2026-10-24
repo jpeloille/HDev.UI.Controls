@@ -111,6 +111,12 @@ public class HDevContextMenu
         return this;
     }
     
+    public HDevContextMenu Add(string header, HDevIcon icon, string? shortcut = null, Action? onClick = null)
+    {
+        Items.Add(new HDevMenuItem(header, icon, shortcut, onClick));
+        return this;
+    }
+
     public HDevContextMenu AddSeparator()
     {
         Items.Add(HDevMenuItem.Separator());

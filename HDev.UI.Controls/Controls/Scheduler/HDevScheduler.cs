@@ -294,8 +294,8 @@ public class HDevScheduler : Control
         var text = evt.AllDay
             ? $"{evt.Subject}\n{evt.Start:d} (journée)"
             : $"{evt.Subject}\n{evt.Start:g} → {evt.End:t}";
-        if (!string.IsNullOrEmpty(evt.Location)) text += $"\n📍 {evt.Location}";
-        if (evt.IsRecurring) text += "\n↻ récurrent";
+        if (!string.IsNullOrEmpty(evt.Location)) text += $"\nLieu : {evt.Location}";
+        if (evt.IsRecurring) text += "\nRécurrent";
         return text;
     }
 
@@ -754,17 +754,21 @@ public class HDevScheduler : Control
         // Libellé lisible sur la couleur de l'événement, quelle qu'elle soit (le blanc
         // imposé tombait à 2,3:1 sur l'orange translucide par défaut)
         var labelColor = HDevTheme.OnColor(HDevTheme.Composite(fill, HDevTheme.Background.Panel));
-        var prefix = master.IsRecurring ? "↻ " : "";
+        var iconSize = HDevTheme.Size.IconSmall;
+        var textX = rect.X + 4 + (master.IsRecurring ? iconSize + 3 : 0);
         var timeText = compact || occ.AllDay ? "" : $"{occ.Start:HH:mm} ";
-        var label = Text($"{prefix}{timeText}{master.Subject}", labelColor, compact ? 10 : 11,
+        var label = Text($"{timeText}{master.Subject}", labelColor, HDevTheme.Typography.FontSizeMicro,
             FontWeight.SemiBold);
-        label.MaxTextWidth = Math.Max(8, rect.Width - 8);
+        label.MaxTextWidth = Math.Max(8, rect.Right - 4 - textX);
         label.Trimming = TextTrimming.CharacterEllipsis;
         label.MaxLineCount = Math.Max(1, (int)(rect.Height / 14));
 
         using (context.PushClip(rect))
         {
-            context.DrawText(label, Crisp.Snap(new Point(rect.X + 4, rect.Y + 2)));
+            if (master.IsRecurring)
+                HDevIcons.Draw(context, HDevIcon.Recurrence,
+                    new Point(rect.X + 4 + iconSize / 2, rect.Y + 2 + label.Height / 2), iconSize, labelColor);
+            context.DrawText(label, Crisp.Snap(new Point(textX, rect.Y + 2)));
         }
     }
 

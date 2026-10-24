@@ -67,7 +67,7 @@ public class HDevDateEdit : HDevEditorBase
         MinWidth = 130;
 
         // Bouton calendrier
-        var button = new HDevEditorGlyphButton { Icon = HDevEditorIcon.Calendar };
+        var button = new HDevEditorGlyphButton { Icon = HDevIcon.Calendar };
         button.Click += (s, e) => TogglePopup();
         SetRightElement(button);
 

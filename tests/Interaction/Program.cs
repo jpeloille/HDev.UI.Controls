@@ -482,7 +482,7 @@ Console.WriteLine("Design P0 :");
 var small = new HDevButton { Text = "Small", Size = ButtonSize.Small };
 var medium = new HDevButton { Text = "Medium" };
 var large = new HDevButton { Text = "Large", Size = ButtonSize.Large };
-var iconButton = new HDevIconButton { Icon = HDevEditorIcon.ChevronRight };
+var iconButton = new HDevIconButton { Icon = HDevIcon.ChevronRight };
 var field = new HDevTextBox { Width = 120, Text = "TY201" };
 var rowPanel = new StackPanel
 {

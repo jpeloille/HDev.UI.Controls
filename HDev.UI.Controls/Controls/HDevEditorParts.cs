@@ -112,18 +112,6 @@ internal static class HDevInputChrome
             bounds.Inflate(1), cornerRadius + 1, cornerRadius + 1);
 }
 
-/// <summary>Icône vectorielle d'un <see cref="HDevEditorGlyphButton"/></summary>
-public enum HDevEditorIcon
-{
-    /// <summary>Pas d'icône : le texte <see cref="HDevEditorGlyphButton.Glyph"/> est affiché</summary>
-    None,
-    Calendar,
-    ChevronDown,
-    ChevronUp,
-    ChevronLeft,
-    ChevronRight
-}
-
 /// <summary>
 /// Petit bouton à glyphe pour la zone droite des éditeurs (calendrier, effacer...)
 /// </summary>
@@ -136,7 +124,10 @@ public class HDevEditorGlyphButton : Control
     public double GlyphSize { get; set; } = 14;
 
     /// <summary>Icône dessinée en traits fins (prioritaire sur <see cref="Glyph"/>)</summary>
-    public HDevEditorIcon Icon { get; set; }
+    public HDevIcon Icon { get; set; }
+
+    /// <summary>Côté de la boîte de l'icône ; 0 = taille d'origine du glyphe</summary>
+    public double IconSize { get; set; }
 
     public event EventHandler? Click;
 
@@ -199,9 +190,9 @@ public class HDevEditorGlyphButton : Control
 
         var color = IsEffectivelyEnabled ? HDevTheme.Text.Secondary : HDevTheme.Disabled.Text;
 
-        if (Icon != HDevEditorIcon.None)
+        if (Icon != HDevIcon.None)
         {
-            DrawIcon(context, Icon, bounds.Center, color);
+            HDevIcons.Draw(context, Icon, bounds.Center, IconSize > 0 ? IconSize : HDevIcons.NaturalSize(Icon), color);
             return;
         }
 
@@ -211,54 +202,6 @@ public class HDevEditorGlyphButton : Control
         context.DrawText(text, Crisp.Snap(new Point(
             (bounds.Width - text.Width) / 2,
             (bounds.Height - text.Height) / 2)));
-    }
-
-    /// <summary>
-    /// Icônes au trait 1,2 px, même graisse que les chevrons de
-    /// <see cref="HDevSpinButtons"/> ; partagé avec le rendu de HDevComboBox.
-    /// <paramref name="scale"/> agrandit glyphe et trait ensemble (HDevIconButton Medium/Large).
-    /// </summary>
-    internal static void DrawIcon(DrawingContext context, HDevEditorIcon icon, Point center, Color color,
-        double scale = 1.0)
-    {
-        var pen = new Pen(new SolidColorBrush(color), 1.2);
-        // Centre calé sur le demi-pixel : traits de 1 px nets
-        var c = Crisp.Snap(center);
-        double cx = c.X + 0.5, cy = c.Y + 0.5;
-        using var zoom = context.PushTransform(Matrix.CreateTranslation(-cx, -cy)
-            * Matrix.CreateScale(scale, scale) * Matrix.CreateTranslation(cx, cy));
-
-        switch (icon)
-        {
-            case HDevEditorIcon.ChevronDown:
-                context.DrawLine(pen, new Point(cx - 4, cy - 2), new Point(cx, cy + 2));
-                context.DrawLine(pen, new Point(cx, cy + 2), new Point(cx + 4, cy - 2));
-                break;
-
-            case HDevEditorIcon.ChevronUp:
-                context.DrawLine(pen, new Point(cx - 4, cy + 2), new Point(cx, cy - 2));
-                context.DrawLine(pen, new Point(cx, cy - 2), new Point(cx + 4, cy + 2));
-                break;
-
-            case HDevEditorIcon.ChevronLeft:
-                context.DrawLine(pen, new Point(cx + 2, cy - 4), new Point(cx - 2, cy));
-                context.DrawLine(pen, new Point(cx - 2, cy), new Point(cx + 2, cy + 4));
-                break;
-
-            case HDevEditorIcon.ChevronRight:
-                context.DrawLine(pen, new Point(cx - 2, cy - 4), new Point(cx + 2, cy));
-                context.DrawLine(pen, new Point(cx + 2, cy), new Point(cx - 2, cy + 4));
-                break;
-
-            case HDevEditorIcon.Calendar:
-                // Cadre 12×11, bandeau d'en-tête, deux anneaux
-                var frame = new Rect(cx - 6, cy - 5, 12, 11);
-                context.DrawRectangle(null, pen, frame, 1.5, 1.5);
-                context.DrawLine(pen, new Point(frame.Left, cy - 2), new Point(frame.Right, cy - 2));
-                context.DrawLine(pen, new Point(cx - 3, cy - 7), new Point(cx - 3, cy - 4));
-                context.DrawLine(pen, new Point(cx + 3, cy - 7), new Point(cx + 3, cy - 4));
-                break;
-        }
     }
 }
 

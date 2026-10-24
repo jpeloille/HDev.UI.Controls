@@ -77,7 +77,7 @@ public static class HDevToast
 
     private static Control BuildToast(string title, string message, string? icon, bool clickable)
     {
-        var closeButton = new HDevEditorGlyphButton { Glyph = "✕", GlyphSize = 10, Width = 22, Height = 22 };
+        var closeButton = new HDevEditorGlyphButton { Icon = HDevIcon.Close, IconSize = HDevTheme.Size.IconSmall, Width = 22, Height = 22 };
 
         var textPanel = new StackPanel { Spacing = 2 };
         textPanel.Children.Add(new TextBlock

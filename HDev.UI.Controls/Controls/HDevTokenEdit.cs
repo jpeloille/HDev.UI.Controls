@@ -226,7 +226,7 @@ public class HDevTokenEdit : Border
             Foreground = new SolidColorBrush(HDevTheme.Text.Primary)
         };
 
-        var remove = new HDevEditorGlyphButton { Glyph = "✕", GlyphSize = 9, Width = 18, Height = 18 };
+        var remove = new HDevEditorGlyphButton { Icon = HDevIcon.Close, IconSize = 10, Width = 18, Height = 18 };
         remove.Click += (s, e) => Tokens.Remove(token);
 
         var content = new StackPanel

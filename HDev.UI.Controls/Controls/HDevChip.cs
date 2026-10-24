@@ -94,7 +94,18 @@ public class HDevChip : HDevControlBase
     /// <summary>Après fermeture : à l'app de retirer le chip de son conteneur</summary>
     public event EventHandler? Closed;
 
-    private string DisplayText => string.IsNullOrEmpty(_icon) ? _text : $"{_icon} {_text}";
+    private HDevIcon _vectorIcon;
+
+    /// <summary>Icône vectorielle avant le texte (prioritaire sur <see cref="Icon"/>)</summary>
+    public HDevIcon VectorIcon
+    {
+        get => _vectorIcon;
+        set { _vectorIcon = value; InvalidateMeasure(); InvalidateVisual(); }
+    }
+
+    private double IconSlot => _vectorIcon != HDevIcon.None ? HDevTheme.Size.IconSmall + 4 : 0;
+
+    private string DisplayText => string.IsNullOrEmpty(_icon) || _vectorIcon != HDevIcon.None ? _text : $"{_icon} {_text}";
 
     private Rect CloseRect => new(
         Bounds.Width - CloseSize - 5, (Bounds.Height - CloseSize) / 2, CloseSize, CloseSize);
@@ -102,7 +113,7 @@ public class HDevChip : HDevControlBase
     protected override Size MeasureOverride(Size availableSize)
     {
         var text = CreateText(DisplayText, HDevTheme.Text.Primary, HDevTheme.Typography.FontSizeCaption);
-        var width = 12 + text.Width + 12 + (_canClose ? CloseSize + 2 : 0)
+        var width = 12 + IconSlot + text.Width + 12 + (_canClose ? CloseSize + 2 : 0)
                     + (string.IsNullOrEmpty(_badge) ? 0 : BadgeWidth() + 2);
         return new Size(width, ChipHeight);
     }
@@ -196,14 +207,17 @@ public class HDevChip : HDevControlBase
             DrawFocusRing(context, rect, radius);
 
         var text = CreateText(DisplayText, textColor, HDevTheme.Typography.FontSizeCaption);
-        context.DrawText(text, Crisp.Snap(new Point(12, (rect.Height - text.Height) / 2)));
+        if (_vectorIcon != HDevIcon.None)
+            HDevIcons.Draw(context, _vectorIcon,
+                new Point(12 + HDevTheme.Size.IconSmall / 2.0, rect.Height / 2), HDevTheme.Size.IconSmall, textColor);
+        context.DrawText(text, Crisp.Snap(new Point(12 + IconSlot, (rect.Height - text.Height) / 2)));
 
         // Badge compteur après le texte
         if (!string.IsNullOrEmpty(_badge))
         {
             var bw = BadgeWidth();
             const double bh = 16;
-            var badgeRect = new Rect(12 + text.Width + 6, (rect.Height - bh) / 2, bw, bh);
+            var badgeRect = new Rect(12 + IconSlot + text.Width + 6, (rect.Height - bh) / 2, bw, bh);
             var badgeColor = IsEnabled ? (_badgeColor ?? HDevTheme.Accent.Fill) : HDevTheme.Disabled.Text;
             context.DrawRectangle(new SolidColorBrush(badgeColor), null, badgeRect, bh / 2, bh / 2);
             // Couleur de badge libre (BadgeColor) : le chiffre prend le texte le plus lisible

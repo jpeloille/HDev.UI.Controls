@@ -480,7 +480,7 @@ public class DocLayoutEngine
                         new Pen(new SolidColorBrush(HDevTheme.Border.Default), 1),
                         bounds, 4, 4);
                     var alt = new TextLayout(
-                        string.IsNullOrEmpty(placeholder.Source.Alt) ? "🖼 image" : $"🖼 {placeholder.Source.Alt}",
+                        string.IsNullOrEmpty(placeholder.Source.Alt) ? "[image]" : $"[image : {placeholder.Source.Alt}]",
                         new Typeface(HDevTheme.Typography.FontFamily), 12,
                         new SolidColorBrush(HDevTheme.Text.Secondary),
                         maxWidth: Math.Max(20, bounds.Width - 12));

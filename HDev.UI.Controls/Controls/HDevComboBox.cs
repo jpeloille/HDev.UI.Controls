@@ -1287,9 +1287,9 @@ public class HDevComboBox : Control
         // Flèche dropdown
         if (_properties.ShowDropDown)
         {
-            HDevEditorGlyphButton.DrawIcon(context,
-                _isDropDownOpen ? HDevEditorIcon.ChevronUp : HDevEditorIcon.ChevronDown,
-                new Point(bounds.Width - arrowWidth / 2.0, bounds.Height / 2),
+            HDevIcons.Draw(context,
+                _isDropDownOpen ? HDevIcon.ChevronUp : HDevIcon.ChevronDown,
+                new Point(bounds.Width - arrowWidth / 2.0, bounds.Height / 2), HDevTheme.Size.IconSmall,
                 IsEnabled ? HDevTheme.Text.Secondary : HDevTheme.Disabled.Text);
         }
     }

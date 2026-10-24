@@ -431,9 +431,9 @@ public class HDevLookUpEdit : Control
             }
         }
 
-        HDevEditorGlyphButton.DrawIcon(context,
-            _isDropDownOpen ? HDevEditorIcon.ChevronUp : HDevEditorIcon.ChevronDown,
-            new Point(bounds.Width - 12, bounds.Height / 2),
+        HDevIcons.Draw(context,
+            _isDropDownOpen ? HDevIcon.ChevronUp : HDevIcon.ChevronDown,
+            new Point(bounds.Width - 12, bounds.Height / 2), HDevTheme.Size.IconSmall,
             IsEnabled ? HDevTheme.Text.Secondary : HDevTheme.Disabled.Text);
     }
 }

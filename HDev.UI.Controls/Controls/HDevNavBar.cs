@@ -16,6 +16,9 @@ public class HDevNavBarItem
     internal HDevNavBar? Owner { get; set; }
 
     public string Icon { get; set; } = "";
+
+    /// <summary>Icône vectorielle (prioritaire sur <see cref="Icon"/>)</summary>
+    public HDevIcon VectorIcon { get; set; }
     public string Label { get; set; } = "";
 
     /// <summary>Pastille (compteur non-lus...) ; null = masquée</summary>
@@ -28,6 +31,12 @@ public class HDevNavBarItem
     public object? Tag { get; set; }
 
     public HDevNavBarItem() { }
+
+    public HDevNavBarItem(HDevIcon icon, string label)
+    {
+        VectorIcon = icon;
+        Label = label;
+    }
 
     public HDevNavBarItem(string icon, string label)
     {
@@ -216,12 +225,18 @@ public class HDevNavBar : Control
             var iconColor = isSelected
                 ? HDevTheme.EnsureContrast(HDevTheme.Accent.Foreground, selectedBackground)
                 : HDevTheme.Text.Secondary;
-            var icon = Text(item.Icon, iconColor, 20);
+            var iconHeight = item.VectorIcon != HDevIcon.None ? HDevTheme.Size.IconLarge : Text(item.Icon, iconColor, 20).Height;
             var iconY = _isCompact
-                ? rect.Y + (ItemHeight - icon.Height) / 2
+                ? rect.Y + (ItemHeight - iconHeight) / 2
                 : rect.Y + 8;
-            context.DrawText(icon, Crisp.Snap(new Point(
-                (bounds.Width - icon.Width) / 2, iconY)));
+            if (item.VectorIcon != HDevIcon.None)
+                HDevIcons.Draw(context, item.VectorIcon, new Point(bounds.Width / 2, iconY + iconHeight / 2),
+                    HDevTheme.Size.IconLarge, iconColor);
+            else
+            {
+                var icon = Text(item.Icon, iconColor, 20);
+                context.DrawText(icon, Crisp.Snap(new Point((bounds.Width - icon.Width) / 2, iconY)));
+            }
 
             if (!_isCompact)
             {

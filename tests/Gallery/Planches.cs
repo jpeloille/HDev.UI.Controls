@@ -106,8 +106,8 @@ static class Planches
             }));
         }
 
-        var glyphs = Enum.GetValues<HDevEditorIcon>()
-            .Where(icon => icon != HDevEditorIcon.None)
+        var glyphs = Enum.GetValues<HDevIcon>()
+            .Where(icon => icon != HDevIcon.None)
             .Select(icon => (icon.ToString(), (Control)new HDevIconButton { Icon = icon }))
             .ToArray();
 
@@ -152,7 +152,7 @@ static class Planches
             ButtonVariant.Outline, ButtonVariant.Secondary, ButtonVariant.Ghost, ButtonVariant.Primary
         }.Select(variant =>
             (variant.ToString(), ButtonStates.Select((_, state) =>
-                (Control?)Stateful(new HDevIconButton { Icon = HDevEditorIcon.ChevronRight, Variant = variant }, state)).ToArray())));
+                (Control?)Stateful(new HDevIconButton { Icon = HDevIcon.ChevronRight, Variant = variant }, state)).ToArray())));
 
         var sizes = Kit.Row(
             new HDevButton { Text = "Small", Variant = ButtonVariant.Primary, Size = ButtonSize.Small },
@@ -160,9 +160,9 @@ static class Planches
             new HDevButton { Text = "Large", Variant = ButtonVariant.Primary, Size = ButtonSize.Large });
 
         var mixed = Kit.Row(
-            new HDevIconButton { Icon = HDevEditorIcon.ChevronLeft, Size = ButtonSize.Small },
-            new HDevIconButton { Icon = HDevEditorIcon.ChevronLeft },
-            new HDevIconButton { Icon = HDevEditorIcon.ChevronRight, Size = ButtonSize.Large },
+            new HDevIconButton { Icon = HDevIcon.ChevronLeft, Size = ButtonSize.Small },
+            new HDevIconButton { Icon = HDevIcon.ChevronLeft },
+            new HDevIconButton { Icon = HDevIcon.ChevronRight, Size = ButtonSize.Large },
             new HDevButton { Text = "Texte Medium" });
 
         var dialog = Kit.Row(
@@ -243,7 +243,7 @@ static class Planches
             new HDevTextBox { Width = 110, Text = "TY201" },
             new HDevDateEdit { Width = 130, Value = new DateTime(2026, 10, 5) },
             ComboIn(1, editable: false)!,
-            new HDevIconButton { Icon = HDevEditorIcon.Calendar, Size = ButtonSize.Small },
+            new HDevIconButton { Icon = HDevIcon.Calendar, Size = ButtonSize.Small },
             new HDevButton { Text = "Rechercher", Size = ButtonSize.Small },
             new HDevButton { Text = "Valider", Variant = ButtonVariant.Primary });
 

@@ -504,17 +504,17 @@ public class HDevMindMap : Control
                 if (!IsReadOnly)
                 {
                     var menu = new HDevContextMenu();
-                    menu.Add("Ajouter un enfant", "➕", "Tab", AddChildToSelected);
+                    menu.Add("Ajouter un enfant", HDevIcon.Plus, "Tab", AddChildToSelected);
                     if (node.Parent != null)
                         menu.Add("Ajouter un frère", null, "Enter", AddSiblingToSelected);
-                    menu.Add("Renommer", "✏️", "F2", () => BeginEdit(node, selectAll: true));
+                    menu.Add("Renommer", HDevIcon.Pencil, "F2", () => BeginEdit(node, selectAll: true));
                     if (node.HasChildren)
                         menu.Add(node.IsExpanded ? "Replier" : "Déplier", null, "Espace",
                             () => node.IsExpanded = !node.IsExpanded);
                     if (node.Parent != null)
                     {
                         menu.AddSeparator();
-                        menu.Add("Supprimer le sous-arbre", "🗑", "Suppr", RemoveSelected);
+                        menu.Add("Supprimer le sous-arbre", HDevIcon.Trash, "Suppr", RemoveSelected);
                     }
                     menu.Show(this, pos);
                 }

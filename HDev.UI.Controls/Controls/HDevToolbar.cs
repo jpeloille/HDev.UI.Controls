@@ -46,6 +46,15 @@ public class HDevToolbarButton : HDevToolbarItem
         set { _icon = value; Owner?.InvalidateVisual(); }
     }
 
+    private HDevIcon _vectorIcon;
+
+    /// <summary>Icône vectorielle (prioritaire sur <see cref="Icon"/>)</summary>
+    public HDevIcon VectorIcon
+    {
+        get => _vectorIcon;
+        set { _vectorIcon = value; Owner?.InvalidateMeasure(); Owner?.InvalidateVisual(); }
+    }
+
     /// <summary>Label affiché à côté de l'icône (bouton icône seule si null)</summary>
     public string? Label
     {
@@ -182,7 +191,7 @@ public class HDevToolbar : Control
             return IconOnlyWidth;
 
         var text = CreateText(btn.Label, HDevTheme.Text.Primary);
-        var iconWidth = string.IsNullOrEmpty(btn.Icon) ? 0 : 20;
+        var iconWidth = string.IsNullOrEmpty(btn.Icon) && btn.VectorIcon == HDevIcon.None ? 0 : 20;
         return 8 + iconWidth + text.Width + 8;
     }
 
@@ -307,7 +316,14 @@ public class HDevToolbar : Control
         var textColor = btn.IsEnabled ? HDevTheme.Text.Primary : HDevTheme.Disabled.Text;
         double contentX = rect.X + (string.IsNullOrEmpty(btn.Label) ? 0 : 8);
 
-        if (!string.IsNullOrEmpty(btn.Icon))
+        if (btn.VectorIcon != HDevIcon.None)
+        {
+            var iconX = string.IsNullOrEmpty(btn.Label) ? rect.X + rect.Width / 2 : contentX + 8;
+            HDevIcons.Draw(context, btn.VectorIcon, new Point(iconX, rect.Y + rect.Height / 2),
+                HDevTheme.Size.IconMedium, textColor);
+            contentX += 20;
+        }
+        else if (!string.IsNullOrEmpty(btn.Icon))
         {
             var icon = CreateText(btn.Icon, textColor);
             var iconX = string.IsNullOrEmpty(btn.Label)

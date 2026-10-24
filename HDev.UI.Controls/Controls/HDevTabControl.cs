@@ -24,6 +24,15 @@ public class HDevTabPage
         set { _header = value; Owner?.InvalidateVisual(); }
     }
 
+    private HDevIcon _vectorIcon;
+
+    /// <summary>Icône vectorielle avant le texte (prioritaire sur <see cref="Icon"/>)</summary>
+    public HDevIcon VectorIcon
+    {
+        get => _vectorIcon;
+        set { _vectorIcon = value; Owner?.InvalidateMeasure(); Owner?.InvalidateVisual(); }
+    }
+
     /// <summary>Icône emoji/unicode optionnelle avant le texte</summary>
     public string? Icon
     {
@@ -241,11 +250,15 @@ public class HDevTabControl : Control
     private double MeasureTabWidth(HDevTabPage page)
     {
         var text = CreateText(GetTabText(page), HDevTheme.Text.Primary);
-        return 12 + text.Width + 12 + (page.CanClose ? CloseSize + 4 : 0);
+        return 12 + IconSlot(page) + text.Width + 12 + (page.CanClose ? CloseSize + 4 : 0);
     }
 
     private static string GetTabText(HDevTabPage page)
-        => string.IsNullOrEmpty(page.Icon) ? page.Header : $"{page.Icon} {page.Header}";
+        => page.VectorIcon != HDevIcon.None || string.IsNullOrEmpty(page.Icon) ? page.Header : $"{page.Icon} {page.Header}";
+
+    /// <summary>Largeur réservée à l'icône vectorielle (glyphe + espace)</summary>
+    private static double IconSlot(HDevTabPage page)
+        => page.VectorIcon != HDevIcon.None ? HDevTheme.Size.IconMedium + 4 : 0;
 
     private (HDevTabPage? Page, bool OnClose) HitTest(Point pos)
     {
@@ -412,8 +425,12 @@ public class HDevTabControl : Control
 
             var textColor = isSelected ? HDevTheme.Text.Primary : HDevTheme.Text.Secondary;
             var text = CreateText(GetTabText(page), textColor);
+            if (page.VectorIcon != HDevIcon.None)
+                HDevIcons.Draw(context, page.VectorIcon,
+                    new Point(rect.X + 12 + HDevTheme.Size.IconMedium / 2, rect.Y + rect.Height / 2),
+                    HDevTheme.Size.IconMedium, textColor);
             context.DrawText(text, Crisp.Snap(new Point(
-                rect.X + 12,
+                rect.X + 12 + IconSlot(page),
                 rect.Y + (rect.Height - text.Height) / 2)));
 
             // Bouton fermer ×
