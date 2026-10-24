@@ -48,6 +48,7 @@ foreach (var variant in new[] { HDevThemeVariant.Light, HDevThemeVariant.Dark })
 
 HDevTheme.Variant = HDevThemeVariant.Light;
 File.WriteAllText(Path.Combine(outDir, "index.html"), Index(label));
+Console.WriteLine($"Design  : {DesignExport.Write(root, outDir)}");
 Console.WriteLine($"Planche : {Path.Combine(outDir, "index.html")}");
 return 0;
 
